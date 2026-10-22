@@ -4,10 +4,10 @@
   "description": "Type definitions and schemas shared between server and web",
   "private": true,
   "scripts": {
-    "build": "tsgo --declaration",
+    "build": "tsc --declaration",
     "clean": "rimraf ./build/",
-    "dev": "tsgo --declaration --watch",
-    "build-dev": "tsgo --declaration --watch",
+    "dev": "tsc --declaration --watch",
+    "build-dev": "tsc --declaration --watch",
     "gen-emby": "typed-openapi https://swagger.emby.media/openapi.json -r zod -o ./build/emby-generated.ts"
   },
   "main": "./dist/src/index.js",
@@ -19,7 +19,6 @@
   "license": "Zlib",
   "devDependencies": {
     "@microsoft/api-extractor": "^7.43.0",
-    "@typescript/native-preview": "catalog:",
     "rimraf": "^5.0.5",
     "tsup": "^8.0.2",
     "typed-openapi": "^0.10.1",

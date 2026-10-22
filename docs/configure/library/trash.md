@@ -2,6 +2,8 @@
 
 The Trash holds items that Tunarr scanned previously but did not find in a recent scan — a deleted file, a renamed folder, or a media server that stopped returning the item from its API. Trashed items stay in the database so you can review them before they are removed for good. They are unplayable in channels while they sit in the Trash.
 
+Removing a folder from a local media source also sends everything it held to the Trash. The path is marked unavailable rather than deleted, so its programs and groupings stay recoverable until you empty the Trash, and adding the path back restores them.
+
 ## Emptying the Trash
 
 Clicking **Empty Trash** starts a background job and returns immediately. Tunarr stays fully responsive while it runs — the UI, the API and active streams are unaffected. The Trash page shows a progress bar and a live item count while the job drains.

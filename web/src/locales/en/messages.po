@@ -986,6 +986,10 @@ msgstr "Codec"
 msgid "Color"
 msgstr "Color"
 
+#: src/components/settings/general/WebSettings.tsx
+msgid "Comfortable"
+msgstr "Comfortable"
+
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx
 msgid "Commit"
 msgstr "Commit"
@@ -1335,6 +1339,19 @@ msgstr "Deleting a media source will remove all of its associated programs from 
 #: src/components/settings/media_source/MediaSourceDeleteDialog.tsx
 #~ msgid "Deleting a Plex server will remove all programming from your channels associated with this plex server. Missing programming will be replaced with Flex time. This action cannot be undone."
 #~ msgstr "Deleting a Plex server will remove all programming from your channels associated with this plex server. Missing programming will be replaced with Flex time. This action cannot be undone."
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Dense"
+msgstr "Dense"
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Dense fits more rows on screen with smaller controls."
+msgstr "Dense fits more rows on screen with smaller controls."
+
+#: src/components/settings/general/WebSettings.tsx
+#: src/components/settings/general/WebSettings.tsx
+msgid "Density"
+msgstr "Density"
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Desc"
@@ -2839,10 +2856,9 @@ msgstr "No programming scheduled for this time period"
 msgid "No results"
 msgstr "No results"
 
-#. placeholder {0}: version.nodejs
 #: src/components/VersionFooter.tsx
-msgid "NodeJS: {0}"
-msgstr "NodeJS: {0}"
+#~ msgid "NodeJS: {0}"
+#~ msgstr "NodeJS: {0}"
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -3474,9 +3490,12 @@ msgid "Roll on Schedule"
 msgstr "Roll on Schedule"
 
 #: src/components/settings/general/LogRollForm.tsx
-#: src/components/settings/general/LogRollForm.tsx
 msgid "Roll the log file on a fixed schedule, regardless of file size."
 msgstr "Roll the log file on a fixed schedule, regardless of file size."
+
+#: src/components/settings/general/LogRollForm.tsx
+msgid "Roll the log file when it grows past the maximum size."
+msgstr "Roll the log file when it grows past the maximum size."
 
 #: src/components/library/LibraryListViewBreadcrumbs.tsx
 msgid "Root"

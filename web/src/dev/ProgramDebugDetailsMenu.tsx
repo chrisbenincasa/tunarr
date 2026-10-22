@@ -5,7 +5,7 @@ import type { ChannelProgram } from '@tunarr/types';
 import { constant, isUndefined } from 'lodash-es';
 import { useState } from 'react';
 import { match, P } from 'ts-pattern';
-import { useCopyToClipboard } from 'usehooks-ts';
+import { useCopyToClipboard } from '@/hooks/useCopyToClipboard.ts';
 import {
   extractProgramGrandparent,
   extractProgramParent,
@@ -21,7 +21,7 @@ const defaultUndefined = constant(undefined);
 const ProgramDebugDetailsMenuImpl = ({ program }: Props) => {
   const { backendUri } = useSettings();
   const [menuAnchorEl, setMenuAnchorEl] = useState<HTMLElement | null>(null);
-  const [, copyToClipboard] = useCopyToClipboard();
+  const copyToClipboard = useCopyToClipboard();
 
   const programId = match(program)
     .with({ type: 'content' }, (p) => p.id)

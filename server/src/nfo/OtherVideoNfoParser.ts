@@ -13,6 +13,7 @@ const ArrayTags = [
   'episodedetails.tag',
   'episodedetails.actor',
   'episodedetails.uniqueid',
+  'episodedetails.studio',
   'movie.credits',
   'movie.director',
   'movie.genre',

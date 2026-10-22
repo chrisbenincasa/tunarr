@@ -986,6 +986,10 @@ msgstr "编码格式"
 msgid "Color"
 msgstr "颜色"
 
+#: src/components/settings/general/WebSettings.tsx
+msgid "Comfortable"
+msgstr ""
+
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx
 msgid "Commit"
 msgstr "提交"
@@ -1335,6 +1339,19 @@ msgstr "删除媒体源将从 Tunarr 中移除其关联的所有节目。"
 #: src/components/settings/media_source/MediaSourceDeleteDialog.tsx
 #~ msgid "Deleting a Plex server will remove all programming from your channels associated with this plex server. Missing programming will be replaced with Flex time. This action cannot be undone."
 #~ msgstr "Deleting a Plex server will remove all programming from your channels associated with this plex server. Missing programming will be replaced with Flex time. This action cannot be undone."
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Dense"
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Dense fits more rows on screen with smaller controls."
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx
+#: src/components/settings/general/WebSettings.tsx
+msgid "Density"
+msgstr ""
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Desc"
@@ -2839,10 +2856,9 @@ msgstr "该时间段内没有安排节目"
 msgid "No results"
 msgstr "无结果"
 
-#. placeholder {0}: version.nodejs
 #: src/components/VersionFooter.tsx
-msgid "NodeJS: {0}"
-msgstr "Node.js：{0}"
+#~ msgid "NodeJS: {0}"
+#~ msgstr "Node.js：{0}"
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -3474,9 +3490,12 @@ msgid "Roll on Schedule"
 msgstr "按计划轮转"
 
 #: src/components/settings/general/LogRollForm.tsx
-#: src/components/settings/general/LogRollForm.tsx
 msgid "Roll the log file on a fixed schedule, regardless of file size."
 msgstr "按固定的时间计划轮转日志文件，不受文件大小影响。"
+
+#: src/components/settings/general/LogRollForm.tsx
+msgid "Roll the log file when it grows past the maximum size."
+msgstr ""
 
 #: src/components/library/LibraryListViewBreadcrumbs.tsx
 msgid "Root"

@@ -3,6 +3,7 @@ import {
   SaveableChannelSchema,
   StrictChannelIconSchema,
   StrictWatermarkSchema,
+  UpdateChannelRequestSchema,
   WatermarkSchema,
 } from '@tunarr/types/schemas';
 import { describe, expect, test } from 'vitest';
@@ -155,5 +156,19 @@ describe('SaveableChannelSchema uses the strict variants', () => {
       icon: { ...channel.icon, position: 'centre' },
     });
     expect(result.success).toBe(false);
+  });
+
+  test('requires startTime when creating a channel', () => {
+    const { startTime: _, ...withoutStartTime } = channel;
+    expect(SaveableChannelSchema.safeParse(withoutStartTime).success).toBe(
+      false,
+    );
+  });
+
+  test('allows an update to omit startTime', () => {
+    const { startTime: _, ...withoutStartTime } = channel;
+    expect(
+      UpdateChannelRequestSchema.safeParse(withoutStartTime).success,
+    ).toBe(true);
   });
 });

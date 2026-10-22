@@ -100,3 +100,28 @@ test.skipIf(!existsSync('/dev/full'))(
   },
   15_000,
 );
+
+test('prunes backups in chronological order', async () => {
+  vi.useFakeTimers({ toFake: ['Date'] });
+  vi.setSystemTime(new Date('2026-10-20T12:00:00'));
+
+  await fs.writeFile(
+    path.join(outputDir, 'tunarr-backup-20261015_213609.tar'),
+    '',
+  );
+  await fs.writeFile(
+    path.join(outputDir, 'tunarr-backup-20261019_010000.tar'),
+    '',
+  );
+
+  const result = await makeBackup().backup({
+    ...outputConfig(outputDir),
+    maxBackups: 2,
+  });
+
+  expect(result.type).toBe('success');
+  expect((await fs.readdir(outputDir)).sort()).toEqual([
+    'tunarr-backup-20261019_010000.tar',
+    'tunarr-backup-20261020_120000.tar',
+  ]);
+}, 15_000);

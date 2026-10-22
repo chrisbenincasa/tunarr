@@ -1,8 +1,26 @@
-# Tunarr Web
+# Tunarr
 
-Domain language for the Tunarr client-side web application (`@tunarr/web`). This context currently covers the channel-programming editor; extend it as other packages are documented.
+Domain language for Tunarr. It covers the channel-programming editor in `@tunarr/web` and the media library lifecycle in `@tunarr/server`; extend it as other areas are documented.
 
 ## Language
+
+### Media library lifecycle
+
+**Missing**:
+The state of a program or grouping that a scan no longer finds. The row stays in the database, lineups and search until it is found again or purged.
+_Avoid_: deleted, removed, unavailable (a library state, not a program state)
+
+**Trash**:
+Every missing program and grouping, presented to the user for review before purge.
+_Avoid_: recycle bin, deleted items
+
+**Purge**:
+The permanent removal of programs and groupings, after their lineup entries have been replaced with flex. The only way program rows leave the database.
+_Avoid_: delete, cleanup, empty (except in the UI action "Empty trash")
+
+**Purge scope**:
+What a purge removes: the trash or one media source. A media source row is deleted only after its purge has emptied it.
+_Avoid_: target, filter
 
 ### Channel programming
 

@@ -3416,7 +3416,7 @@ export type PutApiChannelsByIdData = {
             soundtrack?: string;
             mode: 'pic' | 'clip';
         };
-        startTime: number;
+        startTime?: number;
         stealth: boolean;
         watermark?: {
             url?: string;
@@ -14002,7 +14002,6 @@ export type GetApiVersionResponses = {
     200: {
         tunarr: string;
         ffmpeg: string;
-        nodejs: string;
     };
 };
 

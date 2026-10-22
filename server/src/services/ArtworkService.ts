@@ -9,6 +9,7 @@ import { eq } from 'drizzle-orm';
 import type { FastifyReply } from 'fastify';
 import { inject, injectable } from 'inversify';
 import { isEmpty, trimStart } from 'lodash-es';
+import { existsSync } from 'node:fs';
 import type stream from 'node:stream';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import type { Artwork } from '../db/schema/Artwork.ts';
@@ -321,7 +322,13 @@ export class ArtworkService {
   ): Promise<ArtworkResult> {
     if (art.cachePath) {
       const path = this.imageCache.getImagePath(art.cachePath, art.artworkType);
-      return { kind: 'file', path, artworkType: art.artworkType };
+      // The cache directory is not part of the database, so the file can be
+      // gone while the row still points at it (a restored database, a deleted
+      // cache/, or the repro's copy mode, which skips cache/). Fall through to
+      // the source path instead of handing out a path that does not exist.
+      if (existsSync(path)) {
+        return { kind: 'file', path, artworkType: art.artworkType };
+      }
     }
 
     if (isHttpUrl(art.sourcePath)) {

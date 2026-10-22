@@ -41,7 +41,7 @@ export default function ConnectMediaSources(props: CardProps) {
 
   return (
     <Box sx={sx} {...restProps}>
-      <Card raised>
+      <Card>
         <CardContent>
           {hasMediaSources ? (
             <TableContainer>

@@ -1,5 +1,8 @@
 import { tag } from '@tunarr/types';
 import type { FastifyReply } from 'fastify';
+import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { anything, instance, mock, when } from 'ts-mockito';
 import { v4 } from 'uuid';
 import { describe, expect, test, vi } from 'vitest';
@@ -15,6 +18,7 @@ import type { ImageCache } from './ImageCache.ts';
 function makeService(opts: {
   program: Record<string, unknown> | undefined;
   mediaSource?: { uri: string; type: string; accessToken: string };
+  imageCache?: ImageCache;
 }) {
   const programDB = mock<IProgramDB>();
   const mediaSourceDB = mock<MediaSourceDB>();
@@ -28,7 +32,7 @@ function makeService(opts: {
   );
 
   return new ArtworkService(
-    instance(mock<ImageCache>()),
+    opts.imageCache ?? instance(mock<ImageCache>()),
     instance(programDB),
     instance(mock<DrizzleDBAccess>()),
     instance(mediaSourceDB),
@@ -224,6 +228,97 @@ describe('ArtworkService stored artwork fallback', () => {
     const result = await service.resolveArtwork(v4(), 'program', 'poster');
 
     expect(result.kind).toBe('url');
+  });
+});
+
+const artworkCacheDir = mkdtempSync(join(tmpdir(), 'tunarr-artwork-'));
+
+describe('ArtworkService cached artwork files', () => {
+  function serviceWithCache(cacheFilePath: string, sourcePath: string) {
+    return makeService({
+      program: {
+        artwork: [{ ...storedArt('poster'), sourcePath } as unknown as Artwork],
+        type: 'movie',
+        mediaSourceId,
+        externalKey: '/media/movie.mkv',
+        sourceType: 'local',
+      },
+      mediaSource: localMediaSource,
+      imageCache: {
+        getImagePath: vi.fn().mockReturnValue(cacheFilePath),
+      } as unknown as ImageCache,
+    });
+  }
+
+  test('falls back to the source path when the cached file is gone', async () => {
+    const missingCachePath = join(artworkCacheDir, 'missing-poster.png');
+    const sourcePath = '/media/local/poster.jpg';
+
+    expect(existsSync(missingCachePath)).toBe(false);
+
+    const result = await serviceWithCache(
+      missingCachePath,
+      sourcePath,
+    ).resolveArtwork(v4(), 'program', 'poster');
+
+    expect(result).toEqual({
+      kind: 'file',
+      path: sourcePath,
+      artworkType: 'poster',
+    });
+  });
+
+  test('still serves the cached file when it exists', async () => {
+    const cachePath = join(artworkCacheDir, 'present-poster.png');
+    writeFileSync(cachePath, '');
+
+    const result = await serviceWithCache(
+      cachePath,
+      '/media/local/poster.jpg',
+    ).resolveArtwork(v4(), 'program', 'poster');
+
+    expect(result).toEqual({
+      kind: 'file',
+      path: cachePath,
+      artworkType: 'poster',
+    });
+  });
+
+  test('falls back to the remote url when the cached file is gone', async () => {
+    const missingCachePath = join(artworkCacheDir, 'missing-remote-poster.png');
+    const remoteSourcePath = 'http://plex.local:32400/library/metadata/1/thumb';
+
+    expect(existsSync(missingCachePath)).toBe(false);
+
+    const service = makeService({
+      program: {
+        artwork: [
+          {
+            ...storedArt('poster'),
+            sourcePath: remoteSourcePath,
+          } as unknown as Artwork,
+        ],
+        type: 'movie',
+        mediaSourceId,
+        externalKey: 'abc123',
+        sourceType: 'plex',
+      },
+      mediaSource: {
+        uri: 'http://plex.local:32400',
+        type: 'plex',
+        accessToken: 'plex-token',
+      },
+      imageCache: {
+        getImagePath: vi.fn().mockReturnValue(missingCachePath),
+      } as unknown as ImageCache,
+    });
+
+    const result = await service.resolveArtwork(v4(), 'program', 'poster');
+
+    expect(result.kind).toBe('url');
+    if (result.kind !== 'url') return;
+    expect(result.url).toBe(remoteSourcePath);
+    expect(result.headers).toEqual({ 'X-Plex-Token': 'plex-token' });
   });
 });
 

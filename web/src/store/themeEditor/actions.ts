@@ -1,4 +1,5 @@
 import type { ProgramSelectorViewType } from '../../types/index.ts';
+import type { Density } from '../../themeTokens.ts';
 import useStore from '../index.ts';
 import { initialThemeEditorState } from './store.ts';
 
@@ -11,6 +12,11 @@ export const setGuideDurationState = (duration: number) => {
 export const setThemePreference = (pref: 'light' | 'dark' | 'system') =>
   useStore.setState((state) => {
     state.theme.themePreference = pref;
+  });
+
+export const setDensity = (density: Density) =>
+  useStore.setState((state) => {
+    state.theme.density = density;
   });
 
 export const setProgrammingSelectorViewState = (
