@@ -17,7 +17,7 @@ import type { BadgeProps } from '@mui/material';
 import { useRouterState } from '@tanstack/react-router';
 import { countBy, last, trimEnd } from 'lodash-es';
 import { useMemo, type ReactNode } from 'react';
-import useStore from '../store/index.ts';
+import { useOnboardingComplete } from './useOnboarding.ts';
 import { useSystemHealthChecks } from './useSystemHealthChecks.ts';
 
 function setSelected(navItems: NavItem[], currentRoute: string | undefined) {
@@ -30,7 +30,7 @@ function setSelected(navItems: NavItem[], currentRoute: string | undefined) {
 }
 
 export const useNavItems = () => {
-  const showWelcome = useStore((state) => state.theme.showWelcome);
+  const onboardingComplete = useOnboardingComplete();
   const routerState = useRouterState({
     select: ({ matches }) => trimEnd(last(matches)?.fullPath ?? '', '/'),
   });
@@ -55,7 +55,7 @@ export const useNavItems = () => {
       {
         name: t`Welcome`,
         path: '/welcome',
-        hidden: !showWelcome,
+        hidden: onboardingComplete,
         icon: <Home />,
       },
       { name: t`Guide`, path: '/guide', icon: <Tv /> },
@@ -157,7 +157,7 @@ export const useNavItems = () => {
     setSelected(items, routerState);
 
     return items;
-  }, [highestSev, routerState, sevCount, showWelcome]);
+  }, [highestSev, onboardingComplete, routerState, sevCount]);
 };
 
 export interface NavItem {

@@ -1,6 +1,4 @@
 import { Trans } from '@lingui/react/macro';
-import jellyfinSvg from '@/assets/jellyfin.svg';
-import plexSvg from '@/assets/plex.svg';
 import { useMediaSources } from '@/hooks/settingsHooks.ts';
 import type { Nullable } from '@/types/util.ts';
 import { Edit } from '@mui/icons-material';
@@ -19,6 +17,7 @@ import {
 import type { MediaSourceSettings } from '@tunarr/types';
 import { useState } from 'react';
 import { RouterIconButtonLink } from '../base/RouterButtonLink.tsx';
+import { NetworkIcon } from '../util/NetworkIcon.tsx';
 import { EditMediaSourceLibrariesDialog } from './media_source/EditMediaSourceLibrariesDialog.tsx';
 import { MediaSourceLibrariesChip } from './media_source/MediaSourceLibrariesChip.tsx';
 
@@ -63,10 +62,7 @@ export default function ConnectMediaSources(props: CardProps) {
                     return (
                       <TableRow key={server.id}>
                         <TableCell sx={{ maxWidth: 25 }}>
-                          <img
-                            src={server.type === 'plex' ? plexSvg : jellyfinSvg}
-                            width="25"
-                          />
+                          <NetworkIcon network={server.type} width={25} />
                         </TableCell>
                         <TableCell>{server.name}</TableCell>
                         <TableCell>

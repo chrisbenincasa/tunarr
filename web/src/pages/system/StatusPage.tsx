@@ -1,5 +1,5 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon';
-import { useCopyToClipboard } from '@/hooks/useCopyToClipboard';
+import { CopyToClipboardButton } from '@/components/base/CopyToClipboardButton';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { useM3ULink } from '@/hooks/useM3ULink';
 import { useSystemHealthChecks } from '@/hooks/useSystemHealthChecks';
@@ -8,7 +8,6 @@ import { useXmlTvLink } from '@/hooks/useXmlTvLink';
 import { useSettings } from '@/store/settings/selectors';
 import {
   CheckCircle,
-  ContentCopy,
   Error,
   Info,
   QuestionMark,
@@ -18,8 +17,6 @@ import {
   Box,
   Button,
   Divider,
-  IconButton,
-  type IconButtonProps,
   LinearProgress,
   Link,
   Stack,
@@ -55,29 +52,6 @@ const AllKnownChecks = [
   // MissingProgramAssociationsHealthCheck,
   BaseImageHealthCheck,
 ] as const;
-
-const CopyToClipboardButton = (
-  props: IconButtonProps & { content: string },
-) => {
-  const copyToClipboard = useCopyToClipboard();
-
-  const handleClick = (e: React.SyntheticEvent) => {
-    e.preventDefault();
-    copyToClipboard(props.content).catch(console.warn);
-  };
-
-  return (
-    <IconButton
-      disableRipple
-      sx={{ ml: 0.5, cursor: 'pointer', p: 0 }}
-      size="small"
-      onClick={handleClick}
-      {...props}
-    >
-      <ContentCopy sx={{ fontSize: 'inherit' }} />
-    </IconButton>
-  );
-};
 
 export const StatusPage = () => {
   const { t } = useLingui();
