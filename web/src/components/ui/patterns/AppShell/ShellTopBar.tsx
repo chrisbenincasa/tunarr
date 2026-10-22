@@ -9,11 +9,14 @@ import {
 import {
   Box,
   ButtonBase,
+  type CSSObject,
   Menu,
+  styled,
   type Theme,
   Tooltip,
   useTheme,
 } from '@mui/material';
+import { createLink } from '@tanstack/react-router';
 import {
   type ReactNode,
   useId,
@@ -55,28 +58,41 @@ export type ShellTopBarProps = {
   helpMenu: ReactNode;
 };
 
-const pillSx = (current: boolean) => (theme: Theme) => ({
+const pillStyles = (theme: Theme, current: boolean): CSSObject => ({
   flex: 'none',
   display: 'inline-flex',
   alignItems: 'center',
   height: theme.sizes.navItemHeight,
-  px: '13px',
+  padding: '0 13px',
   gap: '6px',
-  borderRadius: `${radiusPill}px`,
+  borderRadius: radiusPill,
   whiteSpace: 'nowrap',
   fontFamily: 'inherit',
   fontSize: 'inherit',
   fontWeight: current ? 600 : 500,
   color: current ? theme.palette.text.primary : theme.palette.text.secondary,
-  bgcolor: current ? theme.palette.tokens.border : 'transparent',
+  backgroundColor: current ? theme.palette.tokens.border : 'transparent',
   '&:hover': {
-    bgcolor: theme.palette.tokens.border,
+    backgroundColor: theme.palette.tokens.border,
     color: theme.palette.text.primary,
   },
   '&.Mui-focusVisible': {
     outline: `2px solid ${theme.palette.tokens.accent}`,
   },
 });
+
+const notCurrent = (prop: PropertyKey) => prop !== 'current';
+
+const NavPill = styled(ButtonBase, { shouldForwardProp: notCurrent })<{
+  current?: boolean;
+}>(({ theme, current = false }) => pillStyles(theme, current));
+
+const LinkNavPill = createLink(NavPill);
+
+// Offscreen copy of a pill, measured but never interactive.
+const MeasurePill = styled('div', { shouldForwardProp: notCurrent })<{
+  current?: boolean;
+}>(({ theme, current = false }) => pillStyles(theme, current));
 
 const SectionPill = ({
   section,
@@ -85,14 +101,14 @@ const SectionPill = ({
   section: ShellNavSection;
   current: boolean;
 }) => (
-  <LinkButtonBase
+  <LinkNavPill
     to={section.to}
     aria-current={sectionAriaCurrent(section, current)}
-    sx={pillSx(current)}
+    current={current}
   >
     {section.label}
     {section.badge && <NavBadge badge={section.badge} />}
-  </LinkButtonBase>
+  </LinkNavPill>
 );
 
 const Wordmark = () => (
@@ -184,17 +200,17 @@ const useTopBarLayout = (sectionCount: number, activeIndex?: number) => {
         parseFloat(style.paddingRight);
       const next = fitTopBar(
         {
-          available,
-          logo: logo.offsetWidth,
-          wordmark: widthOf('wordmark') + 10,
-          sections: Array.from({ length: sectionCount }, (_, i) =>
+          barWidth: available,
+          logoWidth: logo.offsetWidth,
+          wordmarkWidth: widthOf('wordmark') + 10,
+          sectionWidths: Array.from({ length: sectionCount }, (_, i) =>
             widthOf(`section-${i}`),
           ),
           sectionGap: SectionGap,
-          more: widthOf('more'),
-          searchFull: widthOf('search-full'),
-          searchIcon: widthOf('search-icon'),
-          actions: actions.offsetWidth,
+          moreButtonWidth: widthOf('more'),
+          searchPillWidth: widthOf('search-full'),
+          searchIconWidth: widthOf('search-icon'),
+          actionsWidth: actions.offsetWidth,
           actionGap: ActionGap,
           groupGap: GroupGap,
         },
@@ -286,17 +302,16 @@ export const ShellTopBar = ({
         ))}
         {overflow.length > 0 && (
           <>
-            <ButtonBase
+            <NavPill
               aria-haspopup="menu"
               aria-controls={moreAnchor ? moreMenuId : undefined}
               aria-expanded={moreAnchor ? 'true' : undefined}
               onClick={(e) => setMoreAnchor(e.currentTarget)}
-              sx={pillSx(false)}
             >
               <Trans>More</Trans>
               {overflowBadge && <NavBadge badge={overflowBadge} />}
               <ExpandMore sx={{ fontSize: 16 }} />
-            </ButtonBase>
+            </NavPill>
             <Menu
               id={moreMenuId}
               anchorEl={moreAnchor}
@@ -386,20 +401,20 @@ export const ShellTopBar = ({
           <Wordmark />
         </Box>
         {sections.map((section, i) => (
-          <Box
+          <MeasurePill
             key={section.id}
             data-measure={`section-${i}`}
-            sx={pillSx(section.id === active.sectionId)}
+            current={section.id === active.sectionId}
           >
             {section.label}
             {section.badge && <NavBadge badge={section.badge} />}
-          </Box>
+          </MeasurePill>
         ))}
-        <Box data-measure="more" sx={pillSx(false)}>
+        <MeasurePill data-measure="more">
           <Trans>More</Trans>
           {anyBadge && <NavBadge badge={anyBadge} />}
           <ExpandMore sx={{ fontSize: 16 }} />
-        </Box>
+        </MeasurePill>
         <Box
           data-measure="search-full"
           sx={{ flex: 'none', width: SearchPillWidth }}

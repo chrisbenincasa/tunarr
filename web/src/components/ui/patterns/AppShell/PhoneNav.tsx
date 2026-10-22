@@ -12,8 +12,9 @@ import {
   ListItemIcon,
   ListItemText,
   Menu,
-  type Theme,
+  styled,
 } from '@mui/material';
+import { createLink } from '@tanstack/react-router';
 import { type ReactNode, useId, useState } from 'react';
 import TunarrLogo from '../../../TunarrLogo.tsx';
 import {
@@ -87,7 +88,9 @@ export const PhoneHeader = ({
   );
 };
 
-const itemSx = (current: boolean) => (theme: Theme) => ({
+const BarItem = styled(ButtonBase, {
+  shouldForwardProp: (prop) => prop !== 'current',
+})<{ current?: boolean }>(({ theme, current = false }) => ({
   flex: 1,
   minWidth: 0,
   flexDirection: 'column',
@@ -101,7 +104,9 @@ const itemSx = (current: boolean) => (theme: Theme) => ({
     outline: `2px solid ${theme.palette.tokens.accent}`,
     outlineOffset: -4,
   },
-});
+}));
+
+const LinkBarItem = createLink(BarItem);
 
 const ItemIcon = ({ section }: { section: ShellNavSection }) =>
   section.badge ? (
@@ -116,20 +121,13 @@ const ItemIcon = ({ section }: { section: ShellNavSection }) =>
     section.icon
   );
 
-const ItemLabel = ({ children }: { children: ReactNode }) => (
-  <Box
-    component="span"
-    sx={{
-      maxWidth: '100%',
-      overflow: 'hidden',
-      textOverflow: 'ellipsis',
-      whiteSpace: 'nowrap',
-      px: '2px',
-    }}
-  >
-    {children}
-  </Box>
-);
+const ItemLabel = styled('span')({
+  maxWidth: '100%',
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+  whiteSpace: 'nowrap',
+  padding: '0 2px',
+});
 
 export type PhoneBottomBarProps = {
   nav: ShellNav;
@@ -170,25 +168,25 @@ export const PhoneBottomBar = ({ nav, active }: PhoneBottomBarProps) => {
       {shown.map((section) => {
         const current = section.id === active.sectionId;
         return (
-          <LinkButtonBase
+          <LinkBarItem
             key={section.id}
             to={section.to}
             aria-current={sectionAriaCurrent(section, current)}
-            sx={itemSx(current)}
+            current={current}
           >
             <ItemIcon section={section} />
             <ItemLabel>{section.label}</ItemLabel>
-          </LinkButtonBase>
+          </LinkBarItem>
         );
       })}
       {overflowing && (
         <>
-          <ButtonBase
+          <BarItem
             aria-haspopup="menu"
             aria-controls={anchor ? menuId : undefined}
             aria-expanded={anchor ? 'true' : undefined}
             onClick={(e) => setAnchor(e.currentTarget)}
-            sx={itemSx(moreCurrent)}
+            current={moreCurrent}
           >
             <Badge
               variant="dot"
@@ -200,7 +198,7 @@ export const PhoneBottomBar = ({ nav, active }: PhoneBottomBarProps) => {
             <ItemLabel>
               <Trans>More</Trans>
             </ItemLabel>
-          </ButtonBase>
+          </BarItem>
           <Menu
             id={menuId}
             anchorEl={anchor}

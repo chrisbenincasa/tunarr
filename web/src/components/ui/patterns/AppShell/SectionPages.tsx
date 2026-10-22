@@ -1,7 +1,7 @@
-import { Box, type Theme } from '@mui/material';
+import { Box, ButtonBase, styled } from '@mui/material';
+import { createLink } from '@tanstack/react-router';
 import { radiusPill } from '../../../../themeTokens.ts';
 import type { ShellNavSection } from './navModel.ts';
-import { LinkButtonBase } from './shellLinks.ts';
 
 export type SectionPagesProps = {
   section: ShellNavSection;
@@ -9,10 +9,14 @@ export type SectionPagesProps = {
   variant: 'tabs' | 'chips';
 };
 
-const tabSx = (current: boolean) => (theme: Theme) => ({
+const notCurrent = (prop: PropertyKey) => prop !== 'current';
+
+const Tab = styled(ButtonBase, { shouldForwardProp: notCurrent })<{
+  current?: boolean;
+}>(({ theme, current = false }) => ({
   flex: 'none',
   height: theme.sizes.subTabHeight,
-  px: '12px',
+  padding: '0 12px',
   whiteSpace: 'nowrap',
   fontFamily: 'inherit',
   fontSize: 'inherit',
@@ -24,25 +28,30 @@ const tabSx = (current: boolean) => (theme: Theme) => ({
     outline: `2px solid ${theme.palette.tokens.accent}`,
     outlineOffset: -2,
   },
-});
+}));
 
-const chipSx = (current: boolean) => (theme: Theme) => {
+const Chip = styled(ButtonBase, { shouldForwardProp: notCurrent })<{
+  current?: boolean;
+}>(({ theme, current = false }) => {
   const t = theme.palette.tokens;
   return {
     flex: 'none',
     height: 36,
-    px: '14px',
+    padding: '0 14px',
     whiteSpace: 'nowrap',
     fontFamily: 'inherit',
     fontSize: 13,
     fontWeight: current ? 600 : 500,
-    borderRadius: `${radiusPill}px`,
+    borderRadius: radiusPill,
     border: `1px solid ${current ? 'transparent' : t.borderStrong}`,
-    bgcolor: current ? t.accentSoft : 'transparent',
+    backgroundColor: current ? t.accentSoft : 'transparent',
     color: current ? t.accent : theme.palette.text.secondary,
     '&.Mui-focusVisible': { outline: `2px solid ${t.accent}` },
   };
-};
+});
+
+const LinkTab = createLink(Tab);
+const LinkChip = createLink(Chip);
 
 // The pages of one section, as underline tabs under the desktop bar or as a
 // scrolling chip row under the phone header.
@@ -74,15 +83,16 @@ export const SectionPages = ({
   >
     {section.pages.map((page) => {
       const current = page.id === activePageId;
+      const PageLink = variant === 'tabs' ? LinkTab : LinkChip;
       return (
-        <LinkButtonBase
+        <PageLink
           key={page.id}
           to={page.to}
           aria-current={current ? 'page' : undefined}
-          sx={variant === 'tabs' ? tabSx(current) : chipSx(current)}
+          current={current}
         >
           {page.label}
-        </LinkButtonBase>
+        </PageLink>
       );
     })}
   </Box>
