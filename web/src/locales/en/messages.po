@@ -429,8 +429,8 @@ msgid "Add Slot"
 msgstr "Add Slot"
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Add these links to an IPTV player. Plex, Jellyfin, and Emby can also add Tunarr as an HDHomeRun tuner."
-msgstr "Add these links to an IPTV player. Plex, Jellyfin, and Emby can also add Tunarr as an HDHomeRun tuner."
+msgid "Add these links to an IPTV client. Jellyfin and Emby can use Tunarr as either an M3U source or an HDHomeRun tuner. Plex can add Tunarr as an HDHomeRun tuner."
+msgstr "Add these links to an IPTV client. Jellyfin and Emby can use Tunarr as either an M3U source or an HDHomeRun tuner. Plex can add Tunarr as an HDHomeRun tuner."
 
 #: src/components/filler/EditFillerListForm.tsx
 msgid "Add TV Shows or Movies to filler"
@@ -1140,6 +1140,10 @@ msgstr "Could not cancel emptying the trash."
 msgid "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
 msgstr "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Could not save setup progress. {message}"
+msgstr "Could not save setup progress. {message}"
+
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 msgid "Create"
 msgstr "Create"
@@ -1424,6 +1428,10 @@ msgstr "Divides the programming in blocks of 4, 6, 8 or 12 hours then repeats ea
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Do not group programs at all. Normal shuffle."
 msgstr "Do not group programs at all. Normal shuffle."
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Docs"
+msgstr "Docs"
 
 #: src/components/TopBar.tsx
 msgid "Documentation"
@@ -2065,6 +2073,10 @@ msgstr "Flex"
 msgid "Flex Style"
 msgstr "Flex Style"
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Follow these steps to set up your first channel. Each step will update upon completion. You can skip setup at any time and do all of this from the menu later."
+msgstr "Follow these steps to set up your first channel. Each step will update upon completion. You can skip setup at any time and do all of this from the menu later."
+
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
 msgstr "For more details on manually retrieving a Plex token, see <0>here</0>"
@@ -2136,10 +2148,6 @@ msgstr "Hardware Accel."
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Hardware Acceleration"
 msgstr "Hardware Acceleration"
-
-#: src/pages/welcome/WelcomePage.tsx
-msgid "HDHomeRun Settings"
-msgstr "HDHomeRun Settings"
 
 #: src/pages/settings/SettingsLayout.tsx
 msgid "HDHR"
@@ -4133,10 +4141,6 @@ msgstr "There was an error when submitting the form. Please see console logs for
 msgid "These settings are stored in your browser and are saved automatically when changed."
 msgstr "These settings are stored in your browser and are saved automatically when changed."
 
-#: src/pages/welcome/WelcomePage.tsx
-msgid "These steps get your first channel on the air. Each one checks itself off as you finish it. You can skip setup at any time and do all of this from the menu later."
-msgstr "These steps get your first channel on the air. Each one checks itself off as you finish it. You can skip setup at any time and do all of this from the menu later."
-
 #. placeholder {0}: slot.type .split('-') .map((s) => capitalize(s)) .join(' ')
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
@@ -4392,12 +4396,16 @@ msgid "Tunarr runs various tasks, sometimes on a schedule, for background operat
 msgstr "Tunarr runs various tasks, sometimes on a schedule, for background operations."
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Tunarr scans enabled libraries in the background. Channels can only use programs that a scan has found."
-msgstr "Tunarr scans enabled libraries in the background. Channels can only use programs that a scan has found."
+msgid "Tunarr scans enabled libraries in the background. Channels can only use programs that have been scanned by Tunarr."
+msgstr "Tunarr scans enabled libraries in the background. Channels can only use programs that have been scanned by Tunarr."
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Tunarr uses FFmpeg to transcode streams. Docker images include it, so most installs need no changes here."
-msgstr "Tunarr uses FFmpeg to transcode streams. Docker images include it, so most installs need no changes here."
+msgid "Tunarr uses FFmpeg 6.1 or newer to transcode streams."
+msgstr "Tunarr uses FFmpeg 6.1 or newer to transcode streams."
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Tunarr uses FFmpeg to transcode streams. Your container image includes it, but Tunarr could not use it."
+msgstr "Tunarr uses FFmpeg to transcode streams. Your container image includes it, but Tunarr could not use it."
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Tunarr will attempt to get Plex to pull Tunarr's updated XMLTV upon regeneration"

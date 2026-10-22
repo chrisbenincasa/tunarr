@@ -429,7 +429,7 @@ msgid "Add Slot"
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Add these links to an IPTV player. Plex, Jellyfin, and Emby can also add Tunarr as an HDHomeRun tuner."
+msgid "Add these links to an IPTV client. Jellyfin and Emby can use Tunarr as either an M3U source or an HDHomeRun tuner. Plex can add Tunarr as an HDHomeRun tuner."
 msgstr ""
 
 #: src/components/filler/EditFillerListForm.tsx
@@ -1140,6 +1140,10 @@ msgstr ""
 msgid "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
 msgstr ""
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Could not save setup progress. {message}"
+msgstr ""
+
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 msgid "Create"
 msgstr ""
@@ -1423,6 +1427,10 @@ msgstr ""
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Do not group programs at all. Normal shuffle."
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Docs"
 msgstr ""
 
 #: src/components/TopBar.tsx
@@ -2065,6 +2073,10 @@ msgstr ""
 msgid "Flex Style"
 msgstr ""
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Follow these steps to set up your first channel. Each step will update upon completion. You can skip setup at any time and do all of this from the menu later."
+msgstr ""
+
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
 msgstr ""
@@ -2135,10 +2147,6 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Hardware Acceleration"
-msgstr ""
-
-#: src/pages/welcome/WelcomePage.tsx
-msgid "HDHomeRun Settings"
 msgstr ""
 
 #: src/pages/settings/SettingsLayout.tsx
@@ -4131,10 +4139,6 @@ msgstr ""
 msgid "These settings are stored in your browser and are saved automatically when changed."
 msgstr ""
 
-#: src/pages/welcome/WelcomePage.tsx
-msgid "These steps get your first channel on the air. Each one checks itself off as you finish it. You can skip setup at any time and do all of this from the menu later."
-msgstr ""
-
 #. placeholder {0}: slot.type .split('-') .map((s) => capitalize(s)) .join(' ')
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
@@ -4390,11 +4394,15 @@ msgid "Tunarr runs various tasks, sometimes on a schedule, for background operat
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Tunarr scans enabled libraries in the background. Channels can only use programs that a scan has found."
+msgid "Tunarr scans enabled libraries in the background. Channels can only use programs that have been scanned by Tunarr."
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Tunarr uses FFmpeg to transcode streams. Docker images include it, so most installs need no changes here."
+msgid "Tunarr uses FFmpeg 6.1 or newer to transcode streams."
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Tunarr uses FFmpeg to transcode streams. Your container image includes it, but Tunarr could not use it."
 msgstr ""
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
