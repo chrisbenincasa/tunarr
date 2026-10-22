@@ -39,6 +39,44 @@
         "allowThrowingAny": false,
         "allowThrowingUnknown": false
       }
+    ],
+    "no-restricted-imports": [
+      "error",
+      {
+        "paths": [
+          {
+            "name": "@mui/material",
+            "importNames": [
+              "AppBar",
+              "Drawer",
+              "SwipeableDrawer",
+              "BottomNavigation",
+              "BottomNavigationAction"
+            ],
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/AppBar",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/Drawer",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/SwipeableDrawer",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/BottomNavigation",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/BottomNavigationAction",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          }
+        ]
+      }
     ]
   },
   "ignorePatterns": [
@@ -51,5 +89,23 @@
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/generated/*"
+  ],
+  "overrides": [
+    {
+      "files": [
+        "src/components/ui/**"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
+      "files": [
+        "src/components/channel_config/SelectedProgrammingList.tsx"
+      ],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    }
   ]
 }

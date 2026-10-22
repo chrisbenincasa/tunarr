@@ -66,6 +66,4 @@ export const Local = 'local';
 export const AlphanumericCharCodes = [
   '#'.charCodeAt(0),
   ...range('a'.charCodeAt(0), 'z'.charCodeAt(0) + 1),
-]; // magic number for top bar padding; TODO: calc it off ref
-
-export const TopBarPadddingPx = 64;
+];
