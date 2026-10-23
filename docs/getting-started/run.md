@@ -84,7 +84,7 @@ docker run \
 
 #### Upgrading from older versions
 
-Previous versions of Tunarr ran as `root` inside the container, so your data directory may be owned by `root` (UID `0`). The entrypoint script handles this automatically — it adjusts ownership at startup. No manual `chown` is required.
+Previous versions of Tunarr ran as `root` inside the container, so your data directory may be owned by `root` (UID `0`). The entrypoint script handles this automatically. At startup it changes the owner of any file under `/config` that isn't owned by `PUID:PGID`. No manual `chown` is required.
 
 If you prefer to fix ownership yourself ahead of time:
 
@@ -92,9 +92,26 @@ If you prefer to fix ownership yourself ahead of time:
 sudo chown -R 1000:1000 /path/to/tunarr/data
 ```
 
+!!! warning
+    The ownership fix applies to everything under `/config`. If another service shares a directory mounted there, its files become owned by the Tunarr user. Mount only Tunarr's own data under `/config`, or set `TUNARR_SKIP_CHOWN=true` to turn the fix off.
+
+Some mounts refuse `chown`, such as NFS with root squashing. Tunarr logs a warning and starts anyway, but it can only write there if `PUID`/`PGID` already have write access.
+
+#### Keeping Tunarr running as `root`
+
+Set `PUID=0` and `PGID=0` to keep the old behavior.
+
+#### Running with `docker run --user`
+
+If you start the container with `--user`, the entrypoint skips all user setup. It ignores `PUID`/`PGID`, doesn't change file ownership, and doesn't add `/dev/dri` groups. The mounted data directory must already be writable by that user, and you must pass device groups yourself with `--group-add`.
+
+#### Read-only root filesystem
+
+Running with `--read-only` is not supported.
+
 #### HDHR auto-discovery note
 
-SSDP (used for HDHR auto-discovery) requires binding to privileged port 1900. When running as a non-root user, this bind will fail gracefully — Tunarr logs a warning and continues normally. All functionality except automatic HDHR device discovery is unaffected. Clients can still connect to Tunarr by entering the address manually.
+If the SSDP server for HDHR auto-discovery can't bind UDP port 1900, Tunarr logs a warning and keeps running. Only automatic HDHR device discovery is affected. Clients can still connect by entering the address manually.
 
 ### Docker Desktop
 
