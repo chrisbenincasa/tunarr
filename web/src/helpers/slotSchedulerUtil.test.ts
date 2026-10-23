@@ -63,7 +63,7 @@ describe('customShowAvailability', () => {
 describe('unavailableCustomShowSlotIndexes', () => {
   test('finds custom-show slots whose show is empty or deleted', () => {
     const slots = [
-      { type: 'movie' },
+      { type: 'show', showId: 'show-1' },
       { type: 'custom-show', customShowId: 'full' },
       { type: 'custom-show', customShowId: 'empty' },
       { type: 'custom-show', customShowId: 'deleted' },

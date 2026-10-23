@@ -81,7 +81,6 @@ export const useScheduledSlotProgramDetails = (slotIds: SlotId[]) => {
         })
         .with(
           P.string.startsWith('show'),
-          P.string.startsWith('movie'),
           () =>
             uniqBy(
               programs as (
@@ -94,17 +93,13 @@ export const useScheduledSlotProgramDetails = (slotIds: SlotId[]) => {
         .otherwise(() => 0);
 
       const programDurations = match(scheduledSlotId)
-        .with(
-          P.string.startsWith('show'),
-          P.string.startsWith('custom'),
-          P.string.startsWith('movie'),
-          () =>
-            seq.collect(programs, (p) =>
-              p.type === 'content' ||
-              (p.type === 'custom' && isNonEmptyString(p.id))
-                ? { id: p.id, duration: p.duration }
-                : null,
-            ),
+        .with(P.string.startsWith('show'), P.string.startsWith('custom'), () =>
+          seq.collect(programs, (p) =>
+            p.type === 'content' ||
+            (p.type === 'custom' && isNonEmptyString(p.id))
+              ? { id: p.id, duration: p.duration }
+              : null,
+          ),
         )
         .otherwise(() => []);
 

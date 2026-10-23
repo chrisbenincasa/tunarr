@@ -8,9 +8,12 @@ import { describe, expect, test } from 'vitest';
 
 type Slot = RandomSlotSchedule['slots'][number];
 
-const movieSlot = (durationSpec: Slot['durationSpec']): Slot => ({
+const customShowId = randomUUID();
+
+const contentSlot = (durationSpec: Slot['durationSpec']): Slot => ({
   id: randomUUID(),
-  type: 'movie',
+  type: 'custom-show',
+  customShowId,
   order: 'next',
   direction: 'asc',
   weight: 1,
@@ -26,7 +29,7 @@ const valid: RandomSlotSchedule = {
   padStyle: 'slot',
   randomDistribution: 'uniform',
   lockWeights: false,
-  slots: [movieSlot({ type: 'fixed', durationMs: 30 * 60 * 1000 })],
+  slots: [contentSlot({ type: 'fixed', durationMs: 30 * 60 * 1000 })],
 };
 
 // Each of these makes the scheduler stall or throw rather than fail cleanly.
@@ -34,15 +37,15 @@ const rejected: [string, RandomSlotSchedule][] = [
   ['no slots at all', { ...valid, slots: [] }],
   [
     'a fixed duration of zero',
-    { ...valid, slots: [movieSlot({ type: 'fixed', durationMs: 0 })] },
+    { ...valid, slots: [contentSlot({ type: 'fixed', durationMs: 0 })] },
   ],
   [
     'a negative fixed duration',
-    { ...valid, slots: [movieSlot({ type: 'fixed', durationMs: -1 })] },
+    { ...valid, slots: [contentSlot({ type: 'fixed', durationMs: -1 })] },
   ],
   [
     'a fractional program count',
-    { ...valid, slots: [movieSlot({ type: 'dynamic', programCount: 1.5 })] },
+    { ...valid, slots: [contentSlot({ type: 'dynamic', programCount: 1.5 })] },
   ],
   [
     'a dynamic flex slot',
@@ -68,11 +71,25 @@ describe('StrictRandomSlotScheduleSchema', () => {
   test('accepts a dynamic content slot', () => {
     const dynamic = {
       ...valid,
-      slots: [movieSlot({ type: 'dynamic', programCount: 3 })],
+      slots: [contentSlot({ type: 'dynamic', programCount: 3 })],
     };
     expect(StrictRandomSlotScheduleSchema.safeParse(dynamic).success).toBe(
       true,
     );
+  });
+
+  test('rejects a movie slot', () => {
+    const movie = {
+      ...valid,
+      slots: [
+        {
+          ...contentSlot({ type: 'dynamic', programCount: 1 }),
+          type: 'movie',
+          customShowId: undefined,
+        },
+      ],
+    };
+    expect(RandomSlotScheduleSchema.safeParse(movie).success).toBe(false);
   });
 
   test.each(rejected)('rejects %s', (_label, schedule) => {
@@ -85,8 +102,8 @@ describe('StrictRandomSlotScheduleSchema', () => {
     const result = StrictRandomSlotScheduleSchema.safeParse({
       ...valid,
       slots: [
-        movieSlot({ type: 'fixed', durationMs: 60_000 }),
-        movieSlot({ type: 'fixed', durationMs: 0 }),
+        contentSlot({ type: 'fixed', durationMs: 60_000 }),
+        contentSlot({ type: 'fixed', durationMs: 0 }),
       ],
     });
     expect(result.error?.issues.map((issue) => issue.message)).toEqual([
@@ -97,7 +114,7 @@ describe('StrictRandomSlotScheduleSchema', () => {
   test('rejects a program count of zero in both schemas', () => {
     const zero = {
       ...valid,
-      slots: [movieSlot({ type: 'dynamic', programCount: 0 })],
+      slots: [contentSlot({ type: 'dynamic', programCount: 0 })],
     };
     expect(StrictRandomSlotScheduleSchema.safeParse(zero).success).toBe(false);
     expect(RandomSlotScheduleSchema.safeParse(zero).success).toBe(false);

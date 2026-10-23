@@ -13,16 +13,14 @@ that, which supports mid-roll breaks as of #2213.
 
 ## Status
 
-- Not started. Branch `fix/remove-movie-slots` exists but has no commits.
+- 10/07/2026: Step 1 (migration) committed on `fix/remove-movie-slots`
+  (`c73f5f6d5`). Step 2 (removal) done in the working tree, uncommitted.
+  Typecheck, lint, server and web tests pass. Next: commit, then step 3.
+- Open decisions resolved 10/07/2026: all three proposals accepted.
 - Prerequisite #2213 (mid-roll breaks on custom-show slots) is merged.
-- Custom show title sort and release date sort fixes (Follow-ups) are on
-  `fix/filler-seek-past-eof` (`3eac3910`).
-- Interim fix, branch `fix/movie-slot-filler-leak`: `createProgramMap` leaves
-  programs in a filler list the schedule references out of the movie pool.
-  Known gap: a lineup's filler items are content items with `fillerListId` and
-  are saved as channel programs. If their filler list is later removed from
-  the schedule, they rejoin the movie pool on the next regeneration. The
-  migration below excludes them; the interim fix does not.
+- Custom show sort follow-ups merged as #2214.
+- Interim fix PR #2234 (`fix/movie-slot-filler-leak`) closed unmerged in favor
+  of this removal.
 
 ## 1. Migration: lineup schema v6 to v7
 
@@ -62,21 +60,24 @@ matches what the movie slot produced. Custom-show slots ignore `direction`, so
 the direction has to be baked into the show.
 
 Shows are named `<Channel> Movies`, with a sort suffix only when a channel
-needs more than one. Slots that shared one movie iterator (key
-`movie_${order}`) still share one, since custom-show slots share an iterator
-per show and order (`custom-show_${id}_${order}`).
+needs more than one. Iterators are keyed by slot ID, so each ungrouped slot
+gets its own iterator before and after the migration. Only slots with an
+`iterationGroup` share one, and the migration keeps that field.
 
 **The slot keeps everything else:** id, filler, mid-roll, weight, cooldown,
-duration spec, start time and links. Only `type`, `customShowId` and `order`
-change.
+duration spec, start time and links. Only `type`, `customShowId`, `order` and
+`direction` change. `direction` becomes `asc` because the show already holds
+the slot's direction, and a later change that honors `direction` on
+custom-show slots would otherwise reverse it a second time.
 
 **Empty pool.** The slot becomes a `flex` slot and the migration logs a
 warning. An empty custom show would fail schedule validation on save.
 
 **Reruns.** If the migration fails after creating a show, the lineup stays on
-v6 and the migration runs again on the next startup. It reuses an existing
-custom show with the same name instead of creating a duplicate. (Proposed;
-confirm.)
+v6 and the migration runs again on the next startup. Each show's ID is a
+uuid v5 of the channel ID and sort key, so the rerun finds the show it created
+instead of making a duplicate. Names are not unique, so the migration never
+looks a show up by name.
 
 **Tests.** DB-backed, following `server/src/db/CustomShowDB.test.ts`:
 
@@ -122,7 +123,7 @@ confirm.)
 
 1. The migrated show is a snapshot and doesn't follow movies added to the
    channel later. Proposed: accept it, and document it.
-2. Rerun safety by reusing a same-named show. Proposed: yes.
+2. Rerun safety by deriving each show's ID from the channel and sort. Done.
 3. One PR (migration and removal) or two (migration and server, then web).
    Proposed: one, since the web won't compile against the new types without
    the UI changes.

@@ -2649,7 +2649,6 @@ msgid "Month"
 msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingList.tsx
-#: src/hooks/slot_scheduler/useSlotName.ts
 msgid "Movie"
 msgstr ""
 
@@ -2669,8 +2668,6 @@ msgid "Movie, {0}"
 msgstr ""
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/hooks/programming_controls/useSlotProgramOptions.ts
-#: src/hooks/programming_controls/useSlotProgramOptions.ts
 #: src/pages/library/TrashPage.tsx
 msgid "Movies"
 msgstr ""
@@ -4237,6 +4234,10 @@ msgstr ""
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "TO"
+msgstr ""
+
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
+msgid "To schedule movies, add them to a custom show and choose Custom Show."
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx

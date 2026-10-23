@@ -53,8 +53,7 @@ export const SlotFillerDialogPanel = () => {
     const { unsubscribe } = watch((value, info) => {
       if (
         value.type &&
-        (value.type === 'movie' ||
-          value.type === 'custom-show' ||
+        (value.type === 'custom-show' ||
           value.type === 'show' ||
           value.type === 'smart-collection') &&
         info.name?.startsWith('filler')

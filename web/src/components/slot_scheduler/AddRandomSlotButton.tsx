@@ -14,12 +14,11 @@ import type { SlotViewModel } from '../../model/SlotModels.ts';
 
 const typeWeights: Record<ProgramOption['type'], number> = {
   show: 0,
-  movie: 1,
-  'custom-show': 2,
-  'smart-collection': 2,
-  filler: 2,
-  redirect: 3,
-  flex: 4,
+  'custom-show': 1,
+  'smart-collection': 1,
+  filler: 1,
+  redirect: 2,
+  flex: 3,
 } as const;
 
 const findBestProgramOption = (
@@ -68,7 +67,6 @@ export const AddRandomSlotButton = ({ onAdd }: AddRandomSlotButtonProps) => {
     const baseSlot = {
       type: programOption.type,
       cooldownMs: 0,
-      // order: programming.type === 'movie' ? 'chronological' : 'next',
       weight,
       durationSpec: {
         type: 'fixed',
@@ -80,12 +78,6 @@ export const AddRandomSlotButton = ({ onAdd }: AddRandomSlotButtonProps) => {
 
     const newSlot = match(programOption)
       .returnType<SlotViewModel>()
-      .with({ type: 'movie' }, () => ({
-        id: v4(),
-        ...baseSlot,
-        type: 'movie',
-        order: 'chronological',
-      }))
       .with({ type: 'custom-show' }, (cs) => ({
         id: v4(),
         ...baseSlot,

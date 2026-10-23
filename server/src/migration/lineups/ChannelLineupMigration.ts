@@ -2,6 +2,10 @@ import type { Migration } from '@/migration/Migration.js';
 import { injectable } from 'inversify';
 import type { JsonObject } from '../../types/schemas.ts';
 
+export type ChannelLineupMigrationContext = {
+  channelId: string;
+};
+
 @injectable()
 export abstract class ChannelLineupMigration<
   From extends number,
@@ -10,5 +14,8 @@ export abstract class ChannelLineupMigration<
 {
   abstract from: From;
   abstract to: To;
-  abstract migrate(schema: JsonObject): Promise<void>;
+  abstract migrate(
+    schema: JsonObject,
+    context?: ChannelLineupMigrationContext,
+  ): Promise<void>;
 }

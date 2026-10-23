@@ -225,14 +225,6 @@ export const EditTimeSlotDialogContent = ({
             isMissing: false,
           };
         })
-        .with('movie', () => ({
-          id: v4(),
-          startTime,
-          type: 'movie',
-          order: 'alphanumeric',
-          direction: 'asc',
-          title: 'Movies',
-        }))
         .with('filler', () => {
           const opt = programOptions.find(
             (opt): opt is FillerProgramOption => opt.type === 'filler',
