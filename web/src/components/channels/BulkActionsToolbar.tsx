@@ -1,11 +1,9 @@
 import { Plural, Trans } from '@lingui/react/macro';
 import { PlaylistAdd } from '@mui/icons-material';
 import { Button, Paper, Stack, Typography } from '@mui/material';
-import type { Channel } from '@tunarr/types';
 
 type Props = {
   selectedChannelIds: string[];
-  allChannels: Channel[];
   onClearSelection: () => void;
   onAssignFillers: () => void;
 };

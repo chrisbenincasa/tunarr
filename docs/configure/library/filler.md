@@ -58,21 +58,23 @@ Tunarr provides two ways to assign filler lists to multiple channels at once, sa
 
 From the **Library > Fillers** page, click the **Assign to Channels** button (playlist icon) in the row actions for any filler list. This opens a dialog where you can:
 
-1. Set the **weight** and **cooldown** for the filler list
+1. Set the **relative weight** and **cooldown** for the filler list (defaults: 50 and 30 seconds)
 2. Select which channels should receive the filler list (use **Select All** / **Deselect All** for quick selection)
 3. Click **Apply** to add the filler list to all selected channels
 
-This uses "add" mode — existing filler assignments on those channels are preserved and the selected filler list is added alongside them. If a channel already has the filler list assigned, it will be skipped.
+This uses "add" mode. Existing filler assignments on those channels are kept, and the selected filler list is added alongside them. If a channel already has the filler list, its weight and cooldown are updated to the new values.
+
+Weight is relative. Tunarr picks each of a channel's filler lists in proportion to its weight, compared with the channel's other lists. A list with weight 50 on a channel whose other lists total 50 plays about half the time.
 
 ### Assign Filler Lists to Selected Channels
 
 From the **Channels** page, use the row checkboxes to select one or more channels. A toolbar appears at the bottom of the page with an **Assign Fillers** button. Clicking it opens a dialog where you can:
 
 1. Toggle **Replace all existing fillers** to choose between:
-      - **Add mode** (default): keeps existing filler assignments and adds the selected ones
-      - **Replace mode**: removes all existing filler assignments on the selected channels and replaces them with the new selection
+      - **Add mode** (default): keeps existing filler assignments and adds the selected ones. Channels that already have a selected list get its new weight and cooldown.
+      - **Replace mode**: removes all existing filler assignments on the selected channels and replaces them with the new selection. Tunarr asks for confirmation first.
 2. Check the filler lists you want to assign
-3. For each selected filler list, configure its **weight** (1–100) and **cooldown** (seconds)
+3. For each selected filler list, configure its **relative weight** (1–100) and **cooldown** (seconds)
 4. Click **Apply** to save
 
-After applying, a notification shows how many assignments were added and how many already existed.
+After applying, a notification shows how many assignments were added and how many were updated.
