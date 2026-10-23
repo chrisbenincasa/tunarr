@@ -26,7 +26,7 @@ export default function ChannelEditActions({
   const { t } = useLingui();
   const { currentEntity: channel } = useChannelEditor();
   const {
-    formState: { isValid, isDirty, isSubmitting },
+    formState: { isDirty, isSubmitting },
     reset,
   } = useChannelFormContext();
   const [lastState, setLastState] = useState<MutationStatus>('idle');
@@ -71,6 +71,8 @@ export default function ChannelEditActions({
     }
   }, [isNewChannel, currentState, lastState, snackbar]);
 
+  // Save stays enabled on an invalid form. Submitting runs validation and
+  // switches to the tab that holds the first error.
   return (
     <Stack spacing={2} direction="row" justifyContent="right" sx={{ mt: 2 }}>
       {!isNewChannel ? (
@@ -81,7 +83,7 @@ export default function ChannelEditActions({
             </Button>
           )}
           <Button
-            disabled={!isValid || !isDirty || isSubmitting}
+            disabled={!isDirty || isSubmitting}
             variant="contained"
             type="submit"
             startIcon={
@@ -101,7 +103,7 @@ export default function ChannelEditActions({
       ) : (
         <>
           <Button
-            disabled={!isValid || isSubmitting}
+            disabled={isSubmitting}
             variant="contained"
             type="submit"
             startIcon={

@@ -17,6 +17,10 @@ type Props = {
   onProceed?: () => void;
 };
 
+// Index routes report their full path with a trailing slash.
+const withoutTrailingSlash = (path: string) =>
+  path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path;
+
 // Exempt paths are used in situations where the form spans multiple tabs or pages.
 // This ensures the Alert is not activated in the middle of a form navigation.
 
@@ -28,8 +32,9 @@ export default function UnsavedNavigationAlert({
   const { proceed, status, reset } = useBlocker({
     shouldBlockFn: ({ next }) => {
       if (exceptTargetPaths && !isEmpty(exceptTargetPaths)) {
+        const target = withoutTrailingSlash(String(next.fullPath));
         for (const excludedTarget of exceptTargetPaths) {
-          if (next.fullPath === excludedTarget) {
+          if (target === withoutTrailingSlash(String(excludedTarget))) {
             return false;
           }
         }

@@ -16,6 +16,7 @@ import type {
 } from '@tunarr/types';
 import { isEmpty, isNil, keys, map, reject, some } from 'lodash-es';
 import { useCallback, useState } from 'react';
+import { flushSync } from 'react-dom';
 import {
   FormProvider,
   useForm,
@@ -37,6 +38,13 @@ import {
   type EditChannelTabProps,
   type EditChannelTabs,
 } from './EditChannelTabPanel.tsx';
+import {
+  firstErrorPath,
+  firstTabWithError,
+  focusField,
+  tabId,
+  tabPanelId,
+} from './editChannelTabs.ts';
 
 function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
   return {
@@ -228,11 +236,7 @@ export function EditChannelForm({
     }
   };
 
-  const onInvalid: SubmitErrorHandler<SaveableChannel> = (data) => {
-    console.error(data, formMethods.getValues());
-  };
-
-  const handleChange = (_: React.SyntheticEvent, newValue: EditChannelTabs) => {
+  const switchTab = (newValue: EditChannelTabs) => {
     if (newValue !== currentTab) {
       setCurrentTab(newValue);
       // Don't enable routing for new channel, yet.
@@ -242,6 +246,26 @@ export function EditChannelForm({
           search: { tab: newValue === 'properties' ? undefined : newValue },
         }).catch(console.warn);
       }
+    }
+  };
+
+  const handleChange = (_: React.SyntheticEvent, newValue: EditChannelTabs) =>
+    switchTab(newValue);
+
+  // Visited tabs stay mounted, so an error can sit in a hidden tab. Show that
+  // tab, then focus the field, because focus does nothing inside a hidden panel.
+  const onInvalid: SubmitErrorHandler<SaveableChannel> = (errors) => {
+    const tab = firstTabWithError(EditChannelTabsProps, keys(errors));
+    const fields = EditChannelTabsProps.find((t) => t.value === tab)?.fields;
+    if (tab === undefined || fields === undefined) {
+      return;
+    }
+
+    flushSync(() => switchTab(tab));
+    const path = firstErrorPath(errors, fields);
+    const panel = document.getElementById(tabPanelId(tab));
+    if (path !== undefined && panel) {
+      focusField(panel, path);
     }
   };
 
@@ -257,6 +281,8 @@ export function EditChannelForm({
     return (
       <Tab
         key={tab.value}
+        id={tabId(tab.value)}
+        aria-controls={tabPanelId(tab.value)}
         disabled={isNew && tab.value !== currentTab && !formIsValid}
         value={tab.value}
         label={
@@ -305,7 +331,13 @@ export function EditChannelForm({
           <ChannelEditActions isNewChannel={isNew} />
         </Box>
       </FormProvider>
-      {!isNew && <UnsavedNavigationAlert isDirty={formIsDirty} />}
+      {!isNew && (
+        <UnsavedNavigationAlert
+          isDirty={formIsDirty}
+          // Switching tabs only rewrites `?tab=` on this route.
+          exceptTargetPaths={['/channels/$channelId/edit']}
+        />
+      )}
     </Paper>
   );
 }
