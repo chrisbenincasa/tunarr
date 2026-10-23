@@ -9,7 +9,7 @@ import path from 'node:path';
 import tmp from 'tmp';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { ProgramStream } from '../ProgramStream.ts';
-import { HlsSession } from './HlsSession.js';
+import { HlsSession, nextProgramPtsOffset } from './HlsSession.js';
 
 vi.mock('@/util/logging/LoggerFactory.js', () => ({
   LoggerFactory: {
@@ -351,5 +351,50 @@ describe('HlsSession', () => {
       const remaining = await fs.readdir(workingDir);
       expect(remaining.sort()).toEqual(['data000000.ts']);
     });
+  });
+});
+
+describe('nextProgramPtsOffset', () => {
+  test('starts the next audio where the previous audio ended', () => {
+    // Audio ends 360 ticks after video, and AAC places its first packet 1920
+    // ticks before the offset.
+    const offset = nextProgramPtsOffset(
+      { audioEnd: 1083361, nonAudioEnd: 1083001 },
+      1920,
+    );
+
+    expect(offset).toBe(1085282);
+    expect(offset - 1920).toBe(1083361 + 1);
+  });
+
+  test('absorbs an audio shortfall up to the encoder lead without an audio gap', () => {
+    // Audio ends 240 ticks before video. The lead still covers it.
+    const offset = nextProgramPtsOffset(
+      { audioEnd: 1082761, nonAudioEnd: 1083001 },
+      1920,
+    );
+
+    expect(offset - 1920).toBe(1082761 + 1);
+  });
+
+  test('never starts video before the previous video ended', () => {
+    // The audio shortfall is larger than the lead, so video sets the offset.
+    const offset = nextProgramPtsOffset(
+      { audioEnd: 1080000, nonAudioEnd: 1083001 },
+      480,
+    );
+
+    expect(offset).toBe(1083002);
+  });
+
+  test('uses the remaining stream when the segment has only one kind', () => {
+    expect(nextProgramPtsOffset({ nonAudioEnd: 9000 }, 1920)).toBe(9001);
+    expect(nextProgramPtsOffset({ audioEnd: 9000 }, 1920)).toBe(10921);
+  });
+
+  test('matches the old offset when there is no lead and audio ends first', () => {
+    expect(nextProgramPtsOffset({ audioEnd: 8000, nonAudioEnd: 9000 }, 0)).toBe(
+      9001,
+    );
   });
 });
