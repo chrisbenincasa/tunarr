@@ -531,9 +531,8 @@ export class Server {
       } catch (e) {
         this.logger.warn(
           e,
-          'Failed to start SSDP server for HDHR auto-discovery. ' +
-            'This is expected when running as a non-root user since SSDP binds to privileged port 1900. ' +
-            'HDHR auto-discovery will be unavailable, but all other functionality is unaffected.',
+          'Failed to start the SSDP server on UDP port 1900. ' +
+            'HDHR auto-discovery is unavailable; everything else still works.',
         );
       }
     }

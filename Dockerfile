@@ -107,11 +107,13 @@ RUN pnpm turbo make-bin -- --target ${exec_target} --no-include-version
 ### Full stack ###
 FROM ffmpeg-base AS full-stack
 ARG exec_target=linux-x64
-# Create a non-root user/group for running Tunarr.
-# The entrypoint script will adjust UID/GID at runtime via PUID/PGID env vars.
+# The entrypoint remaps this user to PUID/PGID at startup.
 RUN groupadd -g 1000 tunarr && \
     useradd -u 1000 -g tunarr -s /bin/bash -d /config tunarr
 RUN mkdir -p /config && chown tunarr:tunarr /config
+# Docker sets HOME=/ for a --user uid missing from /etc/passwd. pkg caches
+# native modules under $HOME, so point it at the writable data volume.
+ENV HOME=/config
 WORKDIR /tunarr
 COPY --from=build-full-stack /tunarr/.env /tunarr/.env
 COPY --from=build-full-stack /tunarr/server/bin /tunarr/server/bin
@@ -121,9 +123,6 @@ COPY --from=build-full-stack /tunarr/server/bin /tunarr/server/bin
 RUN mkdir /tunarr/bin
 RUN ln -s /tunarr/server/bin/meilisearch-${exec_target} /tunarr/bin/meilisearch
 RUN ln -s /tunarr/server/bin/tunarr-${exec_target} /tunarr/tunarr
-RUN chown -R tunarr:tunarr /tunarr
 COPY docker-entrypoint.sh /docker-entrypoint.sh
-RUN chmod +x /docker-entrypoint.sh
-ENV PKG_NATIVE_CACHE_PATH=/tmp/pkg-native
 ENTRYPOINT [ "/docker-entrypoint.sh", "dotenvx", "run", "--", "/tunarr/tunarr" ]
 CMD [ "server" ]

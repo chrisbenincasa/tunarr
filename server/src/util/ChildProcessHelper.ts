@@ -207,10 +207,11 @@ export class ChildProcessHelper {
   }
 }
 
-function createDefaultSpawnOpts(opts?: Partial<SpawnOpts>): SpawnOpts {
+export function createDefaultSpawnOpts(opts?: Partial<SpawnOpts>): SpawnOpts {
   return {
     restartOnFailure: opts?.restartOnFailure ?? true,
     maxAttempts: opts?.maxAttempts ?? 1,
     name: opts?.name ?? 'unknown',
+    additionalOpts: opts?.additionalOpts,
   } satisfies SpawnOpts;
 }

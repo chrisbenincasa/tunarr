@@ -179,7 +179,9 @@ docker exec <container_id> nvidia-smi
 
 ## 6. SSDP / HDHR Auto-Discovery (Graceful Degradation)
 
-**Goal:** Verify that SSDP port 1900 bind failure doesn't crash the server.
+**Goal:** Verify SSDP still works as non-root, and that a bind failure doesn't crash the server.
+
+Docker sets `net.ipv4.ip_unprivileged_port_start=0`, so the non-root user can normally bind UDP 1900. To force the failure path, run a second container that holds 1900 on the host network, then start this one with `--network host`.
 
 ```bash
 docker run --rm -it \
@@ -194,7 +196,8 @@ Then enable HDHR auto-discovery via the web UI (Settings > HDHR > Auto-Discovery
 **Expected:**
 
 - [ ] Server starts successfully even with auto-discovery enabled
-- [ ] Log contains a warning message about SSDP failure (mentioning port 1900 / non-root)
+- [ ] Normal run: `grep -i 076C /proc/net/udp` in the container shows 1900 bound by the tunarr uid, with no warning
+- [ ] Forced failure: log contains the SSDP warning naming UDP port 1900
 - [ ] Web UI and all other features continue to work
 - [ ] No crash or unhandled exception
 
@@ -217,7 +220,9 @@ docker run --rm -it \
 
 - [ ] Container starts (entrypoint detects non-root and skips privilege drop)
 - [ ] Process runs as UID `1500`
-- [ ] Note: files in `/tunarr/` (the install dir) may be unwritable since they're owned by `1000`. The container should still function (those files are read-only at runtime). If this causes issues, document as a known limitation.
+- [ ] `PUID`/`PGID` are ignored and `/config` ownership is left alone
+- [ ] `docker diff <container_id>` shows no writes under `/tunarr` (meilisearch runs in `/config/tunarr`)
+- [ ] Also run with a uid missing from `/etc/passwd`: the pkg native cache lands in `/config/.cache/pkg`
 
 **Verify:**
 
@@ -360,8 +365,8 @@ docker run --rm -it \
 
 **Expected:**
 
-- [ ] Document whether this works or what additional tmpfs mounts are needed
-- [ ] If it fails, the error should be clear (not a silent hang)
+- [ ] A read-only root filesystem is unsupported. Confirm it fails with a clear error, not a hang
+- [ ] The entrypoint's `/config` ownership step only warns on failure; it does not abort
 
 ---
 
