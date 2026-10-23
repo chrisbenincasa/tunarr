@@ -449,8 +449,10 @@ describe('ProgramStreamDetailsFetcher', () => {
       return program;
     }
 
-    async function getStreamDetails(artworkService: ArtworkService) {
-      const program = makeAudioOnlyProgram();
+    async function getStreamDetails(
+      artworkService: ArtworkService,
+      program = makeAudioOnlyProgram(),
+    ) {
       const fetcher = new ProgramStreamDetailsFetcher(
         makeProgramDB(program),
         artworkService,
@@ -502,6 +504,74 @@ describe('ProgramStreamDetailsFetcher', () => {
           'http://plex:32400/library/metadata/1/thumb',
           headers,
         ),
+      );
+    });
+
+    it("uses the track's own art without asking for the album's", async () => {
+      const program = makeAudioOnlyProgram();
+      program.type = 'track';
+      program.albumUuid = faker.string.uuid();
+      const trackArt = 'http://jellyfin:8096/Items/track/Images/Primary';
+      const resolveArtwork = vi
+        .fn()
+        .mockResolvedValue({ kind: 'url', url: trackArt });
+      vi.mocked(axios.head).mockResolvedValueOnce({ status: 200 });
+
+      const details = await getStreamDetails(
+        { resolveArtwork } as unknown as ArtworkService,
+        program,
+      );
+
+      expect(details.placeholderImage).toEqual(new HttpStreamSource(trackArt));
+      expect(resolveArtwork).toHaveBeenCalledTimes(1);
+    });
+
+    it('does not try an album for a program that is not a track', async () => {
+      const program = makeAudioOnlyProgram();
+      program.albumUuid = faker.string.uuid();
+      const resolveArtwork = vi
+        .fn()
+        .mockResolvedValue({ kind: 'url', url: 'http://plex:32400/thumb' });
+      vi.mocked(axios.head).mockRejectedValue(new Error('404'));
+
+      const details = await getStreamDetails(
+        { resolveArtwork } as unknown as ArtworkService,
+        program,
+      );
+
+      expect(details.placeholderImage?.path).toBe(GenericMusicScreen);
+      expect(resolveArtwork).toHaveBeenCalledTimes(1);
+    });
+
+    it("falls back to the album's art when the track's own art is unreachable", async () => {
+      const program = makeAudioOnlyProgram();
+      program.type = 'track';
+      program.albumUuid = faker.string.uuid();
+      const trackArt = 'http://jellyfin:8096/Items/track/Images/Primary';
+      const albumArt = 'http://jellyfin:8096/Items/album/Images/Primary';
+      const headers = { 'X-Emby-Token': 'token' };
+      const resolveArtwork = vi
+        .fn()
+        .mockResolvedValueOnce({ kind: 'url', url: trackArt, headers })
+        .mockResolvedValueOnce({ kind: 'url', url: albumArt, headers });
+      vi.mocked(axios.head)
+        .mockRejectedValueOnce(new Error('404'))
+        .mockResolvedValueOnce({ status: 200 });
+
+      const details = await getStreamDetails(
+        { resolveArtwork } as unknown as ArtworkService,
+        program,
+      );
+
+      expect(details.placeholderImage).toEqual(
+        new HttpStreamSource(albumArt, headers),
+      );
+      expect(resolveArtwork).toHaveBeenNthCalledWith(
+        2,
+        program.albumUuid,
+        'program',
+        'poster',
+        ['thumbnail'],
       );
     });
 
