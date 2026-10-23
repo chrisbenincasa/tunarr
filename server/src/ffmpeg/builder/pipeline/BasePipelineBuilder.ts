@@ -817,12 +817,12 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
         .with(VideoFormats.Raw, () => new RawVideoDecoder())
         .with(
           VideoFormats.Av1,
-          () => this.ffmpegCapabilities.hasVideoEncoder('libdav1d'),
+          () => this.ffmpegCapabilities.hasVideoDecoder('libdav1d'),
           () => new Av1Decoder('libdav1d'),
         )
         .with(
           VideoFormats.Av1,
-          () => this.ffmpegCapabilities.hasVideoEncoder('libaom-av1'),
+          () => this.ffmpegCapabilities.hasVideoDecoder('libaom-av1'),
           () => new Av1Decoder('libaom-av1'),
         )
         .with(VideoFormats.Av1, () => new Av1Decoder('av1'))
