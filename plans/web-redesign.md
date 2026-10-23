@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (10/19/2026):** Phase 0 is done, in PR #2348 (`feat/design-tokens-theme`) and PR #2349 (the story diff script, stacked on it). The app shell is decided on the canvas: top nav only, IBM Plex fonts, Sources under Settings, density in Settings → General. Next steps are Phase 2 (`AppShell`) and `plans/mrt-replacement.md` Phase 0, in parallel. Phase 1 mocks for forms, the media browser and slot editors stay one phase ahead.
+> **Status (10/19/2026):** Phase 0 merged in PR #2348 (tokens and theme) and PR #2349 (story diff script). Phase 2 (`AppShell`) is in review as PR #2356, and `plans/mrt-replacement.md` Phase 0 (`DataTable`) as PR #2350. `Segmented`, `KeyHint` and `EmptyState` are built on `feat/ui-primitives-2`, with `ToggleButtonGroup` banned. Phase 3 starts once #2350 and #2356 merge. Next mock is forms/settings, which gates Phase 4.
 
 ## Why
 
@@ -97,6 +97,7 @@ Each phase is one or more PRs against `main`. Each PR leaves the app working.
 - Density reaches the MRT tables through `useStoreBackedTableSettings`. Done on branch, and temporary until `DataTable` replaces MRT.
 - Storybook with the provider decorator and the scheme and density toolbar.
 - First primitives with stories: `StatusPill`, `MonoText`, `PageHeader`.
+- Then `Segmented` (bans `ToggleButtonGroup` and `ToggleButton`), `KeyHint` and `EmptyState`. `EmptyState` has no mock yet, so its stories are the reference. Multi-select toggle groups (`TrashPage`) stay on the legacy list until a multi-select primitive exists.
 - The Vitest add-on, the a11y add-on (warnings only) and the story diff script.
 
 ### Phase 1. Mocks for the remaining page types

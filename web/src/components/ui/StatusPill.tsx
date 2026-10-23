@@ -1,5 +1,6 @@
-import { Box, alpha, useTheme } from '@mui/material';
+import { Box, alpha } from '@mui/material';
 import type { ReactNode } from 'react';
+import { useThemeTokens } from '@/hooks/useTunarrTheme.ts';
 
 export type StatusPillStatus = 'live' | 'idle' | 'warning' | 'error';
 
@@ -9,15 +10,13 @@ export type StatusPillProps = {
 };
 
 export const StatusPill = ({ status, label }: StatusPillProps) => {
-  const theme = useTheme();
-  const tokens = theme.palette.tokens;
+  const { tokens, dense } = useThemeTokens();
   const color = {
     live: tokens.success,
     idle: tokens.textMuted,
     warning: tokens.warning,
     error: tokens.error,
   }[status];
-  const dense = theme.density === 'dense';
 
   return (
     <Box
