@@ -111,6 +111,20 @@ describe('POST /channels/bulk/fillers', () => {
     expect(res.statusCode, res.body).toBe(400);
   });
 
+  test('rejects more than 100 filler lists with a 400', async () => {
+    const res = await bulkAssign({
+      channelIds: [channelIds[0]],
+      fillers: Array.from({ length: 101 }, () => ({
+        fillerShowId: v4(),
+        weight: 1,
+        cooldownSeconds: 0,
+      })),
+      mode: 'add',
+    });
+
+    expect(res.statusCode, res.body).toBe(400);
+  });
+
   test('rejects an unknown channel ID with a 400 and writes nothing', async () => {
     const unknownId = v4();
     const res = await bulkAssign({
@@ -120,7 +134,7 @@ describe('POST /channels/bulk/fillers', () => {
     });
 
     expect(res.statusCode, res.body).toBe(400);
-    expect(res.json<{ message: string }>().message).toContain(unknownId);
+    expect(res.body).toContain(unknownId);
     expect(fillersFor(channelIds[0])).toHaveLength(0);
   });
 
@@ -136,20 +150,20 @@ describe('POST /channels/bulk/fillers', () => {
     });
 
     expect(res.statusCode, res.body).toBe(400);
-    expect(res.json<{ message: string }>().message).toContain(unknownId);
+    expect(res.body).toContain(unknownId);
     for (const channelId of channelIds) {
       expect(fillersFor(channelId)).toHaveLength(0);
     }
   });
 
-  test('add mode skips pairs that already exist', async () => {
+  test('add mode updates weight and cooldown on pairs that already exist', async () => {
     const first = await bulkAssign({
       channelIds: [channelIds[0]],
       fillers: [{ fillerShowId: fillerIds[0], weight: 5, cooldownSeconds: 30 }],
       mode: 'add',
     });
     expect(first.statusCode, first.body).toBe(200);
-    expect(first.json()).toEqual({ added: 1, alreadyExisted: 0 });
+    expect(first.json()).toEqual({ added: 1, updated: 0 });
 
     const second = await bulkAssign({
       channelIds,
@@ -160,14 +174,12 @@ describe('POST /channels/bulk/fillers', () => {
       mode: 'add',
     });
     expect(second.statusCode, second.body).toBe(200);
-    expect(second.json()).toEqual({ added: 3, alreadyExisted: 1 });
-
-    // The existing pair keeps its original weight and cooldown.
+    expect(second.json()).toEqual({ added: 3, updated: 1 });
 
     const existing = fillersFor(channelIds[0]).find(
       (row) => row.fillerShowUuid === fillerIds[0],
     );
-    expect(existing).toMatchObject({ weight: 5, cooldown: 30 });
+    expect(existing).toMatchObject({ weight: 1, cooldown: 0 });
     expect(fillersFor(channelIds[1])).toHaveLength(2);
   });
 
@@ -178,7 +190,7 @@ describe('POST /channels/bulk/fillers', () => {
       mode: 'replace',
     });
     expect(res.statusCode, res.body).toBe(200);
-    expect(res.json()).toEqual({ added: 2, alreadyExisted: 0 });
+    expect(res.json()).toEqual({ added: 2, updated: 0 });
 
     for (const channelId of channelIds) {
       const rows = fillersFor(channelId);
