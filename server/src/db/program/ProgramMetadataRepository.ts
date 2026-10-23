@@ -144,15 +144,19 @@ export class ProgramMetadataRepository {
     });
   }
 
-  async upsertProgramStudios(programId: string, studios: NewStudio[]) {
-    return this.upsertProgramStudiosInternal('program', programId, studios);
+  upsertProgramStudios(programId: string, studios: NewStudio[]) {
+    this.upsertProgramStudiosInternal('program', programId, studios);
   }
 
-  async upsertProgramGroupingStudios(groupingId: string, studios: NewStudio[]) {
-    return this.upsertProgramStudiosInternal('grouping', groupingId, studios);
+  upsertProgramGroupingStudios(groupingId: string, studios: NewStudio[]) {
+    this.upsertProgramStudiosInternal('grouping', groupingId, studios);
   }
 
-  private async upsertProgramStudiosInternal(
+  // Insert by name and read the IDs back in one transaction. A lookup outside
+  // the transaction can race another writer and link to a studio that the
+  // unique name index then refuses to insert.
+
+  private upsertProgramStudiosInternal(
     entityType: 'program' | 'grouping',
     joinId: string,
     studios: NewStudio[],
@@ -162,51 +166,44 @@ export class ProgramMetadataRepository {
     }
 
     const incomingByName = groupByUniq(studios, (g) => g.name);
-    const existingStudiosByName: Dictionary<Studio> = {};
-    for (const studioChunk of chunk(studios, 100)) {
-      const names = studioChunk.map((g) => g.name);
-      const results = await this.drizzleDB
-        .select()
-        .from(Studio)
-        .where(inArray(Studio.name, names));
-      for (const result of results) {
-        existingStudiosByName[result.name] = result;
-      }
-    }
+    const names = Object.keys(incomingByName);
+    const col =
+      entityType === 'grouping' ? StudioEntity.groupId : StudioEntity.programId;
 
-    const newStudioNames = new Set(
-      difference(keys(incomingByName), keys(existingStudiosByName)),
-    );
-
-    const relations: NewStudioEntity[] = [];
-    for (const name of Object.keys(incomingByName)) {
-      const studioId = newStudioNames.has(name)
-        ? incomingByName[name]!.uuid
-        : existingStudiosByName[name]!.uuid;
-      relations.push({
-        studioId,
-        programId: entityType === 'program' ? joinId : null,
-        groupId: entityType === 'grouping' ? joinId : null,
-      });
-    }
-
-    return this.drizzleDB.transaction((tx) => {
-      const col =
-        entityType === 'grouping'
-          ? StudioEntity.groupId
-          : StudioEntity.programId;
-      tx.delete(StudioEntity).where(eq(col, joinId)).run();
-      if (newStudioNames.size > 0) {
+    this.drizzleDB.transaction((tx) => {
+      for (const batch of chunk(Object.values(incomingByName), 100)) {
         tx.insert(Studio)
-          .values(
-            [...newStudioNames.values()].map((name) => incomingByName[name]!),
-          )
-          .onConflictDoNothing()
+          .values(batch)
+          .onConflictDoNothing({ target: Studio.name })
           .run();
       }
-      if (relations.length > 0) {
-        tx.insert(StudioEntity).values(relations).onConflictDoNothing().run();
+
+      const studioIdByName: Dictionary<string> = {};
+      for (const nameChunk of chunk(names, 100)) {
+        const rows = tx
+          .select({ uuid: Studio.uuid, name: Studio.name })
+          .from(Studio)
+          .where(inArray(Studio.name, nameChunk))
+          .all();
+        for (const row of rows) {
+          studioIdByName[row.name] = row.uuid;
+        }
       }
+
+      const relations: NewStudioEntity[] = names.map((name) => {
+        const studioId = studioIdByName[name];
+        if (studioId === undefined) {
+          throw new Error(`Studio "${name}" missing after insert`);
+        }
+        return {
+          studioId,
+          programId: entityType === 'program' ? joinId : null,
+          groupId: entityType === 'grouping' ? joinId : null,
+        };
+      });
+
+      tx.delete(StudioEntity).where(eq(col, joinId)).run();
+      tx.insert(StudioEntity).values(relations).onConflictDoNothing().run();
     });
   }
 

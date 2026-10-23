@@ -61,7 +61,7 @@ import {
   NewProgramSubtitles,
   ProgramSubtitles,
 } from './schema/ProgramSubtitles.ts';
-import { NewStudio } from './schema/Studio.ts';
+import { NewStudio, Studio, StudioEntity } from './schema/Studio.ts';
 import { NewTag } from './schema/Tag.ts';
 
 export function jsonObject<T extends SelectedFields>(shape: T) {
@@ -1176,6 +1176,40 @@ describe('ProgramDB', () => {
           result.entity.uuid,
         );
         expect(retrievedGrouping).toBeDefined();
+      });
+
+      test('reuses one studio row for a name shared across shows', async ({
+        programDb,
+        drizzle,
+      }) => {
+        const library = await createTestMediaSourceLibrary(drizzle);
+        const groupingIds: string[] = [];
+        for (let i = 0; i < 2; i++) {
+          const show = {
+            ...createProgramGrouping('show', library.uuid, 'local', {
+              mediaSourceId: library.mediaSourceId,
+            }),
+            studios: [{ uuid: v4(), name: 'Shared Studio' }],
+          };
+          const result = await programDb.upsertProgramGrouping(show);
+          groupingIds.push(result.entity.uuid);
+        }
+
+        const studios = await drizzle
+          .select()
+          .from(Studio)
+          .where(eq(Studio.name, 'Shared Studio'));
+        expect(studios).toHaveLength(1);
+        const [studio] = studios;
+        if (studio === undefined) {
+          throw new Error('Expected one shared studio');
+        }
+
+        const links = await drizzle
+          .select()
+          .from(StudioEntity)
+          .where(eq(StudioEntity.studioId, studio.uuid));
+        expect(links.map((l) => l.groupId).sort()).toEqual(groupingIds.sort());
       });
 
       test('should upsert credits with artwork for a show', async ({

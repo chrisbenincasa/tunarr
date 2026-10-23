@@ -180,7 +180,7 @@ export class ProgramGroupingUpsertRepository {
         newGroupingAndRelations.genres,
       );
 
-      await this.metadataRepo.upsertProgramGroupingStudios(
+      this.metadataRepo.upsertProgramGroupingStudios(
         entity.uuid,
         newGroupingAndRelations.studios,
       );
