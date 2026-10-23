@@ -443,13 +443,17 @@ msgstr "Add TV Shows or Movies to filler"
 msgid "Add TV Shows or Movies to programming list."
 msgstr "Add TV Shows or Movies to programming list."
 
-#. placeholder {0}: data.added
-#. placeholder {1}: data.added
-#. placeholder {2}: data.alreadyExisted
 #: src/components/channels/BulkAssignFillersDialog.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
-msgid "Added {0} {1, plural, one {assignment} other {assignments}}, {2} already existed."
-msgstr "Added {0} {1, plural, one {assignment} other {assignments}}, {2} already existed."
+#~ msgid "Added {0} {1, plural, one {assignment} other {assignments}}, {2} already existed."
+#~ msgstr "Added {0} {1, plural, one {assignment} other {assignments}}, {2} already existed."
+
+#. placeholder {0}: data.added
+#. placeholder {1}: data.added
+#. placeholder {2}: data.updated
+#: src/hooks/useBulkAssignFillers.tsx
+msgid "Added {0} {1, plural, one {assignment} other {assignments}}, updated {2}."
+msgstr "Added {0} {1, plural, one {assignment} other {assignments}}, updated {2}."
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Adds a channel redirect. During this period of time, the channel will redirect to another channel."
@@ -838,6 +842,7 @@ msgid "Calculating Slots..."
 msgstr "Calculating Slots..."
 
 #: src/components/channels/BulkAssignFillersDialog.tsx
+#: src/components/channels/BulkAssignFillersDialog.tsx
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
@@ -1107,13 +1112,15 @@ msgid "Cooldown"
 msgstr "Cooldown"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
+#: src/components/channels/BulkAssignFillersDialog.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
 msgid "Cooldown (s)"
 msgstr "Cooldown (s)"
 
 #: src/components/channels/BulkAssignFillersDialog.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
-msgid "Cooldown (seconds)"
-msgstr "Cooldown (seconds)"
+#~ msgid "Cooldown (seconds)"
+#~ msgstr "Cooldown (seconds)"
 
 #. placeholder {0}: navItem.name
 #: src/components/TopBar.tsx
@@ -1732,15 +1739,17 @@ msgstr "Episode Order"
 msgid "Episodes"
 msgstr "Episodes"
 
-#. placeholder {0}: e.message
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
-msgid "Error assigning filler: {0}"
-msgstr "Error assigning filler: {0}"
+#~ msgid "Error assigning filler: {0}"
+#~ msgstr "Error assigning filler: {0}"
 
-#. placeholder {0}: e.message
 #: src/components/channels/BulkAssignFillersDialog.tsx
-msgid "Error assigning fillers: {0}"
-msgstr "Error assigning fillers: {0}"
+#~ msgid "Error assigning fillers: {0}"
+#~ msgstr "Error assigning fillers: {0}"
+
+#: src/hooks/useBulkAssignFillers.tsx
+msgid "Error assigning fillers: {message}"
+msgstr "Error assigning fillers: {message}"
 
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
 msgid "Error Audio"
@@ -3335,6 +3344,11 @@ msgstr "Refresh Preview"
 msgid "Refresh Timer (Hours)"
 msgstr "Refresh Timer (Hours)"
 
+#: src/components/channels/BulkAssignFillersDialog.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Relative weight"
+msgstr "Relative weight"
+
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
@@ -3421,8 +3435,16 @@ msgid "Repeats"
 msgstr "Repeats"
 
 #: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "Replace"
+msgstr "Replace"
+
+#: src/components/channels/BulkAssignFillersDialog.tsx
 msgid "Replace all existing fillers"
 msgstr "Replace all existing fillers"
+
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "Replace filler lists?"
+msgstr "Replace filler lists?"
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Replicate Programs"
@@ -4214,6 +4236,11 @@ msgstr "This media source has no enabled or scanned libraries. Enable libraries 
 msgid "This option is disabled because it would calculate a schedule that is too long."
 msgstr "This option is disabled because it would calculate a schedule that is too long."
 
+#. placeholder {0}: selectedChannelIds.length
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "This removes every filler list currently assigned to {0, plural, one {# channel} other {# channels}} and assigns only the selected lists."
+msgstr "This removes every filler list currently assigned to {0, plural, one {# channel} other {# channels}} and assigns only the selected lists."
+
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "This show is marked as missing in the database."
@@ -4614,8 +4641,6 @@ msgid "Weekly"
 msgstr "Weekly"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
-#: src/components/channels/BulkAssignFillersDialog.tsx
-#: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 msgid "Weight"
 msgstr "Weight"
@@ -4623,6 +4648,14 @@ msgstr "Weight"
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 msgid "Weight %"
 msgstr "Weight %"
+
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "Weight is relative to the channel's other filler lists. Channels that already have a selected list get the new weight and cooldown."
+msgstr "Weight is relative to the channel's other filler lists. Channels that already have a selected list get the new weight and cooldown."
+
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Weight is relative to the channel's other filler lists. Channels that already have this list get the new weight and cooldown."
+msgstr "Weight is relative to the channel's other filler lists. Channels that already have this list get the new weight and cooldown."
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx

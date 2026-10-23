@@ -401,14 +401,22 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         body: BulkAssignFillersRequestSchema,
         response: {
           200: BulkAssignFillersResponseSchema,
-          400: z.object({ message: z.string() }),
+          // A string from the handler, or Fastify's own validation error object.
+
+          400: z.string().or(z.object({ message: z.string() })),
         },
       },
     },
     async (req, res) => {
-      const result = req.serverCtx.fillerDB.bulkAssignFillers(req.body);
+      const result = Result.attempt(() =>
+        req.serverCtx.fillerDB.bulkAssignFillers(req.body),
+      );
       if (result.isFailure()) {
-        return res.status(400).send({ message: result.error.message });
+        const badRequest = findBadRequestError(result.error);
+        if (badRequest) {
+          return res.status(400).send(badRequest.message);
+        }
+        throw unwrapError(result.error);
       }
       return res.send(result.get());
     },

@@ -3,6 +3,7 @@ import {
   Box,
   Button,
   Checkbox,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -16,15 +17,15 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { isEmpty } from 'lodash-es';
-import { useSnackbar } from 'notistack';
-import { useCallback, useState } from 'react';
+import { useState } from 'react';
+import { getChannelsOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import {
-  bulkAssignFillersMutation,
-  getChannelsByNumberV2Options,
-} from '../../generated/@tanstack/react-query.gen.ts';
-import { useChannelsSuspense } from '../../hooks/useChannels.ts';
+  DefaultBulkFillerCooldownSeconds,
+  DefaultBulkFillerWeight,
+  useBulkAssignFillers,
+} from '../../hooks/useBulkAssignFillers.tsx';
 
 type Props = {
   open: boolean;
@@ -40,52 +41,16 @@ export function AssignFillerToChannelsDialog({
   fillerName,
 }: Props) {
   const { t } = useLingui();
-  const { data: channels } = useChannelsSuspense();
-  const queryClient = useQueryClient();
-  const snackbar = useSnackbar();
+  const { data, isPending } = useQuery(getChannelsOptions());
+  const channels = data ?? [];
   const [selectedChannelIds, setSelectedChannelIds] = useState<Set<string>>(
     new Set(),
   );
-  const [weight, setWeight] = useState(1);
-  const [cooldownSeconds, setCooldownSeconds] = useState(0);
-
-  const mutation = useMutation({
-    ...bulkAssignFillersMutation(),
-    onSuccess: (data) => {
-      snackbar.enqueueSnackbar({
-        message: (
-          <Trans>
-            Added {data.added}{' '}
-            <Plural value={data.added} one="assignment" other="assignments" />,{' '}
-            {data.alreadyExisted} already existed.
-          </Trans>
-        ),
-        variant: 'success',
-      });
-      for (const channelId of selectedChannelIds) {
-        queryClient
-          .invalidateQueries({
-            queryKey: getChannelsByNumberV2Options({ path: { id: channelId } })
-              .queryKey,
-          })
-          .catch(console.error);
-      }
-      handleClose();
-    },
-    onError: (e) => {
-      snackbar.enqueueSnackbar({
-        message: t`Error assigning filler: ${e.message}`,
-        variant: 'error',
-      });
-    },
-  });
-
-  const handleClose = useCallback(() => {
-    setSelectedChannelIds(new Set());
-    setWeight(1);
-    setCooldownSeconds(0);
-    onClose();
-  }, [onClose]);
+  const [weight, setWeight] = useState(DefaultBulkFillerWeight);
+  const [cooldownSeconds, setCooldownSeconds] = useState(
+    DefaultBulkFillerCooldownSeconds,
+  );
+  const mutation = useBulkAssignFillers(onClose);
 
   const toggleChannel = (channelId: string) => {
     setSelectedChannelIds((prev) => {
@@ -118,20 +83,30 @@ export function AssignFillerToChannelsDialog({
   };
 
   return (
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>
         <Trans>Assign "{fillerName}" to Channels</Trans>
       </DialogTitle>
       <DialogContent>
-        {isEmpty(channels) ? (
+        {isPending ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+            <CircularProgress size={24} />
+          </Box>
+        ) : isEmpty(channels) ? (
           <Typography color="text.secondary" sx={{ py: 2 }}>
             <Trans>No channels found. Create a channel first.</Trans>
           </Typography>
         ) : (
           <>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+              <Trans>
+                Weight is relative to the channel's other filler lists. Channels
+                that already have this list get the new weight and cooldown.
+              </Trans>
+            </Typography>
             <Box sx={{ mb: 2 }}>
               <Typography variant="caption" color="text.secondary">
-                <Trans>Weight</Trans>
+                <Trans>Relative weight</Trans>
               </Typography>
               <Slider
                 value={weight}
@@ -142,7 +117,7 @@ export function AssignFillerToChannelsDialog({
                 size="small"
               />
               <TextField
-                label={t`Cooldown (seconds)`}
+                label={t`Cooldown (s)`}
                 type="number"
                 size="small"
                 fullWidth
@@ -199,7 +174,7 @@ export function AssignFillerToChannelsDialog({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>
+        <Button onClick={onClose}>
           <Trans>Cancel</Trans>
         </Button>
         <Button

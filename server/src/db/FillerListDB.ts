@@ -1,6 +1,5 @@
 import { GenericBadRequestError } from '@/types/errors.js';
 import { KEYS } from '@/types/inject.js';
-import { Result } from '@/types/result.js';
 import { seq } from '@tunarr/shared/util';
 import type {
   BulkAssignFillersRequest,
@@ -407,7 +406,7 @@ export class FillerDB implements IFillerListDB {
 
   bulkAssignFillers(
     request: BulkAssignFillersRequest,
-  ): Result<BulkAssignFillersResponse> {
+  ): BulkAssignFillersResponse {
     const fillerIds = request.fillers.map((f) => f.fillerShowId);
 
     return this.drizzle.transaction((tx) => {
@@ -442,76 +441,56 @@ export class FillerDB implements IFillerListDB {
             ? `unknown filler list IDs: ${missingFillerIds.join(', ')}`
             : null,
         ].filter((p) => p !== null);
-        return Result.failure(new GenericBadRequestError(problems.join('; ')));
+        throw new GenericBadRequestError(problems.join('; '));
       }
 
-      let added = 0;
-      let alreadyExisted = 0;
-
+      let updated = 0;
       if (request.mode === 'replace') {
         tx.delete(ChannelFillerShow)
           .where(inArray(ChannelFillerShow.channelUuid, request.channelIds))
           .run();
-
-        const rows = request.channelIds.flatMap((channelId) =>
-          request.fillers.map((filler) => ({
-            channelUuid: channelId,
-            fillerShowUuid: filler.fillerShowId,
-            weight: filler.weight,
-            cooldown: filler.cooldownSeconds,
-          })),
-        );
-
-        for (const batch of chunk(rows, 1_000)) {
-          tx.insert(ChannelFillerShow).values(batch).run();
-        }
-
-        added = rows.length;
       } else {
-        const existing = tx
-          .select({
-            channelUuid: ChannelFillerShow.channelUuid,
-            fillerShowUuid: ChannelFillerShow.fillerShowUuid,
-          })
-          .from(ChannelFillerShow)
-          .where(inArray(ChannelFillerShow.channelUuid, request.channelIds))
-          .all();
-
-        const existingSet = new Set(
-          existing.map((e) => `${e.channelUuid}:${e.fillerShowUuid}`),
-        );
-
-        const toInsert: Array<{
-          channelUuid: string;
-          fillerShowUuid: string;
-          weight: number;
-          cooldown: number;
-        }> = [];
-
-        for (const channelId of request.channelIds) {
-          for (const filler of request.fillers) {
-            const key = `${channelId}:${filler.fillerShowId}`;
-            if (existingSet.has(key)) {
-              alreadyExisted++;
-            } else {
-              toInsert.push({
-                channelUuid: channelId,
-                fillerShowUuid: filler.fillerShowId,
-                weight: filler.weight,
-                cooldown: filler.cooldownSeconds,
-              });
-            }
-          }
-        }
-
-        for (const batch of chunk(toInsert, 1_000)) {
-          tx.insert(ChannelFillerShow).values(batch).run();
-        }
-
-        added = toInsert.length;
+        updated =
+          tx
+            .select({ count: sql<number>`count(*)` })
+            .from(ChannelFillerShow)
+            .where(
+              and(
+                inArray(ChannelFillerShow.channelUuid, request.channelIds),
+                inArray(ChannelFillerShow.fillerShowUuid, fillerIds),
+              ),
+            )
+            .get()?.count ?? 0;
       }
 
-      return Result.success({ added, alreadyExisted });
+      const rows = request.channelIds.flatMap((channelId) =>
+        request.fillers.map((filler) => ({
+          channelUuid: channelId,
+          fillerShowUuid: filler.fillerShowId,
+          weight: filler.weight,
+          cooldown: filler.cooldownSeconds,
+        })),
+      );
+
+      // Add mode overwrites weight and cooldown on pairs the channel already has.
+
+      for (const batch of chunk(rows, 1_000)) {
+        tx.insert(ChannelFillerShow)
+          .values(batch)
+          .onConflictDoUpdate({
+            target: [
+              ChannelFillerShow.channelUuid,
+              ChannelFillerShow.fillerShowUuid,
+            ],
+            set: {
+              weight: sql`excluded.weight`,
+              cooldown: sql`excluded.cooldown`,
+            },
+          })
+          .run();
+      }
+
+      return { added: rows.length - updated, updated };
     });
   }
 }

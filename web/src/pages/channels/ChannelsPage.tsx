@@ -613,17 +613,18 @@ export default function ChannelsPage() {
       {selectedChannelIds.length > 0 && (
         <BulkActionsToolbar
           selectedChannelIds={selectedChannelIds}
-          allChannels={channels}
           onClearSelection={() => setRowSelection({})}
           onAssignFillers={() => setBulkFillersOpen(true)}
         />
       )}
 
-      <BulkAssignFillersDialog
-        open={bulkFillersOpen}
-        onClose={() => setBulkFillersOpen(false)}
-        selectedChannelIds={selectedChannelIds}
-      />
+      {bulkFillersOpen && (
+        <BulkAssignFillersDialog
+          open
+          onClose={() => setBulkFillersOpen(false)}
+          selectedChannelIds={selectedChannelIds}
+        />
+      )}
 
       <NoChannelsCreated />
       <ChannelSessionsDialog

@@ -3613,7 +3613,7 @@ export type BulkAssignFillersErrors = {
     /**
      * Default Response
      */
-    400: {
+    400: string | {
         message: string;
     };
 };
@@ -3626,7 +3626,7 @@ export type BulkAssignFillersResponses = {
      */
     200: {
         added: number;
-        alreadyExisted: number;
+        updated: number;
     };
 };
 

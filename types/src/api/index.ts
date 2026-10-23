@@ -591,7 +591,7 @@ export type UpdateFeatureFlagsRequest = z.infer<
 
 export const BulkAssignFillersRequestSchema = z
   .object({
-    channelIds: z.array(z.string().uuid()).min(1),
+    channelIds: z.array(z.string().uuid()).min(1).max(1_000),
     fillers: z
       .array(
         z.object({
@@ -600,7 +600,8 @@ export const BulkAssignFillersRequestSchema = z
           cooldownSeconds: z.number().int().nonnegative(),
         }),
       )
-      .min(1),
+      .min(1)
+      .max(100),
     mode: z.enum(['add', 'replace']),
   })
   .superRefine((req, ctx) => {
@@ -629,7 +630,7 @@ export type BulkAssignFillersRequest = z.infer<
 
 export const BulkAssignFillersResponseSchema = z.object({
   added: z.number(),
-  alreadyExisted: z.number(),
+  updated: z.number(),
 });
 
 export type BulkAssignFillersResponse = z.infer<
