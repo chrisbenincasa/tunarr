@@ -18,7 +18,6 @@ import {
   map,
   nth,
   reject,
-  some,
   split,
   trim,
 } from 'lodash-es';
@@ -29,6 +28,7 @@ import { FfmpegCapabilities } from './builder/capabilities/FfmpegCapabilities.ts
 
 const CacheKeys = {
   ENCODERS: 'encoders',
+  DECODERS: 'decoders',
   HWACCELS: 'hwaccels',
   OPTIONS: 'options',
   NVIDIA: 'nvidia',
@@ -55,6 +55,13 @@ const VersionNumberExtractionPattern = /n?(\d+)\.(\d+)(\.(\d+))?[_\-.]*(.*)/;
 const CoderExtractionPattern = /[A-Z.]+\s([a-z0-9_-]+)\s*(.*)$/;
 export const FFmpegOptionsExtractionPattern = /^-([a-z_]+)\s+.*/m;
 const FfmpegFilterExtractionPattern = /^\s*?[A-Z.]+\s+(\w+).*/m;
+
+export function parseVideoDecoderNames(decodersOutput: string): string[] {
+  return seq.collect(
+    filter(split(decodersOutput, '\n'), (line) => /^\s*?V/.test(line)),
+    (line) => line.trim().match(CoderExtractionPattern)?.[1],
+  );
+}
 
 @injectable()
 export class FfmpegInfo {
@@ -85,6 +92,7 @@ export class FfmpegInfo {
       return await Promise.allSettled([
         this.getAvailableAudioEncoders(),
         this.getAvailableVideoEncoders(),
+        this.getAvailableVideoDecoders(),
         this.getHwAccels(),
         this.getOptions(),
         this.getFilters(),
@@ -197,13 +205,15 @@ export class FfmpegInfo {
     });
   }
 
-  async hasVideoDecoder(name: string) {
-    const available = await this.getAvailableVideoEncoders();
-    // TODO should we be throwing here?
-    if (isError(available)) {
-      throw available;
-    }
-    return some(available, { name });
+  async getAvailableVideoDecoders(): Promise<Result<string[]>> {
+    return Result.attemptAsync(async () => {
+      const out = await cacheGetOrSet(
+        FfmpegInfo.resultCache,
+        this.cacheKey('DECODERS'),
+        () => this.getFfmpegStdout(['-hide_banner', '-decoders']),
+      );
+      return parseVideoDecoderNames(out);
+    });
   }
 
   async getHwAccels() {
@@ -269,13 +279,19 @@ export class FfmpegInfo {
   }
 
   async getCapabilities() {
-    const [optionsResult, encodersResult, filtersResult, hwAccelResult] =
-      await Promise.allSettled([
-        this.getOptions(),
-        this.getAvailableVideoEncoders(),
-        this.getFilters(),
-        this.getHwAccels(),
-      ]);
+    const [
+      optionsResult,
+      encodersResult,
+      filtersResult,
+      hwAccelResult,
+      decodersResult,
+    ] = await Promise.allSettled([
+      this.getOptions(),
+      this.getAvailableVideoEncoders(),
+      this.getFilters(),
+      this.getHwAccels(),
+      this.getAvailableVideoDecoders(),
+    ]);
 
     return new FfmpegCapabilities(
       optionsResult.status === 'rejected'
@@ -301,6 +317,11 @@ export class FfmpegInfo {
       hwAccelResult.status === 'rejected'
         ? new Set()
         : new Set(hwAccelResult.value),
+      decodersResult.status === 'rejected'
+        ? new Set<string>()
+        : decodersResult.value
+            .map((arr) => new Set(arr))
+            .getOrElse(() => new Set<string>()),
     );
   }
 
