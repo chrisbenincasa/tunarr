@@ -1,26 +1,24 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { Result } from '@/types/result.js';
-import { isNonEmptyString } from '@/util/index.js';
-import { NewLineTransformStream } from '@/util/streams.js';
 import { spawn } from 'node:child_process';
-import { Writable } from 'node:stream';
+import { createInterface } from 'node:readline';
 
-export type PtsAndDuration = {
-  pts: number;
-  duration: number;
+export type StreamEndPts = {
+  endPts: number;
+  audioEndPts?: number;
 };
 
 export class GetLastPtsDurationTask {
   constructor(private settingsDB: ISettingsDB) {}
 
-  async run(segmentFilePath: string): Promise<Result<PtsAndDuration>> {
+  async run(segmentFilePath: string): Promise<Result<StreamEndPts>> {
     const args = [
       '-v',
       '0',
       '-show_entries',
-      'packet=pts,duration',
+      'packet=codec_type,pts,duration',
       '-of',
-      'compact=p=0:nk=1',
+      'compact=p=0',
       segmentFilePath,
     ];
 
@@ -28,42 +26,56 @@ export class GetLastPtsDurationTask {
       stdio: ['ignore', 'pipe', process.stderr],
     });
 
-    let lastLine: string = '';
-    proc.stdout.pipe(new NewLineTransformStream()).pipe(
-      new Writable({
-        write(chunk, _, callback) {
-          if (chunk instanceof Buffer) {
-            const str = chunk.toString('utf-8').trim();
-            if (isNonEmptyString(str)) {
-              lastLine = str;
-            }
-          }
-          callback();
-        },
-      }),
-    );
+    let result: Result<StreamEndPts> = Result.success({ endPts: -Infinity });
+    const lines = createInterface({ input: proc.stdout, crlfDelay: Infinity });
+    lines.on('line', (line) => {
+      if (line.trim().length > 0) {
+        result = result.map((ends) => accumulateStreamEnd(ends, line));
+      }
+    });
 
     return new Promise((resolve, reject) => {
       proc.on('error', reject);
-      proc.on('close', () => {
-        resolve(Result.attempt(() => parsePtsAndDuration(lastLine)));
+      proc.on('close', (code) => {
+        if (code !== 0) {
+          resolve(Result.failure(`ffprobe exited with code ${code}`));
+          return;
+        }
+        resolve(
+          result.map((ends) => {
+            if (!Number.isFinite(ends.endPts)) {
+              throw new Error('No packet timestamps found in HLS segment');
+            }
+            return ends;
+          }),
+        );
       });
     });
   }
 }
 
-function parsePtsAndDuration(str: string): PtsAndDuration {
-  const [pts, duration] = str.split('|', 2);
-  const ptsParsed = parseFloat(pts!);
-  if (isNaN(ptsParsed)) {
-    throw new Error(`PTS was not a number: got ${str}`);
+export function accumulateStreamEnd(
+  ends: StreamEndPts,
+  line: string,
+): StreamEndPts {
+  const fields: Record<string, string | undefined> = {};
+  for (const field of line.split('|')) {
+    const [key, value] = field.split('=', 2);
+    if (key) {
+      fields[key] = value;
+    }
   }
-  let durationParsed = parseFloat(duration!);
-  if (isNaN(durationParsed)) {
-    durationParsed = 10_000;
+  const pts = Number(fields.pts);
+  if (!Number.isFinite(pts)) {
+    throw new Error(`PTS was not a number: got ${line}`);
   }
+  const duration = Number(fields.duration);
+  const endPts = pts + (Number.isFinite(duration) ? duration : 10_000);
   return {
-    pts: ptsParsed,
-    duration: durationParsed,
+    endPts: Math.max(ends.endPts, endPts),
+    audioEndPts:
+      fields.codec_type === 'audio'
+        ? Math.max(ends.audioEndPts ?? -Infinity, endPts)
+        : ends.audioEndPts,
   };
 }

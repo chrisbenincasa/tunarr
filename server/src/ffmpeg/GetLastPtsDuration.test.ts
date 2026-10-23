@@ -1,20 +1,28 @@
-import { SettingsDB } from '@/db/SettingsDB.js';
-import {
-  getFakeSettingsDb,
-  setTestGlobalOptions,
-} from '../testing/getFakeSettingsDb.js';
-import { GetLastPtsDurationTask } from './GetLastPtsDuration.js';
+import { describe, expect, test } from 'vitest';
+import { accumulateStreamEnd } from './GetLastPtsDuration.js';
 
-let settingsDB: SettingsDB;
-beforeAll(async () => {
-  await setTestGlobalOptions();
-  settingsDB = getFakeSettingsDb();
-});
+describe('HLS segment stream ends', () => {
+  test('retains the audio tail when the final packet in file order is video', () => {
+    const audio = accumulateStreamEnd(
+      { endPts: -Infinity },
+      'codec_type=audio|pts=14820219|duration=1920',
+    );
+    const ends = accumulateStreamEnd(
+      audio,
+      'codec_type=video|pts=14811978|duration=3003|side_data_type=MPEGTS Stream ID|id=224',
+    );
+    expect(ends).toEqual({ endPts: 14822139, audioEndPts: 14822139 });
+  });
 
-test.skip('Get last duration', async () => {
-  const task = new GetLastPtsDurationTask(settingsDB);
-  const result = await task.run(
-    '/home/christian/Desktop/ffmpeg-test/test-out.ts',
-  );
-  console.log(result);
+  test('compares packet ends rather than start timestamps', () => {
+    const audio = accumulateStreamEnd(
+      { endPts: -Infinity },
+      'codec_type=audio|pts=90000|duration=1920',
+    );
+    const ends = accumulateStreamEnd(
+      audio,
+      'codec_type=video|pts=89000|duration=3003',
+    );
+    expect(ends).toEqual({ endPts: 92003, audioEndPts: 91920 });
+  });
 });
