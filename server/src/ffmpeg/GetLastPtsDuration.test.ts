@@ -1,28 +1,50 @@
-import { describe, expect, test } from 'vitest';
-import { accumulateStreamEnd } from './GetLastPtsDuration.js';
+import type * as ChildProcessModule from 'node:child_process';
+import { ChildProcess, spawn } from 'node:child_process';
+import { PassThrough } from 'node:stream';
+import { setImmediate } from 'node:timers/promises';
+import { beforeAll, describe, expect, test, vi } from 'vitest';
+import {
+  getFakeSettingsDb,
+  setTestGlobalOptions,
+} from '../testing/getFakeSettingsDb.js';
+import { GetLastPtsDurationTask } from './GetLastPtsDuration.js';
 
-describe('HLS segment stream ends', () => {
-  test('retains the audio tail when the final packet in file order is video', () => {
-    const audio = accumulateStreamEnd(
-      { endPts: -Infinity },
-      'codec_type=audio|pts=14820219|duration=1920',
-    );
-    const ends = accumulateStreamEnd(
-      audio,
-      'codec_type=video|pts=14811978|duration=3003|side_data_type=MPEGTS Stream ID|id=224',
-    );
-    expect(ends).toEqual({ endPts: 14822139, audioEndPts: 14822139 });
-  });
+vi.mock('node:child_process', async (importOriginal) => ({
+  ...(await importOriginal<typeof ChildProcessModule>()),
+  spawn: vi.fn(),
+}));
 
-  test('compares packet ends rather than start timestamps', () => {
-    const audio = accumulateStreamEnd(
-      { endPts: -Infinity },
-      'codec_type=audio|pts=90000|duration=1920',
-    );
-    const ends = accumulateStreamEnd(
-      audio,
-      'codec_type=video|pts=89000|duration=3003',
-    );
-    expect(ends).toEqual({ endPts: 92003, audioEndPts: 91920 });
-  });
+beforeAll(async () => {
+  await setTestGlobalOptions();
+});
+
+describe('HLS segment probe exit status', () => {
+  test.each([0, 1])(
+    'handles parseable output followed by exit %i',
+    async (code) => {
+      const child = new ChildProcess();
+      const stdout = new PassThrough();
+      child.stdout = stdout;
+      vi.mocked(spawn).mockReturnValueOnce(child);
+
+      const resultPromise = new GetLastPtsDurationTask(getFakeSettingsDb()).run(
+        '/test/segment.ts',
+      );
+      stdout.end('90000|3000\n');
+      await setImmediate();
+      child.emit('close', code, null);
+      const result = await resultPromise;
+
+      if (code === 0) {
+        expect(result.get()).toEqual({ pts: 90000, duration: 3000 });
+      } else {
+        expect(result.isFailure()).toBe(true);
+        if (result.isFailure()) {
+          expect(result.error.cause?.message).toContain(
+            'ffprobe exited with code 1',
+          );
+        }
+      }
+    },
+  );
 });

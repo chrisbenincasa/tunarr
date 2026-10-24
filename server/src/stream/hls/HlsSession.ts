@@ -11,7 +11,6 @@ import type { OnDemandChannelService } from '@/services/OnDemandChannelService.j
 import { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import type { StopOptions } from '@/stream/Session.js';
 import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
-import { calculateHlsPtsOffset } from '@/stream/hls/HlsPtsOffset.js';
 import type { HlsSlowerSession } from '@/stream/hls/HlsSlowerSession.js';
 import type {
   AudioRenditionInfo,
@@ -561,7 +560,9 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       return 0;
     }
 
-    return calculateHlsPtsOffset(result.get(), this.channel.transcodeConfig);
+    const { pts, duration } = result.get();
+
+    return pts + duration + 1;
   }
 
   private async getLastSegment() {
