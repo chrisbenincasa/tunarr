@@ -54,7 +54,8 @@ export class HlsOutputFormat extends OutputOption {
     opts.push('-hls_flags', flags.join('+'));
 
     if (!this.isFirstTranscode) {
-      opts.push('-mpegts_flags', '+initial_discontinuity');
+      // HLS owns the MPEG-TS muxer; outer muxer options do not reach it.
+      opts.push('-hls_segment_options', 'mpegts_flags=+initial_discontinuity');
     }
 
     opts.push(this.playlistPath);

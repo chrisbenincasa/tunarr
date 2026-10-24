@@ -25,6 +25,16 @@ function makeFormat(
 }
 
 describe('HlsOutputFormat', () => {
+  test('passes clip restart signaling to the MPEG-TS segment muxer', () => {
+    const opts = makeFormat(false).options();
+    const index = opts.indexOf('-hls_segment_options');
+    expect(index).toBeGreaterThan(-1);
+    expect(opts[index + 1]).toBe('mpegts_flags=+initial_discontinuity');
+    expect(opts).not.toContain('-mpegts_flags');
+    expect(opts[opts.indexOf('-hls_flags') + 1]).toContain('discont_start');
+    expect(makeFormat(true).options()).not.toContain('-hls_segment_options');
+  });
+
   test('includes -master_pl_name playlist.m3u8 for first transcode', () => {
     const opts = makeFormat(true).options();
     const idx = opts.indexOf('-master_pl_name');
