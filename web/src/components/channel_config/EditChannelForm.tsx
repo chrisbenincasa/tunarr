@@ -85,6 +85,7 @@ function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
     },
     onDemand: {
       enabled: channel.onDemand.enabled,
+      virtualLive: channel.onDemand.virtualLive ?? false,
     },
     subtitlesEnabled: channel.subtitlesEnabled,
     subtitlePreferences: channel.subtitlePreferences ?? [],

@@ -312,6 +312,29 @@ export function ChannelPropertiesEditor() {
                   />
                 )}
               />
+              <Controller
+                control={control}
+                name="onDemand.virtualLive"
+                render={({ field }) => (
+                  <FormControlLabel
+                    control={
+                      <Switch
+                        checked={field.value ?? false}
+                        onChange={(e) => field.onChange(e.target.checked)}
+                        disabled={!watch('onDemand.enabled')}
+                      />
+                    }
+                    label={t`Virtual Live`}
+                  />
+                )}
+              />
+              <Typography variant="body2" color="text.secondary">
+                <Trans>
+                  Virtual Live calculates what would be playing if the channel
+                  were always on, but only starts encoding when someone tunes
+                  in. All viewers see the same position in the schedule.
+                </Trans>
+              </Typography>
             </Stack>
           </Stack>
         </Box>

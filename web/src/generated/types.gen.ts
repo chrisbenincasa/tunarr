@@ -2994,6 +2994,7 @@ export type GetChannelsResponses = {
         };
         onDemand: {
             enabled: boolean;
+            virtualLive: boolean;
         };
         programCount: number;
         streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
@@ -3073,6 +3074,7 @@ export type CreateChannelV2Data = {
             };
             onDemand?: {
                 enabled: boolean;
+                virtualLive: boolean;
             };
             streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
             transcodeConfigId: string;
@@ -3200,6 +3202,7 @@ export type CreateChannelV2Responses = {
         };
         onDemand: {
             enabled: boolean;
+            virtualLive: boolean;
         };
         programCount: number;
         streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
@@ -3360,6 +3363,7 @@ export type GetChannelsByNumberV2Responses = {
         };
         onDemand: {
             enabled: boolean;
+            virtualLive: boolean;
         };
         programCount: number;
         streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
@@ -3437,6 +3441,7 @@ export type PutApiChannelsByIdData = {
         };
         onDemand?: {
             enabled: boolean;
+            virtualLive: boolean;
         };
         streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
         transcodeConfigId: string;
@@ -3566,6 +3571,7 @@ export type PutApiChannelsByIdResponses = {
         };
         onDemand: {
             enabled: boolean;
+            virtualLive: boolean;
         };
         programCount: number;
         streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
@@ -6981,6 +6987,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                     };
                     onDemand: {
                         enabled: boolean;
+                        virtualLive: boolean;
                     };
                     programCount: number;
                     streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
@@ -7392,6 +7399,7 @@ export type GetApiChannelsByIdScheduleResponses = {
                     };
                     onDemand: {
                         enabled: boolean;
+                        virtualLive: boolean;
                     };
                     programCount: number;
                     streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
@@ -13483,6 +13491,7 @@ export type PostApiTroubleshootResponses = {
             };
             onDemand: {
                 enabled: boolean;
+                virtualLive: boolean;
             };
             programCount: number;
             streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';

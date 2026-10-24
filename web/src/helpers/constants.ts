@@ -35,6 +35,7 @@ export const DefaultChannel: MarkOptional<
   },
   onDemand: {
     enabled: false,
+    virtualLive: false,
   },
   programCount: 0,
   streamMode: 'hls',

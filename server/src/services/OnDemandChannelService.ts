@@ -159,11 +159,38 @@ export class OnDemandChannelService {
     });
   }
 
+  /**
+   * Calculates the "virtual live" timestamp for a channel.
+   * This returns where the channel would be in its schedule if it had been
+   * running continuously since its start time, wrapping around when the
+   * duration is exceeded.
+   */
+  getVirtualLiveTimestamp(
+    channelStartTime: number,
+    channelDuration: number,
+    requestTime: number,
+  ): number {
+    const elapsed = requestTime - channelStartTime;
+    const positionInSchedule = elapsed % channelDuration;
+    return channelStartTime + positionInSchedule;
+  }
+
   getLiveTimestampForConfig(
     onDemandConfig: OnDemandChannelConfig,
     channelStartTime: number,
     requestTime: number,
+    channelDuration?: number,
   ): number {
+    // If virtualLive is enabled, calculate position as if channel were always live
+    if (onDemandConfig.virtualLive && channelDuration !== undefined) {
+      return this.getVirtualLiveTimestamp(
+        channelStartTime,
+        channelDuration,
+        requestTime,
+      );
+    }
+
+    // Original cursor-based calculation
     const lastResumed = onDemandConfig.lastResumed ?? 0;
     // Don't skip milliseconds
     let sinceResume = requestTime > lastResumed ? requestTime - lastResumed : 0;
@@ -194,6 +221,7 @@ export class OnDemandChannelService {
       lineup.onDemandConfig,
       channel.startTime,
       requestTime,
+      channel.duration,
     );
   }
 

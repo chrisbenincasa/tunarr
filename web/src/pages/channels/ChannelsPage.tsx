@@ -381,6 +381,14 @@ export default function ChannelsPage() {
         id: 'onDemand',
       },
       {
+        header: t`Virtual Live?`,
+        accessorKey: 'onDemand.virtualLive',
+        Cell: ({ cell }) => (cell.getValue<boolean>() ? <Check /> : <Close />),
+        filterVariant: 'checkbox',
+        enableSorting: false,
+        id: 'virtualLive',
+      },
+      {
         header: t`Transcode Config`,
         accessorFn: (row) =>
           find(transcodeConfigs, { id: row.transcodeConfigId }),

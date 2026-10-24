@@ -741,7 +741,10 @@ export class TVGuideService {
       }
     }
 
-    if (channelWithLineup.lineup?.onDemandConfig?.state === 'paused') {
+    // For regular on-demand (not virtual live), show paused state and stretch program
+    // Virtual live channels show full schedule as if always live
+    const onDemandConfig = channelWithLineup.lineup?.onDemandConfig;
+    if (onDemandConfig?.state === 'paused' && !onDemandConfig?.virtualLive) {
       playing.isPaused = true;
       const itemEndsAt = playing.startTimeMs + playing.lineupItem.durationMs;
       const remaining = itemEndsAt - currentUpdateTimeMs;
@@ -884,10 +887,18 @@ export class TVGuideService {
     };
 
     const timestamp = run(() => {
-      const { startTime } = channelWithLineup.channel;
+      const { startTime, duration: channelDuration } = channelWithLineup.channel;
       if (channelWithLineup.lineup.onDemandConfig) {
-        const { state, cursor } = channelWithLineup.lineup.onDemandConfig;
-        if (state === 'paused') {
+        const { state, cursor, virtualLive } = channelWithLineup.lineup.onDemandConfig;
+        // Virtual live always calculates position as if channel were live
+        if (virtualLive) {
+          return this.onDemandChannelService.getLiveTimestampForConfig(
+            channelWithLineup.lineup.onDemandConfig,
+            startTime,
+            currentUpdateTimeMs,
+            channelDuration,
+          );
+        } else if (state === 'paused') {
           return startTime + cursor;
         } else {
           return this.onDemandChannelService.getLiveTimestampForConfig(
