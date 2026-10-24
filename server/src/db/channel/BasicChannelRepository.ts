@@ -187,6 +187,7 @@ export class BasicChannelRepository {
         lineup.onDemandConfig = {
           state: 'paused',
           cursor: 0,
+          virtualLive: createReq.onDemand?.virtualLive ?? false,
         };
       });
     }
@@ -271,6 +272,7 @@ export class BasicChannelRepository {
           lineup.onDemandConfig = {
             state: 'paused',
             cursor: 0,
+            virtualLive: updateReq.onDemand?.virtualLive ?? false,
           };
         } else {
           delete lineup['onDemandConfig'];

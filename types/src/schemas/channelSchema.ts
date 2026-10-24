@@ -176,6 +176,9 @@ export const ChannelSchema = z.object({
   watermark: WatermarkSchema.optional(),
   onDemand: z.object({
     enabled: z.boolean(),
+    // When true, calculates schedule position as if the channel were always live
+    // but only starts encoding when someone tunes in.
+    virtualLive: z.boolean().optional().default(false),
   }),
   programCount: z.number(),
   streamMode: ChannelStreamModeSchema,

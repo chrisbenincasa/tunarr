@@ -56,6 +56,7 @@ export const dbChannelToApiChannel = ({
     stealth: channel.stealth ?? false,
     onDemand: {
       enabled: isDefined(lineup.onDemandConfig),
+      virtualLive: lineup.onDemandConfig?.virtualLive ?? false,
     },
     programCount: filter(lineup.items, { type: 'content' }).length,
     streamMode: channel.streamMode,
@@ -109,6 +110,7 @@ export const ormChannelToApiChannel = ({
     stealth: channel.stealth ?? false,
     onDemand: {
       enabled: isDefined(lineup.onDemandConfig),
+      virtualLive: lineup.onDemandConfig?.virtualLive ?? false,
     },
     programCount: filter(lineup.items, { type: 'content' }).length,
     streamMode: channel.streamMode,

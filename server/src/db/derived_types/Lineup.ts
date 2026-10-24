@@ -79,6 +79,9 @@ const OnDemandChannelConfigSchema = z.object({
   lastResumed: z.number().positive().optional(),
   lastPaused: z.number().positive().optional(),
   cursor: z.number().nonnegative().default(0).catch(0),
+  // When true, calculates schedule position as if the channel were always live
+  // but only starts encoding when someone tunes in. No cursor tracking needed.
+  virtualLive: z.boolean().optional().default(false).catch(false),
 });
 
 export type OnDemandChannelConfig = z.infer<typeof OnDemandChannelConfigSchema>;
