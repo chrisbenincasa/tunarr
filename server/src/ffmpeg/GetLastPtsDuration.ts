@@ -45,7 +45,11 @@ export class GetLastPtsDurationTask {
 
     return new Promise((resolve, reject) => {
       proc.on('error', reject);
-      proc.on('close', () => {
+      proc.on('close', (code) => {
+        if (code !== 0) {
+          resolve(Result.failure(`ffprobe exited with code ${code}`));
+          return;
+        }
         resolve(Result.attempt(() => parsePtsAndDuration(lastLine)));
       });
     });
