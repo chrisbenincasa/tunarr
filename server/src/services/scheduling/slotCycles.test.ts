@@ -770,7 +770,7 @@ describe('content across cycles', () => {
     const run = () =>
       initializeCycles(start, {
         now: start,
-        horizonMs: 2 * oneDay,
+        horizonMs: 2.5 * oneDay,
         build: randomSlotBuilder(schedule, fixturePrograms, [11]),
       });
 
