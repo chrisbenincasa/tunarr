@@ -7,7 +7,6 @@ import z from 'zod';
 import {
   CommonCustomShowSlotViewModel,
   CommonFillerSlotViewModel,
-  CommonMovieSlotViewModel,
   CommonShowSlotViewModel,
   CommonSmartCollectionViewModel,
 } from './CommonSlotModels.ts';
@@ -15,13 +14,6 @@ import {
 const BaseSlot = z.object({
   ...BaseRandomSlotSchema.shape,
 });
-
-export const MovieSlotViewModel = z.object({
-  ...BaseSlot.shape,
-  ...CommonMovieSlotViewModel.shape,
-});
-
-export type MovieSlotViewModel = z.infer<typeof MovieSlotViewModel>;
 
 export const ShowSlotViewModel = z.object({
   ...BaseSlot.shape,
@@ -67,7 +59,6 @@ export type SmartCollectionTimeSlotViewModel = z.infer<
 >;
 
 export const SlotViewModel = z.discriminatedUnion('type', [
-  MovieSlotViewModel,
   ShowSlotViewModel,
   FlexSlotViewModel,
   RedirectSlotViewModel,

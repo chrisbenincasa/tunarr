@@ -2717,7 +2717,6 @@ msgid "move"
 msgstr "move"
 
 #: src/components/channel_config/SelectedProgrammingList.tsx
-#: src/hooks/slot_scheduler/useSlotName.ts
 msgid "Movie"
 msgstr "Movie"
 
@@ -2737,8 +2736,6 @@ msgid "Movie, {0}"
 msgstr "Movie, {0}"
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/hooks/programming_controls/useSlotProgramOptions.ts
-#: src/hooks/programming_controls/useSlotProgramOptions.ts
 #: src/pages/library/TrashPage.tsx
 msgid "Movies"
 msgstr "Movies"
@@ -4368,6 +4365,10 @@ msgstr "Title"
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "TO"
 msgstr "TO"
+
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
+msgid "To schedule movies, add them to a custom show and choose Custom Show."
+msgstr "To schedule movies, add them to a custom show and choose Custom Show."
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "To use Tunarr, you must first connect at least one media source. Media sources provide all content used to create channels in Tunarr. Plex and Jellyfin are currently supported."
