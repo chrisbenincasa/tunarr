@@ -116,12 +116,21 @@ PBS will skip the `data.ms` directory during all future backup jobs that include
 
 ### What happens if `data.ms` is damaged?
 
-On startup, Tunarr checks the `data.ms` directory before starting Meilisearch. Meilisearch cannot open a `data.ms` directory that has no `VERSION` file. This can happen after a partial restore, or when something deletes files from the directory (for example, macOS clears old files out of its temporary directory, so don't keep Tunarr's data directory there). When the file is missing:
+On startup, Tunarr checks the `data.ms` directory before starting Meilisearch. Meilisearch cannot open a `data.ms` directory whose `VERSION` file is missing, or holds something other than a version number such as `1.30.0`. A missing file can happen after a partial restore, or when something deletes files from the directory (for example, macOS clears old files out of its temporary directory, so don't keep Tunarr's data directory there). An empty `VERSION` file can happen when the machine crashes or loses power shortly after Tunarr starts. When the file is missing or invalid:
 
-- If `data.ms` contains no files, Tunarr deletes it.
+- If `data.ms` contains no other files, Tunarr deletes it.
 - If `data.ms` still contains data, Tunarr renames it to `data.ms.broken-<timestamp>` so nothing is lost. You can delete that directory once Tunarr is running normally.
 
 Tunarr then restores the index from `ms-snapshots` when a snapshot exists, or creates an empty index. If search results are empty afterwards, rescan your libraries to rebuild the index.
+
+## What happens if `settings.json` is damaged?
+
+Tunarr reads `settings.json` from its data directory on startup. A crash or power loss right after a write can leave the file empty or cut off. Tunarr handles both cases instead of refusing to start:
+
+- If `settings.json` is empty, Tunarr treats it as missing. It starts with default settings and writes a new file. The welcome screen may appear, as it does on a new install.
+- If `settings.json` holds text that isn't valid JSON, Tunarr renames it to `settings.json.corrupt-<timestamp>` in the same directory and starts with default settings. The log names both files. The renamed file keeps the original contents, so you can recover values from it by hand. Delete it once you no longer need it.
+
+Your channels, programs, and media sources live in `db.db`, not `settings.json`, so neither case touches them. Tunarr flushes `settings.json` to disk on every write, which makes this damage unlikely in the first place.
 
 ## Language filter values are now ISO 639-2/T
 

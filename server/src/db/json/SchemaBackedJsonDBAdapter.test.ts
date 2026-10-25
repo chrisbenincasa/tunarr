@@ -133,3 +133,79 @@ test('repairs a file that is missing fields by merging the defaults in', async (
   });
   expect(file.writes).toHaveLength(1);
 });
+
+describe('damaged files', () => {
+  test.each(['', ' \n'])(
+    'treats a file holding %j as missing',
+    async (contents) => {
+      const file = new FakeTextFile(contents);
+      const subject = new SchemaBackedDbAdapter(
+        LineupSchema,
+        '/lineup.json',
+        emptyLineup,
+        file,
+      );
+
+      await expect(subject.read()).resolves.toEqual(emptyLineup);
+      expect(file.writes).toHaveLength(1);
+    },
+  );
+
+  test('throws an error that names the file by default', async () => {
+    const file = new FakeTextFile('{"truncated":');
+    const subject = new SchemaBackedDbAdapter(
+      LineupSchema,
+      '/lineup.json',
+      emptyLineup,
+      file,
+    );
+
+    await expect(subject.read()).rejects.toThrow(
+      '/lineup.json does not contain valid JSON',
+    );
+    expect(file.writes).toEqual([]);
+  });
+
+  test('moves an invalid file aside and logs both paths', async () => {
+    const file = new FakeTextFile('{"truncated":');
+    const rename = vi.fn(() => Promise.resolve());
+    const subject = new SchemaBackedDbAdapter(
+      LineupSchema,
+      '/settings.json',
+      emptyLineup,
+      file,
+      { invalidJson: 'move_aside', now: () => 123, rename },
+    );
+    const logError = vi.spyOn(subject['logger'], 'error');
+
+    await expect(subject.read()).resolves.toEqual(emptyLineup);
+
+    expect(rename).toHaveBeenCalledWith(
+      '/settings.json',
+      '/settings.json.corrupt-123',
+    );
+    expect(logError).toHaveBeenCalledWith(
+      expect.any(SyntaxError),
+      expect.any(String),
+      '/settings.json',
+      '/settings.json.corrupt-123',
+    );
+    expect(file.writes).toHaveLength(1);
+  });
+
+  test('leaves an invalid file alone when told to ignore it', async () => {
+    const file = new FakeTextFile('{"truncated":');
+    const rename = vi.fn(() => Promise.resolve());
+    const subject = new SchemaBackedDbAdapter(
+      LineupSchema,
+      '/settings.json',
+      emptyLineup,
+      file,
+      { invalidJson: 'ignore', rename },
+    );
+
+    await expect(subject.read()).resolves.toBeNull();
+    expect(rename).not.toHaveBeenCalled();
+    expect(file.writes).toEqual([]);
+  });
+});
