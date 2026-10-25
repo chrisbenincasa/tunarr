@@ -2655,7 +2655,6 @@ msgstr ""
 msgid "Media Source: \"{0}\""
 msgstr ""
 
-#: src/hooks/useRouteName.ts
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Media Sources"
 msgstr ""
@@ -3091,7 +3090,6 @@ msgstr ""
 msgid "Page"
 msgstr ""
 
-#: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/CommandPaletteContainer.tsx
 msgid "Pages"
 msgstr ""
@@ -3967,6 +3965,7 @@ msgstr ""
 #~ msgstr ""
 
 #: src/components/shell/useShellNav.tsx
+#: src/hooks/useRouteName.ts
 msgid "Sources"
 msgstr ""
 
