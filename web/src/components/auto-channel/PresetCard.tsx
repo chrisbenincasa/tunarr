@@ -10,12 +10,7 @@ import {
   Shuffle,
   Tune,
 } from '@mui/icons-material';
-import {
-  Card,
-  CardActionArea,
-  CardContent,
-  Typography,
-} from '@mui/material';
+import { Card, CardActionArea, CardContent, Typography } from '@mui/material';
 import type { ChannelPreset, ChannelPresetCategory } from '@tunarr/types/api';
 
 const categoryIcons: Record<ChannelPresetCategory, React.ReactNode> = {
