@@ -34,7 +34,7 @@
     "prettier": "^3.5.1",
     "semver": "^7.7.3",
     "tsx": "^4.20.5",
-    "turbo": "^2.5.3",
+    "turbo": "2.11.10",
     "typescript": "catalog:",
     "vitest": "catalog:vitest"
   },
