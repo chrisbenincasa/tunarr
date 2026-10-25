@@ -149,6 +149,16 @@ export class FillerDB implements IFillerListDB {
         .execute();
     }
 
+    if (updateRequest.streamSelectionProfileId !== undefined) {
+      await this.db
+        .updateTable('fillerShow')
+        .where('uuid', '=', filler.uuid)
+        .set({
+          streamSelectionProfileId: updateRequest.streamSelectionProfileId,
+        })
+        .execute();
+    }
+
     return await this.getFiller(filler.uuid);
   }
 
@@ -159,6 +169,7 @@ export class FillerDB implements IFillerListDB {
       updatedAt: now,
       createdAt: now,
       name: createRequest.name,
+      streamSelectionProfileId: createRequest.streamSelectionProfileId ?? null,
     } satisfies NewFillerShow;
 
     const programIndexById = createPendingProgramIndexMap(

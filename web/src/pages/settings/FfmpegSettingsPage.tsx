@@ -25,7 +25,7 @@ import type {
 } from '@tunarr/types';
 import { defaultFfmpegSettings } from '@tunarr/types';
 import { FfmpegLogLevels } from '@tunarr/types/schemas';
-import { capitalize, isEmpty, isEqual, isNull, map, some } from 'lodash-es';
+import { capitalize, isEqual, isNull, map, some } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
@@ -33,7 +33,6 @@ import { Controller, useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
 
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog.tsx';
-import { LanguagePreferencesList } from '@/components/LanguagePreferencesList';
 import type { DeepRequired } from 'ts-essentials';
 import { TranscodeConfigsTable } from '../../components/settings/ffmpeg/TranscodeConfigsTable.tsx';
 import {
@@ -149,8 +148,6 @@ export default function FfmpegSettingsPage() {
 
   const deleteTranscodeConfig = useMutation({
     ...deleteApiTranscodeConfigsByIdMutation(),
-    // mutationFn: (id: string) =>
-    //   apiClient.deleteTranscodeConfig(undefined, { params: { id } }),
   });
 
   const updateFfmpegSettings: SubmitHandler<
@@ -372,39 +369,6 @@ export default function FfmpegSettingsPage() {
             </FormHelperText>
           </FormControl>
         </Box>
-
-        <Divider />
-        <Typography variant="h6" sx={{ mt: 2, mb: 1 }}>
-          <Trans>Audio Language Preferences</Trans>
-        </Typography>
-        <Typography variant="subtitle1" sx={{ mb: 2 }}>
-          <Trans>Configure preferred audio languages globally.</Trans>
-        </Typography>
-        <FormControl fullWidth>
-          <Controller
-            control={control}
-            name="languagePreferences.preferences"
-            rules={{
-              validate: {
-                minLength: (v) =>
-                  isEmpty(v)
-                    ? t`Must define at least one language preference`
-                    : undefined,
-              },
-            }}
-            render={({ field, fieldState: { error } }) => (
-              <LanguagePreferencesList
-                preferences={
-                  field.value ?? [
-                    { iso6391: 'en', iso6392: 'eng', displayName: 'English' },
-                  ]
-                }
-                onChange={field.onChange}
-                error={error}
-              />
-            )}
-          />
-        </FormControl>
       </Stack>
       <Stack spacing={2} direction="row" justifyContent="right">
         {(isDirty || (isDirty && !isSubmitting) || restoreTunarrDefaults) && (

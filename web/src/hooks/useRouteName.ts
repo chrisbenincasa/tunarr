@@ -139,7 +139,15 @@ const useNamedRoutes = () => {
         name: t`FFmpeg Settings`,
       },
       {
-        matcher: entityPageMatcher('settings/ffmpeg', ''),
+        matcher: /^\/profiles\/transcode$/g,
+        name: t`Transcode Configs`,
+      },
+      {
+        matcher: /^\/profiles\/transcode\/new$/g,
+        name: t`New`,
+      },
+      {
+        matcher: entityPageMatcher('profiles/transcode', ''),
         name: t`Edit Transcode Config`,
       },
       {

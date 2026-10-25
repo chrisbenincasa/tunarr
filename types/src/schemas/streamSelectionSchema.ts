@@ -67,6 +67,8 @@ export const StreamSelectionProfileSchema = z.object({
   uuid: z.string(),
   name: z.string().min(1),
   rules: z.array(StreamSelectionRuleSchema).min(1),
+  // Locked profiles ship with Tunarr and cannot be edited or deleted.
+  locked: z.boolean().default(false),
 });
 
 export type StreamSelectionProfile = z.infer<
@@ -88,4 +90,64 @@ export const UpdateStreamSelectionProfileSchema =
 
 export type UpdateStreamSelectionProfileRequest = z.infer<
   typeof UpdateStreamSelectionProfileSchema
+>;
+
+// The locked, built-in profile seeded by the database migrations. It is the
+// last step of every resolution chain, so there is always a profile to use.
+export const BuiltInStreamSelectionProfileId =
+  '00000000-0000-4000-8000-000000000001';
+
+export const StreamSelectionSettingsSchema = z.object({
+  // The profile used when neither the program, its source (custom show or
+  // filler list), nor the channel has one assigned.
+  defaultProfileId: z.uuid().default(BuiltInStreamSelectionProfileId),
+});
+
+export type StreamSelectionSettings = z.infer<
+  typeof StreamSelectionSettingsSchema
+>;
+
+export const defaultStreamSelectionSettings: StreamSelectionSettings = {
+  defaultProfileId: BuiltInStreamSelectionProfileId,
+};
+
+// Where in the resolution chain a profile came from. Order matters: the
+// resolver walks these from most to least specific.
+export const StreamSelectionLevelSchema = z.enum([
+  'program',
+  'custom_show',
+  'filler',
+  'channel',
+  'default',
+  'built_in',
+]);
+
+export type StreamSelectionLevel = z.infer<typeof StreamSelectionLevelSchema>;
+
+const NamedEntitySchema = z.object({
+  uuid: z.string(),
+  name: z.string(),
+});
+
+export const StreamSelectionProfileUsageSchema = z.object({
+  channels: z.array(NamedEntitySchema.extend({ number: z.number() })),
+  fillerLists: z.array(NamedEntitySchema),
+  customShows: z.array(NamedEntitySchema),
+  // Program-level assignment has no UI yet, so only a count is reported.
+  programCount: z.number(),
+});
+
+export type StreamSelectionProfileUsage = z.infer<
+  typeof StreamSelectionProfileUsageSchema
+>;
+
+export const StreamSelectionProfileWithUsageSchema =
+  StreamSelectionProfileSchema.extend({
+    usage: StreamSelectionProfileUsageSchema,
+    // Whether this is the profile the default pointer targets.
+    isDefault: z.boolean(),
+  });
+
+export type StreamSelectionProfileWithUsage = z.infer<
+  typeof StreamSelectionProfileWithUsageSchema
 >;

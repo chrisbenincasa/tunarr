@@ -1,11 +1,14 @@
 import { useIsDarkMode } from '@/hooks/useTunarrTheme.ts';
+import { t } from '@lingui/core/macro';
 import { ExpandLess, ExpandMore } from '@mui/icons-material';
 import {
   Badge,
   Box,
   Collapse,
   Divider,
+  IconButton,
   List,
+  ListItem,
   ListItemButton,
   ListItemIcon,
   ListItemText,
@@ -18,7 +21,7 @@ import type { NavItem } from '../hooks/useNavItems.tsx';
 import { useNavItems } from '../hooks/useNavItems.tsx';
 import VersionFooter from './VersionFooter.tsx';
 
-export const DrawerWidth = 240;
+const DrawerWidth = 240;
 
 type ItemProps = {
   item: NavItem;
@@ -35,21 +38,18 @@ const DrawerItem = ({ item }: ItemProps) => {
 
   const [sublistOpen, setSublistOpen] = useState(isChildSelected);
 
-  const handleOpenClick = useCallback(
-    (path: string | undefined, ev: React.MouseEvent) => {
-      ev.preventDefault();
-      ev.stopPropagation();
-
-      // Only toggle the sublist state if the item has children.
-      if (item.children) {
+  const handleItemClick = useCallback(
+    (path: string | undefined) => {
+      if (path) {
+        // Show the children of the section being navigated to, but never
+        // collapse them; the chevron button handles collapsing.
+        setSublistOpen(true);
+        navigate({ to: path }).catch(console.warn);
+      } else {
         setSublistOpen((prev) => !prev);
       }
-
-      if (path) {
-        navigate({ to: path }).catch(console.warn);
-      }
     },
-    [navigate, item.children],
+    [navigate],
   );
 
   const handleChildClick = useCallback(
@@ -63,33 +63,45 @@ const DrawerItem = ({ item }: ItemProps) => {
 
   return (
     <React.Fragment key={item.name}>
-      <ListItemButton
-        key={item.name}
-        selected={item.selected || isChildSelected}
-        onClick={(ev) => handleOpenClick(item.path, ev)}
+      <ListItem
+        disablePadding
+        secondaryAction={
+          item.children && hasDisplayableChildren ? (
+            <IconButton
+              edge="end"
+              aria-label={
+                sublistOpen ? t`Collapse ${item.name}` : t`Expand ${item.name}`
+              }
+              aria-expanded={sublistOpen}
+              onClick={() => setSublistOpen((prev) => !prev)}
+            >
+              {sublistOpen ? <ExpandLess /> : <ExpandMore />}
+            </IconButton>
+          ) : undefined
+        }
       >
-        {item.icon && item.badge && !sublistOpen ? (
-          <Badge
-            badgeContent={item.badge.count}
-            color={item.badge.color}
-            sx={{
-              '& .MuiBadge-badge': {
-                right: '20px',
-              },
-            }}
-          >
+        <ListItemButton
+          selected={item.selected || isChildSelected}
+          onClick={() => handleItemClick(item.path)}
+        >
+          {item.icon && item.badge && !sublistOpen ? (
+            <Badge
+              badgeContent={item.badge.count}
+              color={item.badge.color}
+              sx={{
+                '& .MuiBadge-badge': {
+                  right: '20px',
+                },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 45 }}>{item.icon}</ListItemIcon>
+            </Badge>
+          ) : (
             <ListItemIcon sx={{ minWidth: 45 }}>{item.icon}</ListItemIcon>
-          </Badge>
-        ) : (
-          <ListItemIcon sx={{ minWidth: 45 }}>{item.icon}</ListItemIcon>
-        )}
-        <ListItemText primary={item.name} />
-        {item.children && hasDisplayableChildren ? (
-          <ListItemIcon sx={{ justifyContent: 'right' }}>
-            {sublistOpen ? <ExpandLess /> : <ExpandMore />}
-          </ListItemIcon>
-        ) : null}
-      </ListItemButton>
+          )}
+          <ListItemText primary={item.name} />
+        </ListItemButton>
+      </ListItem>
       {item.children && hasDisplayableChildren ? (
         <Collapse in={sublistOpen} timeout={100}>
           <List component="div" disablePadding>
@@ -169,7 +181,10 @@ export const Drawer = () => {
             px: [1],
           }}
         ></Toolbar>
-        <List component="nav" sx={{ flex: '1 1 0%', overflowX: 'hidden' }}>
+        {/* The list grows to push the footer to the bottom but never shrinks,
+            so when every section is open the drawer scrolls as a whole
+            instead of clipping links behind the footer. */}
+        <List component="nav" sx={{ flex: '1 0 auto', overflowX: 'hidden' }}>
           {navItems
             .filter((item) => !item.hidden)
             .map((item) => (
@@ -177,7 +192,7 @@ export const Drawer = () => {
             ))}
           <Divider sx={{ my: 1 }} />
         </List>
-        <Box sx={{ whiteSpace: 'nowrap', overflow: 'hidden' }}>
+        <Box sx={{ whiteSpace: 'nowrap', overflow: 'hidden', flexShrink: 0 }}>
           <VersionFooter />
         </Box>
       </>

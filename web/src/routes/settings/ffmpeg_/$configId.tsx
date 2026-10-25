@@ -1,14 +1,12 @@
-import { EditTranscodeConfigSettingsPage } from '@/pages/settings/EditTranscodeConfigSettingsPage';
-import { createFileRoute } from '@tanstack/react-router';
-import { getApiTranscodeConfigsByIdOptions } from '../../../generated/@tanstack/react-query.gen.ts';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
+// Transcode configs moved under Profiles; keep old links working.
 export const Route = createFileRoute('/settings/ffmpeg_/$configId')({
-  loader: ({ params, context }) => {
-    return context.queryClient.ensureQueryData(
-      getApiTranscodeConfigsByIdOptions({
-        path: { id: params.configId },
-      }),
-    );
+  beforeLoad: ({ params }) => {
+    throw redirect({
+      to: '/profiles/transcode/$configId',
+      params: { configId: params.configId },
+      replace: true,
+    });
   },
-  component: EditTranscodeConfigSettingsPage,
 });

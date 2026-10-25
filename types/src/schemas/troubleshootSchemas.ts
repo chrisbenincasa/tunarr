@@ -1,5 +1,6 @@
 import z from 'zod/v4';
 import { ChannelSchema } from './channelSchema.js';
+import { StreamSelectionLevelSchema } from './streamSelectionSchema.js';
 import { TranscodeConfigSchema } from './transcodeConfigSchemas.js';
 
 export const TroubleshootRequestSchema = z.object({
@@ -56,14 +57,27 @@ const StreamSelectionRuleTraceSchema = z.object({
   label: z.string().optional(),
   condition: z.string(),
   matched: z.boolean(),
+  // True for the one rule whose actions were applied.
+  applied: z.boolean(),
   audioAction: z.string().optional(),
   subtitleAction: z.string().optional(),
 });
 
-export const StreamSelectionTraceSchema = z.object({
-  profileName: z.string().optional(),
-  profileSource: z.string().optional(),
+const StreamSelectionLevelTraceSchema = z.object({
+  level: StreamSelectionLevelSchema,
+  sourceId: z.string().optional(),
+  profileId: z.string(),
+  profileName: z.string(),
+  // Whether any rule in this profile matched. The cascade stops at the
+  // first profile that matched.
+  matched: z.boolean(),
   rules: StreamSelectionRuleTraceSchema.array(),
+});
+
+export const StreamSelectionTraceSchema = z.object({
+  // Profiles evaluated, in cascade order. Profiles after the matching one
+  // are not evaluated and are not included.
+  levels: StreamSelectionLevelTraceSchema.array(),
   selectedAudioStream: AudioStreamInfoSchema.optional(),
   selectedSubtitleStream: SubtitleStreamInfoSchema.nullable().optional(),
   subtitleReason: z.string().optional(),

@@ -1,0 +1,3 @@
+ALTER TABLE `custom_show` ADD `stream_selection_profile_id` text REFERENCES stream_selection_profiles(uuid);--> statement-breakpoint
+ALTER TABLE `stream_selection_profiles` ADD `locked` integer DEFAULT false NOT NULL;--> statement-breakpoint
+INSERT OR IGNORE INTO `stream_selection_profiles` (`uuid`, `name`, `rules`, `locked`, `created_at`, `updated_at`) VALUES ('00000000-0000-4000-8000-000000000001', 'Tunarr Default', '[{"label":"Default","condition":"true","audioAction":{"type":"default"},"subtitleAction":{"type":"disable"}}]', 1, CAST(strftime('%s', 'now') AS INTEGER) * 1000, CAST(strftime('%s', 'now') AS INTEGER) * 1000);

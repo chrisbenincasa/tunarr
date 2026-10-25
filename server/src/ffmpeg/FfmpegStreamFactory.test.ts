@@ -1102,7 +1102,7 @@ describe('FfmpegStreamFactory', () => {
         expect(result!.renditions.subtitle).toBeUndefined();
       });
 
-      test('skips subtitles when channel.subtitlesEnabled is false', async () => {
+      test('applies the selected subtitle regardless of the legacy subtitlesEnabled flag', async () => {
         const config = makeTranscodeConfig();
         const capturing = createCapturingPipelineBuilderFactory();
 
@@ -1132,9 +1132,10 @@ describe('FfmpegStreamFactory', () => {
           lineupItem: makeLineupItem(),
         });
 
+        // Stream selection profiles own subtitles; the channel flag is unused.
         const subtitleInput = capturing.getCapturedSubtitleInput();
-        expect(subtitleInput).toBeNull();
-        expect(result!.renditions.subtitle).toBeUndefined();
+        expect(subtitleInput).not.toBeNull();
+        expect(result).toBeDefined();
       });
 
       test('skips subtitles when stream selector returns no subtitle', async () => {
@@ -1411,14 +1412,14 @@ describe('FfmpegStreamFactory', () => {
         expect(result!.renditions.subtitle).toBeUndefined();
       });
 
-      test('skips subtitles when channel.subtitlesEnabled is false', async () => {
+      test('applies the selected subtitle regardless of the legacy subtitlesEnabled flag', async () => {
         const config = makeTranscodeConfig();
         const capturing = createCapturingPipelineBuilderFactory();
         const details = makeStreamDetails();
         details.subtitleDetails = [textSubtitleStream];
 
-        // The selector returns a usable subtitle, so only subtitlesEnabled
-        // can suppress it.
+        // The selector returns a usable subtitle, so the assertion shows
+        // whether the channel flag still suppresses it.
         const sut = new FfmpegStreamFactory(
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
@@ -1445,9 +1446,10 @@ describe('FfmpegStreamFactory', () => {
           lineupItem: makeLineupItem(),
         });
 
+        // Stream selection profiles own subtitles; the channel flag is unused.
         const subtitleInput = capturing.getCapturedSubtitleInput();
-        expect(subtitleInput).toBeNull();
-        expect(result!.renditions.subtitle).toBeUndefined();
+        expect(subtitleInput).not.toBeNull();
+        expect(result).toBeDefined();
       });
 
       test('skips subtitles when no subtitle details in stream', async () => {

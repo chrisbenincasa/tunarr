@@ -1,7 +1,6 @@
-import { TranscodeConfigSettingsForm } from '@/components/settings/ffmpeg/TranscodeConfigSettingsForm';
 import type { TranscodeConfig } from '@tunarr/types';
 
-const defaultNewTranscodeConfig: TranscodeConfig = {
+export const defaultNewTranscodeConfig: TranscodeConfig = {
   id: '',
   name: 'New Config',
   threadCount: 0,
@@ -34,13 +33,4 @@ const defaultNewTranscodeConfig: TranscodeConfig = {
   disableHardwareEncoding: false,
   disableHardwareFilters: false,
   audioLoudnormConfig: null,
-};
-
-export const NewTranscodeConfigSettingsPage = () => {
-  return (
-    <TranscodeConfigSettingsForm
-      initialConfig={defaultNewTranscodeConfig}
-      isNew
-    />
-  );
 };
