@@ -30,8 +30,7 @@ export function YearRangePicker({ value, onChange }: Props) {
 
   const handleDecadeClick = useCallback(
     (decade: (typeof DECADES)[number]) => {
-      const isSame =
-        value?.start === decade.start && value?.end === decade.end;
+      const isSame = value?.start === decade.start && value?.end === decade.end;
       const newRange = isSame ? undefined : decade;
       onChange(newRange, buildFilterString(newRange));
     },
