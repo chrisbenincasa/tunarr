@@ -1,9 +1,22 @@
 import type {
   ConditionClause,
+  TextOperator,
   ConditionEntry,
   ConditionGroup,
 } from './types.ts';
 import { isConditionGroup } from './types.ts';
+
+function textToCel(field: string, operator: TextOperator, value: string) {
+  const literal = JSON.stringify(value);
+  switch (operator) {
+    case 'eq':
+      return `${field} == ${literal}`;
+    case 'neq':
+      return `${field} != ${literal}`;
+    case 'contains':
+      return `${field}.contains(${literal})`;
+  }
+}
 
 function clauseToCel(clause: ConditionClause): string {
   switch (clause.type) {
@@ -41,6 +54,25 @@ function clauseToCel(clause: ConditionClause): string {
       } as const;
       return `audio.streams.exists(s, s.channels ${opMap[clause.operator]} ${clause.value})`;
     }
+
+    case 'program_title':
+      return textToCel('program.title', clause.operator, clause.value);
+
+    case 'show_title':
+      return textToCel('program.showTitle', clause.operator, clause.value);
+
+    case 'genre': {
+      const genre = JSON.stringify(clause.value);
+      if (clause.operator === 'in') {
+        return `${genre} in program.genres`;
+      }
+      return `!(${genre} in program.genres)`;
+    }
+
+    case 'library': {
+      const op = clause.operator === 'eq' ? '==' : '!=';
+      return `program.libraryId ${op} ${JSON.stringify(clause.value)}`;
+    }
   }
 }
 
@@ -51,10 +83,7 @@ function entryToCel(entry: ConditionEntry, parentOperator?: string): string {
   return groupToCel(entry, parentOperator);
 }
 
-function groupToCel(
-  group: ConditionGroup,
-  parentOperator?: string,
-): string {
+function groupToCel(group: ConditionGroup, parentOperator?: string): string {
   if (group.conditions.length === 0) {
     return 'true';
   }

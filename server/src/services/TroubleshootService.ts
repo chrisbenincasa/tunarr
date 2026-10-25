@@ -13,6 +13,7 @@ import {
   HlsOutputFormat,
 } from '@/ffmpeg/builder/constants.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
+import { StreamSelectionProgramContextLoader } from '@/services/StreamSelectionProgramContextLoader.js';
 import { ProgramStreamDetailsFetcher } from '@/stream/ProgramStreamDetailsFetcher.js';
 import type { ProgramStreamResult } from '@/stream/types.js';
 import { isNonEmptyArray } from '@/util/index.js';
@@ -70,6 +71,8 @@ export class TroubleshootService {
     @inject(TranscodeConfigDB) private transcodeConfigDB: TranscodeConfigDB,
     @inject(KEYS.ProgramStreamFactory)
     private programStreamFactory: ProgramStreamFactory,
+    @inject(StreamSelectionProgramContextLoader)
+    private programContextLoader: StreamSelectionProgramContextLoader,
   ) {}
 
   getSessionDirectory(sessionId: string): string | undefined {
@@ -286,7 +289,7 @@ export class TroubleshootService {
           audioStreams,
           subtitleStreams,
           { name: channel.name, number: channel.number },
-          { title: program.title, type: program.type },
+          await this.programContextLoader.load(program),
         );
 
         const evaluation = await evaluateStreamSelectionChain(

@@ -3,6 +3,8 @@ import {
   BuiltInStreamSelectionProfileId,
   CreateStreamSelectionProfileSchema,
   StreamSelectionProfileSchema,
+  StreamSelectionPreviewRequestSchema,
+  StreamSelectionPreviewResultSchema,
   StreamSelectionProfileWithUsageSchema,
   StreamSelectionSettingsSchema,
   UpdateStreamSelectionProfileSchema,
@@ -11,6 +13,7 @@ import { count, eq, isNotNull } from 'drizzle-orm';
 import { groupBy, orderBy } from 'lodash-es';
 import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod/v4';
+import { container } from '../container.ts';
 import { Channel } from '../db/schema/Channel.ts';
 import { CustomShow } from '../db/schema/CustomShow.ts';
 import { FillerShow } from '../db/schema/FillerShow.ts';
@@ -18,6 +21,7 @@ import type { DrizzleDBAccess } from '../db/schema/index.ts';
 import { Program } from '../db/schema/Program.ts';
 import { StreamSelectionProfile } from '../db/schema/StreamSelectionProfile.ts';
 import { CelEvaluationService } from '../services/CelEvaluationService.ts';
+import { StreamSelectionPreviewService } from '../services/StreamSelectionPreviewService.ts';
 
 const ErrorResponseSchema = z.object({ message: z.string() });
 
@@ -366,6 +370,36 @@ export const streamSelectionRouter: RouterPluginCallback = (
   );
 
   // Validate CEL expression
+  // Evaluate unsaved rules against a program's real streams, without
+  // cascading to other profiles
+  fastify.post(
+    '/stream-selection-profiles/preview',
+    {
+      schema: {
+        tags: ['Stream Selection'],
+        body: StreamSelectionPreviewRequestSchema,
+        response: {
+          200: StreamSelectionPreviewResultSchema,
+          404: ErrorResponseSchema,
+          502: ErrorResponseSchema,
+        },
+      },
+    },
+    async (req, res) => {
+      const outcome = await container
+        .get(StreamSelectionPreviewService)
+        .preview(req.body);
+      switch (outcome.type) {
+        case 'success':
+          return res.send(outcome.result);
+        case 'not_found':
+          return res.status(404).send({ message: outcome.message });
+        case 'streams_unavailable':
+          return res.status(502).send({ message: outcome.message });
+      }
+    },
+  );
+
   fastify.post(
     '/stream-selection-profiles/validate-expression',
     {
