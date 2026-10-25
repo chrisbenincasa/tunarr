@@ -13596,50 +13596,6 @@ export type GetApiAutoChannelsPresetsResponses = {
                     type: 'oneExtra';
                 };
                 latenessMs?: number;
-                type: 'movie';
-                order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
-                direction: 'asc' | 'desc';
-                id: string;
-                iterationGroup?: string;
-                linkMode?: 'continue' | 'rerun';
-                rerunOverflow?: 'flex' | 'continue';
-                filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
-                    fillerListId: string;
-                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                }>;
-                midRoll?: {
-                    intervalMs?: number;
-                    breakRule?: {
-                        type: 'fixed_interval';
-                        intervalMs: number;
-                    } | {
-                        type: 'percentage';
-                        points: Array<number>;
-                    } | {
-                        type: 'initial_then_interval';
-                        initialDelayMs: number;
-                        intervalMs: number;
-                    };
-                    maxBreaks: number;
-                    minProgramDurationMs: number;
-                    tailBufferMs: number;
-                    breakDurationMs?: number;
-                    breakDurationMinMs?: number;
-                    breakDurationMaxMs?: number;
-                    programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
-                    strategy: 'eager' | 'lazy';
-                };
-            } | {
-                startTime: number;
-                padMs?: number;
-                overflow?: {
-                    type: 'duration';
-                    maxMs: number;
-                } | {
-                    type: 'oneExtra';
-                };
-                latenessMs?: number;
                 type: 'show';
                 showId: string;
                 seasonFilter: Array<number>;
@@ -13848,52 +13804,6 @@ export type GetApiAutoChannelsPresetsResponses = {
             padMs: number;
             padStyle: 'slot' | 'episode';
             slots: Array<{
-                id: string;
-                iterationGroup?: string;
-                linkMode?: 'continue' | 'rerun';
-                rerunOverflow?: 'flex' | 'continue';
-                filler?: Array<{
-                    types: Array<'head' | 'pre' | 'post' | 'tail' | 'fallback' | 'mid'>;
-                    fillerListId: string;
-                    fillerOrder: 'shuffle_prefer_short' | 'shuffle_prefer_long' | 'uniform';
-                }>;
-                midRoll?: {
-                    intervalMs?: number;
-                    breakRule?: {
-                        type: 'fixed_interval';
-                        intervalMs: number;
-                    } | {
-                        type: 'percentage';
-                        points: Array<number>;
-                    } | {
-                        type: 'initial_then_interval';
-                        initialDelayMs: number;
-                        intervalMs: number;
-                    };
-                    maxBreaks: number;
-                    minProgramDurationMs: number;
-                    tailBufferMs: number;
-                    breakDurationMs?: number;
-                    breakDurationMinMs?: number;
-                    breakDurationMaxMs?: number;
-                    programTypes?: Array<'movie' | 'episode' | 'track' | 'music_video' | 'other_video'>;
-                    strategy: 'eager' | 'lazy';
-                };
-                cooldownMs: number;
-                periodMs?: number;
-                durationSpec: {
-                    durationMs: number;
-                    type: 'fixed';
-                } | {
-                    type: 'dynamic';
-                    programCount: number;
-                };
-                weight: number;
-                index?: number;
-                order: 'next' | 'shuffle' | 'ordered_shuffle' | 'alphanumeric' | 'chronological';
-                direction: 'asc' | 'desc';
-                type: 'movie';
-            } | {
                 id: string;
                 iterationGroup?: string;
                 linkMode?: 'continue' | 'rerun';
