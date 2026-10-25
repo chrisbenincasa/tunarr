@@ -14,8 +14,8 @@ function makeShuffleScheduleConfig(
     slots: [
       {
         id: randomUUID(),
-        type: 'smart-collection',
-        smartCollectionId: role,
+        type: 'role',
+        role,
         order: (opts?.order as 'shuffle' | 'next') ?? 'shuffle',
         direction: 'asc',
         cooldownMs: 0,
@@ -57,8 +57,8 @@ export const ShufflePreset: ChannelPreset = {
     slots: [
       {
         id: randomUUID(),
-        type: 'smart-collection',
-        smartCollectionId: 'all', // Placeholder role name, resolved at creation time
+        type: 'role',
+        role: 'all',
         order: 'shuffle',
         direction: 'asc',
         cooldownMs: 0,
@@ -102,8 +102,8 @@ export const MovieChannelPreset: ChannelPreset = {
     slots: [
       {
         id: randomUUID(),
-        type: 'smart-collection',
-        smartCollectionId: 'movies', // Placeholder role name, resolved at creation time
+        type: 'role',
+        role: 'movies',
         order: 'shuffle',
         direction: 'asc',
         cooldownMs: 0,
@@ -154,7 +154,11 @@ export const GenrePreset: ChannelPreset = {
       defaultQuery: {},
       required: true,
       minPrograms: 1,
-      pickerHint: { type: 'facet', facetFields: ['genre'], label: 'Pick a genre' },
+      pickerHint: {
+        type: 'facet',
+        facetFields: ['genre'],
+        label: 'Pick a genre',
+      },
     },
   ],
   scheduleType: 'random',
@@ -164,8 +168,7 @@ export const GenrePreset: ChannelPreset = {
 export const ActorDirectorPreset: ChannelPreset = {
   id: 'actor-director-channel',
   name: 'Actor / Director Channel',
-  description:
-    'A channel featuring content from a specific actor or director.',
+  description: 'A channel featuring content from a specific actor or director.',
   category: 'people',
   contentRequirements: [
     {
@@ -315,32 +318,32 @@ export const ClassicTvDayPreset: ChannelPreset = {
     slots: [
       {
         id: randomUUID(),
-        type: 'smart-collection',
-        smartCollectionId: 'morning',
+        type: 'role',
+        role: 'morning',
         order: 'shuffle',
         direction: 'asc',
         startTime: 6 * 60 * 60 * 1000, // 6 AM
       },
       {
         id: randomUUID(),
-        type: 'smart-collection',
-        smartCollectionId: 'afternoon',
+        type: 'role',
+        role: 'afternoon',
         order: 'shuffle',
         direction: 'asc',
         startTime: 12 * 60 * 60 * 1000, // 12 PM
       },
       {
         id: randomUUID(),
-        type: 'smart-collection',
-        smartCollectionId: 'primetime',
+        type: 'role',
+        role: 'primetime',
         order: 'shuffle',
         direction: 'asc',
         startTime: 20 * 60 * 60 * 1000, // 8 PM
       },
       {
         id: randomUUID(),
-        type: 'smart-collection',
-        smartCollectionId: 'latenight',
+        type: 'role',
+        role: 'latenight',
         order: 'shuffle',
         direction: 'asc',
         startTime: 23 * 60 * 60 * 1000, // 11 PM

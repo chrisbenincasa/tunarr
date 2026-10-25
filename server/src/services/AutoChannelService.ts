@@ -31,6 +31,7 @@ import type {
   TerminalProgramSearchDocument,
 } from './MeilisearchService.ts';
 import { MeilisearchService } from './MeilisearchService.ts';
+import { resolveScheduleSkeleton } from './resolveScheduleSkeleton.ts';
 import { GlobalScheduler } from './Scheduler.js';
 
 @injectable()
@@ -153,22 +154,12 @@ export class AutoChannelService {
     }
 
     // Step 3: Build the schedule config
-    const scheduleConfig = request.dynamicParams
-      ? this.buildScheduleFromDynamicParams(request.dynamicParams)
-      : structuredClone(preset.scheduleConfig);
-
-    // Assign fresh IDs and replace placeholder smart collection IDs in slots
-    for (const slot of 'slots' in scheduleConfig ? scheduleConfig.slots : []) {
-      if ('id' in slot) {
-        slot.id = v4();
-      }
-      if (slot.type === 'smart-collection') {
-        const resolvedId = smartCollectionIdsByRole[slot.smartCollectionId];
-        if (resolvedId !== undefined) {
-          slot.smartCollectionId = resolvedId;
-        }
-      }
-    }
+    const scheduleConfig = resolveScheduleSkeleton(
+      request.dynamicParams
+        ? this.buildScheduleFromDynamicParams(request.dynamicParams)
+        : preset.scheduleConfig,
+      smartCollectionIdsByRole,
+    );
 
     // Step 4: Resolve program IDs for the schedule
     const allProgramIds: string[] = [];
@@ -287,8 +278,8 @@ export class AutoChannelService {
           lockWeights: false,
           slots: params.groups.map((g) => ({
             id: v4(),
-            type: 'smart-collection' as const,
-            smartCollectionId: g.role,
+            type: 'role' as const,
+            role: g.role,
             order: 'shuffle' as const,
             direction: 'asc' as const,
             cooldownMs: 0,
@@ -308,8 +299,8 @@ export class AutoChannelService {
           timeZoneOffset: 0,
           slots: params.blocks.map((b) => ({
             id: v4(),
-            type: 'smart-collection' as const,
-            smartCollectionId: b.role,
+            type: 'role' as const,
+            role: b.role,
             startTime: b.startTime,
             order: 'shuffle' as const,
             direction: 'asc' as const,
