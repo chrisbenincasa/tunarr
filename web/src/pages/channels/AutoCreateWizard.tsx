@@ -184,10 +184,7 @@ export function AutoCreateWizard() {
           'slots' in preset.scheduleConfig ? preset.scheduleConfig.slots : [];
         const blocks: TimeBlock[] = preset.contentRequirements.map((req) => {
           const matchingSlot = slots.find(
-            (s) =>
-              s.type === 'smart-collection' &&
-              s.smartCollectionId === req.role &&
-              'startTime' in s,
+            (s) => s.type === 'role' && s.role === req.role && 'startTime' in s,
           );
           return {
             role: req.role,
