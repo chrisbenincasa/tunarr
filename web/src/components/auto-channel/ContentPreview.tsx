@@ -1,11 +1,13 @@
+import { programTypeCounts } from '@/components/auto-channel/programTypeCounts';
+import { MonoText } from '@/components/ui/MonoText';
 import {
   Alert,
   Box,
-  Chip,
   CircularProgress,
   List,
   ListItem,
   ListItemText,
+  Stack,
   Typography,
 } from '@mui/material';
 import type { ContentPreviewResponse } from '@tunarr/types/api';
@@ -68,25 +70,25 @@ export function ContentPreview({
 
   return (
     <Box sx={{ mt: 2 }}>
-      <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mb: 2 }}>
-        <Chip
-          label={`${preview.totalPrograms} programs`}
-          color="primary"
-          variant="outlined"
-        />
-        <Chip
-          label={`Total: ${formatDuration(preview.totalDurationMs)}`}
-          variant="outlined"
-        />
-        {Object.entries(preview.byType).map(([type, count]) => (
-          <Chip
-            key={type}
-            label={`${count} ${type}${count !== 1 ? 's' : ''}`}
-            size="small"
-            variant="outlined"
-          />
+      <Stack direction="row" gap={2} flexWrap="wrap" sx={{ mb: 2 }}>
+        <Typography>
+          <MonoText fontWeight={600}>
+            {preview.totalPrograms.toLocaleString()}
+          </MonoText>{' '}
+          programs
+        </Typography>
+        <Typography>
+          <MonoText fontWeight={600}>
+            {formatDuration(preview.totalDurationMs)}
+          </MonoText>{' '}
+          total
+        </Typography>
+        {programTypeCounts(preview.byType).map(({ type, count, noun }) => (
+          <Typography key={type} color="text.secondary">
+            <MonoText>{count.toLocaleString()}</MonoText> {noun}
+          </Typography>
         ))}
-      </Box>
+      </Stack>
 
       {preview.topShows.length > 0 && (
         <Box>
@@ -98,7 +100,11 @@ export function ContentPreview({
               <ListItem key={show.name} disableGutters>
                 <ListItemText
                   primary={show.name}
-                  secondary={`${show.episodeCount} episodes`}
+                  secondary={
+                    <>
+                      <MonoText>{show.episodeCount}</MonoText> episodes
+                    </>
+                  }
                 />
               </ListItem>
             ))}

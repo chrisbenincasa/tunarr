@@ -21,8 +21,14 @@ import {
   buildRoleQuery,
   hasRequiredPick,
 } from '@/components/auto-channel/roleQuery';
+import { rolePreviewStatus } from '@/components/auto-channel/rolePreviewStatus';
 import { SimpleContentControls } from '@/components/auto-channel/SimpleContentControls';
 import PaddedPaper from '@/components/base/PaddedPaper';
+import { RouterButtonLink } from '@/components/base/RouterButtonLink';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { MonoText } from '@/components/ui/MonoText';
+import { PageHeader } from '@/components/ui/PageHeader';
+import { StatusPill } from '@/components/ui/StatusPill';
 import { getApiMediaSourcesOptions } from '@/generated/@tanstack/react-query.gen';
 import {
   useAutoChannelPresets,
@@ -30,12 +36,11 @@ import {
   useRolePreviews,
   type RolePreview,
 } from '@/hooks/useAutoChannel';
-import { ArrowBack, ArrowForward } from '@mui/icons-material';
+import { ArrowBack, ArrowForward, VideoLibrary } from '@mui/icons-material';
 import {
   Alert,
   Box,
   Button,
-  Chip,
   CircularProgress,
   FormControlLabel,
   Grid,
@@ -365,9 +370,10 @@ export function AutoCreateWizard() {
 
   return (
     <Box>
-      <Typography variant="h4" sx={{ mb: 3 }}>
-        Auto-Create Channel
-      </Typography>
+      <PageHeader
+        title="Auto-Create Channel"
+        subtitle="Pick a channel style, choose content from your libraries, and Tunarr builds the schedule."
+      />
 
       <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
         {steps.map((label, index) => (
@@ -384,11 +390,18 @@ export function AutoCreateWizard() {
       </Stepper>
 
       {!mediaSourcesLoading && (!mediaSources || mediaSources.length === 0) ? (
-        <Alert severity="warning" sx={{ mb: 2 }}>
-          You need to configure at least one media source before using
-          auto-channel creation. Add a Plex, Jellyfin, or Emby server in
-          Settings &gt; Media Sources.
-        </Alert>
+        <PaddedPaper>
+          <EmptyState
+            icon={<VideoLibrary />}
+            title="Add a media source first"
+            description="Auto-create builds channels from your libraries. Add a Plex, Jellyfin, Emby, or local source, then come back."
+            actions={
+              <RouterButtonLink to="/settings/sources" variant="contained">
+                Go to Sources
+              </RouterButtonLink>
+            }
+          />
+        </PaddedPaper>
       ) : (
         <PaddedPaper>{renderStepContent()}</PaddedPaper>
       )}
@@ -653,20 +666,33 @@ function RoleSection({
     totalPrograms !== undefined &&
     totalPrograms > 0 &&
     totalPrograms < requirement.minPrograms;
+  const previewStatus = rolePreviewStatus(preview, requirement.minPrograms);
 
   return (
     <Box
       sx={{ mb: 3, p: 2, border: 1, borderColor: 'divider', borderRadius: 1 }}
     >
-      <Stack direction="row" alignItems="center" justifyContent="space-between">
-        <Typography variant="subtitle1" fontWeight="bold">
-          {requirement.label}
-          {requirement.required && (
-            <Typography component="span" color="error" sx={{ ml: 0.5 }}>
-              *
-            </Typography>
-          )}
-        </Typography>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        gap={1}
+        flexWrap="wrap"
+      >
+        <Stack direction="row" alignItems="center" gap={1} minWidth={0}>
+          <Typography variant="subtitle1" fontWeight="bold">
+            {requirement.label}
+            {requirement.required && (
+              <Typography component="span" color="error" sx={{ ml: 0.5 }}>
+                *
+              </Typography>
+            )}
+          </Typography>
+          <StatusPill
+            status={previewStatus.status}
+            label={previewStatus.label}
+          />
+        </Stack>
         <FormControlLabel
           control={
             <Switch
@@ -817,8 +843,9 @@ function ReviewStep({
           Content
         </Typography>
         <Typography>
-          {totalPrograms} program{totalPrograms !== 1 ? 's' : ''} across{' '}
-          {roleCount} group{roleCount !== 1 ? 's' : ''}
+          <MonoText>{totalPrograms.toLocaleString()}</MonoText> program
+          {totalPrograms !== 1 ? 's' : ''} across{' '}
+          <MonoText>{roleCount}</MonoText> group{roleCount !== 1 ? 's' : ''}
         </Typography>
       </Box>
 
@@ -827,14 +854,14 @@ function ReviewStep({
           <Typography variant="subtitle2" color="text.secondary">
             Weighted Groups
           </Typography>
-          <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
+          <Stack sx={{ mt: 0.5 }} gap={0.25}>
             {weightedGroups.map((g) => (
-              <Chip
-                key={g.role}
-                label={`${g.label}: weight ${g.weight}`}
-                size="small"
-                variant="outlined"
-              />
+              <Stack key={g.role} direction="row" gap={1}>
+                <Typography sx={{ flexGrow: 1 }}>{g.label}</Typography>
+                <Typography color="text.secondary">
+                  weight <MonoText>{g.weight}</MonoText>
+                </Typography>
+              </Stack>
             ))}
           </Stack>
         </Box>
@@ -845,16 +872,16 @@ function ReviewStep({
           <Typography variant="subtitle2" color="text.secondary">
             Time Blocks
           </Typography>
-          <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap' }}>
+          <Stack sx={{ mt: 0.5 }} gap={0.25}>
             {[...timeBlocks]
               .sort((a, b) => a.startTime - b.startTime)
               .map((b) => (
-                <Chip
-                  key={b.role}
-                  label={`${b.label} @ ${formatBlockTime(b.startTime)}`}
-                  size="small"
-                  variant="outlined"
-                />
+                <Stack key={b.role} direction="row" gap={2}>
+                  <MonoText color="text.secondary" sx={{ minWidth: '8ch' }}>
+                    {formatBlockTime(b.startTime)}
+                  </MonoText>
+                  <Typography>{b.label}</Typography>
+                </Stack>
               ))}
           </Stack>
         </Box>

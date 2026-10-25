@@ -1,14 +1,9 @@
-import {
-  Autocomplete,
-  Chip,
-  Tab,
-  Tabs,
-  TextField,
-  Typography,
-} from '@mui/material';
+import { Segmented } from '@/components/ui/Segmented';
+import { Autocomplete, Box, Chip, TextField, Typography } from '@mui/material';
 import { useMutation } from '@tanstack/react-query';
 import { search } from '@tunarr/shared/util';
 import type { SearchFilter } from '@tunarr/types/schemas';
+import { capitalize } from 'lodash-es';
 import type { HTMLAttributes } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { postApiProgramsFacetsByFacetName } from '../../../generated/sdk.gen.ts';
@@ -51,11 +46,14 @@ export function FacetPicker({
   mediaSourceId,
   libraryId,
 }: Props) {
-  const [activeTab, setActiveTab] = useState(0);
+  const [pickedField, setPickedField] = useState<string>();
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState<FacetValue[]>([]);
 
-  const activeField = facetFields[activeTab] ?? facetFields[0];
+  const activeField =
+    pickedField !== undefined && facetFields.includes(pickedField)
+      ? pickedField
+      : facetFields[0];
   const indexField =
     search.virtualFieldToIndexField[activeField] ?? activeField;
 
@@ -132,23 +130,21 @@ export function FacetPicker({
   return (
     <>
       {facetFields.length > 1 && (
-        <Tabs
-          value={activeTab}
-          onChange={(_, v: number) => {
-            setActiveTab(v);
-            // Reset selections when switching tabs
-            onChange([], '');
-          }}
-          sx={{ mb: 1, minHeight: 0 }}
-        >
-          {facetFields.map((field) => (
-            <Tab
-              key={field}
-              label={field}
-              sx={{ textTransform: 'capitalize' }}
-            />
-          ))}
-        </Tabs>
+        <Box sx={{ mb: 1 }}>
+          <Segmented
+            aria-label="Facet field"
+            options={facetFields.map((field) => ({
+              value: field,
+              label: capitalize(field),
+            }))}
+            value={activeField}
+            onChange={(field) => {
+              setPickedField(field);
+              // A pick on one field doesn't apply to another, so clear it.
+              onChange([], '');
+            }}
+          />
+        </Box>
       )}
       <Autocomplete
         multiple
