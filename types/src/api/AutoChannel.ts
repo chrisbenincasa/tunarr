@@ -1,7 +1,13 @@
 import { z } from 'zod/v4';
 import { ContentProgramTypeSchema } from '../schemas/utilSchemas.js';
-import { RandomSlotScheduleSchema } from './RandomSlots.js';
-import { TimeSlotScheduleSchema } from './TimeSlots.js';
+import {
+  RandomSlotScheduleSchema,
+  SmartCollectionRandomSlot,
+} from './RandomSlots.js';
+import {
+  SmartCollectionTimeSlot,
+  TimeSlotScheduleSchema,
+} from './TimeSlots.js';
 
 //
 // Content query specification
@@ -95,9 +101,41 @@ export type ContentRequirement = z.infer<typeof ContentRequirementSchema>;
 //
 // Schedule skeleton
 //
+
+// A preset slot names one of the preset's roles. Creating the channel swaps it
+// for a smart collection slot that points at the role's new collection.
+const RoleSlotFields = {
+  type: z.literal('role'),
+  role: z.string().describe("A role from the preset's content requirements"),
+};
+
+export const RoleTimeSlotSchema = SmartCollectionTimeSlot.omit({
+  smartCollectionId: true,
+}).extend(RoleSlotFields);
+
+export type RoleTimeSlot = z.infer<typeof RoleTimeSlotSchema>;
+
+export const RoleRandomSlotSchema = SmartCollectionRandomSlot.omit({
+  smartCollectionId: true,
+}).extend(RoleSlotFields);
+
+export type RoleRandomSlot = z.infer<typeof RoleRandomSlotSchema>;
+
+export const TimeSlotSkeletonSchema = TimeSlotScheduleSchema.extend({
+  slots: z.array(RoleTimeSlotSchema),
+});
+
+export type TimeSlotSkeleton = z.infer<typeof TimeSlotSkeletonSchema>;
+
+export const RandomSlotSkeletonSchema = RandomSlotScheduleSchema.extend({
+  slots: z.array(RoleRandomSlotSchema),
+});
+
+export type RandomSlotSkeleton = z.infer<typeof RandomSlotSkeletonSchema>;
+
 export const ScheduleSkeletonSchema = z.discriminatedUnion('type', [
-  TimeSlotScheduleSchema,
-  RandomSlotScheduleSchema,
+  TimeSlotSkeletonSchema,
+  RandomSlotSkeletonSchema,
 ]);
 
 export type ScheduleSkeleton = z.infer<typeof ScheduleSkeletonSchema>;
