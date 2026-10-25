@@ -24,6 +24,7 @@ import { v4 } from 'uuid';
 import { ChannelDB } from '../db/ChannelDB.ts';
 import { dbChannelToApiChannel } from '../db/converters/channelConverters.ts';
 import { SmartCollectionsDB } from '../db/SmartCollectionsDB.ts';
+import { TranscodeConfigDB } from '../db/TranscodeConfigDB.ts';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
 
 import type {
@@ -42,6 +43,7 @@ export class AutoChannelService {
     @inject(MeilisearchService) private searchService: MeilisearchService,
     @inject(SmartCollectionsDB) private smartCollectionsDB: SmartCollectionsDB,
     @inject(ChannelDB) private channelDB: ChannelDB,
+    @inject(TranscodeConfigDB) private transcodeConfigDB: TranscodeConfigDB,
   ) {}
 
   getPresets(): ChannelPreset[] {
@@ -98,6 +100,11 @@ export class AutoChannelService {
     const preset = getPresetById(request.presetId);
     if (!preset) {
       throw new Error(`Preset not found: ${request.presetId}`);
+    }
+
+    const transcodeConfig = await this.transcodeConfigDB.getDefaultConfig();
+    if (!transcodeConfig) {
+      throw new Error('No default transcode config exists');
     }
 
     // Step 1: Determine roles — dynamic presets derive roles from contentAssignments
@@ -210,7 +217,7 @@ export class AutoChannelService {
         soundtrack: undefined,
       },
       streamMode: 'hls',
-      transcodeConfigId: 'default',
+      transcodeConfigId: transcodeConfig.uuid,
       subtitlesEnabled: false,
     };
 
