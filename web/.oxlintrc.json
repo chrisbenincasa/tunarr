@@ -37,6 +37,50 @@
       {
         "paths": [
           {
+            "name": "@mui/material",
+            "importNames": ["ToggleButton", "ToggleButtonGroup"],
+            "message": "Use Segmented from components/ui instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/ToggleButton",
+            "message": "Use Segmented from components/ui instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/ToggleButtonGroup",
+            "message": "Use Segmented from components/ui instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material",
+            "importNames": [
+              "AppBar",
+              "Drawer",
+              "SwipeableDrawer",
+              "BottomNavigation",
+              "BottomNavigationAction"
+            ],
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/AppBar",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/Drawer",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/SwipeableDrawer",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/BottomNavigation",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/BottomNavigationAction",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
             "name": "material-react-table",
             "message": "Use DataTable from components/ui/table. See plans/mrt-replacement.md."
           },
@@ -86,15 +130,30 @@
     {
       "files": [
         "src/components/MediaSourceLibraryTable.tsx",
+        "src/components/base/ProgramViewToggleButton.tsx",
+        "src/components/base/StandaloneToggleButton.tsx",
+        "src/components/channel_config/ChannelProgrammingConfig.tsx",
         "src/components/channel_config/ChannelSubtitlePreferencesTable.tsx",
+        "src/components/channel_config/ProgrammingSelector.tsx",
+        "src/components/channel_config/SelectedProgrammingList.tsx",
+        "src/components/programming_controls/BalanceProgrammingModal.tsx",
+        "src/components/search/SearchInputToggle.tsx",
         "src/components/settings/ConnectMediaSources.tsx",
+        "src/components/settings/DarkModeButton.tsx",
+        "src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx",
         "src/components/settings/ffmpeg/TranscodeConfigsTable.tsx",
+        "src/components/settings/general/WebSettings.tsx",
+        "src/components/slot_scheduler/EditRandomSlotDialogContent.tsx",
+        "src/components/slot_scheduler/MidRollConfigPanel.tsx",
         "src/components/slot_scheduler/RandomSlotTable.tsx",
+        "src/components/slot_scheduler/SlotFillerDialogPanel.tsx",
+        "src/components/slot_scheduler/SlotOrderFormControl.tsx",
         "src/components/slot_scheduler/TimeSlotTable.tsx",
         "src/components/smart_collections/SmartCollectionsTable.tsx",
         "src/hooks/useTableSettings.ts",
         "src/pages/channels/ChannelsPage.tsx",
         "src/pages/library/CustomShowsPage.tsx",
+        "src/pages/library/TrashPage.tsx",
         "src/pages/settings/MediaSourceSettingsPage.tsx",
         "src/pages/settings/TaskSettingsPage.tsx",
         "src/pages/system/StatusPage.tsx",

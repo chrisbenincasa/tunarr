@@ -1,6 +1,5 @@
-import { TopBarPadddingPx } from '@/helpers/constants.ts';
 import { Trans } from '@lingui/react/macro';
-import { Box, LinearProgress, Typography } from '@mui/material';
+import { Box, LinearProgress, Typography, useTheme } from '@mui/material';
 import type {
   InfiniteData,
   UseInfiniteQueryResult,
@@ -42,6 +41,7 @@ export function MediaItemList<PageDataType, ItemType>(
     },
     renderListItem,
   } = props;
+  const shellBarHeight = useTheme().sizes.shellBarHeight;
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
@@ -57,7 +57,7 @@ export function MediaItemList<PageDataType, ItemType>(
     const containerOffset =
       gridContainerRef.current?.getBoundingClientRect().top;
     return containerOffset
-      ? totalHeight - containerOffset - TopBarPadddingPx
+      ? totalHeight - containerOffset - shellBarHeight
       : undefined;
   });
 
@@ -69,7 +69,7 @@ export function MediaItemList<PageDataType, ItemType>(
         gridContainerRef.current?.getBoundingClientRect().top;
 
       const containerHeight = containerOffset
-        ? totalHeight - containerOffset - TopBarPadddingPx
+        ? totalHeight - containerOffset - shellBarHeight
         : undefined;
       setContainerHeight(containerHeight);
       // containerHeight = size

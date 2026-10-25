@@ -35,6 +35,11 @@ msgstr "「{0}」会话"
 msgid "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, m3u playlist, etc. The channel can still be streamed directly or be used as a redirect target."
 msgstr "「隐身」频道不会出现在节目单、模拟 HDHR 设备、m3u 播放列表等位置。该频道仍可直接播放，或作为跳转目标使用。"
 
+#. placeholder {0}: badge.count
+#: src/components/ui/patterns/AppShell/NavBadge.tsx
+msgid "{0, plural, one {(# health check issue)} other {(# health check issues)}}"
+msgstr ""
+
 #. placeholder {0}: customShow.contentCount
 #: src/components/channel_config/SelectedProgrammingList.tsx
 msgid "{0, plural, one {# item} other {# items}}"
@@ -861,6 +866,7 @@ msgstr "调整特定日志分类的详细程度，便于调试具体功能。"
 
 #: src/components/programming_controls/AddRedirectModal.tsx
 #: src/components/programming_controls/AddRedirectModal.tsx
+#: src/components/shell/CommandPaletteContainer.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Channel"
@@ -912,7 +918,8 @@ msgid "Channel Transcode Config"
 msgstr "频道转码配置"
 
 #: src/App.tsx
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/CommandPaletteContainer.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -954,6 +961,10 @@ msgstr "清空排期"
 #: src/components/channel_config/CustomShowProgrammingSelector.tsx
 msgid "Click to preview the items in this Custom Show. Note that only the whole show can be added at once."
 msgstr "点击预览此自定义剧集中的条目。注意只能整部添加，不能单独添加。"
+
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "close"
+msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingList.tsx
 #: src/components/channels/ChannelSessionsDialog.tsx
@@ -1073,10 +1084,9 @@ msgstr "冷却时间（秒）"
 #~ msgid "Cooldown (seconds)"
 #~ msgstr "Cooldown (seconds)"
 
-#. placeholder {0}: navItem.name
 #: src/components/TopBar.tsx
-msgid "Copied {0} URL to clipboard"
-msgstr "已将 {0} 链接复制到剪贴板"
+#~ msgid "Copied {0} URL to clipboard"
+#~ msgstr "已将 {0} 链接复制到剪贴板"
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Copied channel \"{channelName}\" m3u link to clipboard"
@@ -1086,9 +1096,17 @@ msgstr "已将频道「{channelName}」的 m3u 链接复制到剪贴板"
 msgid "Copied Channel ID!"
 msgstr "频道 ID 已复制！"
 
+#: src/components/shell/HelpMenuContainer.tsx
+msgid "Copied M3U URL to clipboard"
+msgstr ""
+
 #: src/hooks/useCopyToClipboard.ts
 msgid "Copied to clipboard!"
 msgstr "已复制到剪贴板！"
+
+#: src/components/shell/HelpMenuContainer.tsx
+msgid "Copied XMLTV URL to clipboard"
+msgstr ""
 
 #: src/pages/system/SystemDebugPage.tsx
 #: src/pages/system/SystemDebugPage.tsx
@@ -1105,6 +1123,7 @@ msgid "Copy Full Report"
 msgstr "复制完整报告"
 
 #: src/components/channels/ChannelOptionsMenu.tsx
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
 msgid "Copy M3U URL"
 msgstr "复制 M3U 链接"
 
@@ -1116,6 +1135,10 @@ msgstr "复制到剪贴板"
 #: src/components/RawProgramDetails.tsx
 msgid "Copy to Clipboard"
 msgstr "复制到剪贴板"
+
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+msgid "Copy XMLTV URL"
+msgstr ""
 
 #: src/hooks/useEmptyTrash.ts
 msgid "Could not cancel emptying the trash."
@@ -1145,6 +1168,10 @@ msgstr "创建新合集"
 msgid "Custom Program"
 msgstr "自定义节目"
 
+#: src/components/shell/CommandPaletteContainer.tsx
+msgid "Custom show"
+msgstr ""
+
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
@@ -1173,7 +1200,8 @@ msgid "Custom Show: {0}"
 msgstr "自定义剧集：{0}"
 
 #: src/components/channel_config/ProgrammingSelector.tsx
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/CommandPaletteContainer.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/CustomShowsPage.tsx
 msgid "Custom Shows"
@@ -1222,8 +1250,7 @@ msgstr "天"
 msgid "Days to Precalculate"
 msgstr "预计算天数"
 
-#: src/hooks/useNavItems.tsx
-#: src/pages/system/SystemLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Debug"
 msgstr "调试"
 
@@ -1406,7 +1433,7 @@ msgstr "将节目分成 4、6、8 或 12 小时的块，然后按指定次数重
 msgid "Do not group programs at all. Normal shuffle."
 msgstr "不对节目做任何分组，普通随机。"
 
-#: src/components/TopBar.tsx
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
 msgid "Documentation"
 msgstr "文档"
 
@@ -1785,6 +1812,10 @@ msgstr "调度任务 {taskId} 时出错，详情请查看服务器日志"
 msgid "Errors"
 msgstr "错误"
 
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "Esc, close search"
+msgstr ""
+
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Escape Hatches"
 msgstr "应急选项"
@@ -1847,13 +1878,22 @@ msgstr "兜底模式"
 msgid "Feature flags saved!"
 msgstr "功能开关已保存！"
 
-#: src/pages/settings/SettingsLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Features"
 msgstr "功能"
 
+#: src/components/shell/useShellNav.tsx
+msgid "FFmpeg"
+msgstr ""
+
 #: src/pages/settings/SettingsLayout.tsx
-msgid "FFMPEG"
-msgstr "FFmpeg"
+#~ msgid "FFMPEG"
+#~ msgstr "FFmpeg"
+
+#. placeholder {0}: version.ffmpeg
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+msgid "FFmpeg {0}"
+msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "FFmpeg Command"
@@ -1906,10 +1946,9 @@ msgstr "部分功能需要 FFmpeg 转码支持，例如频道水印、字幕，�
 msgid "FFmpeg version 7.1+ recommended. Check your current version in the sidebar"
 msgstr "建议使用 FFmpeg 7.1 及以上版本，可在侧边栏查看当前版本"
 
-#. placeholder {0}: version.ffmpeg
 #: src/components/VersionFooter.tsx
-msgid "FFMPEG: {0}"
-msgstr "FFmpeg：{0}"
+#~ msgid "FFMPEG: {0}"
+#~ msgstr "FFmpeg：{0}"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "FFprobe Executable Path"
@@ -1967,6 +2006,10 @@ msgstr "垫片像弹性时间一样在播放时才临时选取，节目单中显
 msgid "Filler is resolved at schedule time. The guide shows specific filler titles."
 msgstr "垫片在排期时就已确定，节目单中会显示具体的垫片名称。"
 
+#: src/components/shell/CommandPaletteContainer.tsx
+msgid "Filler list"
+msgstr ""
+
 #: src/components/channel_config/ChannelFlexConfig.tsx
 #: src/components/channel_config/ChannelFlexConfig.tsx
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
@@ -1983,7 +2026,8 @@ msgstr "垫片列表冷却时间（秒）"
 msgid "Filler List: {0}"
 msgstr "垫片列表：{0}"
 
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/CommandPaletteContainer.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/FillerListsPage.tsx
 msgid "Filler Lists"
@@ -2070,7 +2114,7 @@ msgstr "频率"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
-#: src/pages/settings/SettingsLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "General"
 msgstr "常规"
 
@@ -2103,7 +2147,7 @@ msgstr "按所属剧集对单集节目分组。"
 msgid "Grouping works as follows:"
 msgstr "分组规则如下："
 
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/pages/guide/GuidePage.tsx
 msgid "Guide"
 msgstr "节目单"
@@ -2120,7 +2164,7 @@ msgstr "硬件加速"
 msgid "Hardware Acceleration"
 msgstr "硬件加速"
 
-#: src/pages/settings/SettingsLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "HDHR"
 msgstr "HDHR"
 
@@ -2135,6 +2179,11 @@ msgstr "头部"
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Healthy?"
 msgstr "是否正常？"
+
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+msgid "Help and links"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Hide Advanced"
@@ -2355,13 +2404,14 @@ msgstr "级别"
 
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Libraries"
 msgstr "媒体库"
 
 #: src/components/channel_config/ImportedLibrarySeletor.tsx
 #: src/components/channel_config/ImportedLibrarySeletor.tsx
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/LibraryIndexPage.tsx
 msgid "Library"
@@ -2426,11 +2476,16 @@ msgstr "加载流"
 msgid "Loading"
 msgstr "加载中"
 
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+msgid "Loading version…"
+msgstr ""
+
 #: src/components/ProgramSearchAutocomplete.tsx
 msgid "Loading..."
 msgstr "加载中…"
 
 #: src/components/ProgramSearchAutocomplete.tsx
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
 msgid "Loading…"
 msgstr "加载中…"
 
@@ -2467,8 +2522,7 @@ msgstr "对数衰减，权重更小。"
 msgid "Logging"
 msgstr "日志记录"
 
-#: src/hooks/useNavItems.tsx
-#: src/pages/system/SystemLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Logs"
 msgstr "日志"
 
@@ -2495,6 +2549,11 @@ msgstr "响度目标"
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Loudnorm Options"
 msgstr "Loudnorm 选项"
+
+#: src/components/ui/patterns/AppShell/PhoneNav.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Main"
+msgstr ""
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Makes multiple copies of the schedule and plays them in sequence"
@@ -2596,7 +2655,6 @@ msgstr "媒体源"
 msgid "Media Source: \"{0}\""
 msgstr "媒体源：「{0}」"
 
-#: src/hooks/useRouteName.ts
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Media Sources"
 msgstr "媒体源"
@@ -2648,8 +2706,17 @@ msgstr "修改节目编排"
 msgid "Month"
 msgstr "月"
 
+#: src/components/ui/patterns/AppShell/PhoneNav.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "More"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "move"
+msgstr ""
+
 #: src/components/channel_config/SelectedProgrammingList.tsx
-#: src/hooks/slot_scheduler/useSlotName.ts
 msgid "Movie"
 msgstr "电影"
 
@@ -2669,8 +2736,6 @@ msgid "Movie, {0}"
 msgstr "电影，{0}"
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/hooks/programming_controls/useSlotProgramOptions.ts
-#: src/hooks/programming_controls/useSlotProgramOptions.ts
 #: src/pages/library/TrashPage.tsx
 msgid "Movies"
 msgstr "电影"
@@ -2805,6 +2870,10 @@ msgstr "未连接任何媒体源。"
 msgid "No Media Sources detected."
 msgstr "未检测到媒体源。"
 
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "No pages or lists match."
+msgstr ""
+
 #: src/components/channel_config/ChannelLineupList.tsx
 msgid "No programming added yet"
 msgstr "尚未添加任何节目"
@@ -2902,10 +2971,18 @@ msgstr "哎呀！"
 msgid "Opacity"
 msgstr "不透明度"
 
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "open"
+msgstr ""
+
 #. placeholder {0}: capitalize(program.sourceType)
 #: src/components/programs/MediaDetailCard.tsx
 msgid "Open in {0}"
 msgstr "在 {0} 中打开"
+
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "Opens Search"
+msgstr ""
 
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx
@@ -3005,6 +3082,14 @@ msgstr "填充方式"
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Pad Times"
 msgstr "填充时间"
+
+#: src/components/shell/CommandPaletteContainer.tsx
+msgid "Page"
+msgstr ""
+
+#: src/components/shell/CommandPaletteContainer.tsx
+msgid "Pages"
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Passthrough audio unchanged. Other settings will not apply."
@@ -3443,6 +3528,10 @@ msgstr "限制时段"
 msgid "Restrict search fields"
 msgstr "限定搜索字段"
 
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "Results"
+msgstr ""
+
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "Review"
 msgstr "复查"
@@ -3540,7 +3629,7 @@ msgstr "扫描"
 msgid "Scan {0}"
 msgstr "扫描 {0}"
 
-#: src/pages/settings/SettingsLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Scanner"
 msgstr "扫描器"
 
@@ -3561,6 +3650,10 @@ msgstr "使用指定了开始时间和时长的时段来编排节目。"
 msgid "Search"
 msgstr "搜索"
 
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Search ({searchShortcut})"
+msgstr ""
+
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Search for a program"
 msgstr "搜索节目"
@@ -3577,13 +3670,30 @@ msgstr "当前搜索范围限定在此媒体源媒体库内。"
 msgid "Search is currently scoped to this Media Source."
 msgstr "当前搜索范围限定在此媒体源内。"
 
+#. placeholder {0}: query.trim()
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "Search library for “{0}”"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+#: src/components/ui/patterns/AppShell/PhoneNav.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Search or jump to"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Search or jump to…"
+msgstr ""
+
 #: src/pages/system/StatusPage.tsx
 msgid "Search Server URL:"
 msgstr "搜索服务器地址："
 
 #: src/components/TopBar.tsx
-msgid "Search…"
-msgstr "搜索…"
+#~ msgid "Search…"
+#~ msgstr "搜索…"
 
 #: src/components/programs/Seasons.tsx
 msgid "Seasons"
@@ -3660,8 +3770,8 @@ msgstr "设为 0 表示永不删除备份"
 msgid "Sets the number of threads used to decode the input stream. Set to 0 to let ffmpeg automatically decide how many threads to use. Read more about this option <0>here</0>. <1>Note: </1> this option is overridden to 1 when using hardware accelearation for stability reasons."
 msgstr "设置用于解码输入流的线程数。设为 0 表示由 ffmpeg 自动决定线程数。点击<0>此处</0>了解该选项的更多信息。<1>注意：</1>出于稳定性考虑，使用硬件加速时此选项会被强制设为 1。"
 
+#: src/components/shell/useShellNav.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
-#: src/hooks/useNavItems.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/settings/SettingsLayout.tsx
 msgid "Settings"
@@ -3772,6 +3882,10 @@ msgstr "时段"
 msgid "Slots Editor..."
 msgstr "时段编辑器…"
 
+#: src/components/shell/CommandPaletteContainer.tsx
+msgid "Smart collection"
+msgstr ""
+
 #: src/components/slot_scheduler/SmartCollectionSlotProgrammingForm.tsx
 msgid "Smart Collection"
 msgstr "智能合集"
@@ -3786,7 +3900,8 @@ msgstr "智能合集 - {0}"
 msgid "Smart Collection: {0}"
 msgstr "智能合集：{0}"
 
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/CommandPaletteContainer.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/routes/library/smart_collections/index.tsx
 msgid "Smart Collections"
@@ -3848,7 +3963,8 @@ msgstr "来源"
 #~ msgid "Source Type"
 #~ msgstr "来源类型"
 
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/useShellNav.tsx
+#: src/hooks/useRouteName.ts
 msgid "Sources"
 msgstr "媒体源"
 
@@ -3875,8 +3991,7 @@ msgstr "已于 {startedAgo} 开始 - 剩余 {remainingTime}"
 msgid "Starting Episode"
 msgstr ""
 
-#: src/hooks/useNavItems.tsx
-#: src/pages/system/SystemLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Status"
 msgstr "状态"
 
@@ -3961,6 +4076,16 @@ msgstr "已成功调度 {taskId}（正在后台运行）。"
 msgid "Successfully updated Media Source settings."
 msgstr "媒体源设置已成功更新。"
 
+#: src/components/ui/patterns/AppShell/PhoneNav.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Switch to dark mode"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/PhoneNav.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Switch to light mode"
+msgstr ""
+
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Sync"
 msgstr ""
@@ -3982,7 +4107,7 @@ msgid "Synced with external playlist"
 msgstr "已与外部播放列表同步"
 
 #: src/components/settings/DarkModeButton.tsx
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/pages/system/SystemLayout.tsx
 msgid "System"
 msgstr "系统"
@@ -4012,8 +4137,8 @@ msgstr "尾部缓冲（分钟）"
 msgid "Take Turns"
 msgstr ""
 
+#: src/components/shell/useShellNav.tsx
 #: src/pages/settings/TaskSettingsPage.tsx
-#: src/pages/system/SystemLayout.tsx
 msgid "Tasks"
 msgstr "任务"
 
@@ -4241,6 +4366,10 @@ msgstr "标题"
 msgid "TO"
 msgstr "至"
 
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
+msgid "To schedule movies, add them to a custom show and choose Custom Show."
+msgstr ""
+
 #: src/pages/welcome/WelcomePage.tsx
 msgid "To use Tunarr, you must first connect at least one media source. Media sources provide all content used to create channels in Tunarr. Plex and Jellyfin are currently supported."
 msgstr "使用 Tunarr 前，必须先连接至少一个媒体源。媒体源提供创建频道所需的全部内容。目前支持 Plex 和 Jellyfin。"
@@ -4305,7 +4434,7 @@ msgstr "转码配置"
 msgid "Transcoding Settings"
 msgstr "转码设置"
 
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/TrashPage.tsx
 msgid "Trash"
@@ -4315,9 +4444,14 @@ msgstr "回收站"
 msgid "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
 msgstr "回收站中的条目是指之前扫描到、但在最近一次扫描中未找到的条目。原因可能是文件丢失，或媒体服务器不再通过 API 返回该条目。这些条目当前在频道中将无法播放。清空回收站后，它们在频道中的位置将被弹性时间替代。"
 
-#: src/pages/system/SystemLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Troubleshoot"
 msgstr "排查"
+
+#. placeholder {0}: version.tunarr
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+msgid "Tunarr {0}"
+msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Tunarr Backend URL"
@@ -4326,6 +4460,11 @@ msgstr "Tunarr 后端地址"
 #: src/pages/system/StatusPage.tsx
 msgid "Tunarr Backend URL:"
 msgstr "Tunarr 后端地址："
+
+#: src/components/ui/patterns/AppShell/PhoneNav.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Tunarr home"
+msgstr ""
 
 #: src/components/Video.tsx
 msgid "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
@@ -4468,14 +4607,17 @@ msgstr "值"
 msgid "Version Mismatch!"
 msgstr "版本不匹配！"
 
-#. placeholder {0}: version.tunarr
-#: src/components/VersionFooter.tsx
-msgid "Version: {0}"
-msgstr "版本：{0}"
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+msgid "Version unknown"
+msgstr ""
 
 #: src/components/VersionFooter.tsx
-msgid "Version: unknown"
-msgstr "版本：未知"
+#~ msgid "Version: {0}"
+#~ msgstr "版本：{0}"
+
+#: src/components/VersionFooter.tsx
+#~ msgid "Version: unknown"
+#~ msgstr "版本：未知"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Video"
@@ -4574,7 +4716,7 @@ msgstr "权重 %"
 msgid "Weighting"
 msgstr "加权方式"
 
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Welcome"
 msgstr "欢迎"
 
@@ -4606,7 +4748,7 @@ msgstr "即使已设置硬件加速，也强制使用软件编码器。"
 msgid "Will force use of a software filters (e.g. scale, pad, etc.) despite hardware acceleration settings."
 msgstr "即使已设置硬件加速，也强制使用软件滤镜（如缩放、填充等）。"
 
-#: src/pages/settings/SettingsLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "XMLTV"
 msgstr "XMLTV"
 

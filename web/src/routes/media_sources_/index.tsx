@@ -1,6 +1,8 @@
-import { createFileRoute } from '@tanstack/react-router';
-import MediaSourceSettingsPage from '../../pages/settings/MediaSourceSettingsPage.tsx';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
+// Sources lives under Settings. This keeps old links and bookmarks working.
 export const Route = createFileRoute('/media_sources_/')({
-  component: MediaSourceSettingsPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/settings/sources', replace: true });
+  },
 });

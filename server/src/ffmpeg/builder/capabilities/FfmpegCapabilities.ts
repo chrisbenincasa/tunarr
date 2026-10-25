@@ -7,6 +7,7 @@ export class FfmpegCapabilities {
     private videoEncoders: ReadonlyMap<string, FfmpegEncoder>,
     private filters: ReadonlySet<string>,
     private hwAccels: ReadonlySet<string>,
+    private videoDecoders: ReadonlySet<string> = new Set(),
   ) {}
 
   allOptions(): Set<string> {
@@ -27,6 +28,10 @@ export class FfmpegCapabilities {
 
   hasVideoEncoder(encoder: string) {
     return this.videoEncoders.has(encoder);
+  }
+
+  hasVideoDecoder(decoder: string) {
+    return this.videoDecoders.has(decoder);
   }
 
   hasFilter(filter: string) {
