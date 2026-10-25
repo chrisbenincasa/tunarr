@@ -25,6 +25,8 @@
 - `DataTable` keeps MRT's accessible names ("Show/Hide filters", "Show/Hide search", "Search", "Toggle visibility X", "Sort by X ascending", "Sorted by X descending", "Rows per page"), so one spec runs on both. Two names extend MRT's and still match the spec's substring lookups. The filter toggle reads "Show/Hide filters (N active)" while filters are set, and the range inputs read "Min X" and "Max X".
 - The header keeps two sort targets, the header text and the sort label. Wrapping the text in `TableSortLabel` would make the column header's accessible name start with "Sort by", and the spec finds headers by their column name.
 - The global search stays behind its toggle, as MRT's does by default. Clear filters appears only for column filters and clears only those.
+- The search toggle is disabled while the open field holds a search, as MRT's is. Otherwise a hidden search could filter the table with nothing on screen to show or clear it.
+- A saved page index outside the page range moves to the nearest valid page once data loads. That covers negative indexes, which `PaginationStateSchema` accepts.
 - `hooks/useTableSettings.ts` and `store/settings/actions.ts` type MRT's persisted state with v9's `PaginationState`, `SortingState` and `ColumnVisibilityState`. They match v8's shapes today, but nothing enforces it. Check them when bumping v9 before Phase 4 removes MRT.
 - The parity spec skips `MediaSourceLibraryTable`, the subtitle table and both slot tables, each with a reason. Their port PRs add the entry and make it pass on MRT first.
 - Pages with `ported: true` in the spec also check the filter count and Clear filters.

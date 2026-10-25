@@ -146,6 +146,38 @@ describe('DataTable', () => {
     ).not.toBeInTheDocument();
   });
 
+  test('keeps the search open while it filters rows', async () => {
+    const { user } = renderWithProviders(<Harness />);
+    const toggle = screen.getByRole('button', { name: 'Show/Hide search' });
+    await user.click(toggle);
+    await user.type(screen.getByRole('textbox', { name: 'Search' }), 'alp');
+    expect(toggle).toBeDisabled();
+    expect(names()).toEqual(['Alpha']);
+
+    await user.clear(screen.getByRole('textbox', { name: 'Search' }));
+    expect(toggle).toBeEnabled();
+    await user.click(toggle);
+    expect(
+      screen.queryByRole('textbox', { name: 'Search' }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('moves a negative page index onto the first page', async () => {
+    const many = Array.from({ length: 12 }, (_, i) => ({
+      id: String(i),
+      name: `Item ${String(i + 1).padStart(2, '0')}`,
+      count: i,
+    }));
+    renderWithProviders(
+      <Harness
+        data={many}
+        initialPagination={{ pageIndex: -2, pageSize: 5 }}
+      />,
+    );
+    expect(await screen.findByText('1–5 of 12')).toBeInTheDocument();
+    expect(names()).toHaveLength(5);
+  });
+
   test('moves an out-of-range page index onto the last page', async () => {
     const many = Array.from({ length: 12 }, (_, i) => ({
       id: String(i),
@@ -186,6 +218,9 @@ describe('DataTable', () => {
       within(menu).getByRole('checkbox', { name: 'Toggle visibility Count' }),
     );
     await user.keyboard('{Escape}');
+    expect(
+      screen.queryByRole('columnheader', { name: /^Count/ }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByRole('button', { name: 'Sort by Count descending' }),
     ).not.toBeInTheDocument();

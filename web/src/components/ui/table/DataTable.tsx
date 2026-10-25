@@ -30,6 +30,7 @@ import {
   Typography,
 } from '@mui/material';
 import type { Row, RowData } from '@tanstack/react-table';
+import { clamp } from 'lodash-es';
 import { type ReactNode, useEffect, useState } from 'react';
 import { SortButton } from './SortButton.tsx';
 import { ColumnFilter } from './filters/ColumnFilter.tsx';
@@ -58,7 +59,7 @@ export type DataTableProps<TData extends RowData> = {
   'aria-label'?: string;
 };
 
-// Moves a saved page index that points past the last page back onto it.
+// Moves a saved page index that falls outside the page range back into it.
 // autoResetPageIndex skips the first render, so it never repairs one on load.
 // Waits for data, because an empty table would reset every saved page to 0.
 const PageIndexRepair = <TData extends RowData>({
@@ -73,8 +74,8 @@ const PageIndexRepair = <TData extends RowData>({
   ready: boolean;
 }) => {
   useEffect(() => {
-    if (ready && pageIndex > lastPage) {
-      table.setPageIndex(lastPage);
+    if (ready && (pageIndex < 0 || pageIndex > lastPage)) {
+      table.setPageIndex(clamp(pageIndex, 0, lastPage));
     }
   }, [table, pageIndex, lastPage, ready]);
   return null;
@@ -171,13 +172,18 @@ export const DataTable = <TData extends RowData>({
               )}
               {canSearch && (
                 <Tooltip title={t`Show/Hide search`}>
-                  <IconButton
-                    aria-label={t`Show/Hide search`}
-                    aria-pressed={showSearch}
-                    onClick={() => setShowSearch((s) => !s)}
-                  >
-                    <Search />
-                  </IconButton>
+                  {/* A search can't be hidden while it filters rows, as in MRT.
+                      The span lets the tooltip work on the disabled button. */}
+                  <span>
+                    <IconButton
+                      aria-label={t`Show/Hide search`}
+                      aria-pressed={showSearch}
+                      disabled={showSearch && !!state.globalFilter}
+                      onClick={() => setShowSearch((s) => !s)}
+                    >
+                      <Search />
+                    </IconButton>
+                  </span>
                 </Tooltip>
               )}
               {canFilter && (
@@ -427,7 +433,7 @@ export const DataTable = <TData extends RowData>({
             <TablePagination
               component="div"
               count={rowCount}
-              page={Math.min(pageIndex, lastPage)}
+              page={clamp(pageIndex, 0, lastPage)}
               rowsPerPage={pageSize}
               rowsPerPageOptions={rowsPerPageOptions}
               onPageChange={(_, page) => table.setPageIndex(page)}
