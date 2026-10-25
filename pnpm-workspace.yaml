@@ -26,10 +26,10 @@ overrides:
   conventional-changelog-conventionalcommits: "^9.0.0"
   "@types/node": "22.10.7"
 
-onlyBuiltDependencies:
-  - "@swc/core"
-  - arktype
-  - better-sqlite3
-  - esbuild
-  - unrs-resolver
-  - oxlint
+allowBuilds:
+  "@swc/core": true
+  arktype: true
+  better-sqlite3: true
+  esbuild: true
+  unrs-resolver: true
+  oxlint: true
