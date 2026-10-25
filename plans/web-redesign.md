@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (10/19/2026):** Phase 0 merged in PR #2348 (tokens and theme) and PR #2349 (story diff script). Phase 2 (`AppShell`) is in review as PR #2356, and `plans/mrt-replacement.md` Phase 0 (`DataTable`) as PR #2350. `Segmented`, `KeyHint` and `EmptyState` are built on `feat/ui-primitives-2`, with `ToggleButtonGroup` banned. Phase 3 starts once #2350 and #2356 merge. Next mock is forms/settings, which gates Phase 4.
+> **Status (10/25/2026):** Phase 0 merged in PR #2348 (tokens and theme) and PR #2349 (story diff script). Phase 2 (`AppShell`) lands with PR #2356, and `plans/mrt-replacement.md` Phase 0 (`DataTable`) is in review as PR #2350. `Segmented`, `KeyHint` and `EmptyState` merged in PR #2359, with `ToggleButtonGroup` banned. Phase 3 starts once #2350 merges. Next mock is forms/settings, which gates Phase 4.
 
 ## Why
 
@@ -120,6 +120,17 @@ Each phase is one or more PRs against `main`. Each PR leaves the app working.
 - ⌘K matches nav pages, settings tabs, channels, custom shows, filler lists and smart collections by name, all from data the app already loads. Its last row, "Search library for '…'", opens `/search` with a query built by the structured `SearchFilter` builder. Inline program results are out of scope for now.
 - Phone layout keeps a bottom nav bar with five items: Guide, Channels, Schedules, Library and More (System, Settings). Section pages show as a chip row.
 
+Built on `feat/app-shell` (10/19/2026):
+
+- Views live in `web/src/components/ui/patterns/AppShell/`. Data wrappers live in `web/src/components/shell/`. The nav tree is `useShellNav.tsx`, so Schedules is one more entry in `sections`.
+- Settings is a gear icon at the right end of the bar.
+- XMLTV/M3U copy, Docs, GitHub, Discord and the version line moved from the old `TopBar` into one help menu, a "?" button beside color mode. The phone header has the same button.
+- System keeps the health-check badge.
+- Library gained a Libraries tab (`/library`) that the mock doesn't show. System tabs follow the mock order: Status, Tasks, Logs, Debug, Troubleshoot.
+- The phone layout starts below MUI's `sm` breakpoint (600 px). The bottom bar shows up to five items and folds the rest under More.
+- `no-restricted-imports` in `web/.oxlintrc.json` bans `AppBar`, `Drawer`, `SwipeableDrawer` and `BottomNavigation` outside `components/ui/`. `SelectedProgrammingList.tsx` is exempt until its page is rebuilt.
+- Page sticky offsets still use the fixed 64 px `TopBarPadddingPx`. The dense bar is shorter, so dense pages show a small gap under sticky headers.
+
 ### Phase 3. Collection pages
 
 - Needs `DataTable` from `plans/mrt-replacement.md` Phase 0. That phase runs in parallel with Phases 1 and 2.
@@ -186,4 +197,4 @@ Each phase is one or more PRs against `main`. Each PR leaves the app working.
 
 ## Open questions
 
-- Whether Settings is a gear icon at the right end of the bar or a labeled nav item. Shell 1 on the canvas mocks both (Tweaks → settings).
+- None open. Settings placement was settled as a gear icon (10/19/2026).

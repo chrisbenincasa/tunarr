@@ -48,6 +48,37 @@
           {
             "name": "@mui/material/ToggleButtonGroup",
             "message": "Use Segmented from components/ui instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material",
+            "importNames": [
+              "AppBar",
+              "Drawer",
+              "SwipeableDrawer",
+              "BottomNavigation",
+              "BottomNavigationAction"
+            ],
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/AppBar",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/Drawer",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/SwipeableDrawer",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/BottomNavigation",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
+          },
+          {
+            "name": "@mui/material/BottomNavigationAction",
+            "message": "Use AppShell from components/ui/patterns instead. See plans/web-redesign.md, Ban list."
           }
         ]
       }
@@ -77,6 +108,7 @@
         "src/components/base/StandaloneToggleButton.tsx",
         "src/components/channel_config/ChannelProgrammingConfig.tsx",
         "src/components/channel_config/ProgrammingSelector.tsx",
+        "src/components/channel_config/SelectedProgrammingList.tsx",
         "src/components/programming_controls/BalanceProgrammingModal.tsx",
         "src/components/search/SearchInputToggle.tsx",
         "src/components/settings/DarkModeButton.tsx",
