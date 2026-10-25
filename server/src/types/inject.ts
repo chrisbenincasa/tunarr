@@ -58,6 +58,7 @@ const KEYS = {
   LocalMediaCanonicalizer: Symbol.for('LocalMediaCanonicalizer'),
   ContentSourceUpdateFactory: Symbol.for('ContentSourceUpdateFactory'),
 
+  ChannelLineupLock: Symbol.for('ChannelLineupLock'),
   FillerPicker: Symbol.for('FillerPicker'),
   ChannelCache: Symbol.for('ChannelCache'),
   SearchService: Symbol.for('SearchService'),
