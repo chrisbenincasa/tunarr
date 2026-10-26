@@ -25,6 +25,7 @@ import { PadVaapiFilter } from '../../filter/vaapi/PadVaapiFilter.ts';
 import { ScaleVaapiFilter } from '../../filter/vaapi/ScaleVaapiFilter.ts';
 import { TonemapVaapiFilter } from '../../filter/vaapi/TonemapVaapiFilter.ts';
 import {
+  PixelFormatNv12,
   PixelFormatRgba,
   PixelFormatUnknown,
   PixelFormatYuv420P,
@@ -612,6 +613,48 @@ describe('VaapiPipelineBuilder pad', () => {
       },
     );
   }
+
+  test.each([
+    ['unspecified', ColorFormat.unknown],
+    ['BT.709', ColorFormat.bt709],
+    [
+      'matrix only',
+      new ColorFormat({
+        colorRange: 'tv',
+        colorSpace: 'bt709',
+        colorPrimaries: null,
+        colorTransfer: null,
+      }),
+    ],
+  ] as const)(
+    'stabilizes SDR color for %s clips after hardware decode or software upload',
+    (_name, colorFormat) => {
+      for (const disableHardwareDecoding of [false, true]) {
+        const pipeline = buildWithPad({
+          videoStream: VideoStream.create({
+            index: 0,
+            codec: 'h264',
+            profile: 'main',
+            pixelFormat: new PixelFormatNv12(new PixelFormatYuv420P()),
+            frameSize: FrameSize.FHD,
+            displayAspectRatio: '16:9',
+            providedSampleAspectRatio: '1:1',
+            colorFormat,
+          }),
+          disableHardwareDecoding,
+        });
+        const args = pipeline.getCommandArgs().join(' ');
+        expect(args).toContain(
+          'scale_vaapi=format=nv12:extra_hw_frames=64:out_color_matrix=bt709:out_color_primaries=bt709:out_color_transfer=bt709:out_range=tv',
+        );
+        if (disableHardwareDecoding) {
+          expect(args.indexOf('hwupload')).toBeLessThan(
+            args.indexOf('out_color_matrix'),
+          );
+        }
+      }
+    },
+  );
 
   test('uses pad_vaapi when capability is available and content is SDR', () => {
     const pipeline = buildWithPad({ videoStream: create43VideoStream() });
