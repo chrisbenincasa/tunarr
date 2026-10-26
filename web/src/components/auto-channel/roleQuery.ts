@@ -20,6 +20,7 @@ export type ContentScope = Pick<
  * the preset's default query, and the wizard-wide context.
  */
 export type RoleSelection = {
+  facetField?: string;
   facetValues?: string[];
   yearRange?: YearRange;
   show?: ShowOption;
