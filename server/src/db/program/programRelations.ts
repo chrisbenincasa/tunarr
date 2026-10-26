@@ -200,9 +200,16 @@ export const GuideShowRelationsWithCreditArtwork = guideShowRelations({
  * versions, subtitles and external ids, and nothing else. Every stream start
  * and program transition loads this, so parent groupings and their cast stay
  * out.
+ *
+ * The one exception is the show grouping: native playback shows the show
+ * title as the primary title of an episode, and the flat `program.showTitle`
+ * column is never written (#2216). The grouping is loaded with its external
+ * ids only - the shape ProgramOrmWithExternalIds declares - so its cast,
+ * genres and artwork stay out.
  */
 export const StreamProgramRelations = {
   externalIds: true,
+  show: { with: { externalIds: true } },
   ...ProgramStreamRelations,
 } as const;
 
