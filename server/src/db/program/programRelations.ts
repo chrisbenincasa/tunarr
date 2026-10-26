@@ -200,9 +200,13 @@ export const GuideShowRelationsWithCreditArtwork = guideShowRelations({
  * versions, subtitles and external ids, and nothing else. Every stream start
  * and program transition loads this, so parent groupings and their cast stay
  * out.
+ *
+ * The one exception is the show grouping: native playback reads its title, and
+ * its external ids are the shape ProgramOrmWithExternalIds declares (#2216).
  */
 export const StreamProgramRelations = {
   externalIds: true,
+  show: { with: { externalIds: true } },
   ...ProgramStreamRelations,
 } as const;
 
