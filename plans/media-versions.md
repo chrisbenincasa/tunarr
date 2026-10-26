@@ -10,18 +10,18 @@ This is a different layer from #2192. That issue was about several video streams
 
 ## Current state
 
-| Layer | What it does today | Where |
-|---|---|---|
-| Schema | `program` → many `program_version` → files, streams, chapters | `server/src/db/schema/ProgramVersion.ts`, `Program.ts:133` |
-| Version identity | Random `uuid` only. No external key such as Plex Media id or Jellyfin MediaSource id | `ProgramVersion.ts` |
-| Canonical model | A single `mediaItem` per program | `types/src/schemas/programmingSchema.ts:251` |
-| Minting | Writes at most one version from `item.mediaItem` | `server/src/db/converters/ProgramMinter.ts:162` (`mintVersions`) |
-| Plex ingest | Keeps the `Media` with the highest `id` and drops the rest | `server/src/external/plex/PlexApiClient.ts` (`plexMediaStreamsInject`, `maxBy(..., m => m.id)`) |
-| Jellyfin/Emby ingest | Keeps the first `MediaSource` with `Protocol: 'File'`, else the first | `JellyfinApiClient.ts:1196` (`jellyfinApiMediaSourcesInjection`), Emby equivalent |
-| Local ingest | Each video file becomes its own program, keyed by path | `server/src/services/scanner/LocalMovieScanner.ts:272` |
-| Upsert | Deletes all of a program's versions and reinserts them with new uuids on every scan | `server/src/db/program/ProgramUpsertRepository.ts:195` (`upsertProgramVersions`) |
-| Playback | Uses `head(program.versions)` with no ordering | `server/src/stream/ProgramStreamDetailsFetcher.ts:63` |
-| Lineup | A content item stores the program `id` only | `server/src/db/derived_types/Lineup.ts` (`ContentLineupItemSchema`) |
+| Layer                | What it does today                                                                   | Where                                                                                           |
+| -------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| Schema               | `program` → many `program_version` → files, streams, chapters                        | `server/src/db/schema/ProgramVersion.ts`, `Program.ts:133`                                      |
+| Version identity     | Random `uuid` only. No external key such as Plex Media id or Jellyfin MediaSource id | `ProgramVersion.ts`                                                                             |
+| Canonical model      | A single `mediaItem` per program                                                     | `types/src/schemas/programmingSchema.ts:251`                                                    |
+| Minting              | Writes at most one version from `item.mediaItem`                                     | `server/src/db/converters/ProgramMinter.ts:162` (`mintVersions`)                                |
+| Plex ingest          | Keeps the `Media` with the highest `id` and drops the rest                           | `server/src/external/plex/PlexApiClient.ts` (`plexMediaStreamsInject`, `maxBy(..., m => m.id)`) |
+| Jellyfin/Emby ingest | Keeps the first `MediaSource` with `Protocol: 'File'`, else the first                | `JellyfinApiClient.ts:1196` (`jellyfinApiMediaSourcesInjection`), Emby equivalent               |
+| Local ingest         | Each video file becomes its own program, keyed by path                               | `server/src/services/scanner/LocalMovieScanner.ts:272`                                          |
+| Upsert               | Deletes all of a program's versions and reinserts them with new uuids on every scan  | `server/src/db/program/ProgramUpsertRepository.ts:195` (`upsertProgramVersions`)                |
+| Playback             | Uses `head(program.versions)` with no ordering                                       | `server/src/stream/ProgramStreamDetailsFetcher.ts:63`                                           |
+| Lineup               | A content item stores the program `id` only                                          | `server/src/db/derived_types/Lineup.ts` (`ContentLineupItemSchema`)                             |
 
 ### What this means
 
@@ -77,10 +77,10 @@ An override that no longer matches a version, because the file was removed, fall
 
 Overrides are likely needed but come after rules. Candidates:
 
-| Option | How it works | Fits | Cost |
-|---|---|---|---|
-| Per program default | `program.preferredVersionId` | "Always play the 4K file" | Simple. One choice for every channel |
-| Per lineup item | `ContentLineupItemSchema` gains a version reference | "This channel plays the extended cut" | The most UI. Slot and infinite schedules regenerate lineups, so the override must live on the schedule's content source, not only on the materialized item |
+| Option              | How it works                                        | Fits                                  | Cost                                                                                                                                                       |
+| ------------------- | --------------------------------------------------- | ------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Per program default | `program.preferredVersionId`                        | "Always play the 4K file"             | Simple. One choice for every channel                                                                                                                       |
+| Per lineup item     | `ContentLineupItemSchema` gains a version reference | "This channel plays the extended cut" | The most UI. Slot and infinite schedules regenerate lineups, so the override must live on the schedule's content source, not only on the materialized item |
 
 Both depend on stable version identity (step 1).
 
