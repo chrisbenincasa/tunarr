@@ -2113,14 +2113,23 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       );
     }
 
-    const videoStream = find(
+    const videoStreams = filter(
       apiMediaStreams,
       (stream): stream is PlexMediaVideoStream => stream.streamType === 1,
     );
+    const videoStream = selectPlexVideoStream(videoStreams);
+
+    if (videoStreams.length > 0 && videoStream === undefined) {
+      this.logger.warn(
+        'Plex item ID = %s has %d video stream(s), none with dimensions',
+        itemId,
+        videoStreams.length,
+      );
+    }
 
     if (requireVideoStream && !videoStream) {
       return Result.forError(
-        new Error(`Plex item ID = ${itemId} has no video streams`),
+        new Error(`Plex item ID = ${itemId} has no usable video streams`),
       );
     }
 
@@ -2310,6 +2319,20 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 type PlexTvDevicesResponse = {
   MediaContainer: { Device: PlexResource[] };
 };
+
+/**
+ * Picks the first video stream that reports both dimensions. Plex lists
+ * dimensionless streams for empty programs in broadcast recordings, and the
+ * transcode pipeline cannot scale a stream of unknown size.
+ */
+export function selectPlexVideoStream(
+  streams: PlexMediaVideoStream[],
+): Maybe<PlexMediaVideoStream> {
+  return find(
+    streams,
+    (stream) => isDefined(stream.width) && isDefined(stream.height),
+  );
+}
 
 function plexJoinItemInject(items: Nilable<PlexJoinItem[]>): NamedEntity[] {
   return items?.map(({ tag }) => ({ name: tag })) ?? [];

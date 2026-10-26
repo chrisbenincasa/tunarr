@@ -1,7 +1,8 @@
 import { faker } from '@faker-js/faker';
 import { describe, expect, it, vi } from 'vitest';
 import { Result } from '@/types/result.js';
-import { PlexApiClient } from './PlexApiClient.js';
+import { PlexMovieSchema } from '@tunarr/types/plex';
+import { PlexApiClient, selectPlexVideoStream } from './PlexApiClient.js';
 
 const { fakeLogger } = vi.hoisted(() => {
   const fakeLogger = {
@@ -418,6 +419,103 @@ describe('PlexApiClient', () => {
         expect.anything(),
         expect.anything(),
       );
+    });
+  });
+
+  describe('video stream selection', () => {
+    // Broadcast MPEG-TS recordings list one stream per program. Plex reports
+    // dimensions only on the program that carries picture.
+    function broadcastStreams() {
+      return [
+        { streamType: 1, codec: 'mpeg2video', index: 6 },
+        { streamType: 1, codec: 'mpeg2video', index: 10 },
+        {
+          streamType: 1,
+          codec: 'mpeg2video',
+          index: 5,
+          height: 480,
+          width: 528,
+          frameRate: 29.97,
+          scanType: 'progressive',
+        },
+        { streamType: 1, codec: 'mpeg2video', index: 18 },
+        { streamType: 2, codec: 'ac3', index: 7, channels: 2 },
+      ];
+    }
+
+    function broadcastMovie(streams: unknown[]) {
+      const metadata = makePlexMovieMetadata('1401', 1);
+      const media = metadata.Media[0];
+      if (!media) {
+        throw new Error('fixture has no Media');
+      }
+      return PlexMovieSchema.parse({
+        ...metadata,
+        Media: [
+          {
+            ...media,
+            container: 'mpegts',
+            Part: media.Part.map((part) => ({ ...part, Stream: streams })),
+          },
+        ],
+      });
+    }
+
+    it('parses video streams that lack dimensions', () => {
+      expect(() => broadcastMovie(broadcastStreams())).not.toThrow();
+    });
+
+    it('selects the first video stream with dimensions', () => {
+      const selected = selectPlexVideoStream([
+        { streamType: 1, codec: 'mpeg2video', index: 6 },
+        {
+          streamType: 1,
+          codec: 'mpeg2video',
+          index: 5,
+          height: 480,
+          width: 528,
+        },
+        { streamType: 1, codec: 'h264', index: 9, height: 720, width: 1280 },
+      ]);
+      expect(selected?.index).toBe(5);
+    });
+
+    it('selects nothing when no video stream has dimensions', () => {
+      expect(
+        selectPlexVideoStream([
+          { streamType: 1, codec: 'mpeg2video', index: 6, height: 480 },
+          { streamType: 1, codec: 'mpeg2video', index: 10, width: 528 },
+        ]),
+      ).toBeUndefined();
+    });
+
+    it('builds the media item from the stream with dimensions', () => {
+      const { client } = makeMinimalPlexClient();
+      const result = client.plexMediaStreamsInject(
+        '1401',
+        broadcastMovie(broadcastStreams()),
+      );
+
+      expect(result.isSuccess()).toBe(true);
+      const videoStreams = result
+        .get()
+        .streams.filter((stream) => stream.streamType === 'video');
+      expect(videoStreams).toHaveLength(1);
+      expect(videoStreams[0]?.index).toBe(5);
+    });
+
+    it('fails when no video stream has dimensions', () => {
+      const { client } = makeMinimalPlexClient();
+      const result = client.plexMediaStreamsInject(
+        '1401',
+        broadcastMovie([
+          { streamType: 1, codec: 'mpeg2video', index: 6 },
+          { streamType: 2, codec: 'ac3', index: 7, channels: 2 },
+        ]),
+      );
+
+      expect(result.isFailure()).toBe(true);
+      expect(fakeLogger.warn).toHaveBeenCalled();
     });
   });
 });
