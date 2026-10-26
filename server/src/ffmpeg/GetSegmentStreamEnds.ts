@@ -1,13 +1,13 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { Result } from '@/types/result.js';
+import { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
 import { isNonEmptyString } from '@/util/index.js';
-import { NewLineTransformStream } from '@/util/streams.js';
-import { spawn } from 'node:child_process';
-import { Writable } from 'node:stream';
 
 // Used when ffprobe reports no duration for a packet, so the next program
 // still starts after it.
 const UnknownPacketDurationTicks = 10_000;
+
+const ProbeTimeoutMs = 10_000;
 
 /**
  * When each kind of stream in a segment ends, as the latest `pts + duration`
@@ -33,30 +33,18 @@ export class GetSegmentStreamEndsTask {
       segmentFilePath,
     ];
 
-    const proc = spawn(this.settingsDB.ffprobePath, args, {
-      stdio: ['ignore', 'pipe', process.stderr],
-    });
-
-    const lines: string[] = [];
-    proc.stdout.pipe(new NewLineTransformStream()).pipe(
-      new Writable({
-        write(chunk, _, callback) {
-          if (chunk instanceof Buffer) {
-            const str = chunk.toString('utf-8').trim();
-            if (isNonEmptyString(str)) {
-              lines.push(str);
-            }
-          }
-          callback();
-        },
-      }),
-    );
-
-    return new Promise((resolve, reject) => {
-      proc.on('error', reject);
-      proc.on('close', () => {
-        resolve(Result.attempt(() => parseSegmentStreamEnds(lines)));
-      });
+    return Result.attemptAsync(async () => {
+      const stdout = await new ChildProcessHelper().getStdout(
+        this.settingsDB.ffprobePath,
+        args,
+        { swallowError: false, timeout: ProbeTimeoutMs },
+      );
+      return parseSegmentStreamEnds(
+        stdout
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(isNonEmptyString),
+      );
     });
   }
 }
