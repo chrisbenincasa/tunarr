@@ -341,6 +341,13 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
     this.state = 'started';
     this.#playlistStart = this.transcodedUntil = dayjs();
+
+    // Measure while the first program transcodes, so the first program
+    // boundary does not wait on it.
+    if (this.sessionOptions.streamMode === 'hls') {
+      void this.getAudioEncoderLead();
+    }
+
     // Fire-and-forget
     this.run().catch((e) => this.logger.error(e));
   }
@@ -567,7 +574,13 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   private getAudioEncoderLead(): Promise<number> {
-    this.#audioEncoderLead ??= this.measureAudioEncoderLead();
+    this.#audioEncoderLead ??= this.measureAudioEncoderLead().catch((e) => {
+      this.logger.warn(
+        e,
+        'Could not measure the audio encoder lead. Audio may overlap at program boundaries.',
+      );
+      return 0;
+    });
     return this.#audioEncoderLead;
   }
 

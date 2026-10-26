@@ -1,10 +1,12 @@
 import { Result } from '@/types/result.js';
-import { spawn } from 'node:child_process';
+import { ChildProcessHelper } from '@/util/ChildProcessHelper.js';
 
 // HLS segments are MPEG-TS, which timestamps every stream at 90 kHz.
 const MpegTsTicksPerSecond = 90_000;
 
 const ProbeOffsetSeconds = 10;
+
+const ProbeTimeoutMs = 10_000;
 
 // Real encoder delays are tens of milliseconds. Anything this large means the
 // probe output was not what we expected.
@@ -52,34 +54,13 @@ export class MeasureAudioEncoderLeadTask {
       'pipe:1',
     ];
 
-    const proc = spawn(this.ffmpegPath, args, {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    let stdout = '';
-    let stderr = '';
-    proc.stdout.setEncoding('utf-8').on('data', (d: string) => (stdout += d));
-    proc.stderr.setEncoding('utf-8').on('data', (d: string) => (stderr += d));
-
-    return new Promise((resolve) => {
-      proc.on('error', (e) => resolve(Result.forError(e)));
-      proc.on('close', (code) => {
-        if (code !== 0) {
-          resolve(
-            Result.forError(
-              new Error(
-                `Audio encoder lead probe exited with code ${code}: ${stderr.trim()}`,
-              ),
-            ),
-          );
-          return;
-        }
-        resolve(
-          Result.attempt(() =>
-            parseEncoderLeadFromFramecrc(stdout, ProbeOffsetSeconds),
-          ),
-        );
-      });
+    return Result.attemptAsync(async () => {
+      const stdout = await new ChildProcessHelper().getStdout(
+        this.ffmpegPath,
+        args,
+        { swallowError: false, timeout: ProbeTimeoutMs },
+      );
+      return parseEncoderLeadFromFramecrc(stdout, ProbeOffsetSeconds);
     });
   }
 }
