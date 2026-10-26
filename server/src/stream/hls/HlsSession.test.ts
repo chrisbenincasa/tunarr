@@ -8,7 +8,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import tmp from 'tmp';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { MeasureAudioEncoderLeadTask } from '@/ffmpeg/MeasureAudioEncoderLeadTask.js';
+import { Result } from '@/types/result.js';
 import { ProgramStream } from '../ProgramStream.ts';
+import type { HlsSessionOptions } from './HlsSession.js';
 import { HlsSession, nextProgramPtsOffset } from './HlsSession.js';
 
 vi.mock('@/util/logging/LoggerFactory.js', () => ({
@@ -35,14 +38,23 @@ vi.mock('@/stream/ConnectionTracker.ts', () => {
 
 const channelUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 
-function makeSession(transcodeDirectory: string): HlsSession {
+type MakeSessionOverrides = {
+  streamMode?: HlsSessionOptions['streamMode'];
+  transcodeConfig?: Partial<ChannelOrmWithTranscodeConfig['transcodeConfig']>;
+  settingsDB?: ISettingsDB;
+};
+
+function makeSession(
+  transcodeDirectory: string,
+  overrides: MakeSessionOverrides = {},
+): HlsSession {
   const channel = {
     uuid: channelUuid,
-    transcodeConfig: {},
+    transcodeConfig: overrides.transcodeConfig ?? {},
   } as ChannelOrmWithTranscodeConfig;
 
   const options = {
-    streamMode: 'hls' as const,
+    streamMode: overrides.streamMode ?? 'hls',
     initialSegmentCount: 2,
     transcodeDirectory,
   };
@@ -51,7 +63,7 @@ function makeSession(transcodeDirectory: string): HlsSession {
     channel,
     options,
     {} as StreamProgramCalculator,
-    {} as ISettingsDB,
+    overrides.settingsDB ?? ({} as ISettingsDB),
     {} as OnDemandChannelService,
     (() => ({}) as unknown as ProgramStream) as (
       ctx: PlayerContext,
@@ -231,6 +243,68 @@ describe('HlsSession', () => {
       for (const file of listed) {
         expect(onDisk).toContain(file);
       }
+    });
+  });
+
+  describe('audio encoder lead prefetch', () => {
+    let dir: tmp.DirResult;
+
+    const settingsDB = {
+      ffmpegSettings: () => ({ ffmpegExecutablePath: '/usr/bin/ffmpeg' }),
+    } as unknown as ISettingsDB;
+
+    const transcodeConfig = {
+      audioFormat: 'aac',
+      audioSampleRate: 48,
+      audioChannels: 2,
+    } as const;
+
+    type PrefetchInternals = {
+      startInternal(): Promise<void>;
+      getAudioEncoderLead(): Promise<number>;
+    };
+
+    beforeEach(() => {
+      dir = tmp.dirSync({ unsafeCleanup: true });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+      dir.removeCallback();
+    });
+
+    test('measures once when an hls session starts and reuses the result', async () => {
+      const run = vi
+        .spyOn(MeasureAudioEncoderLeadTask.prototype, 'run')
+        .mockResolvedValue(Result.success(1920));
+      const session = makeSession(dir.name, { settingsDB, transcodeConfig });
+      const internals = session as unknown as PrefetchInternals;
+
+      await internals.startInternal();
+
+      expect(run).toHaveBeenCalledTimes(1);
+      expect(run).toHaveBeenCalledWith({
+        encoder: 'aac',
+        sampleRateKhz: 48,
+        channels: 2,
+      });
+
+      // A program boundary reads the cached measurement.
+      await expect(internals.getAudioEncoderLead()).resolves.toBe(1920);
+      expect(run).toHaveBeenCalledTimes(1);
+    });
+
+    test('does not measure for hls_direct_v2', async () => {
+      const run = vi.spyOn(MeasureAudioEncoderLeadTask.prototype, 'run');
+      const session = makeSession(dir.name, {
+        streamMode: 'hls_direct_v2',
+        settingsDB,
+        transcodeConfig,
+      });
+
+      await (session as unknown as PrefetchInternals).startInternal();
+
+      expect(run).not.toHaveBeenCalled();
     });
   });
 
