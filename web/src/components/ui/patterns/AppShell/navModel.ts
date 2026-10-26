@@ -1,7 +1,15 @@
 import type { router } from '@/router.ts';
+import type { RemoveTrailingSlashes } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 
-export type ShellPath = keyof (typeof router)['routesByPath'];
+type RoutePath = keyof (typeof router)['routesByPath'];
+
+// Index routes key as `/a/b/`, but `to` only accepts `/a/b`.
+export type ShellPath = RoutePath extends infer P
+  ? P extends '/'
+    ? P
+    : RemoveTrailingSlashes<P>
+  : never;
 
 export type ShellNavBadge = {
   count: number;
