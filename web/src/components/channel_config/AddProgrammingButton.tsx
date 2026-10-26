@@ -1,44 +1,29 @@
 import { Route } from '@/routes/channels_/$channelId/programming/index.tsx';
 import {
+  Add as AddIcon,
   AddToQueue,
-  FreeBreakfast as BreaksIcon,
   Expand as FlexIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
-  Expand as PaddingIcon,
   Directions as RedirectIcon,
-  Nightlight as RestrictHoursIcon,
 } from '@mui/icons-material';
-import { Button, ButtonGroup, MenuItem } from '@mui/material';
+import { Button, MenuItem } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
-import { isNull } from 'lodash-es';
 import { useState } from 'react';
-import { useLingui } from '@lingui/react/macro';
+import { Trans, useLingui } from '@lingui/react/macro';
 import { ElevatedTooltip } from '../base/ElevatedTooltip.tsx';
 import { StyledMenu } from '../base/StyledMenu';
-import AddBreaksModal from '../programming_controls/AddBreaksModal';
 import AddFlexModal from '../programming_controls/AddFlexModal';
-import AddPaddingModal from '../programming_controls/AddPaddingModal';
 import AddRedirectModal from '../programming_controls/AddRedirectModal';
-import AddRestrictHoursModal from '../programming_controls/AddRestrictHoursModal';
 
 export default function AddProgrammingButton() {
   const { t } = useLingui();
   const [addRedirectModalOpen, setAddRedirectModalOpen] = useState(false);
   const [addFlexModalOpen, setAddFlexModalOpen] = useState(false);
-  const [addPaddingModalOpen, setAddPaddingModalOpen] = useState(false);
-  const [addRestrictHoursModalOpen, setAddRestrictHoursModalOpen] =
-    useState(false);
-  const [addBreaksModalOpen, setAddBreaksModalOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [lastSelection, setLastSelection] = useState<number>(0);
   const navigate = useNavigate();
   const { channelId } = Route.useParams();
 
-  const open = !isNull(anchorEl);
-
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
+  const open = anchorEl !== null;
 
   const handleClose = () => {
     setAnchorEl(null);
@@ -47,56 +32,25 @@ export default function AddProgrammingButton() {
   const addProgrammingOptions = [
     {
       icon: <AddToQueue />,
-      name: t`Add Media`,
+      name: t`Media...`,
       callback: () =>
         navigate({
           to: '/channels/$channelId/programming/add',
           params: { channelId },
         }),
       description: t`Add TV Shows or Movies to programming list.`,
-      divider: false,
     },
     {
       icon: <RedirectIcon />,
-      name: t`Add Redirect`,
+      name: t`Redirect...`,
       callback: () => setAddRedirectModalOpen(true),
       description: t`Adds a channel redirect. During this period of time, the channel will redirect to another channel.`,
-      divider: false,
-    },
-    {
-      icon: null,
-      name: t`Flex`,
-      callback: () => null,
-      description: '',
-      divider: true,
     },
     {
       icon: <FlexIcon />,
-      name: t`Add Flex`,
+      name: t`Flex...`,
       callback: () => setAddFlexModalOpen(true),
-      description: t`Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases.`,
-      divider: false,
-    },
-    {
-      icon: <BreaksIcon />,
-      name: t`Add Breaks`,
-      callback: () => setAddBreaksModalOpen(true),
-      description: t`Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large.`,
-      divider: false,
-    },
-    {
-      icon: <PaddingIcon />,
-      name: t`Add Padding`,
-      callback: () => setAddPaddingModalOpen(true),
-      description: t`Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large.`,
-      divider: false,
-    },
-    {
-      icon: <RestrictHoursIcon />,
-      name: t`Restrict Hours`,
-      callback: () => setAddRestrictHoursModalOpen(true),
-      description: t`The channel's regular programming between the specified hours. Flex time will fill up the remaining hours.`,
-      divider: false,
+      description: t`Programs a single Flex time slot. To add Flex across the whole lineup at once, use the Flex menu.`,
     },
   ];
 
@@ -110,56 +64,43 @@ export default function AddProgrammingButton() {
         open={addRedirectModalOpen}
         onClose={() => setAddRedirectModalOpen(false)}
       />
-      <AddPaddingModal
-        open={addPaddingModalOpen}
-        onClose={() => setAddPaddingModalOpen(false)}
-      />
-      <AddRestrictHoursModal
-        open={addRestrictHoursModalOpen}
-        onClose={() => setAddRestrictHoursModalOpen(false)}
-      />
-      <AddBreaksModal
-        open={addBreaksModalOpen}
-        onClose={() => setAddBreaksModalOpen(false)}
-      />
 
-      <ButtonGroup aria-label="Add Programming Button Group">
-        <Button
-          onClick={addProgrammingOptions[lastSelection].callback}
-          startIcon={addProgrammingOptions[lastSelection].icon}
-        >
-          {addProgrammingOptions[lastSelection].name}
-        </Button>
-        <Button onClick={handleClick}>
-          <KeyboardArrowDownIcon />
-        </Button>
-      </ButtonGroup>
-      <StyledMenu anchorEl={anchorEl} open={open} onClose={handleClose}>
-        {addProgrammingOptions.map((item, index) =>
-          item.divider ? (
-            <MenuItem divider disabled key={item.name}>
-              {item.name}
-            </MenuItem>
-          ) : (
-            <ElevatedTooltip
-              elevation={5}
-              key={item.name}
-              title={item.description}
-              placement="right"
+      <Button
+        id="channel-programming-add-button"
+        startIcon={<AddIcon />}
+        endIcon={<KeyboardArrowDownIcon />}
+        onClick={(event) => setAnchorEl(event.currentTarget)}
+        variant="outlined"
+      >
+        <Trans>Add</Trans>
+      </Button>
+      <StyledMenu
+        id="channel-programming-add"
+        MenuListProps={{
+          'aria-labelledby': 'channel-programming-add-button',
+        }}
+        anchorEl={anchorEl}
+        open={open}
+        onClose={handleClose}
+      >
+        {addProgrammingOptions.map((item) => (
+          <ElevatedTooltip
+            elevation={5}
+            key={item.name}
+            title={item.description}
+            placement="right"
+          >
+            <MenuItem
+              disableRipple
+              onClick={() => {
+                item.callback();
+                handleClose();
+              }}
             >
-              <MenuItem
-                disableRipple
-                onClick={() => {
-                  item.callback();
-                  setLastSelection(index);
-                  handleClose();
-                }}
-              >
-                {item.icon} {item.name}
-              </MenuItem>
-            </ElevatedTooltip>
-          ),
-        )}
+              {item.icon} {item.name}
+            </MenuItem>
+          </ElevatedTooltip>
+        ))}
       </StyledMenu>
     </>
   );
