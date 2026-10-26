@@ -13,7 +13,10 @@ import {
 } from 'lodash-es';
 import { match } from 'ts-pattern';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
-import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.ts';
+import type {
+  MediaSourceWithRelations,
+  ProgramOrmWithExternalIds,
+} from '../db/schema/derivedTypes.ts';
 import { ArtworkService } from '../services/ArtworkService.ts';
 import type { ArtworkResult } from '../services/ArtworkService.ts';
 import { KEYS } from '../types/inject.ts';
@@ -227,9 +230,8 @@ export class ProgramStreamDetailsFetcher {
     };
 
     if (streamDetails.audioOnly) {
-      streamDetails.placeholderImage = await this.resolvePlaceholderImage(
-        program.uuid,
-      );
+      streamDetails.placeholderImage =
+        await this.resolvePlaceholderImage(program);
     }
 
     if (server.type === 'local') {
@@ -266,14 +268,41 @@ export class ProgramStreamDetailsFetcher {
    * track's own art wins, then its album's, then a generic music card. Remote
    * art gets a HEAD request first, because ffmpeg fails the whole stream when
    * an input is unreachable.
+   *
+   * The album is tried on its own, not only through the artwork service's
+   * parent fallback: a track can carry a poster row its server no longer
+   * serves (the backfill derives `/Items/<id>/Images/Primary` for every
+   * program, and a track with no embedded art has no such image). That row
+   * wins the lookup, so without this step the track would play the generic
+   * card while its album has a perfectly good cover.
    */
   private async resolvePlaceholderImage(
-    programId: string,
+    program: Pick<ProgramOrmWithExternalIds, 'uuid' | 'type' | 'albumUuid'>,
   ): Promise<StreamSource> {
+    const candidates = [program.uuid];
+    if (program.type === 'track' && isNonEmptyString(program.albumUuid)) {
+      candidates.push(program.albumUuid);
+    }
+
+    for (const entityId of candidates) {
+      const source = await this.resolveReachableArtwork(entityId);
+      if (source) {
+        return source;
+      }
+    }
+
+    return new HttpStreamSource(
+      makeLocalUrl('/images/generic-music-screen.png'),
+    );
+  }
+
+  private async resolveReachableArtwork(
+    entityId: string,
+  ): Promise<Maybe<StreamSource>> {
     let artwork: ArtworkResult = { kind: 'not-found' };
     try {
       artwork = await this.artworkService.resolveArtwork(
-        programId,
+        entityId,
         'program',
         'poster',
         ['thumbnail'],
@@ -281,12 +310,12 @@ export class ProgramStreamDetailsFetcher {
     } catch (e) {
       this.logger.warn(
         e,
-        'Unable to resolve artwork for audio-only program %s',
-        programId,
+        'Unable to resolve placeholder artwork for %s',
+        entityId,
       );
     }
 
-    const source = await match(artwork)
+    return match(artwork)
       .with({ kind: 'file' }, async ({ path }) => {
         const exists = await fileExists(path).catch((e) => {
           this.logger.warn(e, 'Unable to read cached artwork at %s', path);
@@ -301,11 +330,6 @@ export class ProgramStreamDetailsFetcher {
       )
       .with({ kind: 'not-found' }, () => Promise.resolve(undefined))
       .exhaustive();
-
-    return (
-      source ??
-      new HttpStreamSource(makeLocalUrl('/images/generic-music-screen.png'))
-    );
   }
 
   private async isReachable(
