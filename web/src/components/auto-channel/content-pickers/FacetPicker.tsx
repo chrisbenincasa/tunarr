@@ -32,8 +32,9 @@ function fieldFilter(field: string, values: string[]): SearchFilter {
 type Props = {
   facetFields: string[];
   label: string;
+  field: string | undefined;
   value: string[];
-  onChange: (values: string[], filterString: string) => void;
+  onChange: (values: string[], filterString: string, field: string) => void;
   mediaSourceId?: string;
   libraryId?: string;
 };
@@ -41,19 +42,17 @@ type Props = {
 export function FacetPicker({
   facetFields,
   label,
+  field,
   value,
   onChange,
   mediaSourceId,
   libraryId,
 }: Props) {
-  const [pickedField, setPickedField] = useState<string>();
   const [inputValue, setInputValue] = useState('');
   const [options, setOptions] = useState<FacetValue[]>([]);
 
   const activeField =
-    pickedField !== undefined && facetFields.includes(pickedField)
-      ? pickedField
-      : facetFields[0];
+    field !== undefined && facetFields.includes(field) ? field : facetFields[0];
   const indexField =
     search.virtualFieldToIndexField[activeField] ?? activeField;
 
@@ -122,9 +121,9 @@ export function FacetPicker({
       const selected = newValue.map((v) =>
         typeof v === 'string' ? v : v.label,
       );
-      onChange(selected, buildFilterString(selected));
+      onChange(selected, buildFilterString(selected), activeField);
     },
-    [onChange, buildFilterString],
+    [onChange, buildFilterString, activeField],
   );
 
   return (
@@ -138,10 +137,9 @@ export function FacetPicker({
               label: capitalize(field),
             }))}
             value={activeField}
-            onChange={(field) => {
-              setPickedField(field);
+            onChange={(nextField) => {
               // A pick on one field doesn't apply to another, so clear it.
-              onChange([], '');
+              onChange([], '', nextField);
             }}
           />
         </Box>

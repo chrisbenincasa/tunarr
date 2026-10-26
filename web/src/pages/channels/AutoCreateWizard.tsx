@@ -13,6 +13,14 @@ import {
   type GlobalContentContext,
 } from '@/components/auto-channel/GlobalContentControls';
 import { PresetCard } from '@/components/auto-channel/PresetCard';
+import {
+  blockLimits,
+  canExportPreset,
+  parseChannelTemplate,
+  templateFileName,
+  toChannelTemplate,
+  type WizardTemplateState,
+} from '@/components/auto-channel/channelTemplate';
 import { FacetPicker } from '@/components/auto-channel/content-pickers/FacetPicker';
 import { SingleShowPicker } from '@/components/auto-channel/content-pickers/SingleShowPicker';
 import { YearRangePicker } from '@/components/auto-channel/content-pickers/YearRangePicker';
@@ -36,7 +44,14 @@ import {
   useRolePreviews,
   type RolePreview,
 } from '@/hooks/useAutoChannel';
-import { ArrowBack, ArrowForward, VideoLibrary } from '@mui/icons-material';
+import { useDownload } from '@/hooks/useDownload';
+import {
+  ArrowBack,
+  ArrowForward,
+  FileDownload,
+  FileUpload,
+  VideoLibrary,
+} from '@mui/icons-material';
 import {
   Alert,
   Box,
@@ -65,6 +80,7 @@ import type {
   DynamicPresetParams,
 } from '@tunarr/types/api';
 import { mapValues, pick } from 'lodash-es';
+import type { ChangeEvent } from 'react';
 import { useCallback, useMemo, useState } from 'react';
 
 const steps = ['Choose Style', 'Select Content', 'Review & Create'];
@@ -87,6 +103,8 @@ export function AutoCreateWizard() {
   const [dynamicParams, setDynamicParams] = useState<
     DynamicPresetParams | undefined
   >();
+  const [importError, setImportError] = useState<string>();
+  const download = useDownload();
 
   const { data: mediaSources, isLoading: mediaSourcesLoading } = useQuery(
     getApiMediaSourcesOptions(),
@@ -270,6 +288,57 @@ export function AutoCreateWizard() {
     );
   }, []);
 
+  const handleImport = useCallback(
+    (text: string) => {
+      const parsed = parseChannelTemplate(text, presets ?? []);
+      if (!parsed.ok) {
+        setImportError(parsed.error);
+        return;
+      }
+      const { state } = parsed;
+      setImportError(undefined);
+      handlePresetSelect(state.preset);
+      if (state.weightedGroups.length > 0) {
+        handleGroupsChange(state.weightedGroups);
+      }
+      if (state.timeBlocks.length > 0) {
+        handleBlocksChange(state.timeBlocks);
+      }
+      setRoleSelections(state.roleSelections);
+      setChannelName(state.channelName);
+    },
+    [presets, handlePresetSelect, handleGroupsChange, handleBlocksChange],
+  );
+
+  const handleExport = useCallback(() => {
+    if (!selectedPreset) return;
+
+    const state: WizardTemplateState = {
+      preset: selectedPreset,
+      channelName,
+      weightedGroups,
+      timeBlocks,
+      roleSelections,
+    };
+    const template = toChannelTemplate(
+      state,
+      roles.map((r) => r.role),
+    );
+    download(
+      JSON.stringify(template, null, 2),
+      templateFileName(template),
+      'application/json',
+    );
+  }, [
+    selectedPreset,
+    channelName,
+    weightedGroups,
+    timeBlocks,
+    roleSelections,
+    roles,
+    download,
+  ]);
+
   const handleNext = useCallback(() => {
     setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
   }, []);
@@ -320,7 +389,12 @@ export function AutoCreateWizard() {
             presets={presets ?? []}
             presetsLoading={presetsLoading}
             selectedPresetId={selectedPreset?.id}
-            onSelect={handlePresetSelect}
+            onSelect={(preset) => {
+              setImportError(undefined);
+              handlePresetSelect(preset);
+            }}
+            onImport={handleImport}
+            importError={importError}
           />
         );
       case 1:
@@ -358,6 +432,7 @@ export function AutoCreateWizard() {
             onNumberChange={setChannelNumber}
             weightedGroups={weightedGroups}
             timeBlocks={timeBlocks}
+            onExport={handleExport}
           />
         );
       default:
@@ -458,12 +533,27 @@ function ChooseStyleStep({
   presetsLoading,
   selectedPresetId,
   onSelect,
+  onImport,
+  importError,
 }: {
   presets: ChannelPreset[];
   presetsLoading: boolean;
   selectedPresetId: string | undefined;
   onSelect: (preset: ChannelPreset) => void;
+  onImport: (text: string) => void;
+  importError: string | undefined;
 }) {
+  const handleFile = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+
+    // Clear the input so picking the same file again still fires a change.
+    e.target.value = '';
+    if (file === undefined) {
+      return;
+    }
+    file.text().then(onImport).catch(console.error);
+  };
+
   if (presetsLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
@@ -474,9 +564,30 @@ function ChooseStyleStep({
 
   return (
     <Box>
-      <Typography variant="h6" sx={{ mb: 2 }}>
-        Choose a channel style
-      </Typography>
+      <Stack
+        direction="row"
+        alignItems="center"
+        justifyContent="space-between"
+        gap={1}
+        flexWrap="wrap"
+        sx={{ mb: 2 }}
+      >
+        <Typography variant="h6">Choose a channel style</Typography>
+        <Button component="label" startIcon={<FileUpload />}>
+          Import template
+          <input
+            hidden
+            type="file"
+            accept="application/json,.json"
+            onChange={handleFile}
+          />
+        </Button>
+      </Stack>
+      {importError !== undefined && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {importError}
+        </Alert>
+      )}
       <Grid container spacing={2}>
         {presets.map((preset) => (
           <Grid key={preset.id} size={{ xs: 12, sm: 6, md: 4 }}>
@@ -560,16 +671,14 @@ function SelectContentStep({
         <DynamicRoleManager
           groups={weightedGroups}
           onGroupsChange={onGroupsChange}
-          min={preset.minBlocks ?? 2}
-          max={preset.maxBlocks ?? 10}
+          {...blockLimits(preset)}
           renderRoleContent={(group) => renderRoleSection(group.role)}
         />
       ) : isClassicTv ? (
         <BlockConfigurator
           blocks={timeBlocks}
           onBlocksChange={onBlocksChange}
-          min={preset.minBlocks ?? 2}
-          max={preset.maxBlocks ?? 8}
+          {...blockLimits(preset)}
           renderRoleContent={(block) => renderRoleSection(block.role)}
         />
       ) : (
@@ -623,9 +732,10 @@ function RoleSection({
           <FacetPicker
             facetFields={hint.facetFields}
             label={hint.label}
+            field={selection.facetField}
             value={selection.facetValues ?? []}
-            onChange={(facetValues, pickerFilter) =>
-              update({ facetValues, pickerFilter })
+            onChange={(facetValues, pickerFilter, facetField) =>
+              update({ facetField, facetValues, pickerFilter })
             }
             mediaSourceId={mediaSourceId}
             libraryId={libraryId}
@@ -771,6 +881,7 @@ function ReviewStep({
   onNumberChange,
   weightedGroups,
   timeBlocks,
+  onExport,
 }: {
   preset: ChannelPreset;
   totalPrograms: number;
@@ -781,7 +892,9 @@ function ReviewStep({
   onNumberChange: (num: number | undefined) => void;
   weightedGroups: WeightedGroup[];
   timeBlocks: TimeBlock[];
+  onExport: () => void;
 }) {
+  const exportable = canExportPreset(preset);
   const formatBlockTime = (ms: number) => {
     const totalMinutes = Math.floor(ms / (60 * 1000));
     const hours = Math.floor(totalMinutes / 60);
@@ -883,6 +996,22 @@ function ReviewStep({
           </Stack>
         </Box>
       )}
+
+      <Stack direction="row" alignItems="center" gap={2} flexWrap="wrap">
+        <Button
+          variant="outlined"
+          startIcon={<FileDownload />}
+          onClick={onExport}
+          disabled={!exportable}
+        >
+          Export template
+        </Button>
+        <Typography variant="body2" color="text.secondary">
+          {exportable
+            ? 'Saves the style and your picks without your libraries, so others can build this channel from their own media.'
+            : "Binge channels can't be exported yet, because the show is specific to this server."}
+        </Typography>
+      </Stack>
     </Box>
   );
 }
