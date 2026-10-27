@@ -331,7 +331,7 @@ msgstr "访问令牌<<<<<<< HEAD"
 
 #: src/components/ui/table/ActionsHeader.tsx
 msgid "Actions"
-msgstr ""
+msgstr "<<<<<<< HEAD"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/library/ProgramListItem.tsx
@@ -2264,11 +2264,11 @@ msgstr "硬件加速"
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Hardware Acceleration"
-msgstr "硬件加速<<<<<<< HEAD"
+msgstr "硬件加速<<<<<<< HEAD<<<<<<< HEAD"
 
 #: src/pages/welcome/WelcomePage.tsx
 #~ msgid "HDHomeRun Settings"
-#~ msgstr ""
+#~ msgstr "=======>>>>>>> 4e169fab3 (chore: regenerate OpenAPI spec and lingui catalogs after rebase)"
 
 #: src/components/shell/useShellNav.tsx
 msgid "HDHR"

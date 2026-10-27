@@ -331,7 +331,7 @@ msgstr "Access Token<<<<<<< HEAD"
 
 #: src/components/ui/table/ActionsHeader.tsx
 msgid "Actions"
-msgstr "Actions"
+msgstr "Actions<<<<<<< HEAD"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/library/ProgramListItem.tsx
@@ -2256,11 +2256,11 @@ msgstr "Hardware Accel."
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Hardware Acceleration"
-msgstr "Hardware Acceleration<<<<<<< HEAD"
+msgstr "Hardware Acceleration<<<<<<< HEAD<<<<<<< HEAD"
 
 #: src/pages/welcome/WelcomePage.tsx
 #~ msgid "HDHomeRun Settings"
-#~ msgstr "HDHomeRun Settings"
+#~ msgstr "HDHomeRun Settings=======>>>>>>> 4e169fab3 (chore: regenerate OpenAPI spec and lingui catalogs after rebase)"
 
 #: src/components/shell/useShellNav.tsx
 msgid "HDHR"
