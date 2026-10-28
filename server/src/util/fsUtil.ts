@@ -1,3 +1,11 @@
+import {
+  closeSync,
+  fsyncSync,
+  openSync,
+  renameSync,
+  unlinkSync,
+  writeSync,
+} from 'node:fs';
 import fs, { constants, type FileHandle } from 'node:fs/promises';
 import path from 'node:path';
 import { isNodeError } from './index.js';
@@ -58,10 +66,7 @@ export function writeFileAtomic(
 }
 
 async function writeFileAtomicInternal(filePath: string, contents: string) {
-  const tempPath = path.join(
-    path.dirname(filePath),
-    `.${path.basename(filePath)}.${process.pid}.tmp`,
-  );
+  const tempPath = atomicWriteTempPath(filePath);
 
   let fileHandle: FileHandle | undefined;
   try {
@@ -83,6 +88,69 @@ async function writeFileAtomicInternal(filePath: string, contents: string) {
     await fs.unlink(tempPath).catch(() => void 0);
     throw e;
   }
+}
+
+export type SyncWriteFs = {
+  openSync: (path: string, flags: string) => number;
+  writeSync: (fd: number, contents: string) => number;
+  fsyncSync: (fd: number) => void;
+  closeSync: (fd: number) => void;
+  renameSync: (from: string, to: string) => void;
+  unlinkSync: (path: string) => void;
+};
+
+const nodeSyncWriteFs: SyncWriteFs = {
+  openSync,
+  writeSync,
+  fsyncSync,
+  closeSync,
+  renameSync,
+  unlinkSync,
+};
+
+/**
+ * Synchronous counterpart to {@link writeFileAtomic}, for writes that must
+ * finish before startup continues. It writes a scratch file, fsyncs it, and
+ * renames it into place, with the same durability limits.
+ */
+export function writeFileAtomicSync(
+  filePath: string,
+  contents: string,
+  fsImpl: SyncWriteFs = nodeSyncWriteFs,
+): void {
+  const tempPath = atomicWriteTempPath(filePath);
+
+  let fd: number | undefined;
+  try {
+    fd = fsImpl.openSync(tempPath, 'w');
+    fsImpl.writeSync(fd, contents);
+    fsImpl.fsyncSync(fd);
+    fsImpl.closeSync(fd);
+    fd = undefined;
+    fsImpl.renameSync(tempPath, filePath);
+  } catch (e) {
+    if (fd !== undefined) {
+      try {
+        fsImpl.closeSync(fd);
+      } catch {
+        // The write already failed and is being rethrown.
+      }
+    }
+
+    try {
+      fsImpl.unlinkSync(tempPath);
+    } catch {
+      // Best-effort cleanup.
+    }
+    throw e;
+  }
+}
+
+function atomicWriteTempPath(filePath: string) {
+  return path.join(
+    path.dirname(filePath),
+    `.${path.basename(filePath)}.${process.pid}.tmp`,
+  );
 }
 
 export async function* streamFileBackwards(

@@ -1,7 +1,9 @@
+import type { FileHandle } from 'node:fs/promises';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
-import { writeFileAtomic } from './fsUtil.ts';
+import type { SyncWriteFs } from './fsUtil.ts';
+import { writeFileAtomic, writeFileAtomicSync } from './fsUtil.ts';
 
 // Deliberately kept out of fsUtil.test.ts: that file mocks node:fs/promises
 // module-wide, and these tests need the real filesystem to say anything
@@ -99,4 +101,64 @@ test('a failed write does not block subsequent writes', async () => {
   await writeFileAtomic(dest, '{"n":3}');
 
   await expect(fs.readFile(dest, 'utf-8')).resolves.toEqual('{"n":3}');
+});
+
+describe('fsync before rename', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  test('the async write syncs the scratch file before renaming it', async () => {
+    const calls: string[] = [];
+    const handle = {
+      writeFile: () => (calls.push('write'), Promise.resolve()),
+      sync: () => (calls.push('sync'), Promise.resolve()),
+      close: () => (calls.push('close'), Promise.resolve()),
+    };
+    vi.spyOn(fs, 'open').mockImplementation(() => {
+      calls.push('open');
+      return Promise.resolve(handle as unknown as FileHandle);
+    });
+    vi.spyOn(fs, 'rename').mockImplementation(() => {
+      calls.push('rename');
+      return Promise.resolve();
+    });
+
+    await writeFileAtomic(path.join(dir, 'settings.json'), '{}');
+
+    expect(calls).toEqual(['open', 'write', 'sync', 'close', 'rename']);
+  });
+
+  test('the sync write syncs the scratch file before renaming it', () => {
+    const calls: string[] = [];
+    const fakeFs: SyncWriteFs = {
+      openSync: () => (calls.push('open'), 7),
+      writeSync: () => (calls.push('write'), 2),
+      fsyncSync: (fd) => void calls.push(`sync:${fd}`),
+      closeSync: (fd) => void calls.push(`close:${fd}`),
+      renameSync: (from, to) =>
+        void calls.push(`rename:${path.basename(from)}->${path.basename(to)}`),
+      unlinkSync: () => void calls.push('unlink'),
+    };
+
+    writeFileAtomicSync(path.join(dir, 'settings.json'), '{}', fakeFs);
+
+    expect(calls).toEqual([
+      'open',
+      'write',
+      'sync:7',
+      'close:7',
+      `rename:.settings.json.${process.pid}.tmp->settings.json`,
+    ]);
+  });
+
+  test('the sync write writes the content and leaves no scratch file', async () => {
+    const dest = path.join(dir, 'settings.json');
+    await fs.writeFile(dest, '{"old":true}');
+
+    writeFileAtomicSync(dest, '{"new":true}');
+
+    await expect(fs.readFile(dest, 'utf-8')).resolves.toBe('{"new":true}');
+    await expect(fs.readdir(dir)).resolves.toEqual(['settings.json']);
+  });
 });

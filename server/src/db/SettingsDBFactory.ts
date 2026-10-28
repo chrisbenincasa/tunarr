@@ -5,7 +5,6 @@ import { defaultLogRollConfig } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { merge } from 'lodash-es';
 import { Low, LowSync } from 'lowdb';
-import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { isMainThread } from 'node:worker_threads';
 import type { DeepPartial } from 'ts-essentials';
@@ -40,27 +39,34 @@ export class SettingsDBFactory {
       return instance;
     }
 
-    const freshSettings = !existsSync(actualPath);
-
     const defaultValue = merge(
       {},
       defaultSettings(this.globalOptions.databaseDirectory),
       initialSettings,
     );
+    // Only the main thread may move a corrupt settings file aside. Workers
+    // start after the main thread has already repaired it.
+    const invalidJson = isMainThread ? 'move_aside' : 'ignore';
+
     // Load this synchronously, but then give the DB instance an async version
-    const db = new LowSync<SettingsFile>(
-      new SyncSchemaBackedDbAdapter(
-        SettingsFileSchema,
-        actualPath,
-        defaultValue,
-      ),
+    const syncAdapter = new SyncSchemaBackedDbAdapter(
+      SettingsFileSchema,
+      actualPath,
       defaultValue,
+      undefined,
+      { invalidJson },
     );
+    const db = new LowSync<SettingsFile>(syncAdapter, defaultValue);
 
     db.read();
+
+    // An empty or corrupt file starts from defaults, exactly like a missing one.
+    const freshSettings = syncAdapter.readFoundNoFile;
+
     // Only the main thread records startup state. Workers bootstrap through
-    // the same entry point, all at once, and lowdb writes through one fixed
-    // scratch file (.settings.json.tmp) before renaming it into place, so
+    // the same entry point, all at once, and every thread in the process
+    // writes through one scratch file (.settings.json.<pid>.tmp) before
+    // renaming it into place, so
     // concurrent writers race on the rename and fail with ENOENT. The parent
     // has already written this file before it spawns any workers.
     if (isMainThread) {
@@ -87,7 +93,13 @@ export class SettingsDBFactory {
 
     const settingsDB = new SettingsDB(
       new Low<SettingsFile>(
-        new SchemaBackedDbAdapter(SettingsFileSchema, actualPath, defaultValue),
+        new SchemaBackedDbAdapter(
+          SettingsFileSchema,
+          actualPath,
+          defaultValue,
+          undefined,
+          { invalidJson },
+        ),
         db.data,
       ),
     );
