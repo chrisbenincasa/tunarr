@@ -21,9 +21,9 @@ Tunarr scans enabled libraries in the background. This step checks itself off wh
 ### Check FFmpeg
 
 !!! info
-    FFmpeg is included in Tunarr Docker images. When Tunarr runs in a container, this step is hidden unless the FFmpeg check fails.
+    FFmpeg is included in Tunarr Docker images. When Tunarr runs in a container, this step is hidden unless the FFmpeg check reports a warning or an error.
 
-Tunarr requires [FFmpeg](https://ffmpeg.org/). FFmpeg is used to normalize channel video / audio streams for seamless playback, interleave your "flex" content, and more. Tunarr defaults to looking for the FFmpeg executable at `/usr/bin/ffmpeg`. If no executable is found, or the version is too old, this step shows the problem and links to the FFmpeg settings page, where you can change the path. The minimum known supported version of FFmpeg is 6.1. The recommended version is 7.1.1. We recommend [this build of FFmpeg](https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/tag/7.1.1) as it matches what is shipped in Tunarr docker containers.
+Tunarr requires [FFmpeg](https://ffmpeg.org/). FFmpeg is used to normalize channel video / audio streams for seamless playback, interleave your "flex" content, and more. Tunarr defaults to looking for the FFmpeg executable at `/usr/bin/ffmpeg`. If no executable is found, or the version is too old, this step shows the problem and links to the FFmpeg settings page, where you can change the path. Only an error blocks **Finish**. A warning, such as a version string Tunarr cannot parse, shows here but does not block setup. The minimum known supported version of FFmpeg is 6.1. The recommended version is 7.1.1. We recommend [this build of FFmpeg](https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/tag/7.1.1) as it matches what is shipped in Tunarr docker containers.
 
 ### Create a channel
 

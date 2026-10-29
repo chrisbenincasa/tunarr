@@ -50,7 +50,7 @@ describe('isFfmpegOk', () => {
     [undefined, true],
     [{ type: 'healthy' as const }, true],
     [{ type: 'info' as const, context: '' }, true],
-    [{ type: 'warning' as const, context: '' }, false],
+    [{ type: 'warning' as const, context: '' }, true],
     [{ type: 'error' as const, context: '' }, false],
   ])('%o -> %s', (check, expected) => {
     expect(isFfmpegOk(check)).toBe(expected);
@@ -72,5 +72,11 @@ describe('showFfmpegStep', () => {
 
   test('shows in a container when the check fails', () => {
     expect(showFfmpegStep(true, failing)).toBe(true);
+  });
+
+  test('shows in a container when the check warns', () => {
+    expect(showFfmpegStep(true, { type: 'warning', context: 'unknown' })).toBe(
+      true,
+    );
   });
 });

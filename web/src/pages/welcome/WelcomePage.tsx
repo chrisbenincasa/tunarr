@@ -1,6 +1,6 @@
 import { AddMediaSourceButton } from '@/components/settings/media_source/AddMediaSourceButton.tsx';
 import { CopyToClipboardButton } from '@/components/base/CopyToClipboardButton.tsx';
-import { useChannels } from '@/hooks/useChannels.ts';
+import { useChannelsSuspense } from '@/hooks/useChannels.ts';
 import { useM3ULink } from '@/hooks/useM3ULink.ts';
 import { useSetOnboardingComplete } from '@/hooks/useOnboarding.ts';
 import { getApiErrorMessage } from '@/helpers/apiError.ts';
@@ -59,7 +59,7 @@ export default function WelcomePage() {
     refetchInterval: (query) =>
       hasScannedLibrary(query.state.data) ? false : 5_000,
   });
-  const { data: channels } = useChannels();
+  const { data: channels } = useChannelsSuspense();
   const { data: healthChecks } = useSystemHealthChecks();
   const { data: systemState } = useSystemState();
   const m3uLink = useM3ULink();
