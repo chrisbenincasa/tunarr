@@ -2129,7 +2129,11 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
 
     if (requireVideoStream && !videoStream) {
       return Result.forError(
-        new Error(`Plex item ID = ${itemId} has no usable video streams`),
+        new Error(
+          videoStreams.length === 0
+            ? `Plex item ID = ${itemId} has no video streams`
+            : `Plex item ID = ${itemId} has no video streams with dimensions`,
+        ),
       );
     }
 
@@ -2294,7 +2298,9 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       resolution:
         isDefined(relevantMedia.width) && isDefined(relevantMedia.height)
           ? { widthPx: relevantMedia.width, heightPx: relevantMedia.height }
-          : undefined,
+          : videoStream
+            ? { widthPx: videoStream.width, heightPx: videoStream.height }
+            : undefined,
       frameRate: videoStream?.frameRate?.toFixed(2),
       streams,
       locations: [
@@ -2320,17 +2326,23 @@ type PlexTvDevicesResponse = {
   MediaContainer: { Device: PlexResource[] };
 };
 
+type PlexSizedVideoStream = PlexMediaVideoStream & {
+  width: number;
+  height: number;
+};
+
 /**
- * Picks the first video stream that reports both dimensions. Plex lists
+ * Picks the first video stream with nonzero dimensions. Plex lists
  * dimensionless streams for empty programs in broadcast recordings, and the
  * transcode pipeline cannot scale a stream of unknown size.
  */
 export function selectPlexVideoStream(
   streams: PlexMediaVideoStream[],
-): Maybe<PlexMediaVideoStream> {
+): Maybe<PlexSizedVideoStream> {
   return find(
     streams,
-    (stream) => isDefined(stream.width) && isDefined(stream.height),
+    (stream): stream is PlexSizedVideoStream =>
+      (stream.width ?? 0) > 0 && (stream.height ?? 0) > 0,
   );
 }
 

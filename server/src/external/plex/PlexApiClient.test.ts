@@ -424,7 +424,7 @@ describe('PlexApiClient', () => {
 
   describe('video stream selection', () => {
     // Broadcast MPEG-TS recordings list one stream per program. Plex reports
-    // dimensions only on the program that carries picture.
+    // dimensions only on the program that carries picture, and none on Media.
     function broadcastStreams() {
       return [
         { streamType: 1, codec: 'mpeg2video', index: 6 },
@@ -454,6 +454,8 @@ describe('PlexApiClient', () => {
         Media: [
           {
             ...media,
+            width: undefined,
+            height: undefined,
             container: 'mpegts',
             Part: media.Part.map((part) => ({ ...part, Stream: streams })),
           },
@@ -489,6 +491,20 @@ describe('PlexApiClient', () => {
       ).toBeUndefined();
     });
 
+    it('skips video streams with zero dimensions', () => {
+      const selected = selectPlexVideoStream([
+        { streamType: 1, codec: 'mpeg2video', index: 6, height: 0, width: 0 },
+        {
+          streamType: 1,
+          codec: 'mpeg2video',
+          index: 5,
+          height: 480,
+          width: 528,
+        },
+      ]);
+      expect(selected?.index).toBe(5);
+    });
+
     it('builds the media item from the stream with dimensions', () => {
       const { client } = makeMinimalPlexClient();
       const result = client.plexMediaStreamsInject(
@@ -502,6 +518,7 @@ describe('PlexApiClient', () => {
         .streams.filter((stream) => stream.streamType === 'video');
       expect(videoStreams).toHaveLength(1);
       expect(videoStreams[0]?.index).toBe(5);
+      expect(result.get().resolution).toEqual({ widthPx: 528, heightPx: 480 });
     });
 
     it('fails when no video stream has dimensions', () => {
@@ -514,8 +531,34 @@ describe('PlexApiClient', () => {
         ]),
       );
 
-      expect(result.isFailure()).toBe(true);
-      expect(fakeLogger.warn).toHaveBeenCalled();
+      if (!result.isFailure()) {
+        throw new Error('expected a failure');
+      }
+      expect(result.error.cause?.message).toBe(
+        'Plex item ID = 1401 has no video streams with dimensions',
+      );
+      expect(fakeLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining('none with dimensions'),
+        '1401',
+        1,
+      );
+    });
+
+    it('fails when the item has no video streams', () => {
+      const { client } = makeMinimalPlexClient();
+      const result = client.plexMediaStreamsInject(
+        '1401',
+        broadcastMovie([
+          { streamType: 2, codec: 'ac3', index: 7, channels: 2 },
+        ]),
+      );
+
+      if (!result.isFailure()) {
+        throw new Error('expected a failure');
+      }
+      expect(result.error.cause?.message).toBe(
+        'Plex item ID = 1401 has no video streams',
+      );
     });
   });
 });
