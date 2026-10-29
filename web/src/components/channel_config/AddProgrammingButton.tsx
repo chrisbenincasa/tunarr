@@ -2,9 +2,9 @@ import { Route } from '@/routes/channels_/$channelId/programming/index.tsx';
 import {
   Add as AddIcon,
   AddToQueue,
+  Directions as RedirectIcon,
   Expand as FlexIcon,
   KeyboardArrowDown as KeyboardArrowDownIcon,
-  Directions as RedirectIcon,
 } from '@mui/icons-material';
 import { Button, MenuItem } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
@@ -48,9 +48,9 @@ export default function AddProgrammingButton() {
     },
     {
       icon: <FlexIcon />,
-      name: t`Flex...`,
+      name: t`Flex Slot...`,
       callback: () => setAddFlexModalOpen(true),
-      description: t`Programs a single Flex time slot. To add Flex across the whole lineup at once, use the Flex menu.`,
+      description: t`Adds one Flex time slot. To add Flex across the whole lineup at once, use the Flex menu next to Add.`,
     },
   ];
 
@@ -85,7 +85,7 @@ export default function AddProgrammingButton() {
       >
         {addProgrammingOptions.map((item) => (
           <ElevatedTooltip
-            elevation={5}
+            elevation={10}
             key={item.name}
             title={item.description}
             placement="right"

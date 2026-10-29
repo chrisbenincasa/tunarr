@@ -477,6 +477,10 @@ msgstr ""
 msgid "Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes."
 msgstr "在节目之间添加弹性间隔，尽量避免连续节目的总时长超过指定的分钟数。"
 
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Adds one Flex time slot. To add Flex across the whole lineup at once, use the Flex menu next to Add."
+msgstr ""
+
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Adjust the output volume (not recommended). Values higher than 100 will boost the audio."
 msgstr "调整输出音量（不推荐）。高于 100 的数值会放大音频。"
@@ -2114,6 +2118,10 @@ msgstr "固定间隔"
 msgid "Flex"
 msgstr "弹性时间"
 
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Flex Slot..."
+msgstr ""
+
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
@@ -2122,8 +2130,8 @@ msgid "Flex Style"
 msgstr "弹性时间样式"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
-msgid "Flex..."
-msgstr ""
+#~ msgid "Flex..."
+#~ msgstr ""
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
@@ -3243,8 +3251,12 @@ msgid "Plays shows in a random order, one episode at a time, keeping each show's
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
-msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first."
+msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first, and removes programs longer than the allowed hours."
 msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+#~ msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first."
+#~ msgstr ""
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
@@ -3345,8 +3357,8 @@ msgstr "节目"
 #~ msgstr "安排一个弹性时间时段。通常你会使用填充时间、限制时段或添加广告来批量生成弹性时间，此功能则适用于更具体的场景。"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
-msgid "Programs a single Flex time slot. To add Flex across the whole lineup at once, use the Flex menu."
-msgstr ""
+#~ msgid "Programs a single Flex time slot. To add Flex across the whole lineup at once, use the Flex menu."
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "Programs saved!"

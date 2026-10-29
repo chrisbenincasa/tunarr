@@ -16,12 +16,12 @@ import AddBreaksModal from '../programming_controls/AddBreaksModal';
 import AddPaddingModal from '../programming_controls/AddPaddingModal';
 import AddRestrictHoursModal from '../programming_controls/AddRestrictHoursModal';
 
-type OpenModal = 'breaks' | 'padding' | 'restrict';
+type FlexModalKind = 'breaks' | 'padding' | 'restrict';
 
 export function ChannelProgrammingFlexTools() {
   const { t } = useLingui();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [openModal, setOpenModal] = useState<OpenModal | null>(null);
+  const [openModal, setOpenModal] = useState<FlexModalKind | null>(null);
   const removeFlex = useRemoveFlex();
   const open = anchorEl !== null;
 
@@ -29,7 +29,7 @@ export function ChannelProgrammingFlexTools() {
     setAnchorEl(null);
   };
 
-  const openFromMenu = (modal: OpenModal) => {
+  const openFromMenu = (modal: FlexModalKind) => {
     setOpenModal(modal);
     handleClose();
   };
@@ -74,7 +74,7 @@ export function ChannelProgrammingFlexTools() {
           </MenuItem>
         </ElevatedTooltip>
         <ElevatedTooltip
-          title={t`Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first.`}
+          title={t`Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first, and removes programs longer than the allowed hours.`}
           placement="right"
           elevation={10}
         >

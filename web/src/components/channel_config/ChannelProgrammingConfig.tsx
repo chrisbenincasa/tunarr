@@ -203,6 +203,7 @@ export function ChannelProgrammingConfig() {
             gap={{ xs: 1 }}
             sx={{
               display: 'flex',
+              flexWrap: { sm: 'wrap' },
               columnGap: 1,
               alignItems: 'center',
               justifyContent: { sm: 'flex-end' },
