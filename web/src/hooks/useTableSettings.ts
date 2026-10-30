@@ -2,10 +2,14 @@ import type {
   OnChangeFn,
   PaginationState,
   SortingState,
-  VisibilityState,
+  ColumnVisibilityState,
 } from '@tanstack/react-table';
 import { isFunction } from 'lodash-es';
-import type { MRT_RowData, MRT_TableOptions } from 'material-react-table';
+import type {
+  MRT_DensityState,
+  MRT_RowData,
+  MRT_TableOptions,
+} from 'material-react-table';
 import { useCallback, useState } from 'react';
 import {
   setTableColumnModel,
@@ -13,18 +17,33 @@ import {
   setTableSortState,
 } from '../store/settings/actions.ts';
 import { useSettings } from '../store/settings/selectors.ts';
+import useStore from '../store/index.ts';
+
+// Maps the app-wide density setting onto a table. Tables that are compact by
+// design pass 'compact' so they stay compact in both modes.
+export const useTableDensity = (
+  comfortableDensity: MRT_DensityState = 'comfortable',
+) => {
+  const dense = useStore((state) => state.theme.density === 'dense');
+  const density: MRT_DensityState = dense ? 'compact' : comfortableDensity;
+  return {
+    density,
+    enableDensityToggle: false,
+  };
+};
 
 export const useTableSettings = (
   tableName: string,
   defaultPaginationState: PaginationState = { pageIndex: 0, pageSize: 10 },
-  defaultVisibilityState: VisibilityState = {},
+  defaultVisibilityState: ColumnVisibilityState = {},
   defaultSortState: SortingState = [],
 ) => {
   const settings = useSettings();
   const tableSettings = settings.ui.tableSettings[tableName];
   const initialColumnModel =
     tableSettings?.columnModel ?? defaultVisibilityState;
-  const colVisibilityState = useState<VisibilityState>(initialColumnModel);
+  const colVisibilityState =
+    useState<ColumnVisibilityState>(initialColumnModel);
   const paginationState = useState<PaginationState>(
     tableSettings?.pagination ?? defaultPaginationState,
   );
@@ -32,7 +51,7 @@ export const useTableSettings = (
     tableSettings?.sortState ?? defaultSortState,
   );
 
-  const visibilityUpdater: OnChangeFn<VisibilityState> = useCallback(
+  const visibilityUpdater: OnChangeFn<ColumnVisibilityState> = useCallback(
     (updater) => {
       if (isFunction(updater)) {
         colVisibilityState[1]((prev) => {
@@ -69,7 +88,6 @@ export const useTableSettings = (
       if (isFunction(updater)) {
         sortState[1]((prev) => {
           const next = updater(prev);
-          console.log(next);
           setTableSortState(tableName, next);
           return next;
         });
@@ -100,8 +118,10 @@ export const useTableSettings = (
 export const useStoreBackedTableSettings = <Data extends MRT_RowData>(
   tableName: string,
   defaultPaginationState: PaginationState = { pageIndex: 0, pageSize: 10 },
-  defaultVisibilityState: VisibilityState = {},
+  defaultVisibilityState: ColumnVisibilityState = {},
+  comfortableDensity: MRT_DensityState = 'comfortable',
 ) => {
+  const { density, enableDensityToggle } = useTableDensity(comfortableDensity);
   const tableState = useTableSettings(
     tableName,
     defaultPaginationState,
@@ -113,7 +133,9 @@ export const useStoreBackedTableSettings = <Data extends MRT_RowData>(
       columnVisibility: tableState.colVisibilityState.current,
       pagination: tableState.paginationState.current,
       sorting: tableState.sortState.current,
+      density,
     },
+    enableDensityToggle,
     initialState: {
       pagination: tableState.paginationState.current,
       columnVisibility: tableState.colVisibilityState.current,

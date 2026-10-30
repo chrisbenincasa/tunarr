@@ -6,11 +6,10 @@ packages:
   - e2e
 
 catalog:
-  "@typescript/native-preview": beta
   dayjs: ^1.11.20
   lodash-es: ^4.17.21
   random-js: 2.1.0
-  typescript: "5.9.3"
+  typescript: "7.0.2"
   zod: ^4.5.4
 
 catalogs:

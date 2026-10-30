@@ -1,6 +1,6 @@
 # Channel Lineup Loading, Server-Side Drafts and Program Add Flow
 
-> **Status (09/29/2026):** Phases 0 and 1 are in open PR #2176. Part of Phase 2 is in open PR #2177 (dialogs mount only when open, memoized lineup). A 16,920-item lineup now cold-loads in 1.7 s at a 110 MB peak heap. Phase 4 is now server-side lineup drafts, chosen 09/28/2026 over a slim client payload. Phase 4 design was grilled 09/28–09/29/2026, and all open questions are settled. Next step is Phase 4a on `dev`. Phase 3 (batched add) is not started and now feeds the draft.
+> **Status (09/29/2026):** Phases 0 and 1 are in open PR #2176. Part of Phase 2 is in open PR #2177 (dialogs mount only when open, memoized lineup). A 16,920-item lineup now cold-loads in 1.7 s at a 110 MB peak heap. Phase 4 is now server-side lineup drafts, chosen 09/28/2026 over a slim client payload. Phase 4 design was grilled 09/28–09/29/2026, and all open questions are settled. Next step is Phase 4a on `main` (moved from `dev` 10/19/2026, see Stages). Phase 3 (batched add) is not started and now feeds the draft.
 
 ## Context
 
@@ -235,7 +235,7 @@ Pages carry a slim summary per program, not full `ContentProgram` objects.
 
 ### Stages
 
-Stages 4a to 4c ship on `dev`, because the work spans many PRs and changes the core editor.
+Stages 4a to 4c ship on `main`, phase by phase, so they line up with the editor rebuild in `plans/web-redesign.md` Phase 6 (decided 10/19/2026). Each PR leaves the editor working. The draft tables, API and server operations merge first, while the editor still reads its in-browser lineup. The channel editor switches to the draft in the last 4a PR, once every tool group runs on the server.
 
 1. **4a:** Tables, draft API, paged reads and summaries. Channel editor list reads from the draft. Every operation group runs on the server: manual, sort, remove, arrange and flex. History panel and changed-row highlights.
    - Delete the dead offsets fallback in `assembleCondensedLineup` (`LineupRepository.ts:844-848`). `startTimeOffsets` is a required array, so the branch never runs, and it has an off-by-one (`take(items, cleanOffset - 1)`).

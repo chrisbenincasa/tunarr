@@ -35,6 +35,11 @@ msgstr ""
 msgid "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, m3u playlist, etc. The channel can still be streamed directly or be used as a redirect target."
 msgstr ""
 
+#. placeholder {0}: badge.count
+#: src/components/ui/patterns/AppShell/NavBadge.tsx
+msgid "{0, plural, one {(# health check issue)} other {(# health check issues)}}"
+msgstr ""
+
 #. placeholder {0}: selectedChannelIds.length
 #: src/components/channels/BulkActionsToolbar.tsx
 msgid "{0, plural, one {# channel selected} other {# channels selected}}"
@@ -206,6 +211,10 @@ msgstr ""
 msgid "{enabled} of {total} enabled"
 msgstr ""
 
+#: src/components/ui/table/DataTable.tsx
+msgid "{from}–{to} of {count}"
+msgstr ""
+
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr ""
@@ -327,6 +336,10 @@ msgstr ""
 msgid "Access Token"
 msgstr ""
 
+#: src/components/ui/table/ActionsHeader.tsx
+msgid "Actions"
+msgstr ""
+
 #: src/components/library/ProgramListItem.tsx
 #: src/components/settings/AddPlexServer.tsx
 #: src/components/settings/media_source/AddMediaSourceButton.tsx
@@ -442,11 +455,6 @@ msgstr ""
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Add TV Shows or Movies to programming list."
 msgstr ""
-
-#: src/components/channels/BulkAssignFillersDialog.tsx
-#: src/components/fillers/AssignFillerToChannelsDialog.tsx
-#~ msgid "Added {0} {1, plural, one {assignment} other {assignments}}, {2} already existed."
-#~ msgstr ""
 
 #. placeholder {0}: data.added
 #. placeholder {1}: data.added
@@ -633,6 +641,7 @@ msgstr ""
 msgid "Assign Fillers to {0, plural, one {# Channel} other {# Channels}}"
 msgstr ""
 
+#: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 msgid "Assign to Channels"
 msgstr ""
@@ -906,6 +915,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddRedirectModal.tsx
 #: src/components/programming_controls/AddRedirectModal.tsx
+#: src/components/shell/CommandPaletteContainer.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Channel"
@@ -958,7 +968,8 @@ msgstr ""
 
 #: src/App.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/CommandPaletteContainer.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -993,6 +1004,10 @@ msgstr ""
 msgid "Clear All"
 msgstr ""
 
+#: src/components/ui/table/DataTable.tsx
+msgid "Clear filters"
+msgstr ""
+
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Clear Schedule"
 msgstr ""
@@ -1003,6 +1018,10 @@ msgstr ""
 
 #: src/components/channel_config/CustomShowProgrammingSelector.tsx
 msgid "Click to preview the items in this Custom Show. Note that only the whole show can be added at once."
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "close"
 msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingList.tsx
@@ -1023,6 +1042,10 @@ msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Color"
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Comfortable"
 msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx
@@ -1117,15 +1140,13 @@ msgstr ""
 msgid "Cooldown (s)"
 msgstr ""
 
-#: src/components/channels/BulkAssignFillersDialog.tsx
-#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+#: src/components/channel_config/ChannelFlexConfig.tsx
 #~ msgid "Cooldown (seconds)"
 #~ msgstr ""
 
-#. placeholder {0}: navItem.name
 #: src/components/TopBar.tsx
-msgid "Copied {0} URL to clipboard"
-msgstr ""
+#~ msgid "Copied {0} URL to clipboard"
+#~ msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Copied channel \"{channelName}\" m3u link to clipboard"
@@ -1135,8 +1156,16 @@ msgstr ""
 msgid "Copied Channel ID!"
 msgstr ""
 
+#: src/components/shell/HelpMenuContainer.tsx
+msgid "Copied M3U URL to clipboard"
+msgstr ""
+
 #: src/hooks/useCopyToClipboard.ts
 msgid "Copied to clipboard!"
+msgstr ""
+
+#: src/components/shell/HelpMenuContainer.tsx
+msgid "Copied XMLTV URL to clipboard"
 msgstr ""
 
 #: src/pages/system/SystemDebugPage.tsx
@@ -1154,6 +1183,7 @@ msgid "Copy Full Report"
 msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
 msgid "Copy M3U URL"
 msgstr ""
 
@@ -1164,6 +1194,10 @@ msgstr ""
 #: src/components/ProgramStreamDetails.tsx
 #: src/components/RawProgramDetails.tsx
 msgid "Copy to Clipboard"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+msgid "Copy XMLTV URL"
 msgstr ""
 
 #: src/hooks/useEmptyTrash.ts
@@ -1194,6 +1228,10 @@ msgstr ""
 msgid "Custom Program"
 msgstr ""
 
+#: src/components/shell/CommandPaletteContainer.tsx
+msgid "Custom show"
+msgstr ""
+
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
@@ -1222,7 +1260,8 @@ msgid "Custom Show: {0}"
 msgstr ""
 
 #: src/components/channel_config/ProgrammingSelector.tsx
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/CommandPaletteContainer.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/CustomShowsPage.tsx
 msgid "Custom Shows"
@@ -1271,8 +1310,7 @@ msgstr ""
 msgid "Days to Precalculate"
 msgstr ""
 
-#: src/hooks/useNavItems.tsx
-#: src/pages/system/SystemLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Debug"
 msgstr ""
 
@@ -1294,6 +1332,7 @@ msgstr ""
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 msgid "Delete"
@@ -1369,6 +1408,19 @@ msgstr ""
 #: src/components/settings/media_source/MediaSourceDeleteDialog.tsx
 #~ msgid "Deleting a Plex server will remove all programming from your channels associated with this plex server. Missing programming will be replaced with Flex time. This action cannot be undone."
 #~ msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Dense"
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx
+msgid "Dense fits more rows on screen with smaller controls."
+msgstr ""
+
+#: src/components/settings/general/WebSettings.tsx
+#: src/components/settings/general/WebSettings.tsx
+msgid "Density"
+msgstr ""
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Desc"
@@ -1446,7 +1498,7 @@ msgstr ""
 msgid "Do not group programs at all. Normal shuffle."
 msgstr ""
 
-#: src/components/TopBar.tsx
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
 msgid "Documentation"
 msgstr ""
 
@@ -1525,6 +1577,7 @@ msgstr ""
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Edit"
@@ -1739,14 +1792,6 @@ msgstr ""
 msgid "Episodes"
 msgstr ""
 
-#: src/components/fillers/AssignFillerToChannelsDialog.tsx
-#~ msgid "Error assigning filler: {0}"
-#~ msgstr ""
-
-#: src/components/channels/BulkAssignFillersDialog.tsx
-#~ msgid "Error assigning fillers: {0}"
-#~ msgstr ""
-
 #: src/hooks/useBulkAssignFillers.tsx
 msgid "Error assigning fillers: {message}"
 msgstr ""
@@ -1837,6 +1882,10 @@ msgstr ""
 msgid "Errors"
 msgstr ""
 
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "Esc, close search"
+msgstr ""
+
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Escape Hatches"
 msgstr ""
@@ -1899,12 +1948,21 @@ msgstr ""
 msgid "Feature flags saved!"
 msgstr ""
 
-#: src/pages/settings/SettingsLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Features"
 msgstr ""
 
+#: src/components/shell/useShellNav.tsx
+msgid "FFmpeg"
+msgstr ""
+
 #: src/pages/settings/SettingsLayout.tsx
-msgid "FFMPEG"
+#~ msgid "FFMPEG"
+#~ msgstr ""
+
+#. placeholder {0}: version.ffmpeg
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+msgid "FFmpeg {0}"
 msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
@@ -1958,10 +2016,9 @@ msgstr ""
 msgid "FFmpeg version 7.1+ recommended. Check your current version in the sidebar"
 msgstr ""
 
-#. placeholder {0}: version.ffmpeg
 #: src/components/VersionFooter.tsx
-msgid "FFMPEG: {0}"
-msgstr ""
+#~ msgid "FFMPEG: {0}"
+#~ msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "FFprobe Executable Path"
@@ -2019,6 +2076,10 @@ msgstr ""
 msgid "Filler is resolved at schedule time. The guide shows specific filler titles."
 msgstr ""
 
+#: src/components/shell/CommandPaletteContainer.tsx
+msgid "Filler list"
+msgstr ""
+
 #: src/components/channel_config/ChannelFlexConfig.tsx
 #: src/components/channel_config/ChannelFlexConfig.tsx
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
@@ -2035,8 +2096,10 @@ msgstr ""
 msgid "Filler List: {0}"
 msgstr ""
 
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/CommandPaletteContainer.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
+#: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 msgid "Filler Lists"
 msgstr ""
@@ -2054,6 +2117,11 @@ msgstr ""
 #: src/components/search/SearchFilterBuilder.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Filter"
+msgstr ""
+
+#: src/components/ui/table/filters/TextFilter.tsx
+#: src/components/ui/table/filters/TextFilter.tsx
+msgid "Filter by {label}"
 msgstr ""
 
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
@@ -2122,7 +2190,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
-#: src/pages/settings/SettingsLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "General"
 msgstr ""
 
@@ -2143,6 +2211,22 @@ msgstr ""
 msgid "Go Home"
 msgstr ""
 
+#: src/components/ui/table/DataTable.tsx
+msgid "Go to first page"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "Go to last page"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "Go to next page"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "Go to previous page"
+msgstr ""
+
 #: src/components/base/ProgramViewToggleButton.tsx
 msgid "Grid"
 msgstr ""
@@ -2155,7 +2239,7 @@ msgstr ""
 msgid "Grouping works as follows:"
 msgstr ""
 
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/pages/guide/GuidePage.tsx
 msgid "Guide"
 msgstr ""
@@ -2172,7 +2256,7 @@ msgstr ""
 msgid "Hardware Acceleration"
 msgstr ""
 
-#: src/pages/settings/SettingsLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "HDHR"
 msgstr ""
 
@@ -2186,6 +2270,11 @@ msgstr ""
 
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Healthy?"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+msgid "Help and links"
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
@@ -2407,13 +2496,14 @@ msgstr ""
 
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Libraries"
 msgstr ""
 
 #: src/components/channel_config/ImportedLibrarySeletor.tsx
 #: src/components/channel_config/ImportedLibrarySeletor.tsx
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/LibraryIndexPage.tsx
 msgid "Library"
@@ -2478,11 +2568,16 @@ msgstr ""
 msgid "Loading"
 msgstr ""
 
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+msgid "Loading version…"
+msgstr ""
+
 #: src/components/ProgramSearchAutocomplete.tsx
 msgid "Loading..."
 msgstr ""
 
 #: src/components/ProgramSearchAutocomplete.tsx
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
 msgid "Loading…"
 msgstr ""
 
@@ -2519,8 +2614,7 @@ msgstr ""
 msgid "Logging"
 msgstr ""
 
-#: src/hooks/useNavItems.tsx
-#: src/pages/system/SystemLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Logs"
 msgstr ""
 
@@ -2546,6 +2640,11 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Loudnorm Options"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/PhoneNav.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Main"
 msgstr ""
 
 #: src/components/programming_controls/AddReplicateModal.tsx
@@ -2582,6 +2681,14 @@ msgstr ""
 
 #: src/components/search/SearchGroupNode.tsx
 msgid "Match any of"
+msgstr ""
+
+#: src/components/ui/table/filters/RangeFilter.tsx
+msgid "Max"
+msgstr ""
+
+#: src/components/ui/table/filters/RangeFilter.tsx
+msgid "Max {label}"
 msgstr ""
 
 #: src/components/settings/general/BackupForm.tsx
@@ -2648,7 +2755,6 @@ msgstr ""
 msgid "Media Source: \"{0}\""
 msgstr ""
 
-#: src/hooks/useRouteName.ts
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Media Sources"
 msgstr ""
@@ -2676,6 +2782,14 @@ msgstr ""
 msgid "Mid-Roll"
 msgstr ""
 
+#: src/components/ui/table/filters/RangeFilter.tsx
+msgid "Min"
+msgstr ""
+
+#: src/components/ui/table/filters/RangeFilter.tsx
+msgid "Min {label}"
+msgstr ""
+
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Min Duration"
 msgstr ""
@@ -2700,8 +2814,17 @@ msgstr ""
 msgid "Month"
 msgstr ""
 
+#: src/components/ui/patterns/AppShell/PhoneNav.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "More"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "move"
+msgstr ""
+
 #: src/components/channel_config/SelectedProgrammingList.tsx
-#: src/hooks/slot_scheduler/useSlotName.ts
 msgid "Movie"
 msgstr ""
 
@@ -2721,8 +2844,6 @@ msgid "Movie, {0}"
 msgstr ""
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/hooks/programming_controls/useSlotProgramOptions.ts
-#: src/hooks/programming_controls/useSlotProgramOptions.ts
 #: src/pages/library/TrashPage.tsx
 msgid "Movies"
 msgstr ""
@@ -2865,6 +2986,10 @@ msgstr ""
 msgid "No Media Sources detected."
 msgstr ""
 
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "No pages or lists match."
+msgstr ""
+
 #: src/components/channel_config/ChannelLineupList.tsx
 msgid "No programming added yet"
 msgstr ""
@@ -2881,9 +3006,17 @@ msgstr ""
 #~ msgid "No programs selected"
 #~ msgstr ""
 
+#: src/components/ui/table/DataTable.tsx
+msgid "No records to display"
+msgstr ""
+
 #: src/components/channel_config/MediaItemGrid.tsx
 #: src/components/channel_config/MediaItemList.tsx
 msgid "No results"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "No results found"
 msgstr ""
 
 #: src/components/VersionFooter.tsx
@@ -2962,9 +3095,17 @@ msgstr ""
 msgid "Opacity"
 msgstr ""
 
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "open"
+msgstr ""
+
 #. placeholder {0}: capitalize(program.sourceType)
 #: src/components/programs/MediaDetailCard.tsx
 msgid "Open in {0}"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "Opens Search"
 msgstr ""
 
 #: src/components/channel_config/plex/PlexFilterBuilder.tsx
@@ -3064,6 +3205,14 @@ msgstr ""
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Pad Times"
+msgstr ""
+
+#: src/components/shell/CommandPaletteContainer.tsx
+msgid "Page"
+msgstr ""
+
+#: src/components/shell/CommandPaletteContainer.tsx
+msgid "Pages"
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
@@ -3518,6 +3667,10 @@ msgstr ""
 msgid "Restrict search fields"
 msgstr ""
 
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "Results"
+msgstr ""
+
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "Review"
 msgstr ""
@@ -3535,12 +3688,19 @@ msgid "Roll on Schedule"
 msgstr ""
 
 #: src/components/settings/general/LogRollForm.tsx
-#: src/components/settings/general/LogRollForm.tsx
 msgid "Roll the log file on a fixed schedule, regardless of file size."
+msgstr ""
+
+#: src/components/settings/general/LogRollForm.tsx
+msgid "Roll the log file when it grows past the maximum size."
 msgstr ""
 
 #: src/components/library/LibraryListViewBreadcrumbs.tsx
 msgid "Root"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "Rows per page"
 msgstr ""
 
 #: src/pages/settings/TaskSettingsPage.tsx
@@ -3612,7 +3772,7 @@ msgstr ""
 msgid "Scan {0}"
 msgstr ""
 
-#: src/pages/settings/SettingsLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Scanner"
 msgstr ""
 
@@ -3629,8 +3789,14 @@ msgstr ""
 msgid "Schedule programming using slots assigned a start time and duration."
 msgstr ""
 
+#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/DataTable.tsx
 #: src/hooks/useRouteName.ts
 msgid "Search"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Search ({searchShortcut})"
 msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
@@ -3649,13 +3815,30 @@ msgstr ""
 msgid "Search is currently scoped to this Media Source."
 msgstr ""
 
+#. placeholder {0}: query.trim()
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+msgid "Search library for “{0}”"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+#: src/components/ui/patterns/AppShell/PhoneNav.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Search or jump to"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/CommandPalette.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Search or jump to…"
+msgstr ""
+
 #: src/pages/system/StatusPage.tsx
 msgid "Search Server URL:"
 msgstr ""
 
 #: src/components/TopBar.tsx
-msgid "Search…"
-msgstr ""
+#~ msgid "Search…"
+#~ msgstr ""
 
 #: src/components/programs/Seasons.tsx
 msgid "Seasons"
@@ -3733,8 +3916,8 @@ msgstr ""
 msgid "Sets the number of threads used to decode the input stream. Set to 0 to let ffmpeg automatically decide how many threads to use. Read more about this option <0>here</0>. <1>Note: </1> this option is overridden to 1 when using hardware accelearation for stability reasons."
 msgstr ""
 
+#: src/components/shell/useShellNav.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
-#: src/hooks/useNavItems.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/settings/SettingsLayout.tsx
 msgid "Settings"
@@ -3782,6 +3965,25 @@ msgstr ""
 #. placeholder {0}: show.title
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Show: {0}"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/DataTable.tsx
+msgid "Show/Hide columns"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/DataTable.tsx
+msgid "Show/Hide filters"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "Show/Hide filters ({activeFilters} active)"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/DataTable.tsx
+msgid "Show/Hide search"
 msgstr ""
 
 #: src/components/channels/ChannelPrograms.tsx
@@ -3845,6 +4047,10 @@ msgstr ""
 msgid "Slots Editor..."
 msgstr ""
 
+#: src/components/shell/CommandPaletteContainer.tsx
+msgid "Smart collection"
+msgstr ""
+
 #: src/components/slot_scheduler/SmartCollectionSlotProgrammingForm.tsx
 msgid "Smart Collection"
 msgstr ""
@@ -3859,7 +4065,8 @@ msgstr ""
 msgid "Smart Collection: {0}"
 msgstr ""
 
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/CommandPaletteContainer.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/routes/library/smart_collections/index.tsx
 msgid "Smart Collections"
@@ -3877,6 +4084,14 @@ msgstr ""
 msgid "Sort"
 msgstr ""
 
+#: src/components/ui/table/SortButton.tsx
+msgid "Sort by {label} ascending"
+msgstr ""
+
+#: src/components/ui/table/SortButton.tsx
+msgid "Sort by {label} descending"
+msgstr ""
+
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Sort By..."
@@ -3892,6 +4107,14 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Sort TV Shows (desc)"
+msgstr ""
+
+#: src/components/ui/table/SortButton.tsx
+msgid "Sorted by {label} ascending"
+msgstr ""
+
+#: src/components/ui/table/SortButton.tsx
+msgid "Sorted by {label} descending"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
@@ -3921,7 +4144,8 @@ msgstr ""
 #~ msgid "Source Type"
 #~ msgstr ""
 
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/useShellNav.tsx
+#: src/hooks/useRouteName.ts
 msgid "Sources"
 msgstr ""
 
@@ -3948,8 +4172,7 @@ msgstr ""
 msgid "Starting Episode"
 msgstr ""
 
-#: src/hooks/useNavItems.tsx
-#: src/pages/system/SystemLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Status"
 msgstr ""
 
@@ -4034,6 +4257,16 @@ msgstr ""
 msgid "Successfully updated Media Source settings."
 msgstr ""
 
+#: src/components/ui/patterns/AppShell/PhoneNav.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Switch to dark mode"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/PhoneNav.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Switch to light mode"
+msgstr ""
+
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Sync"
 msgstr ""
@@ -4055,7 +4288,7 @@ msgid "Synced with external playlist"
 msgstr ""
 
 #: src/components/settings/DarkModeButton.tsx
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/pages/system/SystemLayout.tsx
 msgid "System"
 msgstr ""
@@ -4085,8 +4318,8 @@ msgstr ""
 msgid "Take Turns"
 msgstr ""
 
+#: src/components/shell/useShellNav.tsx
 #: src/pages/settings/TaskSettingsPage.tsx
-#: src/pages/system/SystemLayout.tsx
 msgid "Tasks"
 msgstr ""
 
@@ -4319,6 +4552,10 @@ msgstr ""
 msgid "TO"
 msgstr ""
 
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
+msgid "To schedule movies, add them to a custom show and choose Custom Show."
+msgstr ""
+
 #: src/pages/welcome/WelcomePage.tsx
 msgid "To use Tunarr, you must first connect at least one media source. Media sources provide all content used to create channels in Tunarr. Plex and Jellyfin are currently supported."
 msgstr ""
@@ -4340,6 +4577,10 @@ msgstr ""
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "toggle password visibility"
+msgstr ""
+
+#: src/components/ui/table/DataTable.tsx
+msgid "Toggle visibility {label}"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingTools.tsx
@@ -4383,7 +4624,7 @@ msgstr ""
 msgid "Transcoding Settings"
 msgstr ""
 
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/TrashPage.tsx
 msgid "Trash"
@@ -4393,8 +4634,13 @@ msgstr ""
 msgid "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
 msgstr ""
 
-#: src/pages/system/SystemLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Troubleshoot"
+msgstr ""
+
+#. placeholder {0}: version.tunarr
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+msgid "Tunarr {0}"
 msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
@@ -4403,6 +4649,11 @@ msgstr ""
 
 #: src/pages/system/StatusPage.tsx
 msgid "Tunarr Backend URL:"
+msgstr ""
+
+#: src/components/ui/patterns/AppShell/PhoneNav.tsx
+#: src/components/ui/patterns/AppShell/ShellTopBar.tsx
+msgid "Tunarr home"
 msgstr ""
 
 #: src/components/Video.tsx
@@ -4546,14 +4797,17 @@ msgstr ""
 msgid "Version Mismatch!"
 msgstr ""
 
-#. placeholder {0}: version.tunarr
-#: src/components/VersionFooter.tsx
-msgid "Version: {0}"
+#: src/components/ui/patterns/AppShell/HelpMenu.tsx
+msgid "Version unknown"
 msgstr ""
 
 #: src/components/VersionFooter.tsx
-msgid "Version: unknown"
-msgstr ""
+#~ msgid "Version: {0}"
+#~ msgstr ""
+
+#: src/components/VersionFooter.tsx
+#~ msgid "Version: unknown"
+#~ msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Video"
@@ -4660,7 +4914,7 @@ msgstr ""
 msgid "Weighting"
 msgstr ""
 
-#: src/hooks/useNavItems.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "Welcome"
 msgstr ""
 
@@ -4692,7 +4946,7 @@ msgstr ""
 msgid "Will force use of a software filters (e.g. scale, pad, etc.) despite hardware acceleration settings."
 msgstr ""
 
-#: src/pages/settings/SettingsLayout.tsx
+#: src/components/shell/useShellNav.tsx
 msgid "XMLTV"
 msgstr ""
 

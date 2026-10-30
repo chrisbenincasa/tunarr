@@ -22,7 +22,7 @@ import { TunarrApiProvider } from './context/TunarrApiContext.tsx';
 import { messages as enMessages } from './locales/en/messages.po';
 import { queryClient } from './queryClient.ts';
 import { router } from './router.ts';
-import { Theme } from './theme.ts';
+import { createTunarrTheme } from './theme.ts';
 // Load English immediately as a synchronous fallback so the first render
 // always has text (no blank flash or message IDs).
 i18n.loadAndActivate({ locale: 'en', messages: enMessages });
@@ -37,15 +37,18 @@ export const Tunarr = () => {
     void setUiLocale(locale);
   }, [locale]);
 
+  const density = useStore((store) => store.theme.density ?? 'comfortable');
+
   const muiLocaleTheme = useMemo(() => {
+    const theme = createTunarrTheme(density);
     if (locale === 'es') {
-      return createTheme(Theme, muiEsES, pickersEsES);
+      return createTheme(theme, muiEsES, pickersEsES);
     }
     if (locale === 'zh-CN') {
-      return createTheme(Theme, muiZhCN, pickersZhCN);
+      return createTheme(theme, muiZhCN, pickersZhCN);
     }
-    return Theme;
-  }, [locale]);
+    return theme;
+  }, [locale, density]);
 
   return (
     <TunarrApiProvider queryClient={queryClient}>

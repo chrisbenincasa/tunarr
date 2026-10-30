@@ -106,13 +106,6 @@ export const AddTimeSlotButton = ({
         fillerList: null,
         isMissing: false,
       };
-    } else if (optionsByType['movie'] && !isEmpty(optionsByType['movie'])) {
-      newSlot = {
-        id: v4(),
-        ...baseSlot,
-        type: 'movie',
-        order: 'alphanumeric',
-      };
     } else {
       newSlot = {
         ...baseSlot,

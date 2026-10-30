@@ -1,7 +1,10 @@
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
 import { FileStreamSource } from '../../../stream/types.ts';
-import { EmptyFfmpegCapabilities } from '../capabilities/FfmpegCapabilities.ts';
+import {
+  EmptyFfmpegCapabilities,
+  FfmpegCapabilities,
+} from '../capabilities/FfmpegCapabilities.ts';
 import {
   defaultHlsOptions,
   HlsDirectOutputFormat,
@@ -9,7 +12,10 @@ import {
 } from '../constants.ts';
 import { AudioVolumeFilter } from '../filter/AudioVolumeFilter.ts';
 import { LoudnormFilter } from '../filter/LoudnormFilter.ts';
-import { PixelFormatYuv420P } from '../format/PixelFormat.ts';
+import {
+  PixelFormatYuv420P,
+  PixelFormatYuv420P10Le,
+} from '../format/PixelFormat.ts';
 import { AudioInputSource } from '../input/AudioInputSource.ts';
 import { SubtitlesInputSource } from '../input/SubtitlesInputSource.ts';
 import { VideoInputSource } from '../input/VideoInputSource.ts';
@@ -544,5 +550,74 @@ describe('BasePipelineBuilder', () => {
     // video/audio are still seeked (subtitle is not, so only 2 -ss flags)
     const seekCount = commandArgs.filter((arg) => arg === '-ss').length;
     expect(seekCount).toBe(2);
+  });
+
+  describe('AV1 software decoder selection', () => {
+    function buildAv1(binaryCapabilities: FfmpegCapabilities) {
+      const av1Video = VideoInputSource.withStream(
+        new FileStreamSource('/path/to/video.mkv'),
+        VideoStream.create({
+          codec: 'av1',
+          displayAspectRatio: '16:9',
+          frameSize: FrameSize.withDimensions(1920, 1036),
+          index: 0,
+          pixelFormat: new PixelFormatYuv420P10Le(),
+          providedSampleAspectRatio: null,
+        }),
+      );
+
+      const pipeline = new NoopPipelineBuilder(
+        av1Video,
+        makeAudio(),
+        null,
+        null,
+        null,
+        binaryCapabilities,
+      );
+
+      return pipeline
+        .build(state, frameState, DefaultPipelineOptions)
+        .getCommandArgs();
+    }
+
+    function decoderArg(args: string[]) {
+      const inputIdx = args.indexOf('/path/to/video.mkv');
+      const codecIdx = args.lastIndexOf('-c:v', inputIdx);
+      return codecIdx >= 0 ? args[codecIdx + 1] : undefined;
+    }
+
+    // libaom-av1 is both an encoder and a decoder; libdav1d only decodes.
+    const libaomEncoder = new Map([
+      ['libaom-av1', { ffmpegName: 'libaom-av1', name: 'libaom AV1' }],
+    ]);
+
+    test.each([
+      [['libdav1d', 'libaom-av1', 'av1'], 'libdav1d'],
+      [['libaom-av1', 'av1'], 'libaom-av1'],
+      [['av1'], 'av1'],
+      [[], 'av1'],
+    ])('decoders %j selects %s', (decoders, expected) => {
+      const capabilities = new FfmpegCapabilities(
+        new Set(),
+        libaomEncoder,
+        new Set(),
+        new Set(),
+        new Set(decoders),
+      );
+
+      expect(decoderArg(buildAv1(capabilities))).toBe(expected);
+    });
+
+    test('does not treat an encoder as an available decoder', () => {
+      const capabilities = new FfmpegCapabilities(
+        new Set(),
+        libaomEncoder,
+        new Set(),
+        new Set(),
+        new Set(),
+      );
+
+      expect(decoderArg(buildAv1(capabilities))).toBe('av1');
+    });
   });
 });

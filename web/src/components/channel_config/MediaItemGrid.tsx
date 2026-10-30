@@ -10,6 +10,7 @@ import {
   Grid,
   LinearProgress,
   Typography,
+  useTheme,
 } from '@mui/material';
 import type {
   InfiniteData,
@@ -40,7 +41,6 @@ import {
   useIntersectionObserver,
   useResizeObserver,
 } from 'usehooks-ts';
-import { TopBarPadddingPx } from '../../helpers/constants.ts';
 import { InlineModal } from '../InlineModal.tsx';
 import { AlphanumericFilters } from './AlphanumericFilters.tsx';
 
@@ -104,6 +104,7 @@ export function MediaItemGrid<PageDataType, ItemType>(
     renderGridItem,
     depth = 0,
   } = props;
+  const shellBarHeight = useTheme().sizes.shellBarHeight;
   const [scrollParams, setScrollParams] = useState({ limit: 0, max: -1 });
   const [rowSize, setRowSize] = useState(9);
   const [{ modalIndex, modalItem }, setModalState] = useState<
@@ -234,14 +235,14 @@ export function MediaItemGrid<PageDataType, ItemType>(
         const nestedHeight =
           (gridItemRef?.getBoundingClientRect().height ?? 0) *
           Math.max(depth - 1, 0);
-        const newTop = top + scroll - TopBarPadddingPx - StickyHeaderPaddingPx;
+        const newTop = top + scroll - shellBarHeight - StickyHeaderPaddingPx;
         window.scrollTo({
           top: newTop + nestedHeight,
           behavior: 'smooth',
         });
       }
     },
-    [depth, gridItemRef, previousModalIndex, rowSize],
+    [depth, gridItemRef, previousModalIndex, rowSize, shellBarHeight],
   );
 
   // Scroll to new selected item when modalIndex changes

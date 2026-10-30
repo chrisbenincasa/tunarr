@@ -21,7 +21,7 @@ import serverPackage from '../package.json' with { type: 'json' };
 import { fileExists } from '../src/util/fsUtil.ts';
 import { grabMeilisearch } from './download-meilisearch.ts';
 
-const NODE_VERSION = '22.20.0';
+const NODE_VERSION = '22.23.4';
 
 const betterSqlite3ReleaseFmt =
   'https://github.com/WiseLibs/better-sqlite3/releases/download/v%s/better-sqlite3-v%s-node-v%s-%s-%s.tar.gz';

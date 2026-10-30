@@ -27,7 +27,6 @@ export const KNOWN_ISSUES: KnownIssue[] = [
       '/channels/$channelId/programming/slot-editor',
       '/library',
       '/library/custom-shows',
-      '/library/fillers',
       '/library/smart_collections',
       '/media_sources',
       '/settings/ffmpeg',
@@ -45,11 +44,6 @@ export const KNOWN_ISSUES: KnownIssue[] = [
       '/library/fillers/$fillerId/edit',
     ],
     note: 'Missing list keys in the lineup and programming editors.',
-  },
-  {
-    match: /MUI: The `value` provided to the Tabs component is invalid/,
-    routes: ['/settings', '/settings/sources'],
-    note: 'Settings tabs receive a value with no matching tab.',
   },
   {
     match: /Invalid prop `children` supplied to `ForwardRef\(Tooltip2?\)`/,

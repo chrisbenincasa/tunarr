@@ -21,7 +21,7 @@ describe('ChannelLineupMigrator', () => {
         type: 'time',
         slots: [
           {
-            type: 'movie',
+            type: 'flex',
           },
           {
             type: 'show',

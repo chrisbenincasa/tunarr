@@ -15,8 +15,12 @@ export class VainfoProcessHelper {
         ['--display', display, '--device', vaapiDevice, '-a'],
         {
           swallowError,
+
+          // getStdout replaces the child environment with `env`, so keep
+          // PATH, LIBVA_DRIVERS_PATH, and the rest of the server's variables.
+
           env: isNonEmptyString(vaapiDriver)
-            ? { LIBVA_DRIVER_NAME: vaapiDriver }
+            ? { ...process.env, LIBVA_DRIVER_NAME: vaapiDriver }
             : undefined,
           isPath: false,
         },

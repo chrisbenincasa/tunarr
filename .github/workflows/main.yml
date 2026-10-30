@@ -25,7 +25,7 @@ jobs:
       - name: Install Node.js
         uses: actions/setup-node@v6
         with:
-          node-version: 22.13.0
+          node-version: 22.23.4
           cache: "pnpm"
 
       - name: Cache Turbo
@@ -57,6 +57,10 @@ jobs:
 
       - name: Build web
         run: pnpm turbo build --filter=@tunarr/web
+
+      # The web storybook test project runs stories in headless Chromium.
+      - name: Install Playwright Chromium
+        run: pnpm --filter @tunarr/web exec playwright install --with-deps chromium
 
       - name: Run tests
         run: pnpm turbo test -- run

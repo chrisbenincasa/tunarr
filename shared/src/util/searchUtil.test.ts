@@ -3,6 +3,7 @@ import dayjs from 'dayjs';
 import customParseFormat from 'dayjs/plugin/customParseFormat.js';
 import {
   BinarySearchClause,
+  makeTitleContainsFilter,
   parsedSearchToRequest,
   SearchClause,
   searchFilterToString,
@@ -1270,5 +1271,29 @@ describe('dateValue parser rule', () => {
       parser.searchExpression();
       expect(parser.errors.length).toBeGreaterThan(0);
     });
+  });
+
+  test('title contains filter round-trips through the query string', () => {
+    const query = searchFilterToString(makeTitleContainsFilter('Sci-Fi'));
+    expect(query).toEqual('title ~ "Sci-Fi"');
+    expect(parsedSearchToRequest(parseAndCheckExpression(query))).toMatchObject(
+      {
+        type: 'value',
+        fieldSpec: { key: 'title', op: 'contains', value: ['Sci-Fi'] },
+      },
+    );
+  });
+
+  test('title contains filter drops characters the syntax cannot quote', () => {
+    const query = searchFilterToString(
+      makeTitleContainsFilter(' say "hi" {now} \\ '),
+    );
+    expect(query).toEqual('title ~ "say hi now"');
+    parseAndCheckExpression(query);
+  });
+
+  test('title contains filter keeps words split by a dropped character apart', () => {
+    const query = searchFilterToString(makeTitleContainsFilter('a"b}c'));
+    expect(query).toEqual('title ~ "a b c"');
   });
 });

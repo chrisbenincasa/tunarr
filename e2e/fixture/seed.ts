@@ -190,6 +190,29 @@ export async function seed(): Promise<FixtureIds> {
     } satisfies PostApiFillerListsData['body'],
   );
 
+  // Second filler list and custom show, so the table parity spec has rows
+  // to sort and a range filter that hides one of them.
+  const [firstBumper] = bumpers.programs;
+  if (firstBumper === undefined) {
+    throw new Error('Filler library scanned with no programs');
+  }
+  await api<PostApiFillerListsResponse>('POST', '/filler-lists', {
+    name: 'E2E Idents',
+    programs: [firstBumper],
+  } satisfies PostApiFillerListsData['body']);
+
+  await api<CreateCustomShowResponse>('POST', '/custom-shows', {
+    name: 'E2E Specials',
+    programs: episodes.programs.slice(3, 4).map((p) => ({
+      type: 'content',
+      id: p.id,
+      duration: p.duration,
+    })),
+    syncMediaSourceId: null,
+    syncMediaSourceType: null,
+    syncExternalPlaylistId: null,
+  } satisfies CreateCustomShowData['body']);
+
   const smartCollection = await api<PostApiSmartCollectionsResponse>(
     'POST',
     '/smart_collections',
