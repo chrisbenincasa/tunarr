@@ -1,13 +1,17 @@
 import type { InferInsertModel, InferSelectModel } from 'drizzle-orm';
 import { relations } from 'drizzle-orm';
-import { index, sqliteTable, text } from 'drizzle-orm/sqlite-core';
+import { index, sqliteTable, text, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { Program } from './Program.ts';
 import { ProgramGrouping } from './ProgramGrouping.ts';
 
-export const Studio = sqliteTable('studio', {
-  uuid: text().primaryKey(),
-  name: text().notNull(),
-});
+export const Studio = sqliteTable(
+  'studio',
+  {
+    uuid: text().primaryKey(),
+    name: text().notNull(),
+  },
+  (table) => [uniqueIndex('studio_name_unique_idx').on(table.name)],
+);
 
 export const StudioEntity = sqliteTable(
   'studio_entity',
@@ -24,6 +28,11 @@ export const StudioEntity = sqliteTable(
     index('studio_entity_id_index').on(table.studioId),
     index('studio_entity_program_id_index').on(table.programId),
     index('studio_entity_group_id_index').on(table.groupId),
+    uniqueIndex('studio_program_unique_idx').on(
+      table.studioId,
+      table.programId,
+    ),
+    uniqueIndex('studio_grouping_unique_idx').on(table.studioId, table.groupId),
   ],
 );
 
