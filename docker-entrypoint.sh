@@ -5,6 +5,19 @@ set -e
 DEFAULT_UID=1000
 DEFAULT_GID=1000
 
+# Under `docker run --user`, the caller picked the uid. Skip all user setup,
+# including PUID/PGID.
+#
+# pkg extracts native modules to $HOME/.cache/pkg. HOME is /config, which
+# only uid 1000 can write when just /config/tunarr is mounted, so fall back
+# to /tmp for any other uid.
+if [ "$(id -u)" != "0" ]; then
+    if [ ! -w "$HOME" ]; then
+        export HOME=/tmp
+    fi
+    exec "$@"
+fi
+
 PUID="${PUID:-$DEFAULT_UID}"
 PGID="${PGID:-$DEFAULT_GID}"
 
@@ -14,12 +27,6 @@ for var in PUID PGID; do
         exit 1
     fi
 done
-
-# Under `docker run --user`, the caller picked the uid. Skip all user setup,
-# including PUID/PGID.
-if [ "$(id -u)" != "0" ]; then
-    exec "$@"
-fi
 
 # Grant the tunarr user access to mounted /dev/dri devices. A device group
 # unknown inside the container gets a placeholder group with the host GID.
