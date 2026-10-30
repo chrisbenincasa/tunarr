@@ -16,6 +16,8 @@ import { type ChannelSession, type CreateChannelRequest } from '@tunarr/types';
 import {
   BasicIdParamSchema,
   BasicPagingSchema,
+  BulkAssignFillersRequestSchema,
+  BulkAssignFillersResponseSchema,
   MaterializedSchedule,
   PagedResult,
   SlotScheduleWithPrograms,
@@ -387,6 +389,36 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       return res.send();
+    },
+  );
+
+  fastify.post(
+    '/channels/bulk/fillers',
+    {
+      schema: {
+        operationId: 'bulkAssignFillers',
+        tags: ['Channels'],
+        body: BulkAssignFillersRequestSchema,
+        response: {
+          200: BulkAssignFillersResponseSchema,
+          // A string from the handler, or Fastify's own validation error object.
+
+          400: z.string().or(z.object({ message: z.string() })),
+        },
+      },
+    },
+    async (req, res) => {
+      const result = Result.attempt(() =>
+        req.serverCtx.fillerDB.bulkAssignFillers(req.body),
+      );
+      if (result.isFailure()) {
+        const badRequest = findBadRequestError(result.error);
+        if (badRequest) {
+          return res.status(400).send(badRequest.message);
+        }
+        throw unwrapError(result.error);
+      }
+      return res.send(result.get());
     },
   );
 

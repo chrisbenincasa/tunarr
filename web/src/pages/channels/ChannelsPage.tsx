@@ -38,11 +38,11 @@ import {
 } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { find, isEmpty, map, sum } from 'lodash-es';
-import type { MRT_Row } from 'material-react-table';
+import type { MRT_Row, MRT_RowSelectionState } from 'material-react-table';
 import {
   MaterialReactTable,
   useMaterialReactTable,
-  type MRT_ColumnDef, //if using TypeScript (optional, but recommended)
+  type MRT_ColumnDef,
 } from 'material-react-table';
 import React, { useEffect, useMemo, useState } from 'react';
 import {
@@ -51,6 +51,8 @@ import {
 } from '../../components/base/RouterButtonLink.tsx';
 import { RouterLink } from '../../components/base/RouterLink.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
+import { BulkActionsToolbar } from '../../components/channels/BulkActionsToolbar.tsx';
+import { BulkAssignFillersDialog } from '../../components/channels/BulkAssignFillersDialog.tsx';
 import { ChannelIconDisplay } from '../../components/channels/ChannelIconDisplay.tsx';
 import { ChannelOptionsMenu } from '../../components/channels/ChannelOptionsMenu.tsx';
 import { ChannelSessionsDialog } from '../../components/channels/ChannelSessionsDialog.tsx';
@@ -109,6 +111,13 @@ export default function ChannelsPage() {
   );
   const tableSettings = useStoreBackedTableSettings('Channels');
   const { addListener, removeListener } = useServerEvents();
+  const [rowSelection, setRowSelection] = useState<MRT_RowSelectionState>({});
+  const [bulkFillersOpen, setBulkFillersOpen] = useState(false);
+
+  const selectedChannelIds = useMemo(
+    () => Object.keys(rowSelection).filter((id) => rowSelection[id]),
+    [rowSelection],
+  );
 
   useEffect(() => {
     const key = addListener((ev) => {
@@ -562,8 +571,17 @@ export default function ChannelsPage() {
     columns: columnsNew,
     data: channels,
     enableRowActions: true,
+    enableRowSelection: !smallViewport,
+    enableSelectAll: true,
+    getRowId: (row) => row.id,
     layoutMode: 'grid',
+    positionToolbarAlertBanner: 'none',
     ...tableSettings,
+    onRowSelectionChange: setRowSelection,
+    state: {
+      ...tableSettings.state,
+      rowSelection,
+    },
     muiTableBodyRowProps: ({ row }) => ({
       sx: {
         cursor: 'pointer',
@@ -606,6 +624,22 @@ export default function ChannelsPage() {
         <TableContainer component={Paper} sx={{ width: '100%' }}>
           <MaterialReactTable table={table} />
         </TableContainer>
+      )}
+
+      {selectedChannelIds.length > 0 && (
+        <BulkActionsToolbar
+          selectedChannelIds={selectedChannelIds}
+          onClearSelection={() => setRowSelection({})}
+          onAssignFillers={() => setBulkFillersOpen(true)}
+        />
+      )}
+
+      {bulkFillersOpen && (
+        <BulkAssignFillersDialog
+          open
+          onClose={() => setBulkFillersOpen(false)}
+          selectedChannelIds={selectedChannelIds}
+        />
       )}
 
       <NoChannelsCreated />

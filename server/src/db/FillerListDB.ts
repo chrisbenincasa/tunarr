@@ -1,6 +1,9 @@
+import { GenericBadRequestError } from '@/types/errors.js';
 import { KEYS } from '@/types/inject.js';
 import { seq } from '@tunarr/shared/util';
 import type {
+  BulkAssignFillersRequest,
+  BulkAssignFillersResponse,
   CreateFillerListRequest,
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
@@ -35,6 +38,7 @@ import type {
   IFillerListDB,
 } from './interfaces/IFillerListDB.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
+import { Channel } from './schema/Channel.ts';
 import { ChannelFillerShow } from './schema/ChannelFillerShow.ts';
 import type { NewFillerShow } from './schema/FillerShow.ts';
 import { FillerShow } from './schema/FillerShow.ts';
@@ -397,6 +401,96 @@ export class FillerDB implements IFillerListDB {
         fillerShowUuid: result.fillerShowUuid,
         weight: result.weight,
       } satisfies ChannelFillerShowWithContent;
+    });
+  }
+
+  bulkAssignFillers(
+    request: BulkAssignFillersRequest,
+  ): BulkAssignFillersResponse {
+    const fillerIds = request.fillers.map((f) => f.fillerShowId);
+
+    return this.drizzle.transaction((tx) => {
+      const foundChannelIds = new Set(
+        tx
+          .select({ uuid: Channel.uuid })
+          .from(Channel)
+          .where(inArray(Channel.uuid, request.channelIds))
+          .all()
+          .map((row) => row.uuid),
+      );
+      const foundFillerIds = new Set(
+        tx
+          .select({ uuid: FillerShow.uuid })
+          .from(FillerShow)
+          .where(inArray(FillerShow.uuid, fillerIds))
+          .all()
+          .map((row) => row.uuid),
+      );
+      const missingChannelIds = request.channelIds.filter(
+        (id) => !foundChannelIds.has(id),
+      );
+      const missingFillerIds = fillerIds.filter(
+        (id) => !foundFillerIds.has(id),
+      );
+      if (missingChannelIds.length > 0 || missingFillerIds.length > 0) {
+        const problems = [
+          missingChannelIds.length > 0
+            ? `unknown channel IDs: ${missingChannelIds.join(', ')}`
+            : null,
+          missingFillerIds.length > 0
+            ? `unknown filler list IDs: ${missingFillerIds.join(', ')}`
+            : null,
+        ].filter((p) => p !== null);
+        throw new GenericBadRequestError(problems.join('; '));
+      }
+
+      let updated = 0;
+      if (request.mode === 'replace') {
+        tx.delete(ChannelFillerShow)
+          .where(inArray(ChannelFillerShow.channelUuid, request.channelIds))
+          .run();
+      } else {
+        updated =
+          tx
+            .select({ count: sql<number>`count(*)` })
+            .from(ChannelFillerShow)
+            .where(
+              and(
+                inArray(ChannelFillerShow.channelUuid, request.channelIds),
+                inArray(ChannelFillerShow.fillerShowUuid, fillerIds),
+              ),
+            )
+            .get()?.count ?? 0;
+      }
+
+      const rows = request.channelIds.flatMap((channelId) =>
+        request.fillers.map((filler) => ({
+          channelUuid: channelId,
+          fillerShowUuid: filler.fillerShowId,
+          weight: filler.weight,
+          cooldown: filler.cooldownSeconds,
+        })),
+      );
+
+      // Add mode overwrites weight and cooldown on pairs the channel already has.
+
+      for (const batch of chunk(rows, 1_000)) {
+        tx.insert(ChannelFillerShow)
+          .values(batch)
+          .onConflictDoUpdate({
+            target: [
+              ChannelFillerShow.channelUuid,
+              ChannelFillerShow.fillerShowUuid,
+            ],
+            set: {
+              weight: sql`excluded.weight`,
+              cooldown: sql`excluded.cooldown`,
+            },
+          })
+          .run();
+      }
+
+      return { added: rows.length - updated, updated };
     });
   }
 }

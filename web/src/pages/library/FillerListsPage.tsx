@@ -2,7 +2,7 @@ import AddCircleIcon from '@mui/icons-material/AddCircle';
 
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
-import { Delete, Edit } from '@mui/icons-material';
+import { Delete, Edit, PlaylistAdd } from '@mui/icons-material';
 import {
   Dialog,
   DialogActions,
@@ -23,6 +23,7 @@ import { find } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useMemo, useState } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
+import { AssignFillerToChannelsDialog } from '../../components/fillers/AssignFillerToChannelsDialog.tsx';
 import {
   deleteApiFillerListsByIdMutation,
   getApiFillerListsQueryKey,
@@ -45,6 +46,9 @@ export default function FillerListsPage() {
   const queryClient = useQueryClient();
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<
     string | undefined
+  >(undefined);
+  const [assignFiller, setAssignFiller] = useState<
+    { id: string; name: string } | undefined
   >(undefined);
   const snackbar = useSnackbar();
 
@@ -140,6 +144,16 @@ export default function FillerListsPage() {
         actionsColumn<FillerList>({
           render: ({ original: filler }) => (
             <>
+              <Tooltip title={t`Assign to Channels`} placement="top">
+                <IconButton
+                  aria-label={t`Assign to Channels`}
+                  onClick={() =>
+                    setAssignFiller({ id: filler.id, name: filler.name })
+                  }
+                >
+                  <PlaylistAdd />
+                </IconButton>
+              </Tooltip>
               <Tooltip title={t`Edit`} placement="top">
                 <IconButton
                   aria-label={t`Edit`}
@@ -174,6 +188,14 @@ export default function FillerListsPage() {
     <Box>
       <Breadcrumbs />
       {renderConfirmationDialog()}
+      {assignFiller !== undefined && (
+        <AssignFillerToChannelsDialog
+          open
+          onClose={() => setAssignFiller(undefined)}
+          fillerId={assignFiller.id}
+          fillerName={assignFiller.name}
+        />
+      )}
       <Box display="flex" mb={2} alignItems="flex-start">
         <Box flexDirection={'column'} flexGrow={1}>
           <Typography flexGrow={1} variant="h4">
