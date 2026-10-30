@@ -1592,8 +1592,8 @@ msgid "Edit Channel Redirect"
 msgstr ""
 
 #: src/pages/channels/ChannelsPage.tsx
-#~ msgid "Edit Channel Settings"
-#~ msgstr ""
+msgid "Edit Channel Settings"
+msgstr ""
 
 #: src/pages/library/EditFillerPage.tsx
 msgid "Edit Filler List"

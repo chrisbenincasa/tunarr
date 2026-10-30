@@ -3,7 +3,7 @@ import { invalidateTaggedQueries } from '@/helpers/queryUtil.ts';
 import { useTranscodeConfigs } from '@/hooks/settingsHooks.ts';
 import type { Maybe } from '@/types/util.ts';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
-import { Check, Close, MoreVert } from '@mui/icons-material';
+import { Check, Close, Edit, MoreVert } from '@mui/icons-material';
 import AddCircleIcon from '@mui/icons-material/AddCircle';
 import type { BoxProps } from '@mui/material';
 import {
@@ -45,7 +45,10 @@ import {
   type MRT_ColumnDef,
 } from 'material-react-table';
 import React, { useEffect, useMemo, useState } from 'react';
-import { RouterButtonLink } from '../../components/base/RouterButtonLink.tsx';
+import {
+  RouterButtonLink,
+  RouterIconButtonLink,
+} from '../../components/base/RouterButtonLink.tsx';
 import { RouterLink } from '../../components/base/RouterLink.tsx';
 import NoChannelsCreated from '../../components/channel_config/NoChannelsCreated.tsx';
 import { BulkActionsToolbar } from '../../components/channels/BulkActionsToolbar.tsx';
@@ -94,6 +97,7 @@ export default function ChannelsPage() {
   const { data: transcodeConfigs } = useTranscodeConfigs();
   const theme = useTheme();
   const smallViewport = useMediaQuery(theme.breakpoints.down('sm'));
+  const mediumViewport = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [deleteChannelConfirmation, setDeleteChannelConfirmation] = useState<
@@ -225,6 +229,7 @@ export default function ChannelsPage() {
         onClose={() => handleChannelMenuClose()}
         open={channelMenuOpen === row.id}
         row={row}
+        hideItems={['edit']}
       />
     );
   };
@@ -237,6 +242,17 @@ export default function ChannelsPage() {
     return (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         {renderChannelMenu(channel)}
+        {!mediumViewport && (
+          <Tooltip title={t`Edit Channel Settings`} placement="top">
+            <RouterIconButtonLink
+              to={'/channels/$channelId/edit'}
+              params={{ channelId: channel.id }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <Edit />
+            </RouterIconButtonLink>
+          </Tooltip>
+        )}
         <IconButton
           id="channel-options-button"
           aria-controls={channelMenuOpen ? 'channel-options-menu' : undefined}
@@ -576,7 +592,7 @@ export default function ChannelsPage() {
     }),
     displayColumnDefOptions: {
       'mrt-row-actions': {
-        size: 60,
+        size: mediumViewport ? 60 : 100,
         grow: false,
         Header: '',
         visibleInShowHideMenu: false,

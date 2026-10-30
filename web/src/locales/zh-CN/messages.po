@@ -1592,8 +1592,8 @@ msgid "Edit Channel Redirect"
 msgstr "编辑频道跳转"
 
 #: src/pages/channels/ChannelsPage.tsx
-#~ msgid "Edit Channel Settings"
-#~ msgstr "编辑频道设置"
+msgid "Edit Channel Settings"
+msgstr "编辑频道设置"
 
 #: src/pages/library/EditFillerPage.tsx
 msgid "Edit Filler List"
