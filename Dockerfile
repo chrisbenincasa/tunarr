@@ -112,7 +112,8 @@ RUN groupadd -g 1000 tunarr && \
     useradd -u 1000 -g tunarr -s /bin/bash -d /config tunarr
 RUN mkdir -p /config && chown tunarr:tunarr /config
 # Docker sets HOME=/ for a --user uid missing from /etc/passwd. pkg caches
-# native modules under $HOME, so point it at the writable data volume.
+# native modules under $HOME. The entrypoint falls back to /tmp when another
+# uid cannot write /config.
 ENV HOME=/config
 WORKDIR /tunarr
 COPY --from=build-full-stack /tunarr/.env /tunarr/.env
