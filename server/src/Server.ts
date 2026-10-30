@@ -526,7 +526,15 @@ export class Server {
 
     const hdhrSettings = this.serverContext.settings.hdhrSettings();
     if (hdhrSettings.autoDiscoveryEnabled) {
-      await this.serverContext.hdhrService.ssdp.start();
+      try {
+        await this.serverContext.hdhrService.ssdp.start();
+      } catch (e) {
+        this.logger.warn(
+          e,
+          'Failed to start the SSDP server on UDP port 1900. ' +
+            'HDHR auto-discovery is unavailable; everything else still works.',
+        );
+      }
     }
 
     this.serverContext.eventService.push({

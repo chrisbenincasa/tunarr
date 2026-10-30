@@ -33,6 +33,86 @@ services:
       - /path/to/tunarr/data:/config/tunarr
 ```
 
+### Running as a Non-Root User
+
+The Tunarr Docker image includes a built-in `tunarr` user (UID/GID `1000:1000`). By default, the container starts as `root` and the entrypoint script automatically drops privileges to this user before launching Tunarr. This means Tunarr itself never runs as `root`.
+
+#### Matching host file ownership with `PUID` / `PGID`
+
+If the data directory on your host is owned by a user other than UID `1000`, set the `PUID` and `PGID` environment variables to match. The entrypoint script will adjust the container user's UID/GID and fix ownership of the config directory at startup.
+
+```
+docker run \
+    -v "$(pwd)"/tunarr:/config/tunarr \
+    -e PUID=1001 \
+    -e PGID=1001 \
+    -e "TZ=America/New_York" \
+    -p 8000:8000 \
+    chrisbenincasa/tunarr
+```
+
+Or in `docker compose`:
+
+```yaml title="docker-compose.yml"
+services:
+  tunarr:
+    image: chrisbenincasa/tunarr:latest
+    environment:
+      - PUID=1001
+      - PGID=1001
+      - TZ=America/New_York
+    volumes:
+      - /path/to/tunarr/data:/config/tunarr
+    # ...
+```
+
+!!! tip
+    To find the UID and GID of the user that owns your data directory, run `ls -nd /path/to/tunarr/data` and use the third and fourth columns.
+
+#### Hardware acceleration (`/dev/dri`)
+
+When you mount `/dev/dri` for VA-API or QSV hardware transcoding, the entrypoint script automatically detects the device group ownership and adds the Tunarr user to the appropriate groups. No extra configuration is needed — just mount the device as usual:
+
+```
+docker run \
+    --device /dev/dri:/dev/dri \
+    -v "$(pwd)"/tunarr:/config/tunarr \
+    -e "TZ=America/New_York" \
+    -p 8000:8000 \
+    chrisbenincasa/tunarr
+```
+
+#### Upgrading from older versions
+
+Previous versions of Tunarr ran as `root` inside the container, so your data directory may be owned by `root` (UID `0`). The entrypoint script handles this automatically. At startup it changes the owner of any file under `/config` that isn't owned by `PUID:PGID`. No manual `chown` is required.
+
+If you prefer to fix ownership yourself ahead of time:
+
+```bash
+sudo chown -R 1000:1000 /path/to/tunarr/data
+```
+
+!!! warning
+    The ownership fix applies to everything under `/config`. If another service shares a directory mounted there, its files become owned by the Tunarr user. Mount only Tunarr's own data under `/config`, or set `TUNARR_SKIP_CHOWN=true` to turn the fix off.
+
+Some mounts refuse `chown`, such as NFS with root squashing. Tunarr logs a warning and starts anyway, but it can only write there if `PUID`/`PGID` already have write access.
+
+#### Keeping Tunarr running as `root`
+
+Set `PUID=0` and `PGID=0` to keep the old behavior.
+
+#### Running with `docker run --user`
+
+If you start the container with `--user`, the entrypoint skips all user setup. It ignores `PUID`/`PGID`, doesn't change file ownership, and doesn't add `/dev/dri` groups. The mounted data directory must already be writable by that user, and you must pass device groups yourself with `--group-add`.
+
+#### Read-only root filesystem
+
+Running with `--read-only` is not supported.
+
+#### HDHR auto-discovery note
+
+If the SSDP server for HDHR auto-discovery can't bind UDP port 1900, Tunarr logs a warning and keeps running. Only automatic HDHR device discovery is affected. Clients can still connect by entering the address manually.
+
 ### Docker Desktop
 
 If using Docker Desktop, before running the Tunarr container, you have to use the GUI to configure some of the options mentioned above. This can be done by clicking on the "Optional settings" button. This will show the UI below, where, at the very least, you should configure a volume bind mount (so that your configurations don't get deleted if the container restarts / Tunarr is upgraded). Set the "Container path" to `/config/tunarr` and the Host path to the path on your system where you want to save Tunarr data. Additionally, expose the port of your choice to access Tunarr, by setting "Host port" to the port of your choice.
