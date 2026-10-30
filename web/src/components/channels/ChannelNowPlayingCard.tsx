@@ -14,14 +14,17 @@ import {
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { getApiChannelsByIdNowPlayingQueryKey } from '@/generated/@tanstack/react-query.gen.ts';
-import type { MediaArtwork } from '@tunarr/types';
 import * as globalDayjs from 'dayjs';
 import { capitalize, isNil } from 'lodash-es';
 import { useMemo, useState } from 'react';
 import { match, P } from 'ts-pattern';
 import { useTimeout, useToggle } from 'usehooks-ts';
+import {
+  channelFlexImageUrl,
+  nowPlayingImageUrl,
+} from '../../helpers/nowPlayingImage.ts';
 import { extractProgramGrandparent } from '../../helpers/programUtil.ts';
-import { useChannelAndProgramming } from '../../hooks/useChannelLineup.ts';
+import { useChannelSuspense } from '../../hooks/useChannels.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useChannelNowPlaying } from '../../hooks/useTvGuide.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
@@ -45,9 +48,7 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
   const dayjs = useDayjs();
   const { backendUri } = useSettings();
 
-  const {
-    data: { lineup },
-  } = useChannelAndProgramming(channelId);
+  const { data: channel } = useChannelSuspense(channelId);
   const { data: firstProgram } = useChannelNowPlaying(channelId);
   const [open, toggleOpen] = useToggle(false);
 
@@ -100,58 +101,33 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
       .exhaustive();
   }, [firstProgram]);
 
-  const imageUrl = useMemo(() => {
-    if (!firstProgram) {
-      return;
-    }
+  const flexImageUrl = channelFlexImageUrl(channel.offline.picture, backendUri);
+  const artworkUrl = nowPlayingImageUrl(
+    firstProgram,
+    channel.offline.picture,
+    backendUri,
+  );
 
-    if (firstProgram.type !== 'content') {
-      return;
-    }
+  // Artwork that fails to load falls back to the flex image.
+  const [failedUrl, setFailedUrl] = useState<string>();
+  const imageUrl = artworkUrl === failedUrl ? flexImageUrl : artworkUrl;
 
-    const program = lineup.programs[firstProgram.id];
-    if (!program) {
-      return;
-    }
-
-    const [id, artworkType, fallbackTypes] = match([
-      program.program,
-      extractProgramGrandparent(program.program),
-    ])
-      .returnType<[string, MediaArtwork['type'], MediaArtwork['type'][]]>()
-      .with([{ type: 'episode' }, P.nonNullable], ([_, show]) => [
-        show.uuid,
-        'fanart',
-        ['poster'],
-      ])
-      .with([{ type: 'episode' }, P._], ([ep, _]) => [ep.uuid, 'thumbnail', []])
-      .with([{ type: 'track' }, P.nonNullable], ([_, artist]) => [
-        artist.uuid,
-        'banner',
-        ['fanart', 'poster'],
-      ])
-      .with([{ type: 'movie' }, P._], ([movie, _]) => [
-        movie.uuid,
-        'banner',
-        ['fanart', 'poster'],
-      ])
-      .otherwise(([other, _]) => [other.uuid, 'fanart', ['poster']]);
-
-    const fallbackParts =
-      fallbackTypes.length === 0 ? '' : `${fallbackTypes.join(',')}`;
-
-    return `${backendUri}/api/programs/${id}/artwork/${artworkType}?fallbackArtworkTypes=${fallbackParts}`;
-  }, [backendUri, firstProgram, lineup.programs]);
-
-  const [imageLoaded, setImageLoaded] = useState(false);
+  // Tracks the URL that finished loading, so the skeleton returns while a
+  // new program's image loads.
+  const [loadedUrl, setLoadedUrl] = useState<string>();
+  const imageLoaded = loadedUrl === imageUrl;
 
   const handleImageLoad = () => {
-    setImageLoaded(true);
+    setLoadedUrl(imageUrl);
   };
 
   const handleImageError = () => {
     console.error(`Failed to load image: ${imageUrl}`);
-    setImageLoaded(true);
+    if (imageUrl === flexImageUrl) {
+      setLoadedUrl(imageUrl);
+    } else {
+      setFailedUrl(imageUrl);
+    }
   };
 
   const startedAgo = dayjs(firstProgram?.start).fromNow();
