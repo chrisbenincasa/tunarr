@@ -222,7 +222,7 @@ docker run --rm -it \
 - [ ] Process runs as UID `1500`
 - [ ] `PUID`/`PGID` are ignored and `/config` ownership is left alone
 - [ ] `docker diff <container_id>` shows no writes under `/tunarr` (meilisearch runs in `/config/tunarr`)
-- [ ] Also run with a uid missing from `/etc/passwd`: the pkg native cache lands in `/config/.cache/pkg`
+- [ ] Also run with a uid missing from `/etc/passwd`: the server starts, and the pkg native cache lands in `/tmp/.cache/pkg` because `/config` is not writable
 
 **Verify:**
 
@@ -382,17 +382,17 @@ rm -rf /tmp/tunarr-test-fresh /tmp/tunarr-test-root-owned \
 
 ## Summary Matrix
 
-| Test | Area | Pass/Fail | Notes |
-|------|------|-----------|-------|
-| 1 | Basic startup | | |
-| 2 | Custom PUID/PGID | | |
-| 3 | Upgrade (root-owned data) | | |
-| 4 | VA-API/QSV /dev/dri | | |
-| 5 | Nvidia GPU | | |
-| 6 | SSDP graceful degradation | | |
-| 7 | --user override | | |
-| 8 | Meilisearch subprocess | | |
-| 9 | Docker Compose e2e | | |
-| 10 | Idempotent restarts | | |
-| 11 | Large data dir performance | | |
-| 12 | Read-only filesystem | | |
+| Test | Area                       | Pass/Fail | Notes |
+| ---- | -------------------------- | --------- | ----- |
+| 1    | Basic startup              |           |       |
+| 2    | Custom PUID/PGID           |           |       |
+| 3    | Upgrade (root-owned data)  |           |       |
+| 4    | VA-API/QSV /dev/dri        |           |       |
+| 5    | Nvidia GPU                 |           |       |
+| 6    | SSDP graceful degradation  |           |       |
+| 7    | --user override            |           |       |
+| 8    | Meilisearch subprocess     |           |       |
+| 9    | Docker Compose e2e         |           |       |
+| 10   | Idempotent restarts        |           |       |
+| 11   | Large data dir performance |           |       |
+| 12   | Read-only filesystem       |           |       |
