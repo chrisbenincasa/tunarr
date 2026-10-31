@@ -21,7 +21,7 @@ const VersionProbeTimeoutMs = 10_000;
 export class EtvNextBinaryNotFoundError extends Error {
   constructor(readonly testedPaths: string[]) {
     super(
-      `Could not find the ${ETV_NEXT_BINARY_NAME} binary at any of the tested paths: ${testedPaths.join(', ')}`,
+      `Could not find the ${ETV_NEXT_BINARY_NAME} binary at any of the tested paths: ${testedPaths.join(', ')}. In a source checkout, run \`pnpm download-ersatztv-next\` in server/ to fetch it.`,
     );
     this.name = 'EtvNextBinaryNotFoundError';
   }

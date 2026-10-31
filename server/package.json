@@ -25,7 +25,7 @@
     "kysely": "dotenv -e .env.development -- kysely",
     "lint": "oxlint src/ --report-unused-disable-directives --max-warnings 0",
     "make-bin": "dotenvx run -- tsx scripts/make-bin.ts",
-    "predev": "tsx scripts/generateEnvModule.ts",
+    "predev": "tsx scripts/generateEnvModule.ts && tsx scripts/download-ersatztv-next.ts --optional",
     "preinstall": "npx only-allow pnpm",
     "resolve-migrations": "tsx scripts/resolve-migrations.ts",
     "run-fixer": "dotenv -e .env.development -- tsx src/index.ts fixer",

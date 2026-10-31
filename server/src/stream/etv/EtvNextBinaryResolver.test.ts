@@ -5,6 +5,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { ChildProcessHelper } from '../../util/ChildProcessHelper.ts';
 import {
   ETV_NEXT_BINARY_NAME,
+  EtvNextBinaryNotFoundError,
   EtvNextBinaryResolver,
   EtvNextVersionMismatchError,
 } from './EtvNextBinaryResolver.ts';
@@ -54,6 +55,15 @@ describe('candidatePaths', () => {
     const paths = EtvNextBinaryResolver.candidatePaths('linux', 'x64');
 
     expect(paths.every((p) => p.startsWith(process.cwd()))).toBe(true);
+  });
+});
+
+describe('EtvNextBinaryNotFoundError', () => {
+  test('names the tested paths and the download command', () => {
+    const error = new EtvNextBinaryNotFoundError(['/a/bin', '/b/bin']);
+
+    expect(error.message).toContain('/a/bin, /b/bin');
+    expect(error.message).toContain('pnpm download-ersatztv-next');
   });
 });
 

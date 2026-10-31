@@ -251,14 +251,34 @@ if (invokedDirectly) {
     .option('platform', { type: 'string', default: os.platform() })
     .option('arch', { type: 'string', default: os.arch() })
     .option('outPath', { type: 'string', default: DefaultOutPath })
+    .option('optional', {
+      type: 'boolean',
+      default: false,
+      description:
+        'Warn instead of failing, so `pnpm dev` still starts offline',
+    })
     .parseAsync();
 
   console.log(
     `ErsatzTV next pinned to ${releaseTag} (commit ${commit.slice(0, 7)}) from ${releaseRepo}`,
   );
 
-  const result = await grabEtvNext(args.outPath, args.platform, args.arch);
+  const result = await grabEtvNext(
+    args.outPath,
+    args.platform,
+    args.arch,
+  ).catch((e: unknown) => {
+    console.error(`Could not download ${BINARY_NAME}`, e);
+    return null;
+  });
+
   if (!result) {
-    process.exit(1);
+    if (args.optional) {
+      console.warn(
+        `Continuing without ${BINARY_NAME}. ErsatzTV next streams will fail until \`pnpm download-ersatztv-next\` succeeds.`,
+      );
+    } else {
+      process.exit(1);
+    }
   }
 }

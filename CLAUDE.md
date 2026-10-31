@@ -99,11 +99,12 @@ pnpm docker-test
 
 # Server-specific commands
 cd server
-pnpm dev              # Start server with tsx watch
+pnpm dev              # Start server with tsx watch (predev fetches the pinned ersatztv-channel binary)
 pnpm debug            # Start server with debugger
 pnpm kysely           # Run Kysely CLI for database operations
 pnpm tunarr           # Run CLI commands (see src/cli/commands.ts)
 pnpm generate-openapi # Generate OpenAPI spec
+pnpm download-ersatztv-next # Fetch the pinned ersatztv-channel binary into bin/
 pnpm resolve-migrations # Regenerate this branch's migration after a merge/rebase conflict
 
 # Web-specific commands
