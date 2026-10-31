@@ -1,6 +1,7 @@
 import type { IProgramDB } from '@/db/interfaces/IProgramDB.js';
 
 import type { StreamLineupItem } from '@/db/derived_types/StreamLineup.js';
+import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { LanguageTaggedStream } from '@/ffmpeg/StreamSelectionEvaluator.js';
 import {
   buildCelContext,
@@ -13,9 +14,12 @@ import {
 } from '@/ffmpeg/builder/constants.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { ProgramStreamDetailsFetcher } from '@/stream/ProgramStreamDetailsFetcher.js';
+import { routesToEtvNext } from '@/stream/etv/EtvNextRouting.js';
+import type { EtvNextTroubleshootRunner } from '@/stream/etv/EtvNextTroubleshootRunner.js';
 import type { ProgramStreamResult } from '@/stream/types.js';
 import { isNonEmptyArray } from '@/util/index.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
+import { redactMediaServerSecrets } from '@/util/redactSecrets.js';
 import { getTunarrVersion } from '@/util/version.js';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { TroubleshootStreamSelectionTrace } from '@tunarr/types';
@@ -46,10 +50,19 @@ import type {
 } from '../stream/types.js';
 import { KEYS } from '../types/inject.js';
 import { TroubleshootSessionFolderName } from '../util/constants.ts';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { CelEvaluationService } from './CelEvaluationService.js';
+import { FeatureFlagService } from './FeatureFlagService.js';
 import { StreamSelectionProfileResolver } from './StreamSelectionProfileResolver.js';
 
 dayjs.extend(duration);
+
+type TroubleshootProgram = NonNullable<
+  Awaited<ReturnType<IProgramDB['getProgramById']>>
+>;
+
+/** How long a finished troubleshoot session's output stays servable. */
+const SessionRetentionMs = 5 * 60 * 1000;
 
 /**
  * Find the first subtitle stream matching any of the requested languages, in
@@ -100,6 +113,10 @@ export class TroubleshootService {
     @inject(TranscodeConfigDB) private transcodeConfigDB: TranscodeConfigDB,
     @inject(KEYS.ProgramStreamFactory)
     private programStreamFactory: ProgramStreamFactory,
+    @inject(KEYS.SettingsDB) private settingsDB: ISettingsDB,
+    @inject(FeatureFlagService) private featureFlagService: FeatureFlagService,
+    @inject(KEYS.EtvNextTroubleshootRunner)
+    private etvNextRunner: EtvNextTroubleshootRunner,
   ) {}
 
   getSessionDirectory(sessionId: string): string | undefined {
@@ -184,19 +201,15 @@ export class TroubleshootService {
 
       streamDetails = streamResult.get();
 
-      const redactPath = (p: string) =>
-        p
-          .replace(/(X-Plex-Token=)[A-Za-z0-9_-]+/g, '$1REDACTED')
-          .replace(/(X-Emby-Token:\s)[A-Za-z0-9_-]+/g, '$1REDACTED')
-          .replace(/(api_key=)[A-Za-z0-9_-]+/g, '$1REDACTED');
-
       result.mediaInfo = {
         title: program.title,
         type: program.type,
         duration: program.duration,
         sourceType: mediaSource.type,
         streamSourceType: streamDetails.streamSource.type,
-        streamSourcePath: redactPath(streamDetails.streamSource.path),
+        streamSourcePath: redactMediaServerSecrets(
+          streamDetails.streamSource.path,
+        ),
         videoStreams:
           streamDetails.streamDetails.videoDetails?.map((v) => ({
             index: v.streamIndex ?? 0,
@@ -272,8 +285,234 @@ export class TroubleshootService {
     result.transcodeConfig = transcodeConfigOrmToDto(transcodeConfig);
     result.channelConfig = ormChannelToApiChannel({ channel, lineup });
 
+    // The worker builds its own pipeline from channel.json, so everything
+    // below — the CEL trace and Tunarr's FFmpeg session — would describe work
+    // that never happens on this channel.
+    if (
+      routesToEtvNext(
+        channel.streamMode,
+        this.featureFlagService.get('ersatzTvNextEnabled'),
+        channel.useEtvNext ?? false,
+      )
+    ) {
+      return await this.troubleshootEtvNext({
+        request,
+        result,
+        errors,
+        channel: { ...channel, transcodeConfig },
+        program,
+        streamDetails,
+      });
+    }
+
     // Stage 4: Stream Selection Trace (diagnostic only — the real stream
     // session will perform its own selection through the same code path)
+    await this.traceStreamSelection({
+      channel,
+      program,
+      streamDetails,
+      result,
+      errors,
+    });
+
+    // Stage 5 & 6: Create stream session using the real pipeline and run
+    // the test transcode. This uses the exact same code path as production
+    // streaming (FfmpegStreamFactory.createStreamSession).
+    const sessionId = uuidv4();
+    const tempDir = path.join(
+      os.tmpdir(),
+      TroubleshootSessionFolderName,
+      sessionId,
+    );
+    await fs.mkdir(tempDir, { recursive: true });
+    this.activeSessions.set(sessionId, tempDir);
+
+    try {
+      const testDurationMs = request.testDurationSeconds * 1000;
+      const programDurationMs = program.duration;
+      const maxStartMs = Math.max(0, programDurationMs - testDurationMs - 5000);
+      const startTimeMs = maxStartMs > 0 ? random(0, maxStartMs) : 0;
+
+      const watermark =
+        channel.watermark?.enabled === true ? channel.watermark : undefined;
+
+      const lineupItem: StreamLineupItem = {
+        type: 'program',
+        program: { ...program, mediaSourceId: program.mediaSourceId },
+        duration: program.duration,
+        infiniteLoop: false,
+        programBeginMs: +dayjs(),
+        streamDuration: testDurationMs,
+      };
+
+      const hlsOutputFormat = HlsOutputFormat({
+        ...defaultHlsOptions,
+        hlsTime: 4,
+        hlsListSize: 0,
+        segmentBaseDirectory: dirname(tempDir),
+        streamBasePath: basename(tempDir),
+        streamBaseUrl: `/api/troubleshoot/stream/${sessionId}/`,
+        segmentNameFormat: 'live%06d.ts',
+        streamNameFormat: 'live.m3u8',
+        subtitleStreamNameFormat: 'subs.m3u8',
+        deleteThreshold: null,
+        appendSegments: true,
+      });
+
+      const programStream = this.programStreamFactory(
+        new PlayerContext(lineupItem, channel, channel, transcodeConfig, {
+          audioOnly: false,
+          realtime: false,
+          streamMode: channel.streamMode,
+        }),
+        hlsOutputFormat,
+        {
+          startTime: dayjs.duration(startTimeMs),
+          duration: dayjs.duration(testDurationMs),
+          watermark,
+          realtime: false,
+          outputFormat: hlsOutputFormat,
+          streamMode: channel.streamMode,
+          isFirstTranscode: true,
+          emitEndList: true,
+        },
+      );
+
+      const sessionResult = await programStream.setup();
+
+      if (sessionResult.isFailure()) {
+        errors.push(
+          `Failed to create FFmpeg stream session: ${sessionResult.error.message}`,
+        );
+        return result;
+      }
+
+      const session = sessionResult.get();
+
+      // const { session } = sessionResult;
+
+      // Extract pipeline info from the real session's process.
+      const redactedArgs = session.process.args.map(redactMediaServerSecrets);
+
+      result.pipeline = {
+        hardwareAccelMode: transcodeConfig.hardwareAccelerationMode ?? 'none',
+        builderType: 'FfmpegStreamFactory',
+        pipelineSteps: [],
+        ffmpegArgs: redactedArgs,
+        ffmpegArgsString: redactedArgs.join(' '),
+        environmentVariables: omitBy(
+          session.process.environmentVariables,
+          isNil,
+        ) as Record<string, string>,
+      };
+
+      // Stage 6: Run the test transcode using the real session.
+      try {
+        const exitResult = await new Promise<{
+          code: number | null;
+          signal: string | null;
+        }>((resolve) => {
+          const stdout = session.start();
+
+          if (!stdout) {
+            resolve({ code: -1, signal: null });
+            return;
+          }
+
+          // Discard stdout — HLS output goes to files in tempDir.
+          stdout.pipe(
+            new Writable({
+              write(_chunk, _encoding, callback) {
+                callback();
+              },
+            }),
+          );
+
+          session.process.on('exit', (code, signal) => {
+            resolve({ code, signal: signal ?? null });
+          });
+
+          session.process.on('error', (err) => {
+            resolve({
+              code: (err as { code?: number }).code ?? -1,
+              signal: null,
+            });
+          });
+
+          // Safety timeout
+          const timeout = setTimeout(
+            () => {
+              session.kill();
+              resolve({ code: -1, signal: 'TIMEOUT' });
+            },
+            request.testDurationSeconds * 2 * 1000 + 30000,
+          );
+
+          session.process.on('end', () => {
+            clearTimeout(timeout);
+          });
+        });
+
+        // Read the FFmpeg report file if it was written
+        let ffmpegLogContent = '';
+        try {
+          const reportFiles = await fs.readdir(tempDir);
+          const reportFile = reportFiles.find(
+            (f) => f.startsWith('ffmpeg-') && f.endsWith('.log'),
+          );
+          if (reportFile) {
+            ffmpegLogContent = await fs.readFile(
+              path.join(tempDir, reportFile),
+              'utf-8',
+            );
+          }
+        } catch {
+          // No report file available
+        }
+
+        result.testTranscode = {
+          exitCode: exitResult.code,
+          signal: exitResult.signal,
+          success: exitResult.code === 0,
+          stderrOutput: '',
+          hlsSessionId: sessionId,
+        };
+
+        if (ffmpegLogContent) {
+          result.ffmpegLog = ffmpegLogContent;
+        }
+      } catch (err) {
+        errors.push(`Test transcode: ${String(err)}`);
+      }
+    } catch (err) {
+      errors.push(`Pipeline/transcode: ${String(err)}`);
+    }
+
+    this.scheduleSessionCleanup(sessionId, tempDir);
+
+    return result;
+  }
+
+  private scheduleSessionCleanup(sessionId: string, tempDir: string) {
+    setTimeout(() => {
+      this.activeSessions.delete(sessionId);
+      fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
+    }, SessionRetentionMs);
+  }
+
+  private async traceStreamSelection({
+    channel,
+    program,
+    streamDetails,
+    result,
+    errors,
+  }: {
+    channel: Pick<ChannelOrmWithTranscodeConfig, 'uuid' | 'name' | 'number'>;
+    program: TroubleshootProgram;
+    streamDetails: ProgramStreamResult;
+    result: TroubleshootResult;
+    errors: string[];
+  }): Promise<void> {
     try {
       const selectionCtx = {
         channelId: channel.uuid,
@@ -396,10 +635,55 @@ export class TroubleshootService {
     } catch (err) {
       errors.push(`Stream selection: ${String(err)}`);
     }
+  }
 
-    // Stage 5 & 6: Create stream session using the real pipeline and run
-    // the test transcode. This uses the exact same code path as production
-    // streaming (FfmpegStreamFactory.createStreamSession).
+  /**
+   * Runs the diagnostic transcode through the ErsatzTV next worker instead of
+   * Tunarr's own pipeline.
+   *
+   * The result keeps the same shape the page already renders. `pipeline` holds
+   * the command the worker resolved rather than one Tunarr built, and the
+   * settings the backend drops are reported as errors so a config that streams
+   * differently than it reads says so.
+   */
+  private async troubleshootEtvNext({
+    request,
+    result,
+    errors,
+    channel,
+    program,
+    streamDetails,
+  }: {
+    request: TroubleshootRequest;
+    result: TroubleshootResult;
+    errors: string[];
+    channel: ChannelOrmWithTranscodeConfig;
+    program: TroubleshootProgram;
+    streamDetails: ProgramStreamResult;
+  }): Promise<TroubleshootResult> {
+    await this.traceStreamSelection({
+      channel,
+      program,
+      streamDetails,
+      result,
+      errors,
+    });
+
+    // The playout writer drops the subtitle on a channel with subtitles off.
+    if (!channel.subtitlesEnabled && result.streamSelection) {
+      result.streamSelection.selectedSubtitleStream = null;
+      result.streamSelection.subtitleReason =
+        'Subtitles are turned off for this channel';
+    }
+
+    const { mediaSourceId } = program;
+    if (mediaSourceId === null) {
+      errors.push(
+        `Program ${program.uuid} has no media source, so there is nothing to stream.`,
+      );
+      return result;
+    }
+
     const sessionId = uuidv4();
     const tempDir = path.join(
       os.tmpdir(),
@@ -407,183 +691,62 @@ export class TroubleshootService {
       sessionId,
     );
     await fs.mkdir(tempDir, { recursive: true });
-    this.activeSessions.set(sessionId, tempDir);
+
+    const testDurationMs = request.testDurationSeconds * 1000;
+    const maxStartMs = Math.max(0, program.duration - testDurationMs - 5000);
+
+    const lineupItem: StreamLineupItem = {
+      type: 'program',
+      program: { ...program, mediaSourceId },
+      duration: program.duration,
+      infiniteLoop: false,
+      programBeginMs: +dayjs(),
+      streamDuration: testDurationMs,
+      startOffset: maxStartMs > 0 ? random(0, maxStartMs) : 0,
+    };
 
     try {
-      const testDurationMs = request.testDurationSeconds * 1000;
-      const programDurationMs = program.duration;
-      const maxStartMs = Math.max(0, programDurationMs - testDurationMs - 5000);
-      const startTimeMs = maxStartMs > 0 ? random(0, maxStartMs) : 0;
-
-      const watermark =
-        channel.watermark?.enabled === true ? channel.watermark : undefined;
-
-      const lineupItem: StreamLineupItem = {
-        type: 'program',
-        program: { ...program, mediaSourceId: program.mediaSourceId },
-        duration: program.duration,
-        infiniteLoop: false,
-        programBeginMs: +dayjs(),
-        streamDuration: testDurationMs,
-      };
-
-      const hlsOutputFormat = HlsOutputFormat({
-        ...defaultHlsOptions,
-        hlsTime: 4,
-        hlsListSize: 0,
-        segmentBaseDirectory: dirname(tempDir),
-        streamBasePath: basename(tempDir),
-        streamBaseUrl: `/api/troubleshoot/stream/${sessionId}/`,
-        segmentNameFormat: 'live%06d.ts',
-        streamNameFormat: 'live.m3u8',
-        subtitleStreamNameFormat: 'subs.m3u8',
-        deleteThreshold: null,
-        appendSegments: true,
+      const run = await this.etvNextRunner.run({
+        channel,
+        lineupItem,
+        ffmpegSettings: this.settingsDB.ffmpegSettings(),
+        baseDirectory: tempDir,
+        sessionId,
+        timeoutMs: request.testDurationSeconds * 2 * 1000 + 30000,
+        subtitleMode: this.featureFlagService.get('webvttSidecarEnabled')
+          ? 'convert'
+          : 'burn',
       });
 
-      const programStream = this.programStreamFactory(
-        new PlayerContext(lineupItem, channel, channel, transcodeConfig, {
-          audioOnly: false,
-          realtime: false,
-          streamMode: channel.streamMode,
-        }),
-        hlsOutputFormat,
-        {
-          startTime: dayjs.duration(startTimeMs),
-          duration: dayjs.duration(testDurationMs),
-          watermark,
-          realtime: false,
-          outputFormat: hlsOutputFormat,
-          streamMode: channel.streamMode,
-          isFirstTranscode: true,
-          emitEndList: true,
-        },
-      );
+      this.activeSessions.set(sessionId, run.outputDirectory);
+      errors.push(...run.notes);
 
-      const sessionResult = await programStream.setup();
-
-      if (sessionResult.isFailure()) {
-        errors.push(
-          `Failed to create FFmpeg stream session: ${sessionResult.error.message}`,
-        );
-        return result;
-      }
-
-      const session = sessionResult.get();
-
-      // const { session } = sessionResult;
-
-      // Extract pipeline info from the real session's process.
-      const redactArg = (arg: string) =>
-        arg
-          .replace(/(X-Plex-Token=)[A-Za-z0-9_-]+/g, '$1REDACTED')
-          .replace(/(X-Emby-Token:\s)[A-Za-z0-9_-]+/g, '$1REDACTED')
-          .replace(/(api_key=)[A-Za-z0-9_-]+/g, '$1REDACTED');
-
-      const redactedArgs = session.process.args.map(redactArg);
-
+      const args = run.ffmpegCommand?.split(/\s+/) ?? [];
       result.pipeline = {
-        hardwareAccelMode: transcodeConfig.hardwareAccelerationMode ?? 'none',
-        builderType: 'FfmpegStreamFactory',
+        hardwareAccelMode: channel.transcodeConfig.hardwareAccelerationMode,
+        builderType: 'ErsatzTvNext',
         pipelineSteps: [],
-        ffmpegArgs: redactedArgs,
-        ffmpegArgsString: redactedArgs.join(' '),
-        environmentVariables: omitBy(
-          session.process.environmentVariables,
-          isNil,
-        ) as Record<string, string>,
+        ffmpegArgs: args,
+        ffmpegArgsString: run.ffmpegCommand ?? '',
+        environmentVariables: {},
       };
 
-      // Stage 6: Run the test transcode using the real session.
-      try {
-        const exitResult = await new Promise<{
-          code: number | null;
-          signal: string | null;
-        }>((resolve) => {
-          const stdout = session.start();
+      result.testTranscode = {
+        exitCode: run.exitCode,
+        signal: run.signal,
+        success: run.success,
+        stderrOutput: run.stderr,
+        hlsSessionId: sessionId,
+      };
 
-          if (!stdout) {
-            resolve({ code: -1, signal: null });
-            return;
-          }
-
-          // Discard stdout — HLS output goes to files in tempDir.
-          stdout.pipe(
-            new Writable({
-              write(_chunk, _encoding, callback) {
-                callback();
-              },
-            }),
-          );
-
-          session.process.on('exit', (code, signal) => {
-            resolve({ code, signal: signal ?? null });
-          });
-
-          session.process.on('error', (err) => {
-            resolve({
-              code: (err as { code?: number }).code ?? -1,
-              signal: null,
-            });
-          });
-
-          // Safety timeout
-          const timeout = setTimeout(
-            () => {
-              session.kill();
-              resolve({ code: -1, signal: 'TIMEOUT' });
-            },
-            request.testDurationSeconds * 2 * 1000 + 30000,
-          );
-
-          session.process.on('end', () => {
-            clearTimeout(timeout);
-          });
-        });
-
-        // Read the FFmpeg report file if it was written
-        let ffmpegLogContent = '';
-        try {
-          const reportFiles = await fs.readdir(tempDir);
-          const reportFile = reportFiles.find(
-            (f) => f.startsWith('ffmpeg-') && f.endsWith('.log'),
-          );
-          if (reportFile) {
-            ffmpegLogContent = await fs.readFile(
-              path.join(tempDir, reportFile),
-              'utf-8',
-            );
-          }
-        } catch {
-          // No report file available
-        }
-
-        result.testTranscode = {
-          exitCode: exitResult.code,
-          signal: exitResult.signal,
-          success: exitResult.code === 0,
-          stderrOutput: '',
-          hlsSessionId: sessionId,
-        };
-
-        if (ffmpegLogContent) {
-          result.ffmpegLog = ffmpegLogContent;
-        }
-      } catch (err) {
-        errors.push(`Test transcode: ${String(err)}`);
+      if (isNonEmptyString(run.report)) {
+        result.ffmpegLog = run.report;
       }
     } catch (err) {
-      errors.push(`Pipeline/transcode: ${String(err)}`);
+      errors.push(`ErsatzTV next transcode: ${String(err)}`);
     }
 
-    // Schedule cleanup of the temp directory after 5 minutes
-    setTimeout(
-      () => {
-        this.activeSessions.delete(sessionId);
-        fs.rm(tempDir, { recursive: true, force: true }).catch(() => {});
-      },
-      5 * 60 * 1000,
-    );
+    this.scheduleSessionCleanup(sessionId, tempDir);
 
     return result;
   }

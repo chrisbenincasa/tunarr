@@ -18,12 +18,12 @@
 
 ## Evidence
 
-| Check | Result |
-|-------|--------|
+| Check                                                        | Result                                                                                                  |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
 | Scheduler probe, 160 episodes, smart-collection slot, 7 days | No bad, fractional, or non-monotonic durations. Guide and playback index lookups agree at every minute. |
-| Sub-10 s flex items, `padMs: 1` | 310 (shuffle) and 125 (ordered_shuffle) per 8.7-day cycle, totaling 27 and 7.6 minutes |
-| Sub-10 s flex items, `padMs` 60 s or 30 min | 0 |
-| Reporter log | XMLTV rebuilt after each save (17:36, 17:39, 17:40 UTC on 08/10/2026), so the guide was not stale |
+| Sub-10 s flex items, `padMs: 1`                              | 310 (shuffle) and 125 (ordered_shuffle) per 8.7-day cycle, totaling 27 and 7.6 minutes                  |
+| Sub-10 s flex items, `padMs` 60 s or 30 min                  | 0                                                                                                       |
+| Reporter log                                                 | XMLTV rebuilt after each save (17:36, 17:39, 17:40 UTC on 08/10/2026), so the guide was not stale       |
 
 - The reporter says cyclic shuffle fixed it. Random slots don't align to clock times, so they don't need the short alignment flex.
 - This fit is inferred. The random-slot output was not probed.

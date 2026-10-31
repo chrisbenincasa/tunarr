@@ -12,13 +12,13 @@ Reject invalid scheduling requests before changing state. Keep empty custom show
 
 ## Evidence and limits
 
-| Finding | Evidence | Consequence |
-| --- | --- | --- |
-| Empty dynamic random slots loop without advancing time. | Real scheduler calls timed out after three seconds; a queued 100 ms timer never fired. Positive fixed-slot and populated dynamic-slot controls completed. | Default inline scheduling can freeze HTTP during a programming write. |
-| Nonpositive durations reach scheduling. | A fixed duration of zero passes the request schema and stalls generation. A zero-duration program also stalls generation; fixed-slot packing exhausted a bounded test heap. | Request validation and inner-loop progress checks both need correction. |
-| Empty custom-show updates retain old membership. | Three real SQLite tests covered explicit empty replacement, all-unresolved replacement, and valid replacement. | An explicit replacement is confused with an omitted update. |
-| Zero random slots have inconsistent behavior. | Sequential selection throws; uniform selection returns 24 days of flex. | New requests need a defined contract; older saved rules need safe runtime handling. |
-| Manual content duration zero passes request validation but fails lineup validation. | Both schemas were exercised. SQL updates precede the lineup write. | Validate the derived lineup before mutation; SQL/cache corruption from this path is not yet reproduced. |
+| Finding                                                                             | Evidence                                                                                                                                                                    | Consequence                                                                                             |
+| ----------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------- |
+| Empty dynamic random slots loop without advancing time.                             | Real scheduler calls timed out after three seconds; a queued 100 ms timer never fired. Positive fixed-slot and populated dynamic-slot controls completed.                   | Default inline scheduling can freeze HTTP during a programming write.                                   |
+| Nonpositive durations reach scheduling.                                             | A fixed duration of zero passes the request schema and stalls generation. A zero-duration program also stalls generation; fixed-slot packing exhausted a bounded test heap. | Request validation and inner-loop progress checks both need correction.                                 |
+| Empty custom-show updates retain old membership.                                    | Three real SQLite tests covered explicit empty replacement, all-unresolved replacement, and valid replacement.                                                              | An explicit replacement is confused with an omitted update.                                             |
+| Zero random slots have inconsistent behavior.                                       | Sequential selection throws; uniform selection returns 24 days of flex.                                                                                                     | New requests need a defined contract; older saved rules need safe runtime handling.                     |
+| Manual content duration zero passes request validation but fails lineup validation. | Both schemas were exercised. SQL updates precede the lineup write.                                                                                                          | Validate the derived lineup before mutation; SQL/cache corruption from this path is not yet reproduced. |
 
 Empty manual lineups and missing program IDs completed guide generation and became flex in service tests. Startup waits for guide construction but does not rerun persisted random rules. The reported successful-write → restart → guide-hang sequence remains unverified.
 
@@ -26,20 +26,20 @@ The cited library-refresh path skips local sources. Valid SQLite membership does
 
 ## Behavior contract
 
-| Situation | Chosen behavior |
-| --- | --- |
-| A custom show has no content. | Keep it creatable and editable, but exclude it from selectable options for new slots. |
-| A saved slot references an empty or deleted show. | Keep its identity visible with an unavailable warning; never substitute another show. |
-| A new scheduling request explicitly references an empty or unresolved custom show. | Return HTTP 400 with the slot and show identified; leave stored state unchanged. |
-| A new request has zero random slots, a nonpositive fixed duration, or an invalid dynamic count. | Return HTTP 400 before calling the scheduler. |
-| A new programming write contains an unresolved content ID or nonpositive content duration. | Return HTTP 400 before mutating SQL, lineup files or caches. |
-| An existing fixed slot loses its content. | Preserve the existing positive-duration flex fallback. |
-| An existing dynamic slot yields nothing. | Try other eligible slots through a bounded search; do not repeatedly select the empty slot at the same cursor. |
-| No slot can produce content. | Advance to the next valid cooldown boundary or fill the remaining generation window with flex and finish. |
-| Previously stored rules contain zero slots. | Return flex for the requested window consistently across distributions. |
-| A caller explicitly clears a custom show. | `programs: []` replaces membership with an empty set. An omitted field leaves membership alone. |
-| A custom-show replacement contains unresolved IDs. | Reject the whole replacement with HTTP 400; do not silently drop IDs or retain old membership while reporting success. |
-| A channel has an empty manual lineup. | Keep it valid and retain the normal flex guide. |
+| Situation                                                                                       | Chosen behavior                                                                                                        |
+| ----------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| A custom show has no content.                                                                   | Keep it creatable and editable, but exclude it from selectable options for new slots.                                  |
+| A saved slot references an empty or deleted show.                                               | Keep its identity visible with an unavailable warning; never substitute another show.                                  |
+| A new scheduling request explicitly references an empty or unresolved custom show.              | Return HTTP 400 with the slot and show identified; leave stored state unchanged.                                       |
+| A new request has zero random slots, a nonpositive fixed duration, or an invalid dynamic count. | Return HTTP 400 before calling the scheduler.                                                                          |
+| A new programming write contains an unresolved content ID or nonpositive content duration.      | Return HTTP 400 before mutating SQL, lineup files or caches.                                                           |
+| An existing fixed slot loses its content.                                                       | Preserve the existing positive-duration flex fallback.                                                                 |
+| An existing dynamic slot yields nothing.                                                        | Try other eligible slots through a bounded search; do not repeatedly select the empty slot at the same cursor.         |
+| No slot can produce content.                                                                    | Advance to the next valid cooldown boundary or fill the remaining generation window with flex and finish.              |
+| Previously stored rules contain zero slots.                                                     | Return flex for the requested window consistently across distributions.                                                |
+| A caller explicitly clears a custom show.                                                       | `programs: []` replaces membership with an empty set. An omitted field leaves membership alone.                        |
+| A custom-show replacement contains unresolved IDs.                                              | Reject the whole replacement with HTTP 400; do not silently drop IDs or retain old membership while reporting success. |
+| A channel has an empty manual lineup.                                                           | Keep it valid and retain the normal flex guide.                                                                        |
 
 Request validation uses current resolved content, not UI counts. Runtime checks remain necessary for older saved rules, direct service callers, content changes and exhausted iterators.
 
@@ -117,20 +117,20 @@ Relevant components are under `web/src/components/slot_scheduler/`; details and 
 
 Write failing regressions before fixes. Run known hangs in child processes with an external deadline until the scheduler can terminate them safely; an in-process test timeout cannot stop a blocked event loop.
 
-| Test | Required result |
-| --- | --- |
-| Empty dynamic custom show under sequential, uniform and weighted selection | Generation finishes; no repeated selection at an unchanged cursor. |
-| Empty dynamic slot mixed with healthy slots, cooldowns and linked slots | Healthy content still schedules; existing ordering and cooldown rules hold. |
-| Positive fixed slot with empty content | Flex covers the slot and advances time. |
-| All slots unavailable, or older saved rules with zero slots | Flex covers the requested window without the current 24-day overshoot. |
-| Fixed duration zero/negative; invalid dynamic count | New requests return 400; direct scheduler calls terminate with a useful error. |
-| Zero-duration program, alone and mixed with valid content | Fixed and dynamic packing terminate without unbounded allocation. |
-| Empty manual lineup and persisted missing content ID | Guide construction and materialization retain their flex fallbacks. |
-| New unresolved references or invalid derived lineup | Request fails before SQL, file, cache or guide changes. |
-| Custom-show field omitted, empty, valid, unresolved and mixed | Omitted preserves; empty clears; valid replaces; unresolved rejects atomically. |
-| Empty show in time/random editors; saved show later empty/deleted | New choice is unavailable; saved identity remains visible and repairable. |
-| Rejected request through the real endpoint with default inline scheduling | Response returns promptly; a second `/api/version` request remains responsive. |
-| Timeout with workers enabled | Capacity is recovered and a subsequent valid task completes. |
+| Test                                                                       | Required result                                                                 |
+| -------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| Empty dynamic custom show under sequential, uniform and weighted selection | Generation finishes; no repeated selection at an unchanged cursor.              |
+| Empty dynamic slot mixed with healthy slots, cooldowns and linked slots    | Healthy content still schedules; existing ordering and cooldown rules hold.     |
+| Positive fixed slot with empty content                                     | Flex covers the slot and advances time.                                         |
+| All slots unavailable, or older saved rules with zero slots                | Flex covers the requested window without the current 24-day overshoot.          |
+| Fixed duration zero/negative; invalid dynamic count                        | New requests return 400; direct scheduler calls terminate with a useful error.  |
+| Zero-duration program, alone and mixed with valid content                  | Fixed and dynamic packing terminate without unbounded allocation.               |
+| Empty manual lineup and persisted missing content ID                       | Guide construction and materialization retain their flex fallbacks.             |
+| New unresolved references or invalid derived lineup                        | Request fails before SQL, file, cache or guide changes.                         |
+| Custom-show field omitted, empty, valid, unresolved and mixed              | Omitted preserves; empty clears; valid replaces; unresolved rejects atomically. |
+| Empty show in time/random editors; saved show later empty/deleted          | New choice is unavailable; saved identity remains visible and repairable.       |
+| Rejected request through the real endpoint with default inline scheduling  | Response returns promptly; a second `/api/version` request remains responsive.  |
+| Timeout with workers enabled                                               | Capacity is recovered and a subsequent valid task completes.                    |
 
 - Extend `RandomSlotsService.test.ts`, `TimeSlotService.test.ts`, the schema validation tests and real SQLite custom-show tests. Add endpoint tests that reach generation and persistence, not only schema injection.
 - Use the existing strict/permissive cases in `server/src/types/timeSlotScheduleValidation.test.ts` as the schema test pattern.

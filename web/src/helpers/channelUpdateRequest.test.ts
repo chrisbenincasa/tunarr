@@ -19,6 +19,7 @@ const channel: SaveableChannel = {
   streamMode: 'hls',
   transcodeConfigId: '00000000-0000-0000-0000-000000000000',
   subtitlesEnabled: false,
+  useEtvNext: false,
 };
 
 describe('toChannelUpdateRequest', () => {

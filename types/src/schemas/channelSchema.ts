@@ -101,6 +101,8 @@ export const HlsDirectStreamMode = 'hls_direct';
 export const HlsDirectConcatStreamMode = 'hls_direct_concat';
 export const HlsDirectV2StreamMode = 'hls_direct_v2';
 export const HlsDirectV2ConcatStreamMode = 'hls_direct_v2_concat';
+export const EtvNextStreamMode = 'etv_next';
+export const EtvNextConcatStreamMode = 'etv_next_concat';
 
 export const ChannelStreamMode = {
   Hls: HlsChannelStreamMode,
@@ -142,6 +144,30 @@ export type ChannelConcatStreamMode = TupleToUnion<
 >;
 export const ChannelConcatStreamModeSchema = z.enum(ChannelConcatStreamModes);
 
+/**
+ * Stream modes a running session can have, as opposed to the modes a channel
+ * can be saved as. `etv_next` is a backend the feature flag routes to, not a
+ * setting, so it appears in session keys and stream URLs but never on a
+ * channel or in the database.
+ */
+export const SessionStreamModes = [
+  ...ChannelStreamModes,
+  EtvNextStreamMode,
+] as const;
+
+export const SessionConcatStreamModes = [
+  ...ChannelConcatStreamModes,
+  EtvNextConcatStreamMode,
+] as const;
+
+export type SessionStreamMode = TupleToUnion<typeof SessionStreamModes>;
+export const SessionStreamModeSchema = z.enum(SessionStreamModes);
+
+export type SessionConcatStreamMode = TupleToUnion<
+  typeof SessionConcatStreamModes
+>;
+export const SessionConcatStreamModeSchema = z.enum(SessionConcatStreamModes);
+
 export const StreamConnectionDetailsSchema = z.object({
   ip: z.ipv4().or(z.ipv6()),
   userAgent: z.string().optional(),
@@ -150,7 +176,7 @@ export const StreamConnectionDetailsSchema = z.object({
 });
 
 export const ChannelSessionSchema = z.object({
-  type: z.enum([...ChannelStreamModes, ...ChannelConcatStreamModes]),
+  type: z.enum([...SessionStreamModes, ...SessionConcatStreamModes]),
   state: z.string(),
   numConnections: z.number().nonnegative(),
   connections: z.array(StreamConnectionDetailsSchema),
@@ -182,6 +208,17 @@ export const ChannelSchema = z.object({
   transcodeConfigId: z.uuid(),
   sessions: z.array(ChannelSessionSchema).optional(),
   subtitlesEnabled: z.boolean(),
+
+  /**
+   * Routes this channel to the ErsatzTV next backend while the global feature
+   * flag is off. The flag enrolls every channel on its own, so this only
+   * decides anything when the flag is off. That is what lets a user move
+   * channels over one at a time before flipping the flag for the rest.
+   *
+   * Defaulted rather than required so a client written before the field
+   * existed can still save a channel.
+   */
+  useEtvNext: z.boolean().default(false),
   subtitlePreferences: z.array(SubtitlePreference).nonempty().optional(),
 });
 

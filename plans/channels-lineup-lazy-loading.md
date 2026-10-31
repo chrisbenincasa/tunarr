@@ -13,22 +13,22 @@
 
 ## Measurements (maintainer's data, 09/28/2026)
 
-| Path | Before | After Phase 0 |
-|---|---|---|
-| `GET /channels/:id/programming`, 6,238 unique programs | 12.2–13.0 s, 186 MB | 0.87–0.90 s, 20.6 MB |
-| `GET /programs/:id/descendants`, single episode (avg of 200) | 30.9 KB | 3.3 KB |
-| Select All add, unfiltered TV library (after Phase 1) | 131 searches + 6,413 requests, 69 s, 16,920 programs | 7 searches + 240 requests, 3 s, 5,640 programs |
+| Path                                                         | Before                                               | After Phase 0                                  |
+| ------------------------------------------------------------ | ---------------------------------------------------- | ---------------------------------------------- |
+| `GET /channels/:id/programming`, 6,238 unique programs       | 12.2–13.0 s, 186 MB                                  | 0.87–0.90 s, 20.6 MB                           |
+| `GET /programs/:id/descendants`, single episode (avg of 200) | 30.9 KB                                              | 3.3 KB                                         |
+| Select All add, unfiltered TV library (after Phase 1)        | 131 searches + 6,413 requests, 69 s, 16,920 programs | 7 searches + 240 requests, 3 s, 5,640 programs |
 
 Cold load of the programming page in a fresh headless Chrome, 5,640 unique programs:
 
-| | Before | After Phases 0–1 |
-|---|---|---|
-| Lineup request | 11.3 s, 179 MB | 0.9 s, 19.8 MB |
-| Time until the list shows | 15.3–15.9 s | 2.2–2.3 s |
-| Renderer JS busy | 4.2–4.4 s | 1.8–1.9 s |
-| Chrome CPU, all processes | 7.0 s | 2.8–3.0 s |
-| Peak JS heap | 307 MB | 125–129 MB |
-| Chrome RSS growth | +620 MB | +130 MB |
+|                           | Before         | After Phases 0–1 |
+| ------------------------- | -------------- | ---------------- |
+| Lineup request            | 11.3 s, 179 MB | 0.9 s, 19.8 MB   |
+| Time until the list shows | 15.3–15.9 s    | 2.2–2.3 s        |
+| Renderer JS busy          | 4.2–4.4 s      | 1.8–1.9 s        |
+| Chrome CPU, all processes | 7.0 s          | 2.8–3.0 s        |
+| Peak JS heap              | 307 MB         | 125–129 MB       |
+| Chrome RSS growth         | +620 MB        | +130 MB          |
 
 A 16,920-item lineup of the same 5,640 programs cold-loads on the fixed branch in 3.4 s at a 168 MB peak heap. `materializeProgramList` (`store/selectors.ts`) is then the top JS cost at 484 ms, which is the Phase 2 target.
 
@@ -53,7 +53,6 @@ From a live profile of a Select All add, measured before Phase 0:
 - [x] `defaultLibrarySearchFilter` in `web/src/helpers/programUtil.ts`, shared by `LibraryProgramGrid` and Select All.
 - [x] `dedupeImportedMedia` in `useAddProgramming.ts` drops repeated imported programs within one add and keeps custom show repeats.
 - [x] Tests: `helpers/programUtil.test.ts`, `hooks/programming_controls/useAddProgramming.test.ts`.
-
 
 - **Cause:**
   - `enumerateSyncedItems` (`web/src/helpers/programUtil.ts:92-124`) pages `/programs/search` without the grid's default type filter (`LibraryProgramGrid.tsx:95-138`).
@@ -127,10 +126,10 @@ The editor's working lineup moves from the browser to the server. Tools run in t
 
 ### Data model
 
-| Table | Columns |
-|---|---|
-| `lineup_draft` | `id`, `target_type` (`channel`, `custom_show`, `filler_list`), `target_id`, `base_hash`, `current_version`, `created_at`, `updated_at` |
-| `lineup_draft_version` | `draft_id`, `version`, `parent_version`, `operation` (JSON), `summary` (JSON), `items` (condensed JSON), `created_at` |
+| Table                  | Columns                                                                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `lineup_draft`         | `id`, `target_type` (`channel`, `custom_show`, `filler_list`), `target_id`, `base_hash`, `current_version`, `created_at`, `updated_at` |
+| `lineup_draft_version` | `draft_id`, `version`, `parent_version`, `operation` (JSON), `summary` (JSON), `items` (condensed JSON), `created_at`                  |
 
 - One draft per target. It is created by the first operation, not by opening the editor, so a view-only visit writes nothing. Opening an editor resumes an existing draft.
   - Chosen 09/28/2026. A draft then always means the user changed something, which is when the resume prompt and cleanup should apply.
@@ -163,18 +162,18 @@ The editor's working lineup moves from the browser to the server. Tools run in t
 
 ### API
 
-| Endpoint | Purpose |
-|---|---|
-| `GET /lineups/:targetType/:targetId` | Lineup state. Returns the draft's version, totals and staleness if a draft exists, else the live lineup's hash and totals. |
-| `GET /lineups/:targetType/:targetId/items?version&offset&limit` | One page of items with start offsets and program summaries. Reads the draft if one exists, else the live lineup. |
-| `GET /lineups/:targetType/:targetId/items?version&from&to` | Items overlapping a time window, for the calendar views. |
-| `POST /lineups/:targetType/:targetId/operations` | Apply one operation. Creates the draft if none exists. Body carries `expected`. |
-| `POST /lineups/:targetType/:targetId/undo`, `/redo` | Move the current version pointer. |
-| `GET /lineups/:targetType/:targetId/history` | Versions with operation and summary. |
-| `POST /lineups/:targetType/:targetId/commit` | Write the draft to the live lineup, then delete the draft. |
-| `DELETE /lineups/:targetType/:targetId/draft` | Discard the draft. |
-| `GET /lineup-drafts` | Every draft with target, age, version count and item total, for badges and the Settings list. |
-| `DELETE /lineup-drafts` | Bulk discard. Body is a list of targets or `{olderThanDays}`. |
+| Endpoint                                                        | Purpose                                                                                                                    |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| `GET /lineups/:targetType/:targetId`                            | Lineup state. Returns the draft's version, totals and staleness if a draft exists, else the live lineup's hash and totals. |
+| `GET /lineups/:targetType/:targetId/items?version&offset&limit` | One page of items with start offsets and program summaries. Reads the draft if one exists, else the live lineup.           |
+| `GET /lineups/:targetType/:targetId/items?version&from&to`      | Items overlapping a time window, for the calendar views.                                                                   |
+| `POST /lineups/:targetType/:targetId/operations`                | Apply one operation. Creates the draft if none exists. Body carries `expected`.                                            |
+| `POST /lineups/:targetType/:targetId/undo`, `/redo`             | Move the current version pointer.                                                                                          |
+| `GET /lineups/:targetType/:targetId/history`                    | Versions with operation and summary.                                                                                       |
+| `POST /lineups/:targetType/:targetId/commit`                    | Write the draft to the live lineup, then delete the draft.                                                                 |
+| `DELETE /lineups/:targetType/:targetId/draft`                   | Discard the draft.                                                                                                         |
+| `GET /lineup-drafts`                                            | Every draft with target, age, version count and item total, for badges and the Settings list.                              |
+| `DELETE /lineup-drafts`                                         | Bulk discard. Body is a list of targets or `{olderThanDays}`.                                                              |
 
 - Endpoints are keyed by target, because there is at most one draft per target and reads work with or without one.
 - `expected` is either `{draftVersion}` or, before a draft exists, `{liveHash}` from the last read. A mismatch returns 409, so an index-based edit never lands on a list the user did not see.
@@ -194,14 +193,14 @@ The editor's working lineup moves from the browser to the server. Tools run in t
 
 Every edit becomes an operation, including manual ones. Versions are ordered, so index-based manual edits stay valid.
 
-| Group | Operations | Source today |
-|---|---|---|
-| Sort | alpha, release date, episode number, random, cyclic shuffle, block shuffle | `useAlphaSort`, `useReleaseDateSort`, `useEpisodeNumberSort`, `useRandomSort`, `useCyclicShuffle`, `useBlockShuffle` |
-| Remove | all, flex, specials, duplicates, selected shows | `useRemoveAllProgramming`, `useRemoveFlex`, `useRemoveSpecials`, `useRemoveDuplicates`, `useRemoveProgramming` |
-| Arrange | balance, replicate, consolidate, slide | `useBalancePrograms`, `useReplicatePrograms`, `useConcolidatePrograms`, `useSlideSchedule` |
-| Flex | add breaks, pad start times, restrict hours | `useAddBreaks`, `usePadStartTimes`, `useRestrictHours` |
-| Manual | move, remove item, insert or edit flex, insert redirect | `store/channelEditor/actions.ts` |
-| Add | add an ordered list of program ids (4a), then Phase 3 selection entries (4b) | `useAddProgramming` |
+| Group   | Operations                                                                   | Source today                                                                                                         |
+| ------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| Sort    | alpha, release date, episode number, random, cyclic shuffle, block shuffle   | `useAlphaSort`, `useReleaseDateSort`, `useEpisodeNumberSort`, `useRandomSort`, `useCyclicShuffle`, `useBlockShuffle` |
+| Remove  | all, flex, specials, duplicates, selected shows                              | `useRemoveAllProgramming`, `useRemoveFlex`, `useRemoveSpecials`, `useRemoveDuplicates`, `useRemoveProgramming`       |
+| Arrange | balance, replicate, consolidate, slide                                       | `useBalancePrograms`, `useReplicatePrograms`, `useConcolidatePrograms`, `useSlideSchedule`                           |
+| Flex    | add breaks, pad start times, restrict hours                                  | `useAddBreaks`, `usePadStartTimes`, `useRestrictHours`                                                               |
+| Manual  | move, remove item, insert or edit flex, insert redirect                      | `store/channelEditor/actions.ts`                                                                                     |
+| Add     | add an ordered list of program ids (4a), then Phase 3 selection entries (4b) | `useAddProgramming`                                                                                                  |
 
 - Move the pure transforms out of the hooks into `@tunarr/shared`. The worker and the existing unit tests both use them.
 - Random operations store their seed in `operation`, so the history is reproducible.
@@ -255,14 +254,14 @@ None. All were settled in the 09/28–09/29/2026 grill.
 
 Each dependency needs a server-side replacement in Phase 4.
 
-| Dependency | Where | Replacement |
-|---|---|---|
-| Row index, `originalIndex`, drag ids | `store/channelEditor/actions.ts:54-70`, `ChannelLineupList.tsx:150-170` | Draft index plus version |
-| Start offsets recomputed from item 0 | `store/selectors.ts:23-63` | Server computes offsets per page |
-| Sort, shuffle, balance, replicate, remove tools | `hooks/programming_controls/*` | Draft operations |
-| Mid-roll grouping | `helpers/midRollGrouping.ts:51-113` | Server groups per page |
-| Calendar views | `hooks/calendarHooks.ts:62-131` | Time-window reads |
-| Manual save sends the whole list | `ChannelProgrammingConfig.tsx:98-118` | Draft commit |
+| Dependency                                      | Where                                                                   | Replacement                      |
+| ----------------------------------------------- | ----------------------------------------------------------------------- | -------------------------------- |
+| Row index, `originalIndex`, drag ids            | `store/channelEditor/actions.ts:54-70`, `ChannelLineupList.tsx:150-170` | Draft index plus version         |
+| Start offsets recomputed from item 0            | `store/selectors.ts:23-63`                                              | Server computes offsets per page |
+| Sort, shuffle, balance, replicate, remove tools | `hooks/programming_controls/*`                                          | Draft operations                 |
+| Mid-roll grouping                               | `helpers/midRollGrouping.ts:51-113`                                     | Server groups per page           |
+| Calendar views                                  | `hooks/calendarHooks.ts:62-131`                                         | Time-window reads                |
+| Manual save sends the whole list                | `ChannelProgrammingConfig.tsx:98-118`                                   | Draft commit                     |
 
 ## Risks
 

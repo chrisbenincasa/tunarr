@@ -30,7 +30,7 @@ Do not redo this work:
 - **It is not event-loop blocking.** That was a real, separate bug: saving one
   channel's programming rebuilt every channel's guide. Fixed in
   `fix: scope guide rebuild to the saved channel on lineup update`. Blocking
-  causes *buffering*, and buffering could plausibly cause playback to fall
+  causes _buffering_, and buffering could plausibly cause playback to fall
   behind — but #1798 reports drift with no save at all, so blocking cannot be
   the whole story.
 - **Lineups are not stored in SQLite.** They are per-channel lowdb JSON files
@@ -72,7 +72,7 @@ playback reports the raw lineup item. **This is the most likely mechanism for
 ### 2. End-of-program slack — playback only
 
 `calculateStreamDuration` takes `slackAmount = SLACK` and, at `:631`, advances to
-the *next* program when within slack of the current one's end:
+the _next_ program when within slack of the current one's end:
 
 ```js
 if (timeElapsed > program.durationMs - slackAmount) {
@@ -111,7 +111,7 @@ The third parameter is `isSorted`, and **it is misnamed and inverted**
 const sorted = isSorted ? sortBy(seq) : seq;
 ```
 
-Passing `true` *sorts* the array. Start-time offsets are already monotonically
+Passing `true` _sorts_ the array. Start-time offsets are already monotonically
 increasing, so the sorted values should match — this is probably not a
 correctness divergence. But it means **playback re-sorts a potentially
 17k-element array on every program lookup**, which is its own performance
@@ -134,7 +134,7 @@ split.
 `getChannelPlaying` (`TvGuideService.ts:546`, recursing at `:643`, with a comment
 at `:575` about a "long redirect block"). Playback handles redirects through a
 different path. Redirect resolution is a strong candidate for divergence because
-it involves reading a *second* channel's position, doubling the exposure to
+it involves reading a _second_ channel's position, doubling the exposure to
 everything above.
 
 ## Suggested method

@@ -21,20 +21,20 @@ wiped on timezone change, three routes that hung every caller).
 
 ## Execution order
 
-| Order | Group | Theme | Severity | Status |
-|-------|-------|-------|----------|--------|
-| 1 | G4 | Lineup file data loss | Critical — silent data loss | ✅ done — PR #1997 |
-| 2 | G5 | Backup data loss | Critical — silent data loss | ✅ done — PR #1998 |
-| 3 | G7 | DI singleton scope | High — locks are no-ops | ✅ done — PR #1999 |
-| 4 | G6a | Guide build retry + hidden failures | High | ✅ done — PR #2000 |
-| 4b | G6b | Lineup returned by reference (race) | High | ✅ done — PR #2002 |
-| 5 | G9 | Random slot cooldown | Medium — feature does nothing | ✅ done — PR #2001 |
-| 6 | G8 | Worker pool lifecycle | Medium — blocks PR #1994 | ✅ done — PR #2004 (G8a only; G8b already fixed by #1994) |
-| 7 | G1 | Query-parameter contract | Medium | ✅ done — PR #1996 (retitled) |
-| 8 | G2 | Paging contract | Medium | ✅ done — PR #2003 |
-| 9 | G3 | Silent value rewrites | Medium | ✅ done — split into PR #2006 (G3a/G3b) and PR #2005 (G3c/G3d) |
-| 10 | G11 | Error visibility | Low | — |
-| 11 | G10 | Dead settings | Low — needs product decisions | — |
+| Order | Group | Theme                               | Severity                      | Status                                                         |
+| ----- | ----- | ----------------------------------- | ----------------------------- | -------------------------------------------------------------- |
+| 1     | G4    | Lineup file data loss               | Critical — silent data loss   | ✅ done — PR #1997                                             |
+| 2     | G5    | Backup data loss                    | Critical — silent data loss   | ✅ done — PR #1998                                             |
+| 3     | G7    | DI singleton scope                  | High — locks are no-ops       | ✅ done — PR #1999                                             |
+| 4     | G6a   | Guide build retry + hidden failures | High                          | ✅ done — PR #2000                                             |
+| 4b    | G6b   | Lineup returned by reference (race) | High                          | ✅ done — PR #2002                                             |
+| 5     | G9    | Random slot cooldown                | Medium — feature does nothing | ✅ done — PR #2001                                             |
+| 6     | G8    | Worker pool lifecycle               | Medium — blocks PR #1994      | ✅ done — PR #2004 (G8a only; G8b already fixed by #1994)      |
+| 7     | G1    | Query-parameter contract            | Medium                        | ✅ done — PR #1996 (retitled)                                  |
+| 8     | G2    | Paging contract                     | Medium                        | ✅ done — PR #2003                                             |
+| 9     | G3    | Silent value rewrites               | Medium                        | ✅ done — split into PR #2006 (G3a/G3b) and PR #2005 (G3c/G3d) |
+| 10    | G11   | Error visibility                    | Low                           | —                                                              |
+| 11    | G10   | Dead settings                       | Low — needs product decisions | —                                                              |
 
 ---
 
@@ -59,7 +59,7 @@ Any `adapter.read()` rejection — EACCES, EMFILE, EIO, an NFS blip — is downg
 (`data === null && this.defaultValue === null`) does **not** fire. Execution reaches:
 
 ```ts
-const parsed: unknown = data ? JSON.parse(data) : {};   // :41  -> {}
+const parsed: unknown = data ? JSON.parse(data) : {}; // :41  -> {}
 ```
 
 `{}` fails schema validation, so the merge-with-defaults branch at `:47-52` runs,
@@ -100,7 +100,7 @@ file has been replaced.
 ### Fix direction
 
 Distinguish "the file could not be read" from "the file is empty/absent". A read
-*error* must propagate (or at minimum must never trigger `needsWriteFlush`); only a
+_error_ must propagate (or at minimum must never trigger `needsWriteFlush`); only a
 genuinely missing file should fall back to defaults. Consider making the write path
 atomic (temp + rename) in the same branch, since it is the source of the zero-length
 file.
@@ -138,8 +138,8 @@ Three distinct defects:
 2. **Resolves before the bytes land.** `archive.on('end')` fires when the readable side
    drains, not when `outStream` has flushed and closed. Should be `outStream.on('close')`.
 3. **Retention runs before confirmation.** Line ordering is `:149 await
-   archive.finalize()` → `:154 fs.rm(tempDir)` → `:158 await
-   deleteOldBackupIfNecessary(config)` → `:159 return finishedPromise`. Old backups are
+archive.finalize()` → `:154 fs.rm(tempDir)` → `:158 await
+deleteOldBackupIfNecessary(config)` → `:159 return finishedPromise`. Old backups are
    deleted before the new one is known good.
 
 Downstream, `server/src/tasks/BackupTask.ts:59-63` branches only on `result.type ===
@@ -181,7 +181,7 @@ confirmed written. Make `BackupTask` log and surface the `'error'` branch.
   or `TasksModule.ts`. It is autobound, therefore transient. (Verified by grep: zero
   bind/singleton matches.)
 - `server/src/container.ts:98` — `bind<MutexMap>(KEYS.MutexMap).toDynamicValue(() =>
-  new MutexMap())` with no `.inSingletonScope()`, so the lock map is transient too.
+new MutexMap())` with no `.inSingletonScope()`, so the lock map is transient too.
 
 Every injection site gets a different `OnDemandChannelService` holding a different
 `MutexMap`. `runWithLockId(channelId, ...)` (`OnDemandChannelService.ts:50`, `:106`)
@@ -262,7 +262,7 @@ await retry(async () => {
 
 The callback catches its own errors, so it never rejects. `retry` sees success on
 attempt 1 and the 15 retries never happen. The `finally` then advances
-`lastEndTime[channelId]` to the *intended* window end even though `cachedGuide[channelId]`
+`lastEndTime[channelId]` to the _intended_ window end even though `cachedGuide[channelId]`
 was never assigned.
 
 **Consequence:** `getChannelLineup` (`:284-296`) reads `lastEndTime`, so it skips its
@@ -274,17 +274,17 @@ guide and is omitted from XMLTV. One `error` line is the only trace.
 
 `server/src/db/channel/LineupRepository.ts:558` returns `db.data` **by reference**;
 `loadAllLineups` (`:490`) builds its whole result from those live references.
-`fileDbLocks` (`:98`) guards only *creation* of the `Low`, not use of it.
+`fileDbLocks` (`:98`) guards only _creation_ of the `Low`, not use of it.
 
 - **Reader:** `TvGuideService.ts:419` — `this.channelsById = await
-  this.channelDB.loadAllLineups()`, then snapshots `accumulateTable` from each
+this.channelDB.loadAllLineups()`, then snapshots `accumulateTable` from each
   `lineup.startTimeOffsets` at `:420-436`.
 - **Writer:** `server/src/api/channelsApi.ts:546` → `updateLineup` →
   `LineupRepository.saveLineup:286` → `applyUpdateLineupRequest:302`, which sets
   `data.items = newLineup.items` at `:307` and reassigns `data.startTimeOffsets`.
   (Also `ReconcileProgramDurationsTask.ts:160`, `RegenerateChannelLineupCommand.ts:63,92`.)
 
-The guide build captures `accumulate` at `:508` — the *old* `startTimeOffsets` array
+The guide build captures `accumulate` at `:508` — the _old_ `startTimeOffsets` array
 object, since the writer rebinds the property. But `lineup.items` is re-read live off
 the same `data` object at `:553`, `:560`, `:603`, `:608`, `:616`, with real yields in
 between (`await this.channelDB.syncChannelDuration(...)` at `:532`). A save that
@@ -434,6 +434,7 @@ deliberately leaves it alone rather than shipping a second divergent fix.
 and is fixed in #2004 with a distinct `'starting'` state.
 
 **Two further defects found in the same method, not in the original sweep:**
+
 - `#startPromises` is only ever pushed to, never replaced. A pool restarted after a
   shutdown kept the previous run's promises, so `allReady()` awaited — and re-threw for —
   already-terminated workers. A healthy restart could never report ready.
@@ -446,8 +447,8 @@ auto-merges cleanly; full suite passes on the merged tree (1179 passed). Either 
 
 **Testing note:** `vi.resetModules()` + dynamic import cannot be used on this module —
 `container.ts` and `TunarrWorkerPool.ts` import each other, and a duplicated module graph
-makes `bind(TunarrWorkerPool).toSelf()` throw *"toSelf function can only be applied when a
-newable function is used"*. The test imports `../container.ts` first so the graph
+makes `bind(TunarrWorkerPool).toSelf()` throw _"toSelf function can only be applied when a
+newable function is used"_. The test imports `../container.ts` first so the graph
 initialises in the normal order, and derives the expected worker count from a single-start
 control pool rather than pinning `numWorkers` via the env var.
 
@@ -478,8 +479,8 @@ The `z.coerce.number()` branch accepts any numeric, then the transform compares
 strictly against `1`. Verified against the repo's zod 4.3.6: `"2"` → false, `"10"` →
 false, `"-1"` → false.
 
-The doc comment directly above it — added by `9d329171` — says *"Accepts
-'true'/'false' and any number, where 0 is false."* The implementation contradicts its
+The doc comment directly above it — added by `9d329171` — says _"Accepts
+'true'/'false' and any number, where 0 is false."_ The implementation contradicts its
 own documented contract.
 
 **Consequence:** ~28 query parameters including `?includePrograms`, `?includeEpisodes`,
@@ -503,9 +504,9 @@ from: z.iso.datetime().optional().pipe(z.coerce.date()),
 
 `.optional()` is inside the pipe, so it only lets `undefined` through the left half;
 `z.coerce.date()` then runs `new Date(undefined)` → `Invalid Date` → the key fails.
-Because the pipe's *output* is non-optional, zod does not treat the object key as
-optional either. Verified: `safeParse({})` → `success: false`, *"Invalid input:
-expected date, received Date"*.
+Because the pipe's _output_ is non-optional, zod does not treat the object key as
+optional either. Verified: `safeParse({})` → `success: false`, _"Invalid input:
+expected date, received Date"_.
 
 **Consequence:** this is the `querystring` for three routes —
 `GET /channels/:id/fallbacks` (`:594`), `GET /channels/all/lineups` (`:630`),
@@ -546,7 +547,7 @@ auto-merges cleanly with `fix/silent-noop-bugs` in either order. The first attem
 add/add conflict because both branches create `schemas.test.ts`, so G2's tests were moved
 to their own `server/src/types/PagingParams.test.ts`. Re-probed: clean.
 
-**Applied fix detail.** `.default()` had to go *inside* the `z.preprocess`, not outside —
+**Applied fix detail.** `.default()` had to go _inside_ the `z.preprocess`, not outside —
 with the preprocess inside, `.default()` never sees the `undefined` it produces and `''`
 is rejected instead of defaulting. Whitespace-only is also treated as blank, since
 `Number("  ")` is 0 too. Verified `pnpm generate-openapi` still emits a clean schema for
@@ -561,7 +562,7 @@ not degrade spec generation, and no web client regeneration is needed.
 limit: z.coerce.number().min(-1).default(-1),
 ```
 
-`.default(-1)` only applies to a *missing* key. `?limit=` (present but empty) is `""`,
+`.default(-1)` only applies to a _missing_ key. `?limit=` (present but empty) is `""`,
 which `z.coerce.number()` coerces to `0`. Verified: `safeParse('')` → `{success: true,
 data: 0}`. `0` passes `.min(-1)` and reaches the DB as `.limit(0)`
 (`server/src/db/channel/ChannelProgramRepository.ts:308`), whereas the intended sentinel
@@ -663,8 +664,8 @@ POST /troubleshoot. Same conclusion, one layer later than the plan thought.
 
 Fix: split by direction. `StrictChannelIconSchema`/`StrictWatermarkSchema` on
 `SaveableChannelSchema` (request body); lenient originals stay on responses. The strict
-variants use `.default()` exactly where the lenient use `.catch()`, so a *missing* field
-behaves identically — only *invalid* values change from silent substitution to 400.
+variants use `.default()` exactly where the lenient use `.catch()`, so a _missing_ field
+behaves identically — only _invalid_ values change from silent substitution to 400.
 
 **PR #2005 — G3c + G3d. Root cause was not the handlers.**
 `.partial()` wraps a field's `.default()` rather than removing it, so an omitted key still
@@ -682,6 +683,7 @@ declared field by field with no defaults.
 `XmlTvSettingsPage.tsx`. Left server-owned.
 
 **Two unrelated defects found while testing, not fixed:**
+
 - `Scheduler.getScheduledJob` does `getScheduledJobs(id)[0]!` — an unguarded `!` that
   throws instead of returning undefined. The XMLTV settings PUT persists, then 500s on it
   when the task is not registered, so the UI reports failure on a successful save.
@@ -701,7 +703,7 @@ declared field by field with no defaults.
 `TruthyQueryParam.catch(false).parse(envValue)`. `TruthyQueryParam` rejects `"on"`,
 `"yes"`, `"TRUE"`, so `.catch(false)` turns those into `false`.
 
-Meanwhile `getEnvOverrides()` (`:51-58`) sets `result[meta.key] = true` for *any*
+Meanwhile `getEnvOverrides()` (`:51-58`) sets `result[meta.key] = true` for _any_
 non-empty env value without parsing it. `buildFeatureFlagsResponse`
 (`server/src/api/systemApi.ts:56-64`) ships that as `envOverride`, and the web renders
 `disabled={meta.envOverride}` (`web/src/pages/settings/FeaturesSettingsPage.tsx:71`).
@@ -713,7 +715,7 @@ UI that could fix it is disabled.
 
 Same construct at `server/src/util/env.ts:99`. Every current caller passes `false`
 explicitly, but the declared signature is `defaultValue: boolean = true`, so the first
-caller relying on the default gets the fail-*open* version: garbage → `true`.
+caller relying on the default gets the fail-_open_ version: garbage → `true`.
 
 **Fix direction:** warn (deduped — `get()` is on hot paths, so a naive warning would
 spam) when an env value fails to parse. Do not widen `TruthyQueryParam` to accept
@@ -753,17 +755,17 @@ controls that do nothing.
 All verified by the sweep as having no reads outside validation, persistence,
 serialization, and the form that sets them. [A]
 
-| Field | Declared | Live UI control | Notes |
-|---|---|---|---|
-| `cooldownMs` | `types/src/api/RandomSlots.ts:39` | yes | **Covered by G9 — implement.** |
-| `normalizeFrameRate` | `types/src/schemas/transcodeConfigSchemas.ts:66` | checkbox, `TranscodeConfigVideoSettingsForm.tsx:252` | Zero refs in `server/src/ffmpeg/**`. FPS-capping in `FfmpegPlaybackParamsCalculator.ts:99-102` is commented out. |
-| `watermark.animated` | `types/src/schemas/channelSchema.ts:24` | checkbox, `ChannelTranscodingConfig.tsx:460` | Helper text warns of "playback errors" — unactionable. Looping is gated on `watermark.inputKind !== 'stillimage'` instead. |
-| `offline.soundtrack` | `types/src/schemas/channelSchema.ts:50` | text field, `ChannelFlexConfig.tsx:454` | Siblings `offline.picture` and `offline.mode` **are** read, which makes the gap easy to miss. |
-| `enableImageCache` | `types/src/schemas/settingsSchemas.ts:9` | checkbox, `XmlTvSettingsPage.tsx:144` | `CacheImageService` is unconditional. |
-| `videoBitDepth` | `types/src/schemas/transcodeConfigSchemas.ts:56` | API only | Read, then overwritten: `FfmpegStreamFactory.ts:451` hardcodes `bitDepth: 8`. Setting `10` is silently clamped. |
-| `timeZoneOffset` | `types/src/api/TimeSlots.ts:164` (**required**), `RandomSlots.ts:195` | written on every save | `useScheduleSlots.ts:62,77`. Schedules always generate in the *server's* timezone. Reads as the mechanism that reconciles client/server time — it is not. Same surface as the air-date bug. |
-| `PlexStreamSettings` group | `types/src/schemas/settingsSchemas.ts:193-198` | API only | `streamPath`, `updatePlayStatus`, `pathReplace`, `pathReplaceWith`. `plexSettings()` has three call sites, all echo. Bites API users and legacy-migrated settings files. |
-| `periodMs` | `types/src/api/RandomSlots.ts:40, 197` | no | Lowest priority. |
+| Field                      | Declared                                                              | Live UI control                                      | Notes                                                                                                                                                                                       |
+| -------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cooldownMs`               | `types/src/api/RandomSlots.ts:39`                                     | yes                                                  | **Covered by G9 — implement.**                                                                                                                                                              |
+| `normalizeFrameRate`       | `types/src/schemas/transcodeConfigSchemas.ts:66`                      | checkbox, `TranscodeConfigVideoSettingsForm.tsx:252` | Zero refs in `server/src/ffmpeg/**`. FPS-capping in `FfmpegPlaybackParamsCalculator.ts:99-102` is commented out.                                                                            |
+| `watermark.animated`       | `types/src/schemas/channelSchema.ts:24`                               | checkbox, `ChannelTranscodingConfig.tsx:460`         | Helper text warns of "playback errors" — unactionable. Looping is gated on `watermark.inputKind !== 'stillimage'` instead.                                                                  |
+| `offline.soundtrack`       | `types/src/schemas/channelSchema.ts:50`                               | text field, `ChannelFlexConfig.tsx:454`              | Siblings `offline.picture` and `offline.mode` **are** read, which makes the gap easy to miss.                                                                                               |
+| `enableImageCache`         | `types/src/schemas/settingsSchemas.ts:9`                              | checkbox, `XmlTvSettingsPage.tsx:144`                | `CacheImageService` is unconditional.                                                                                                                                                       |
+| `videoBitDepth`            | `types/src/schemas/transcodeConfigSchemas.ts:56`                      | API only                                             | Read, then overwritten: `FfmpegStreamFactory.ts:451` hardcodes `bitDepth: 8`. Setting `10` is silently clamped.                                                                             |
+| `timeZoneOffset`           | `types/src/api/TimeSlots.ts:164` (**required**), `RandomSlots.ts:195` | written on every save                                | `useScheduleSlots.ts:62,77`. Schedules always generate in the _server's_ timezone. Reads as the mechanism that reconciles client/server time — it is not. Same surface as the air-date bug. |
+| `PlexStreamSettings` group | `types/src/schemas/settingsSchemas.ts:193-198`                        | API only                                             | `streamPath`, `updatePlayStatus`, `pathReplace`, `pathReplaceWith`. `plexSettings()` has three call sites, all echo. Bites API users and legacy-migrated settings files.                    |
+| `periodMs`                 | `types/src/api/RandomSlots.ts:40, 197`                                | no                                                   | Lowest priority.                                                                                                                                                                            |
 
 Also dead, but never wired to anything and not user-facing:
 `SchedulingOperationSchema` members in `types/src/api/Scheduling.ts:77-134`

@@ -8,6 +8,7 @@ export const FeatureFlagsSchema = z.object({
   disableSearchSnapshotInBackup: z.boolean().default(false),
   disableVulkan: z.boolean().default(false),
   disableVaapiPad: z.boolean().default(false),
+  ersatzTvNextEnabled: z.boolean().default(false),
 });
 
 export type FeatureFlags = z.infer<typeof FeatureFlagsSchema>;
@@ -77,5 +78,13 @@ export const FeatureFlagMetadata: FeatureFlagMeta[] = [
       'Disable hardware-accelerated padding in the VAAPI video pipeline.',
     envVar: 'TUNARR_DISABLE_VAAPI_PAD',
     category: 'escape-hatch',
+  },
+  {
+    key: 'ersatzTvNextEnabled',
+    displayName: 'ErsatzTV next Streaming Backend',
+    description:
+      'Stream every channel through the ErsatzTV next backend instead of Tunarr’s own pipeline. Applies to the HLS, HLS Direct v2 and MPEG-TS stream modes; channel settings are unchanged. Leave this off to move channels over one at a time with the per-channel option in the channel editor.',
+    envVar: 'TUNARR_ERSATZTV_NEXT_ENABLED',
+    category: 'experimental',
   },
 ];

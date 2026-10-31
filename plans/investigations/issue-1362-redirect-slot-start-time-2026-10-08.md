@@ -14,10 +14,10 @@
 - Slots were a show at 00:00, a redirect at 07:00 or 08:00, a movie at 08:30, and a show at 12:00.
 - Pads were 1 ms, 30 min, and 60 min. Flex preference was `end` and `distribute`.
 
-| Pad | Result in both versions |
-|-----|-------------------------|
-| 1 ms | Redirect ends at 08:30. Movie starts at 08:30. |
-| 30 min | Redirect ends at 08:30. Movie starts at 08:30. |
+| Pad    | Result in both versions                                                                                                             |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------- |
+| 1 ms   | Redirect ends at 08:30. Movie starts at 08:30.                                                                                      |
+| 30 min | Redirect ends at 08:30. Movie starts at 08:30.                                                                                      |
 | 60 min | Redirect ends at 08:30. The movie slot is all flex, because the 1 h pad pushes the cursor to 09:00 and lateness 0 rejects the slot. |
 
 - Both versions give a redirect the full remaining slot length, and the lineup save path keeps that duration.

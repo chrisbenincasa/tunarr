@@ -13,32 +13,32 @@
 
 ## Decisions
 
-| Topic | Decision |
-| --- | --- |
-| Version | One version for Docker and binaries. Ship **7.1.1** now. Move both to **8.1.2** together as part of the etv-next work, after more testing. |
-| Packaging | Always bundle. One archive per platform. No ffmpeg-free variant. |
-| macOS | No bundled ffmpeg. Users run `brew install ffmpeg@7` (includes VideoToolbox). Tunarr detects the Homebrew path. |
-| User paths | Never overridden. Settings › FFmpeg shows a warning banner when the configured path differs from the bundled one. |
+| Topic      | Decision                                                                                                                                   |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| Version    | One version for Docker and binaries. Ship **7.1.1** now. Move both to **8.1.2** together as part of the etv-next work, after more testing. |
+| Packaging  | Always bundle. One archive per platform. No ffmpeg-free variant.                                                                           |
+| macOS      | No bundled ffmpeg. Users run `brew install ffmpeg@7` (includes VideoToolbox). Tunarr detects the Homebrew path.                            |
+| User paths | Never overridden. Settings › FFmpeg shows a warning banner when the configured path differs from the bundled one.                          |
 
 ## Current state
 
-| Piece | Today |
-| --- | --- |
-| Docker | `FROM ghcr.io/ersatztv/ersatztv-ffmpeg:7.1.1`. The tag lives in the `Dockerfile` `ARG base_image_tag` and in each `base_tag` of the `build-and-push-docker.yml` matrix. |
-| Binary archives | `make-bin.ts --output-archives` packs the pkg executable + `meilisearch`. No ffmpeg. |
-| macOS DMG | `bundle-macos.sh` copies the executable + `meilisearch` into `Tunarr.app/Contents/MacOS`. `AppDelegate.swift` passes `TUNARR_MEILISEARCH_PATH`. |
+| Piece            | Today                                                                                                                                                                                                                        |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Docker           | `FROM ghcr.io/ersatztv/ersatztv-ffmpeg:7.1.1`. The tag lives in the `Dockerfile` `ARG base_image_tag` and in each `base_tag` of the `build-and-push-docker.yml` matrix.                                                      |
+| Binary archives  | `make-bin.ts --output-archives` packs the pkg executable + `meilisearch`. No ffmpeg.                                                                                                                                         |
+| macOS DMG        | `bundle-macos.sh` copies the executable + `meilisearch` into `Tunarr.app/Contents/MacOS`. `AppDelegate.swift` passes `TUNARR_MEILISEARCH_PATH`.                                                                              |
 | Settings default | `ffmpegExecutablePath` / `ffprobeExecutablePath` default to `/usr/bin/ffmpeg` / `/usr/bin/ffprobe` (`types/src/schemas/settingsSchemas.ts:89-90`). Saved to `settings.json` on first run. Wrong on Windows and on most Macs. |
-| Docs | `docs/getting-started/installation.md:42` tells binary users to fetch ErsatzTV 7.1.1 themselves. |
-| Precedent | Meilisearch has a download script (`server/scripts/download-meilisearch.ts`), a version pin in `server/package.json` (`meilisearch.version`), and a runtime lookup in `MeilisearchService.ts:524-555`. |
+| Docs             | `docs/getting-started/installation.md:42` tells binary users to fetch ErsatzTV 7.1.1 themselves.                                                                                                                             |
+| Precedent        | Meilisearch has a download script (`server/scripts/download-meilisearch.ts`), a version pin in `server/package.json` (`meilisearch.version`), and a runtime lookup in `MeilisearchService.ts:524-555`.                       |
 
 ## ffmpeg source
 
 ErsatzTV-ffmpeg GitHub releases. The Docker base image comes from the same project.
 
-| Release | linux64 | linuxarm64 | win64 | macos64 | macosarm64 | SHA256SUMS |
-| --- | --- | --- | --- | --- | --- | --- |
-| `7.1.1` | 116 MB | 98 MB | 155 MB | **none** | **none** | **none** |
-| `8.1.2-4` | 100 MB | 84 MB | 128 MB | 38 MB | 32 MB | yes |
+| Release   | linux64 | linuxarm64 | win64  | macos64  | macosarm64 | SHA256SUMS |
+| --------- | ------- | ---------- | ------ | -------- | ---------- | ---------- |
+| `7.1.1`   | 116 MB  | 98 MB      | 155 MB | **none** | **none**   | **none**   |
+| `8.1.2-4` | 100 MB  | 84 MB      | 128 MB | 38 MB    | 32 MB      | yes        |
 
 - 7.1.1 has no checksum file, so we compute the hashes once and pin them in the repo.
 - 8.1.2-4 linux64 was tested on this machine. It links only against base glibc libraries and supports VAAPI, QSV, NVENC, and Vulkan. 7.1.1 should be checked the same way in Phase 1.
@@ -59,10 +59,10 @@ ErsatzTV publishes no macOS build of 7.1.1, so macOS follows the existing user r
 
 Measured on `tunarr-v2026.10.0-linux-x64.tar.gz` (131 MB):
 
-| Part | Raw | gzip | Note |
-| --- | --- | --- | --- |
-| `meilisearch` | 139 MB | 96 MB | **73% of the download.** Upstream binary, not stripped. |
-| `tunarr-*` executable | 110 MB | 35 MB | Node 22.20 runtime (74 MB) plus ~36 MB of pkg payload. |
+| Part                  | Raw    | gzip  | Note                                                    |
+| --------------------- | ------ | ----- | ------------------------------------------------------- |
+| `meilisearch`         | 139 MB | 96 MB | **73% of the download.** Upstream binary, not stripped. |
+| `tunarr-*` executable | 110 MB | 35 MB | Node 22.20 runtime (74 MB) plus ~36 MB of pkg payload.  |
 
 - Meilisearch is large mainly because the upstream build includes every language tokenizer, and the CJK dictionaries are big. Stripping it saves only ~2 MB compressed.
 - The pkg payload packs all of `./dist/**/*`. That includes web source maps (~15 MB raw) and the esbuild `meta.json` (3.7 MB), and neither is needed at runtime.
@@ -114,13 +114,13 @@ Levers 2–4 go in with the bundling work. Lever 1 is its own decision and its o
 
 The "bundled ffmpeg" is whatever ships with this install. Each distribution says where it lives:
 
-| Distribution | Bundled location comes from |
-| --- | --- |
-| Docker | `ENV TUNARR_BUNDLED_FFMPEG_DIR=/usr/local/bin` in the `Dockerfile` |
-| macOS (7.x) | The Homebrew `ffmpeg@7` paths above, whichever exists. This is the "expected" ffmpeg, not a bundled one. |
-| macOS (8.1.2 move) | `AppDelegate.swift` sets `TUNARR_BUNDLED_FFMPEG_DIR` to `Contents/MacOS` |
-| Linux / Windows archive | `dirname(process.execPath)`, only when running as a pkg binary |
-| Dev (`pnpm dev`) | None. No banner. |
+| Distribution            | Bundled location comes from                                                                              |
+| ----------------------- | -------------------------------------------------------------------------------------------------------- |
+| Docker                  | `ENV TUNARR_BUNDLED_FFMPEG_DIR=/usr/local/bin` in the `Dockerfile`                                       |
+| macOS (7.x)             | The Homebrew `ffmpeg@7` paths above, whichever exists. This is the "expected" ffmpeg, not a bundled one. |
+| macOS (8.1.2 move)      | `AppDelegate.swift` sets `TUNARR_BUNDLED_FFMPEG_DIR` to `Contents/MacOS`                                 |
+| Linux / Windows archive | `dirname(process.execPath)`, only when running as a pkg binary                                           |
+| Dev (`pnpm dev`)        | None. No banner.                                                                                         |
 
 - In `server/src/util/env.ts`, add `TUNARR_BUNDLED_FFMPEG_DIR`.
 - Add a new `server/src/util/bundledFfmpeg.ts` with `findBundledFfmpeg(): Maybe<{ ffmpegPath, ffprobePath }>`.
@@ -150,14 +150,14 @@ The "bundled ffmpeg" is whatever ships with this install. Each distribution says
 
 ## Phases
 
-| Phase | Work | Done when |
-| --- | --- | --- |
-| 1 | Version pin, `download-ffmpeg.ts`, always-bundle in `make-bin`, size levers 2–4, Docker workflow reads the pin | A `workflow_dispatch` run produces archives with ffmpeg 7.1.1, verified hashes, and measured sizes |
-| 2 | `findBundledFfmpeg`, Docker `ENV`, first-run seeding, `systemApi` field, tests | An unpacked archive on a clean machine streams a channel with zero settings changes |
-| 3 | Banner, onboarding step, health-check text, docs | The banner shows for a custom path in both Docker and a binary, and "Use bundled" clears it; the e2e route sweep passes |
-| 4 | macOS Homebrew detection, plus the onboarding `brew install ffmpeg@7` hint | A Mac with `ffmpeg@7` installed streams with zero settings changes |
-| — | Meilisearch slim build (lever 1) | A separate decision and PR |
-| — | 8.1.2 for Docker and binaries | Part of the etv-next work. A pin and hash change for Linux/Windows. macOS switches to bundling ErsatzTV's build in the DMG, which needs `bundle-macos.sh` changes, explicit `--options=runtime` signing in `sign-macos.sh`, and the `AppDelegate` env. |
+| Phase | Work                                                                                                           | Done when                                                                                                                                                                                                                                              |
+| ----- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 1     | Version pin, `download-ffmpeg.ts`, always-bundle in `make-bin`, size levers 2–4, Docker workflow reads the pin | A `workflow_dispatch` run produces archives with ffmpeg 7.1.1, verified hashes, and measured sizes                                                                                                                                                     |
+| 2     | `findBundledFfmpeg`, Docker `ENV`, first-run seeding, `systemApi` field, tests                                 | An unpacked archive on a clean machine streams a channel with zero settings changes                                                                                                                                                                    |
+| 3     | Banner, onboarding step, health-check text, docs                                                               | The banner shows for a custom path in both Docker and a binary, and "Use bundled" clears it; the e2e route sweep passes                                                                                                                                |
+| 4     | macOS Homebrew detection, plus the onboarding `brew install ffmpeg@7` hint                                     | A Mac with `ffmpeg@7` installed streams with zero settings changes                                                                                                                                                                                     |
+| —     | Meilisearch slim build (lever 1)                                                                               | A separate decision and PR                                                                                                                                                                                                                             |
+| —     | 8.1.2 for Docker and binaries                                                                                  | Part of the etv-next work. A pin and hash change for Linux/Windows. macOS switches to bundling ErsatzTV's build in the DMG, which needs `bundle-macos.sh` changes, explicit `--options=runtime` signing in `sign-macos.sh`, and the `AppDelegate` env. |
 
 Phases 1–3 target `main`.
 

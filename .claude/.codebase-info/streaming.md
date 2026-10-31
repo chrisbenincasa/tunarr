@@ -1,6 +1,6 @@
 # Streaming
 
-*Last Updated: 2026-10-02*
+*Last Updated: 2026-10-13*
 
 Streaming code is organized by session type, not by media source. Source-specific behavior lives
 in stream details fetchers and play-status plugins.
@@ -32,7 +32,8 @@ api/streamApi.ts
   outside the lock, so re-tunes don't queue behind a slow ffmpeg exit. The sessions API's stop
   endpoint uses `endSessionInBackground`, which responds once the session is out of the map. Fragment requests to a
   stopping session get a 404. `services/startup/ClearStreamDirectoriesStartupTask.ts` sweeps
-  leftover `stream_<uuid>[_<uuid>]` directories before the server listens.
+  leftover `stream_<uuid>[_<uuid>]` HLS directories and `etv_<uuid>[_<uuid>]` ErsatzTV next
+  worker workspaces before the server listens.
 - Playlists: `stream/hls/HlsPlaylistCreator.ts`, `HlsPlaylistMutator.ts`,
   `HlsMasterPlaylistMutator.ts`.
 - Viewer tracking: `stream/ConnectionTracker.ts`. Rate control: `stream/StreamThrottler.ts`.
