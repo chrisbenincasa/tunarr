@@ -43,4 +43,44 @@ describe('VaapiHardwareCapabilities', () => {
       ).toBe(false);
     });
   });
+
+  describe('canDecode h264 constrained baseline', () => {
+    const capabilities = new VaapiHardwareCapabilities([
+      new VaapiProfileEntrypoint(
+        VaapiProfiles.H264ConstrainedBaseline,
+        VaapiEntrypoint.Decode,
+      ),
+    ]);
+
+    // ffprobe reports the name, or the number when built with --enable-small.
+    test.each(['constrained baseline', '578'])(
+      'true for profile %s with a decode entrypoint',
+      (profile) => {
+        expect(
+          capabilities.canDecode(
+            VideoFormats.H264,
+            profile,
+            new PixelFormatYuv420P(),
+          ),
+        ).toBe(true);
+      },
+    );
+
+    test('false without a constrained baseline decode entrypoint', () => {
+      const mainOnly = new VaapiHardwareCapabilities([
+        new VaapiProfileEntrypoint(
+          VaapiProfiles.H264Main,
+          VaapiEntrypoint.Decode,
+        ),
+      ]);
+
+      expect(
+        mainOnly.canDecode(
+          VideoFormats.H264,
+          'constrained baseline',
+          new PixelFormatYuv420P(),
+        ),
+      ).toBe(false);
+    });
+  });
 });

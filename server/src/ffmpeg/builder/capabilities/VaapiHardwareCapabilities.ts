@@ -87,7 +87,7 @@ export class VaapiHardwareCapabilities extends BaseFfmpegHardwareCapabilities {
           }),
       )
       .with(
-        [VideoFormats.H264, P.union('baseline constrainted', '578'), P._],
+        [VideoFormats.H264, P.union('constrained baseline', '578'), P._],
         () =>
           some(this.entrypoints, {
             profile: VaapiProfiles.H264ConstrainedBaseline,
