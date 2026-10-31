@@ -19,6 +19,17 @@ catalogs:
 
 enablePrePostScripts: true
 
+# Corepack manages the pnpm version through `packageManager`. Ignoring it here
+# keeps pnpm from writing a boot document into pnpm-lock.yaml, which GitHub's
+# dependency graph and Dependabot cannot read.
+pmOnFail: ignore
+
+# Reject package versions published less than a day ago. Setting this
+# explicitly makes pnpm fail instead of falling back to an older version.
+# To take a same-day release (for example, a security fix), add the package
+# to `minimumReleaseAgeExclude` for that change.
+minimumReleaseAge: 1440
+
 patchedDependencies:
   kysely: "patches/kysely.patch"
 
@@ -26,10 +37,10 @@ overrides:
   conventional-changelog-conventionalcommits: "^9.0.0"
   "@types/node": "22.10.7"
 
-onlyBuiltDependencies:
-  - "@swc/core"
-  - arktype
-  - better-sqlite3
-  - esbuild
-  - unrs-resolver
-  - oxlint
+allowBuilds:
+  "@swc/core": true
+  arktype: true
+  better-sqlite3: true
+  esbuild: true
+  unrs-resolver: true
+  oxlint: true

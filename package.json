@@ -34,14 +34,14 @@
     "prettier": "^3.5.1",
     "semver": "^7.7.3",
     "tsx": "^4.20.5",
-    "turbo": "^2.5.3",
+    "turbo": "^2.11.10",
     "typescript": "catalog:",
     "vitest": "catalog:vitest"
   },
   "engines": {
     "node": "22"
   },
-  "packageManager": "pnpm@10.28.0",
+  "packageManager": "pnpm@12.15.0",
   "lint-staged": {
     "*.{ts,tsx}": [
       "prettier --write",
