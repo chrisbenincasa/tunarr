@@ -2,10 +2,10 @@
 
 let
   linuxFFmpeg = pkgs.stdenv.mkDerivation {
-    name = "linux-ffmpeg-7.1.1";
+    name = "linux-ffmpeg-8.1.2-7";
     src = pkgs.fetchurl {
-      url = "https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/download/7.1.1/ffmpeg-n7.1.1-56-gc2184b65d2-linux64-gpl-7.1.tar.xz";
-      sha256 = "sha256-/+JhogmWKZZCMQON1CgOzGQLnOzCNiU+5GLVpSMsPKw=";
+      url = "https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/download/8.1.2-7/ffmpeg-n8.1.2-etv.7-linux64-gpl-8.1.tar.xz";
+      sha256 = "sha256-7TLLX1xwZ0INOKZOILTK8WWXylcOPQ/wyQyOoyQHZ+c=";
     };
     installPhase = ''
       mkdir -p $out/bin
@@ -30,7 +30,7 @@ pkgs.mkShell {
     jq
   ]
   ++ pkgs.lib.optionals pkgs.stdenv.isLinux [ linuxFFmpeg ]
-  ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [ pkgs.ffmpeg_7 ];
+  ++ pkgs.lib.optionals pkgs.stdenv.isDarwin [ pkgs.ffmpeg_8 ];
 
   shellHook = ''
     echo "Tunarr dev environment"

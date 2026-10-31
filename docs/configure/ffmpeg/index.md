@@ -7,7 +7,7 @@ Tunarr requires FFmpeg for transcoding / remuxing content when outputting channe
 !!! info
     Only non-Docker installs must provide FFmpeg executable paths. Docker installs come with a bundled version of FFmpeg.
 
-Configure FFmpeg and FFprobe executable paths. Generally, both executables reside in the same directory. We recommend using a [specially built FFmpeg 7.1.1](https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/tag/7.1.1) provided by ErsatzTV.
+Configure FFmpeg and FFprobe executable paths. Generally, both executables reside in the same directory. We recommend using a [specially built FFmpeg 8.1.2](https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/tag/8.1.2-7) provided by ErsatzTV.
 
 ## Global FFmpeg options
 

@@ -43,13 +43,13 @@ jobs:
       max-parallel: 2
       matrix:
         builds:
-          - base_tag: "7.1.1"
+          - base_tag: "8.1.2-7"
             platform: linux/amd64
             suffix: ""
             target: linux-x64
             os: ubuntu-latest
 
-          - base_tag: "7.1.1"
+          - base_tag: "8.1.2-7"
             platform: linux/arm64
             suffix: -arm64
             target: linux-arm64

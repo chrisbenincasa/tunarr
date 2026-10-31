@@ -42,7 +42,7 @@ This starts:
 
 ## Dev Containers
 
-The repository ships two [dev container](https://containers.dev/) configurations in `.devcontainer/`. Both include Node 22, pnpm, ffmpeg 7.1.1, and the Meilisearch binary, and both build `@tunarr/types` and `@tunarr/shared` on creation.
+The repository ships two [dev container](https://containers.dev/) configurations in `.devcontainer/`. Both include Node 22, pnpm, ffmpeg 8.1.2, and the Meilisearch binary, and both build `@tunarr/types` and `@tunarr/shared` on creation.
 
 | Configuration | Use it for | Extra setup |
 |---------------|------------|-------------|

@@ -6,7 +6,7 @@ Tunarr is available in two flavors: Docker image and standalone binaries.
 
 <a href="https://hub.docker.com/r/chrisbenincasa/tunarr"><img alt="Docker Pull Count" src="https://img.shields.io/docker/pulls/chrisbenincasa/tunarr" /></a>
 
-Tunarr is available on [Docker Hub](https://hub.docker.com/r/chrisbenincasa/tunarr) as well as [GHCR](https://github.com/chrisbenincasa/tunarr/pkgs/container/tunarr). Docker images come pre-packaged with `ffmpeg` 7.1.1 (thanks [@jasongdove](https://github.com/jasongdove) from ErsatzTV!).
+Tunarr is available on [Docker Hub](https://hub.docker.com/r/chrisbenincasa/tunarr) as well as [GHCR](https://github.com/chrisbenincasa/tunarr/pkgs/container/tunarr). Docker images come pre-packaged with `ffmpeg` 8.1.2 (thanks [@jasongdove](https://github.com/jasongdove) from ErsatzTV!).
 
 Since Tunarr is currently pre-release. There are a few tags to choose from which have different releae cadences:
 
@@ -39,7 +39,7 @@ TODO! If you run Tunarr on Synology and would like to contribute a guide for Tun
 
 ## Binaries
 
-Tunarr is released in pre-built binaries for Linux (x64/ARM), Windows (x64), and macOS (x64/ARM). Tunarr currently does not provide a version of FFmpeg along with these binaries, so you must have your own build ready to go. We recommend using the pre-built FFmpeg 7.1.1 binaries provided by [ErsatzTV](https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/tag/7.1.1). If these don't work, builds from [BtbN/FFmpegBuilds](https://github.com/BtbN/FFmpeg-Builds) or [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) should _generally_ work as well. If you are planning on using hardware acceleration, ensure that the build of FFmpeg you use includes the proper libraries built-in.
+Tunarr is released in pre-built binaries for Linux (x64/ARM), Windows (x64), and macOS (x64/ARM). Tunarr currently does not provide a version of FFmpeg along with these binaries, so you must have your own build ready to go. We recommend using the pre-built FFmpeg 8.1.2 binaries provided by [ErsatzTV](https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/tag/8.1.2-7). If these don't work, builds from [BtbN/FFmpegBuilds](https://github.com/BtbN/FFmpeg-Builds) or [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) should _generally_ work as well. If you are planning on using hardware acceleration, ensure that the build of FFmpeg you use includes the proper libraries built-in.
 
 * [Latest release](http://github.com/chrisbenincasa/tunarr/releases/latest)
 * [Pre-releases](https://github.com/chrisbenincasa/tunarr/releases?q=-dev&expanded=true)

@@ -1,8 +1,8 @@
 FROM mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm
 
 # Same ffmpeg build as the production image and shell.nix.
-ARG FFMPEG_TAG=7.1.1
-ARG FFMPEG_BUILD=ffmpeg-n7.1.1-56-gc2184b65d2
+ARG FFMPEG_TAG=8.1.2-7
+ARG FFMPEG_BUILD=ffmpeg-n8.1.2-etv.7
 
 RUN <<SH
 set -eu
@@ -16,7 +16,7 @@ case "$(dpkg --print-architecture)" in
   *) echo "unsupported architecture" >&2; exit 1 ;;
 esac
 
-dir="${FFMPEG_BUILD}-${target}-gpl-7.1"
+dir="${FFMPEG_BUILD}-${target}-gpl-8.1"
 curl -fsSL "https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/download/${FFMPEG_TAG}/${dir}.tar.xz" \
   | tar -xJ -C /tmp
 install -m 0755 "/tmp/${dir}/bin/ffmpeg" "/tmp/${dir}/bin/ffprobe" /usr/local/bin/
