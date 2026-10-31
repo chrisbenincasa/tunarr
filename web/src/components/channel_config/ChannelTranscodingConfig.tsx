@@ -23,6 +23,7 @@ import { isNonEmptyString } from '@tunarr/shared/util';
 import type { ChannelStreamMode, Watermark } from '@tunarr/types';
 import { find, map, range, round } from 'lodash-es';
 import { useMemo, useState } from 'react';
+import { useStateFromSource } from '../../hooks/useStateFromSource.ts';
 import { Controller } from 'react-hook-form';
 import { typedProperty } from '../../helpers/util.ts';
 import { useTranscodeConfigs } from '../../hooks/settingsHooks.ts';
@@ -90,7 +91,7 @@ export default function ChannelTranscodingConfig() {
   const channel = useStore((s) => s.channelEditor.currentEntity);
   const transcodeConfigs = useTranscodeConfigs();
 
-  const { control, watch, setValue, getValues } = useChannelFormContext();
+  const { control, watch, setValue } = useChannelFormContext();
 
   // The global flag enrolls every channel, which makes the per-channel box
   // meaningless, so it only appears while the flag is off.
@@ -119,7 +120,10 @@ export default function ChannelTranscodingConfig() {
     [transcodeConfigId, transcodeConfigs.data],
   );
 
-  const [opacity, setOpacity] = useState(getValues('watermark.opacity'));
+  const [opacity, setOpacity] = useStateFromSource(
+    watermark?.opacity,
+    (value) => value,
+  );
   const [safeTitleIndicatorVisible, setSafeTitleIndicatorVisible] =
     useState(false);
 

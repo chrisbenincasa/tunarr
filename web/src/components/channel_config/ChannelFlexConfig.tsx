@@ -31,7 +31,8 @@ import {
   some,
   sumBy,
 } from 'lodash-es';
-import { useCallback, useState } from 'react';
+import { useCallback } from 'react';
+import { useStateFromSource } from '../../hooks/useStateFromSource.ts';
 import { Controller, useFieldArray } from 'react-hook-form';
 import { useDebounceCallback } from 'usehooks-ts';
 import { isNonEmptyString, typedProperty } from '../../helpers/util.ts';
@@ -64,8 +65,9 @@ export function ChannelFlexConfig() {
     ? offlinePicture
     : `${backendUri}${DefaultFallbackPicturePath}`;
 
-  const [weights, setWeights] = useState<number[]>(
-    map(channelFillerLists, 'weight'),
+  const [weights, setWeights] = useStateFromSource(
+    channelFillerLists,
+    (lists): number[] => map(lists, 'weight'),
   );
 
   const updateFormWeights = useDebounceCallback(
@@ -104,7 +106,7 @@ export function ChannelFlexConfig() {
       setWeights(map(newLists, 'weight'));
       collectionControls.replace(newLists);
     },
-    [channelFillerLists, collectionControls],
+    [channelFillerLists, collectionControls, setWeights],
   );
 
   const removeSelectedFillerList = useCallback(
@@ -127,7 +129,7 @@ export function ChannelFlexConfig() {
       setWeights(map(newLists, 'weight'));
       collectionControls.replace(newLists);
     },
-    [channelFillerLists, collectionControls],
+    [channelFillerLists, collectionControls, setWeights],
   );
 
   const adjustWeights = useCallback(
@@ -170,7 +172,7 @@ export function ChannelFlexConfig() {
 
       updateFormWeights();
     },
-    [channelFillerLists, updateFormWeights, weights],
+    [channelFillerLists, setWeights, updateFormWeights, weights],
   );
 
   const renderFillerLists = () => {
