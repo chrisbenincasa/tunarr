@@ -1,5 +1,6 @@
 export const KnownFfmpegOptions = {
   ReadrateInitialBurst: 'readrate_initial_burst',
+  ReadrateCatchup: 'readrate_catchup',
   GpuCopy: 'gpu_copy',
 } as const;
 

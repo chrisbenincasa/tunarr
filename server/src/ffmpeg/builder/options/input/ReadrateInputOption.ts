@@ -8,6 +8,11 @@ import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 import { every } from 'lodash-es';
 import { InputOption } from './InputOption.ts';
 
+// FFmpeg 8 catches up after a stall at 1.05x the readrate by default, so a
+// 3 s stall takes about a minute to recover. FFmpeg 7 read at full speed until
+// caught up. A high catch-up rate restores the FFmpeg 7 behavior.
+export const ReadrateCatchupSpeed = 100;
+
 export class ReadrateInputOption extends InputOption {
   constructor(
     private capabilities: FfmpegCapabilities,
@@ -36,6 +41,12 @@ export class ReadrateInputOption extends InputOption {
     const opts = ['-readrate', `${this.readrate}`];
     if (this.shouldBurst()) {
       opts.push('-readrate_initial_burst', `${this.initialBurstSeconds}`);
+    }
+    if (this.capabilities.hasOption(KnownFfmpegOptions.ReadrateCatchup)) {
+      opts.push(
+        '-readrate_catchup',
+        `${Math.max(ReadrateCatchupSpeed, this.readrate)}`,
+      );
     }
     return opts;
   }
