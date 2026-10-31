@@ -181,12 +181,24 @@ export class LocalMusicScanner extends FileSystemScanner {
         missingTracks.map((track) => track.uuid),
         'missing',
       );
-      await this.searchService.updatePrograms(
-        missingTracks.map((track) => ({
-          id: track.uuid,
-          state: 'missing',
-        })),
+
+      // Albums and artists follow their tracks into and out of the trash.
+      const groupings = await this.programDB.syncGroupingStatesForLibrary(
+        context.library.uuid,
+        ['album', 'artist'],
       );
+
+      await this.searchService.updatePrograms([
+        ...missingTracks.map((track) => ({
+          id: track.uuid,
+          state: 'missing' as const,
+        })),
+        ...groupings.missingIds.map((id) => ({
+          id,
+          state: 'missing' as const,
+        })),
+        ...groupings.restoredIds.map((id) => ({ id, state: 'ok' as const })),
+      ]);
     });
 
     return Result.all([scanResult, markMissingResult]).flatMap(() =>
