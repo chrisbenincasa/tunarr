@@ -956,6 +956,10 @@ msgstr "配置为 HLS 直连流模式的频道将按所选容器格式输出。"
 msgid "Channels M3U Link:"
 msgstr "频道 M3U 链接："
 
+#: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
+msgid "Channels using this config cannot stream on the ErsatzTV next backend"
+msgstr ""
+
 #: src/pages/system/SystemDebugPage.tsx
 #: src/pages/system/SystemDebugPage.tsx
 msgid "Check"
@@ -1476,6 +1480,10 @@ msgstr "完成"
 #: src/pages/system/SystemLogsPage.tsx
 msgid "Download all logs"
 msgstr "下载全部日志"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "Download Backend Diagnostics ({dossierCount})"
+msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Download JSON"
@@ -4180,6 +4188,10 @@ msgstr "流模式"
 msgid "Stream Selection"
 msgstr "流选择"
 
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Stream this channel through the experimental ErsatzTV next backend instead of Tunarr's own pipeline. Use this to move channels over one at a time. Turning on the global ErsatzTV next feature flag enrolls every channel and replaces this setting."
+msgstr ""
+
 #: src/components/channel_config/EditChannelForm.tsx
 msgid "Streaming"
 msgstr "播放中"
@@ -4322,6 +4334,14 @@ msgstr "频道在指定时段内的常规节目安排，其余时间由弹性时
 #: src/components/channel_config/MediaItemGrid.tsx
 msgid "The End."
 msgstr "结束。"
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "The ErsatzTV next backend does not serve this stream mode. It supports HLS, HLS Direct v2 and MPEG-TS."
+msgstr ""
+
+#: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
+msgid "The ErsatzTV next backend ignores some of these settings"
+msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "The image will be rendered at its actual size without any scaling applied."
@@ -4718,6 +4738,10 @@ msgstr "链接"
 msgid "Use channel default"
 msgstr "使用频道默认设置"
 
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "Use ErsatzTV next Backend (Experimental)"
+msgstr ""
+
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 msgid "Use schedule default"
@@ -4879,6 +4903,10 @@ msgstr "欢迎"
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Welcome to Tunarr!"
 msgstr "欢迎使用 Tunarr！"
+
+#: src/pages/system/TroubleshootPage.tsx
+msgid "What the ErsatzTV next worker recorded the last few times this channel failed to play an item. Attach it to a bug report."
+msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "When enabled, intermittent watermarks fade in immediately when a stream is initialized. When disabled, the first watermark fade-in occurs after a full period."
