@@ -24,15 +24,16 @@ Before shipping, run stream-repro and an all-targets CI build on 26 (see "Open q
 
 Source: https://github.com/nodejs/Release
 
-| Line | LTS start | Maintenance start | End of life |
-|---|---|---|---|
-| 22 | 10/29/2024 | 10/21/2025 | 04/30/2027 |
-| 24 | 10/28/2025 | 10/20/2026 | 04/30/2028 |
-| 26 | 10/28/2026 | 10/20/2027 | 04/30/2029 |
+| Line | LTS start  | Maintenance start | End of life |
+| ---- | ---------- | ----------------- | ----------- |
+| 22   | 10/29/2024 | 10/21/2025        | 04/30/2027  |
+| 24   | 10/28/2025 | 10/20/2026        | 04/30/2028  |
+| 26   | 10/28/2026 | 10/20/2027        | 04/30/2029  |
 
 ## Benchmarks
 
 Setup:
+
 - Intel i5-10400, 6C/12T, 62 GB RAM, Linux 6.8. Desktop under light background load.
 - Node 22.23.4, 24.22.1, 26.12.1. All runs use better-sqlite3 12.11.1, so only Node differs.
 - Dev entry (`node --import tsx src/index.ts`), not the pkg binary.
@@ -40,24 +41,24 @@ Setup:
 
 Medians; percent is versus 22.
 
-| Benchmark | 22 | 24 | 26 |
-|---|---|---|---|
-| Guide refresh, 40 channels / 14 days (ms, n=12) | 474.5 | 442.5 (−6.7%) | 438.0 (−7.7%) |
-| Schedule save, worker pool off (ms, n=6) | 526 | 459 (−12.7%) | 476 (−9.6%) |
-| Schedule save, worker pool on (ms, n=6) | 626 | 580 (−7.3%) | 524 (−16.3%) |
-| Worst event-loop stall during save, pool off (ms, n=2) | 219 | 181 (−17.5%) | 181 (−17.3%) |
-| Worker reply, 40k items, postMessage round trip (ms, n=6) | 79.9 | 64.3 (−19.5%) | 62.1 (−22.2%) |
-| Worker reply, 40k items, structuredClone (ms, n=6) | 41.0 | 34.5 (−15.8%) | 31.6 (−22.9%) |
-| Server vitest suite (s, n=5) | 59.2 | 56.6 (−4.4%) | 55.9 (−5.6%) |
-| Cold start to first 200 (ms, n=7) | 8684 | 9342 (+7.6%) | 8838 (+1.8%) |
-| RSS 10 s after ready (MB, n=7) | 225 | 482 (+114%) | 367 (+63%) |
+| Benchmark                                                 | 22    | 24            | 26            |
+| --------------------------------------------------------- | ----- | ------------- | ------------- |
+| Guide refresh, 40 channels / 14 days (ms, n=12)           | 474.5 | 442.5 (−6.7%) | 438.0 (−7.7%) |
+| Schedule save, worker pool off (ms, n=6)                  | 526   | 459 (−12.7%)  | 476 (−9.6%)   |
+| Schedule save, worker pool on (ms, n=6)                   | 626   | 580 (−7.3%)   | 524 (−16.3%)  |
+| Worst event-loop stall during save, pool off (ms, n=2)    | 219   | 181 (−17.5%)  | 181 (−17.3%)  |
+| Worker reply, 40k items, postMessage round trip (ms, n=6) | 79.9  | 64.3 (−19.5%) | 62.1 (−22.2%) |
+| Worker reply, 40k items, structuredClone (ms, n=6)        | 41.0  | 34.5 (−15.8%) | 31.6 (−22.9%) |
+| Server vitest suite (s, n=5)                              | 59.2  | 56.6 (−4.4%)  | 55.9 (−5.6%)  |
+| Cold start to first 200 (ms, n=7)                         | 8684  | 9342 (+7.6%)  | 8838 (+1.8%)  |
+| RSS 10 s after ready (MB, n=7)                            | 225   | 482 (+114%)   | 367 (+63%)    |
 
 Memory detail at 10 s (n=3):
 
-| | 22 | 24 | 26 |
-|---|---|---|---|
-| V8 heap used (MB) | 107 | 124 | 90 |
-| V8 heap total (MB) | 194 | 228 | 159 |
+|                       | 22   | 24   | 26   |
+| --------------------- | ---- | ---- | ---- |
+| V8 heap used (MB)     | 107  | 124  | 90   |
+| V8 heap total (MB)    | 194  | 228  | 159  |
 | RSS outside heap (MB) | ~131 | ~252 | ~209 |
 
 - 22's RSS is bimodal (220 or 340 MB); it sometimes releases memory after boot. 24 and 26 stay flat.
@@ -71,19 +72,19 @@ Same machine. Fresh temp DB per run, interleaved, main process RSS only (Meilise
 
 Worker pool on (default: `min(cores, 8)` = 8 workers here), n=5:
 
-| | Shipped 22 | 22 | 26 |
-|---|---|---|---|
-| Ready (ms) | 5776 | 5811 | 6181 (+6%) |
-| RSS at ready (MB) | 771 | 781 | 847 (+8%) |
-| RSS +10 s (MB) | 1321 | 1319 | 1392 (+6%) |
-| RSS +60 s (MB) | 1007 | 999 | 1081 (+8%) |
+|                   | Shipped 22 | 22   | 26         |
+| ----------------- | ---------- | ---- | ---------- |
+| Ready (ms)        | 5776       | 5811 | 6181 (+6%) |
+| RSS at ready (MB) | 771        | 781  | 847 (+8%)  |
+| RSS +10 s (MB)    | 1321       | 1319 | 1392 (+6%) |
+| RSS +60 s (MB)    | 1007       | 999  | 1081 (+8%) |
 
 Worker pool off (`TUNARR_USE_WORKER_POOL=false`), n=3:
 
-| | 22 | 26 |
-|---|---|---|
+|                   | 22  | 26         |
+| ----------------- | --- | ---------- |
 | RSS at ready (MB) | 205 | 257 (+25%) |
-| RSS +60 s (MB) | 171 | 191 (+12%) |
+| RSS +60 s (MB)    | 171 | 191 (+12%) |
 
 - The tsx +63% gap does not carry over to the shipped binary. The real cost of 26 is about 20 MB on the main thread and about 7 MB per worker.
 - 952 of 1025 MB is anonymous memory, so the ~1 GB idle footprint is real allocation, not file pages from the 106 MB executable.
@@ -106,11 +107,11 @@ Raw data and scripts: `/tmp/claude-1000/-home-christian-Code-tunarr/c698932a-07f
 
 ### better-sqlite3 (only native addon)
 
-| Version | Node 22 | Node 24 | Node 26 | Linux glibc (measured, linux-x64) |
-|---|---|---|---|---|
-| 11.8.1 (current) | prebuild | no prebuild; source build works | source build fails (V8 API removals) | 2.29 |
-| 12.11.1 | prebuild | prebuild | prebuild | 2.29 on 22/24, 2.34 on 26 |
-| 13.0.3 (N-API) | bundled in npm package | same | same | 2.34 |
+| Version          | Node 22                | Node 24                         | Node 26                              | Linux glibc (measured, linux-x64) |
+| ---------------- | ---------------------- | ------------------------------- | ------------------------------------ | --------------------------------- |
+| 11.8.1 (current) | prebuild               | no prebuild; source build works | source build fails (V8 API removals) | 2.29                              |
+| 12.11.1          | prebuild               | prebuild                        | prebuild                             | 2.29 on 22/24, 2.34 on 26         |
+| 13.0.3 (N-API)   | bundled in npm package | same                            | same                                 | 2.34                              |
 
 - 11.8.1 → 12.11.1 caused no type errors or test failures.
 - 13.x publishes no GitHub release assets. Prebuilds sit at `prebuilds/<platform>-<arch>.node` in the tarball (darwin, linux, linuxmusl, win32 × x64, arm64).
@@ -125,12 +126,12 @@ Raw data and scripts: `/tmp/claude-1000/-home-christian-Code-tunarr/c698932a-07f
 
 ### Platform floors
 
-| | 22 (today) | 24 | 26 |
-|---|---|---|---|
-| Linux glibc, whole binary | 2.29 | 2.29 (bs3 12.x) | 2.34 |
-| macOS minimum | 11.0 | 13.5 | 13.5 |
-| Windows | 10 / Server 2016 | same | same |
-| Docker base (Ubuntu 24.04, glibc 2.39) | ok | ok | ok |
+|                                        | 22 (today)       | 24              | 26   |
+| -------------------------------------- | ---------------- | --------------- | ---- |
+| Linux glibc, whole binary              | 2.29             | 2.29 (bs3 12.x) | 2.34 |
+| macOS minimum                          | 11.0             | 13.5            | 13.5 |
+| Windows                                | 10 / Server 2016 | same            | same |
+| Docker base (Ubuntu 24.04, glibc 2.39) | ok               | ok              | ok   |
 
 - glibc 2.34 drops Ubuntu 20.04 and Debian 11 for the standalone binary.
 - macOS 13.5 drops Big Sur and Monterey on both 24 and 26.
@@ -145,17 +146,17 @@ Raw data and scripts: `/tmp/claude-1000/-home-christian-Code-tunarr/c698932a-07f
 
 ## Implementation checklist
 
-| File | Change |
-|---|---|
-| `server/scripts/make-bin.ts:24` | `NODE_VERSION` → 26.12.1 |
-| `server/scripts/make-bin.ts:26-27, 126-133` | Drop the per-ABI better-sqlite3 download; copy the N-API prebuild from the package |
-| `server/package.json` | `better-sqlite3` → 13.0.3; drop or bump `node-abi` |
-| `server/scripts/bundle.ts:66` | esbuild `target` → `node26` |
-| `package.json:41-42` | `engines.node` → `26` |
-| `Dockerfile:6` | `NODE_MAJOR=26` |
-| `.github/workflows/*.yml` | `node-version` → 26.12.1 |
-| `@types/node` (root, server, shared, `pnpm-workspace.yaml`) | → 26.x |
-| Docs | Update the Linux glibc and macOS minimums wherever install requirements are listed |
+| File                                                        | Change                                                                             |
+| ----------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `server/scripts/make-bin.ts:24`                             | `NODE_VERSION` → 26.12.1                                                           |
+| `server/scripts/make-bin.ts:26-27, 126-133`                 | Drop the per-ABI better-sqlite3 download; copy the N-API prebuild from the package |
+| `server/package.json`                                       | `better-sqlite3` → 13.0.3; drop or bump `node-abi`                                 |
+| `server/scripts/bundle.ts:66`                               | esbuild `target` → `node26`                                                        |
+| `package.json:41-42`                                        | `engines.node` → `26`                                                              |
+| `Dockerfile:6`                                              | `NODE_MAJOR=26`                                                                    |
+| `.github/workflows/*.yml`                                   | `node-version` → 26.12.1                                                           |
+| `@types/node` (root, server, shared, `pnpm-workspace.yaml`) | → 26.x                                                                             |
+| Docs                                                        | Update the Linux glibc and macOS minimums wherever install requirements are listed |
 
 ## Open questions
 

@@ -22,7 +22,8 @@ function multipartImage(filename: string, content: Buffer) {
   ]);
 }
 
-const UUID_PNG = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.png$/;
+const UUID_PNG =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.png$/;
 
 describe('POST /api/upload/image', () => {
   let app: Awaited<ReturnType<typeof initTestApp>>;
