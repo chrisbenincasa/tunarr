@@ -424,6 +424,18 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(400).send('Invalid file path');
       }
 
+      const windowSegment = req.params.file.match(SubtitleWindowRegex)?.[1];
+      if (windowSegment !== undefined && req.params.sessionType === 'hls') {
+        const vtt = await (session as HlsSession).subtitleWindow(
+          parseInt(windowSegment),
+        );
+        if (vtt === undefined) {
+          return res.status(404).send('Subtitle segment not found');
+        }
+        session.onSegmentRequested(req.ip, req.params.file);
+        return res.type('text/vtt').send(injectTimestampMap(vtt));
+      }
+
       // A request for a missing segment must not move this client's position.
       // Otherwise its next playlist is built around segments that are gone.
       if (!(await fileExists(filePath))) {
@@ -431,16 +443,6 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       session.onSegmentRequested(req.ip, req.params.file);
-
-      const windowSegment = req.params.file.match(SubtitleWindowRegex)?.[1];
-      if (windowSegment !== undefined && req.params.sessionType === 'hls') {
-        const vtt = await (session as HlsSession).subtitleWindow(
-          parseInt(windowSegment),
-        );
-        return vtt === undefined
-          ? res.status(404).send('Subtitle segment not found')
-          : res.type('text/vtt').send(injectTimestampMap(vtt));
-      }
 
       if (req.params.file.endsWith('.vtt')) {
         const content = await fs.readFile(filePath, 'utf-8');
