@@ -260,6 +260,11 @@ export interface IProgramDB {
     newState: ProgramState,
   ): Promise<void>;
 
+  syncGroupingStatesForLibrary(
+    libraryId: string,
+    types: readonly ProgramGroupingType[],
+  ): Promise<{ missingIds: string[]; restoredIds: string[] }>;
+
   upsertProgramGroupingGenres(
     groupingId: string,
     genres: NewGenre[],

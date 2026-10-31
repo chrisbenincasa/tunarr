@@ -1,5 +1,5 @@
 import { KEYS } from '@/types/inject.js';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, eq, inArray, not, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import { chunk } from 'lodash-es';
 import { Program } from '../schema/Program.ts';
@@ -48,6 +48,46 @@ export class ProgramStateRepository {
         .where(inArray(ProgramGrouping.uuid, idChunk))
         .execute();
     }
+  }
+
+  /**
+   * Trashes each grouping of the given types in a library that no longer has
+   * an 'ok' program under it, and restores each trashed one that has one
+   * again. Returns the ids whose state changed so the caller can update the
+   * search index.
+   */
+  async syncGroupingStatesForLibrary(
+    libraryId: string,
+    types: readonly ProgramGroupingType[],
+  ): Promise<{ missingIds: string[]; restoredIds: string[] }> {
+    const hasLiveProgram = sql`EXISTS (SELECT 1 FROM ${Program} p
+      WHERE p.state = 'ok'
+        AND (p.season_uuid = ${ProgramGrouping.uuid}
+          OR p.album_uuid = ${ProgramGrouping.uuid}
+          OR p.tv_show_uuid = ${ProgramGrouping.uuid}
+          OR p.artist_uuid = ${ProgramGrouping.uuid}))`;
+
+    const inScope = and(
+      eq(ProgramGrouping.libraryId, libraryId),
+      inArray(ProgramGrouping.type, [...types]),
+    );
+
+    const missing = await this.drizzleDB
+      .update(ProgramGrouping)
+      .set({ state: 'missing' })
+      .where(and(inScope, eq(ProgramGrouping.state, 'ok'), not(hasLiveProgram)))
+      .returning({ uuid: ProgramGrouping.uuid });
+
+    const restored = await this.drizzleDB
+      .update(ProgramGrouping)
+      .set({ state: 'ok' })
+      .where(and(inScope, eq(ProgramGrouping.state, 'missing'), hasLiveProgram))
+      .returning({ uuid: ProgramGrouping.uuid });
+
+    return {
+      missingIds: missing.map(({ uuid }) => uuid),
+      restoredIds: restored.map(({ uuid }) => uuid),
+    };
   }
 
   async countMissingPrograms(): Promise<number> {
