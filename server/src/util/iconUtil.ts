@@ -39,7 +39,9 @@ export function resolveIconUrl(
   defaultUrl: string,
 ): string | null {
   if (!icon) return defaultUrl;
-  if (isNonEmptyString(icon.path)) return icon.path;
+
+  // Rows saved before paths were trimmed on write can still carry whitespace.
+  if (isNonEmptyString(icon.path)) return icon.path.trim();
   return icon.useDefaultIconFallback !== false ? defaultUrl : null;
 }
 

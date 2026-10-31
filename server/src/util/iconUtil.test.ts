@@ -1,3 +1,4 @@
+import { StrictChannelIconSchema } from '@tunarr/types/schemas';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import {
   deleteIfLocalAndCleared,
@@ -72,6 +73,28 @@ describe('iconUtil', () => {
       expect(resolveIconUrl(icon, defaultUrl)).toBe(icon.path);
     });
 
+    test('trims whitespace around a stored path', () => {
+      const icon = {
+        path: ' http://192.168.1.2:8080/images/logo.png \n',
+        width: 0,
+        duration: 0,
+        position: 'bottom-right' as const,
+      };
+      expect(resolveIconUrl(icon, defaultUrl)).toBe(
+        'http://192.168.1.2:8080/images/logo.png',
+      );
+    });
+
+    test('returns defaultUrl when path is only whitespace', () => {
+      const icon = {
+        path: '   ',
+        width: 0,
+        duration: 0,
+        position: 'bottom-right' as const,
+      };
+      expect(resolveIconUrl(icon, defaultUrl)).toBe(defaultUrl);
+    });
+
     test('returns defaultUrl when path is empty and useDefaultIconFallback is true', () => {
       const icon = {
         path: '',
@@ -143,5 +166,14 @@ describe('iconUtil', () => {
         deleteIfLocalAndCleared(localIconUrl, '', dbDir),
       ).rejects.toThrow('ENOENT: no such file');
     });
+  });
+});
+
+describe('StrictChannelIconSchema', () => {
+  test('trims whitespace from path on save', () => {
+    const icon = StrictChannelIconSchema.parse({
+      path: ' http://192.168.1.2:8080/images/logo.png ',
+    });
+    expect(icon.path).toBe('http://192.168.1.2:8080/images/logo.png');
   });
 });

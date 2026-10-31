@@ -106,7 +106,7 @@ export const ChannelIconPositionSchema = z.union([
  * something else had been. These now fail validation.
  */
 export const StrictChannelIconSchema = z.object({
-  path: z.string().default(''),
+  path: z.string().trim().default(''),
   width: z.number().nonnegative().default(0),
   duration: z.number().default(0),
   position: ChannelIconPositionSchema.default('bottom-right'),
