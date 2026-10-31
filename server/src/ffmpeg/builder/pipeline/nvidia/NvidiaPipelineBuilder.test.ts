@@ -36,6 +36,7 @@ import {
 } from '../../state/FfmpegState.ts';
 import { FrameState } from '../../state/FrameState.ts';
 import { FrameSize } from '../../types.ts';
+import type { FfmpegVersionResult } from '../../../ffmpegInfo.ts';
 import { NvidiaPipelineBuilder } from './NvidiaPipelineBuilder.ts';
 
 describe('NvidiaPipelineBuilder', () => {
@@ -771,5 +772,109 @@ describe('NvidiaPipelineBuilder', () => {
       'scale_cuda=format=yuv420p,hwdownload,format=yuv420p,subtitles=',
     );
     expect(filterComplex).not.toContain('format=nv12,subtitles=');
+  });
+
+  describe('crop bottom workaround', () => {
+    const ffmpeg711: FfmpegVersionResult = {
+      versionString: 'n7.1.1-56-gc2184b65d2-20250716',
+      majorVersion: 7,
+      minorVersion: 1,
+      patchVersion: 1,
+      isUnknown: false,
+    };
+
+    const etv812: FfmpegVersionResult = {
+      versionString: 'n8.1.2-etv.7',
+      majorVersion: 8,
+      minorVersion: 1,
+      patchVersion: 2,
+      isUnknown: false,
+    };
+
+    function buildArgs(
+      frameSize: FrameSize,
+      version: FfmpegVersionResult,
+      withWatermark: boolean,
+    ) {
+      const video = VideoInputSource.withStream(
+        new FileStreamSource('/path/to/video.mkv'),
+        VideoStream.create({
+          codec: 'h264',
+          displayAspectRatio: '16:9',
+          frameSize,
+          index: 0,
+          pixelFormat: new PixelFormatYuv420P(),
+          providedSampleAspectRatio: null,
+          colorFormat: ColorFormat.unknown,
+        }),
+      );
+
+      const watermark = withWatermark
+        ? new WatermarkInputSource(
+            new FileStreamSource('/path/to/watermark.png'),
+            StillImageStream.create({
+              frameSize: FrameSize.withDimensions(800, 600),
+              index: 0,
+            }),
+            {
+              duration: 0,
+              enabled: true,
+              horizontalMargin: 5,
+              opacity: 100,
+              position: 'bottom-right',
+              verticalMargin: 5,
+              width: 10,
+            },
+          )
+        : null;
+
+      const builder = new NvidiaPipelineBuilder(
+        new NvidiaHardwareCapabilities('RTX 2080 Ti', 75),
+        EmptyFfmpegCapabilities,
+        video,
+        null,
+        null,
+        watermark,
+        null,
+      );
+
+      return builder
+        .build(
+          FfmpegState.create({ version }),
+          new FrameState({
+            isAnamorphic: false,
+            scaledSize: frameSize,
+            paddedSize: frameSize,
+            pixelFormat: new PixelFormatYuv420P(),
+          }),
+          DefaultPipelineOptions,
+        )
+        .getCommandArgs()
+        .join(' ');
+    }
+
+    test.each([
+      [FrameSize.FHD, 'crop_bottom=8'],
+      [FrameSize.withDimensions(1280, 720), 'crop_bottom=16'],
+    ])(
+      'crops %s with a watermark on unpatched ffmpeg',
+      (frameSize, expected) => {
+        expect(buildArgs(frameSize, ffmpeg711, true)).toContain(
+          `h264_metadata=${expected}`,
+        );
+      },
+    );
+
+    test('does not crop without an overlay', () => {
+      expect(
+        buildArgs(FrameSize.withDimensions(1280, 720), ffmpeg711, false),
+      ).not.toContain('crop_bottom');
+    });
+
+    test('does not crop on ErsatzTV ffmpeg 8', () => {
+      expect(
+        buildArgs(FrameSize.withDimensions(1280, 720), etv812, true),
+      ).not.toContain('crop_bottom');
+    });
   });
 });
