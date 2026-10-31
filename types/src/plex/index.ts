@@ -275,8 +275,12 @@ export const PlexMediaVideoStreamSchema = BasePlexMediaStreamSchema.extend({
   colorTrc: z.string().optional(),
   frameRate: z.number().optional(),
   hasScalingMatrix: z.boolean().optional(),
-  height: z.number(),
-  width: z.number(),
+
+  // Plex omits dimensions on empty program streams, common in broadcast
+  // MPEG-TS recordings. Stream selection skips these.
+  height: z.number().optional(),
+  width: z.number().optional(),
+
   level: z.number().optional(),
   profile: z.string().optional(),
   scanType: z.string().optional(),
