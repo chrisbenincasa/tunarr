@@ -396,4 +396,11 @@ export class ProgramDB implements IProgramDB {
   ): Promise<void> {
     return this.stateRepo.updateGroupingsState(groupingIds, newState);
   }
+
+  syncGroupingStatesForLibrary(
+    libraryId: string,
+    types: readonly ProgramGroupingType[],
+  ): Promise<{ missingIds: string[]; restoredIds: string[] }> {
+    return this.stateRepo.syncGroupingStatesForLibrary(libraryId, types);
+  }
 }

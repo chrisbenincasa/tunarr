@@ -186,12 +186,24 @@ export class LocalTvShowScanner extends FileSystemScanner {
         missingEpisodes.map((movie) => movie.uuid),
         'missing',
       );
-      await this.searchService.updatePrograms(
-        missingEpisodes.map((movie) => ({
-          id: movie.uuid,
-          state: 'missing',
-        })),
+
+      // Seasons and shows follow their episodes into and out of the trash.
+      const groupings = await this.programDB.syncGroupingStatesForLibrary(
+        context.library.uuid,
+        ['season', 'show'],
       );
+
+      await this.searchService.updatePrograms([
+        ...missingEpisodes.map((movie) => ({
+          id: movie.uuid,
+          state: 'missing' as const,
+        })),
+        ...groupings.missingIds.map((id) => ({
+          id,
+          state: 'missing' as const,
+        })),
+        ...groupings.restoredIds.map((id) => ({ id, state: 'ok' as const })),
+      ]);
     });
 
     return Result.all([scanResult, markMissingResult]).map(() => void 0);
