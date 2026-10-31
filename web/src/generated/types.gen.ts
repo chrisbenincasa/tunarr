@@ -14452,6 +14452,15 @@ export type GetApiEtvPlayoutItemResponses = {
                 fade_ms?: number | null;
                 hold_ms: number;
             } | null;
+            layout?: {
+                mode: 'full_frame';
+            } | {
+                mode: 'region';
+                origin: {
+                    x: number;
+                    y: number;
+                };
+            } | null;
         } | null;
         graphics?: Array<{
             source: {
@@ -14668,6 +14677,15 @@ export type GetApiEtvPlayoutItemResponses = {
                 disable_after_ms?: number | null;
                 fade_ms?: number | null;
                 hold_ms: number;
+            } | null;
+            layout?: {
+                mode: 'full_frame';
+            } | {
+                mode: 'region';
+                origin: {
+                    x: number;
+                    y: number;
+                };
             } | null;
         }>;
     };
