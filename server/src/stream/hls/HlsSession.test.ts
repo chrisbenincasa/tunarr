@@ -4,6 +4,8 @@ import type { OutputFormat } from '@/ffmpeg/builder/constants.js';
 import type { OnDemandChannelService } from '@/services/OnDemandChannelService.js';
 import type { PlayerContext } from '@/stream/PlayerStreamContext.js';
 import type { StreamProgramCalculator } from '@/stream/StreamProgramCalculator.js';
+import { Result } from '@/types/result.js';
+import dayjs from 'dayjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import tmp from 'tmp';
@@ -27,6 +29,7 @@ vi.mock('@/stream/ConnectionTracker.ts', () => {
   return {
     ConnectionTracker: class {
       on = vi.fn();
+      cancelCleanup = vi.fn();
       recordHeartbeat = vi.fn();
       removeStaleConnections = vi.fn(() => []);
     },
@@ -350,6 +353,87 @@ describe('HlsSession', () => {
 
       const remaining = await fs.readdir(workingDir);
       expect(remaining.sort()).toEqual(['data000000.ts']);
+    });
+  });
+
+  describe('stop during program setup', () => {
+    let tmpDir: tmp.DirResult;
+
+    beforeEach(() => {
+      tmpDir = tmp.dirSync({ unsafeCleanup: true });
+    });
+
+    afterEach(() => {
+      tmpDir.removeCallback();
+    });
+
+    // A stop that lands while the next program is still probing must not
+    // leave a freshly spawned ffmpeg that nothing tracks (issue #1950).
+    test('does not start a transcode once the session has stopped', async () => {
+      let finishSetup: (value: Result<unknown>) => void = () => {};
+      const setupDone = new Promise<Result<unknown>>((resolve) => {
+        finishSetup = resolve;
+      });
+
+      const transcodeSession = {
+        streamDuration: dayjs.duration(30, 'minutes'),
+        kill: vi.fn(),
+        wait: vi.fn(() => Promise.resolve({ code: 0, signal: null })),
+        exited: Promise.resolve(),
+      };
+      const start = vi.fn(() => Promise.resolve());
+      const programStream = {
+        on: vi.fn(),
+        setup: vi.fn(() => setupDone),
+        start,
+        renditions: undefined,
+        transcodeSession,
+      };
+
+      const session = new HlsSession(
+        {
+          uuid: channelUuid,
+          transcodeConfig: {},
+        } as ChannelOrmWithTranscodeConfig,
+        {
+          streamMode: 'hls',
+          initialSegmentCount: 2,
+          transcodeDirectory: tmpDir.name,
+        },
+        {
+          getCurrentLineupItem: vi.fn(() =>
+            Promise.resolve(
+              Result.success({
+                lineupItem: { streamDuration: 1_800_000, duration: 1_800_000 },
+                channelContext: {},
+                sourceChannel: {},
+              }),
+            ),
+          ),
+        } as unknown as StreamProgramCalculator,
+        {} as ISettingsDB,
+        {
+          getLiveTimestamp: vi.fn(() => Promise.resolve(Date.now())),
+        } as unknown as OnDemandChannelService,
+        (() => programStream as unknown as ProgramStream) as (
+          ctx: PlayerContext,
+          fmt: OutputFormat,
+        ) => ProgramStream,
+      );
+
+      const internals = session as unknown as {
+        startInternal(): Promise<void>;
+      };
+      await internals.startInternal();
+      await vi.waitFor(() => expect(programStream.setup).toHaveBeenCalled());
+
+      await session.stop({ waitForExit: false });
+      expect(session.state).toBe('stopped');
+
+      finishSetup(Result.success(transcodeSession));
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
+      expect(start).not.toHaveBeenCalled();
     });
   });
 });
