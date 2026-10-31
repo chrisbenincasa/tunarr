@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://ersatztv.org/playout/version/0.0.6",
+  "$id": "https://ersatztv.org/playout/version/0.0.7",
   "title": "Playout",
   "description": "A playout schedule for a single time window.\n\nFiles should be named `{start}_{finish}.json` using compact ISO 8601 (no separators), e.g. `20260413T000000.000000000-0500_20260414T002131.620000000-0500.json`, so that the channel can locate the correct file for the current time.",
   "type": "object",
@@ -233,6 +233,17 @@
               "type": "null"
             }
           ]
+        },
+        "layout": {
+          "description": "Canvas only: where the canvas is placed in the output frame. Default: `full_frame`. Ignored with a warning on media layers.",
+          "oneOf": [
+            {
+              "$ref": "#/definitions/CanvasLayout"
+            },
+            {
+              "type": "null"
+            }
+          ]
         }
       }
     },
@@ -312,11 +323,65 @@
     },
     "GraphicsLayerKind": {
       "type": "string",
-      "description": "canvas: a full-frame layer whose frames are already the output size and carry alpha. It is composited at (0,0) and is content-locked: the channel seeks it to its own position in the item. `location`, margins, `width_percent`, `within_source_content`, `opacity_percent` and `timing` are ignored (a warning is logged if present). HTTP canvas sources receive `x-etv-channel`, `x-etv-offset-ms`, `x-etv-duration-ms` and `x-etv-frame-rate` headers.",
+      "description": "canvas: a layer with alpha, placed by `layout`. It is content-locked: the channel seeks it to the current position in the item. `location`, margins, `width_percent`, `within_source_content`, `opacity_percent` and `timing` are ignored with a warning. HTTP canvas sources receive the `x-etv-channel`, `x-etv-offset-ms`, `x-etv-duration-ms` and `x-etv-frame-rate` headers.",
       "enum": [
         "media",
         "canvas"
       ]
+    },
+    "CanvasLayout": {
+      "description": "Where the canvas is placed in the output frame. `mode` selects the variant.",
+      "oneOf": [
+        {
+          "type": "object",
+          "required": [
+            "mode"
+          ],
+          "properties": {
+            "mode": {
+              "const": "full_frame",
+              "description": "The canvas has the output size and is placed at (0,0). A canvas with a different size (stale playout metadata) is stretched to the output size."
+            }
+          }
+        },
+        {
+          "type": "object",
+          "required": [
+            "mode",
+            "origin"
+          ],
+          "properties": {
+            "mode": {
+              "const": "region",
+              "description": "The canvas covers part of the output. It is placed at `origin` at its own size, without scaling. `origin` is in output pixels and does not change with the output resolution. Parts outside the output are clipped. A canvas fully outside the output is skipped."
+            },
+            "origin": {
+              "$ref": "#/definitions/CanvasPosition",
+              "description": "Top-left output pixel of the canvas. Use even values; odd values may be rounded down for chroma-subsampled output."
+            }
+          }
+        }
+      ]
+    },
+    "CanvasPosition": {
+      "type": "object",
+      "description": "A pixel position in the output frame.",
+      "required": [
+        "x",
+        "y"
+      ],
+      "properties": {
+        "x": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Pixels from the left edge."
+        },
+        "y": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Pixels from the top edge."
+        }
+      }
     },
     "GraphicsLocation": {
       "type": "string",
@@ -839,7 +904,7 @@
             "boolean",
             "null"
           ],
-          "description": "Whether the stream carries HDR10 static metadata (mastering display colour volume or content light level), at the container level or in per-frame SEI. Hardware tonemappers that read that metadata (Intel vpp_qsv) are only used when this is true; omitting it is treated as false and falls back to software tonemapping for \"smpte2084\" content."
+          "description": "Whether the stream carries HDR10 static metadata (mastering display colour volume or content light level), at the container level or in per-frame SEI. Hardware tonemappers that read that metadata (Intel vpp_qsv) are only used when this is true; when it is omitted for \"smpte2084\" content, the channel reads the first frame of local and HTTP sources to determine it, and otherwise treats it as false."
         },
         "rotation": {
           "type": [

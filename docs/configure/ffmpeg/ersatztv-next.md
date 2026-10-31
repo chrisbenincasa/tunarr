@@ -4,7 +4,7 @@ Tunarr can hand a channel to `ersatztv-channel`, a standalone worker from the [E
 
 !!! warning "Experimental"
 
-    Tunarr pins ErsatzTV next release `v0.2.2` and refuses a bundled worker from any other release. A worker you point at with `TUNARR_ERSATZTV_NEXT_PATH` still runs, but Tunarr logs a warning and streams may fail in ways its schema checks cannot catch.
+    Tunarr pins ErsatzTV next release `v0.2.3` and refuses a bundled worker from any other release. A worker you point at with `TUNARR_ERSATZTV_NEXT_PATH` still runs, but Tunarr logs a warning and streams may fail in ways its schema checks cannot catch.
 
 This page covers how your FFmpeg and transcode settings reach the worker. For what the backend is and how it plays a channel, see [Channel Transcoding Settings](../channels/transcoding.md#ersatztv-next-backend-experimental).
 

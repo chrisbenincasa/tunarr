@@ -11,6 +11,25 @@ export const AudioHintSchema = z.strictObject({
 });
 export type AudioHint = z.infer<typeof AudioHintSchema>;
 
+/** A pixel position in the output frame. */
+export const CanvasPositionSchema = z.strictObject({
+  x: z.number().int().min(0),
+  y: z.number().int().min(0),
+});
+export type CanvasPosition = z.infer<typeof CanvasPositionSchema>;
+
+/** Where the canvas is placed in the output frame. `mode` selects the variant. */
+export const CanvasLayoutSchema = z.union([
+  z.strictObject({
+    mode: z.literal('full_frame'),
+  }),
+  z.strictObject({
+    mode: z.literal('region'),
+    origin: CanvasPositionSchema,
+  }),
+]);
+export type CanvasLayout = z.infer<typeof CanvasLayoutSchema>;
+
 /** A placeholder source resolved at playback time by fetching a `PlayoutItem` JSON document over HTTP(S). The returned item replaces this one; its `start` is forced to the current transcode position and its `finish` is clamped to the placeholder's `finish`. Because `start` advances each tick, the resolver is re-hit while the transcode position remains inside the placeholder window, allowing a sequence of distinct items to be returned for a single placeholder. The resolved item's `source` may not itself be `dynamic`, but it may carry its own `probe_hint`, which is honored exactly as for a directly-specified source. */
 export const DynamicSourceSchema = z.strictObject({
   source_type: z.literal('dynamic'),
@@ -130,7 +149,7 @@ export const PlayoutItemSourceSchema = z.discriminatedUnion('source_type', [
 ]);
 export type PlayoutItemSource = z.infer<typeof PlayoutItemSourceSchema>;
 
-/** canvas: a full-frame layer whose frames are already the output size and carry alpha. It is composited at (0,0) and is content-locked: the channel seeks it to its own position in the item. `location`, margins, `width_percent`, `within_source_content`, `opacity_percent` and `timing` are ignored (a warning is logged if present). HTTP canvas sources receive `x-etv-channel`, `x-etv-offset-ms`, `x-etv-duration-ms` and `x-etv-frame-rate` headers. */
+/** canvas: a layer with alpha, placed by `layout`. It is content-locked: the channel seeks it to the current position in the item. `location`, margins, `width_percent`, `within_source_content`, `opacity_percent` and `timing` are ignored with a warning. HTTP canvas sources receive the `x-etv-channel`, `x-etv-offset-ms`, `x-etv-duration-ms` and `x-etv-frame-rate` headers. */
 export const GraphicsLayerKindSchema = z.enum(['media', 'canvas']);
 export type GraphicsLayerKind = z.infer<typeof GraphicsLayerKindSchema>;
 
@@ -182,6 +201,7 @@ export const GraphicsLayerSchema = z.strictObject({
   opacity_percent: z.number().min(0).max(100).nullable().optional(),
   within_source_content: z.boolean().nullable().optional(),
   timing: GraphicsTimingSchema.nullable().optional(),
+  layout: CanvasLayoutSchema.nullable().optional(),
 });
 export type GraphicsLayer = z.infer<typeof GraphicsLayerSchema>;
 

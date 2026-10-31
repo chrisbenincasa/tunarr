@@ -1,6 +1,6 @@
 {
   "$schema": "../../schema/playout.json",
-  "version": "https://ersatztv.org/playout/version/0.0.6",
+  "version": "https://ersatztv.org/playout/version/0.0.7",
   "items": [
     {
       "id": "1",
@@ -55,7 +55,24 @@
             "path": "~/Pictures/be-right-back.png"
           }
         }
-      }
+      },
+      "graphics": [
+        {
+          "kind": "canvas",
+          "source": {
+            "source_type": "local",
+            "path": "~/Videos/graphics/be-right-back.nut"
+          },
+          "location": "top_left",
+          "layout": {
+            "mode": "region",
+            "origin": {
+              "x": 80,
+              "y": 40
+            }
+          }
+        }
+      ]
     }
   ]
 }
