@@ -23,6 +23,7 @@ import { groupByUniq } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import {
+  findDanglingSearchDocumentIds,
   isProgramGroupingDocument,
   isTerminalProgramDocument,
 } from '../util/search.ts';
@@ -92,6 +93,17 @@ export class SearchProgramsCommand {
       this.programDB.getProgramGroupings([...groupingIds.values()]),
       this.programDB.getProgramGroupingChildCounts([...groupingIds.values()]),
     ]);
+
+    // Scanners index a row only after writing it, so a hit with no row is
+    // stale. Drop it from the index so the totals stop counting it.
+    const danglingIds = findDanglingSearchDocumentIds(
+      result.results,
+      new Set(Object.keys(programs)),
+      new Set(Object.keys(groupings)),
+    );
+    if (danglingIds.length > 0) {
+      void this.removeDanglingDocuments(danglingIds);
+    }
 
     const results = seq.collect(result.results, (searchDoc) => {
       const mediaSourceId = decodeCaseSensitiveId(searchDoc.mediaSourceId);
@@ -189,5 +201,17 @@ export class SearchProgramsCommand {
       facetDistribution:
         result.type === 'search' ? result.facetDistribution : undefined,
     };
+  }
+
+  private async removeDanglingDocuments(ids: string[]): Promise<void> {
+    this.logger.info(
+      'Removing %d search document(s) with no matching DB row',
+      ids.length,
+    );
+    try {
+      await this.searchService.deleteByIds(ids);
+    } catch (e) {
+      this.logger.warn(e, 'Failed to remove %d stale document(s)', ids.length);
+    }
   }
 }
