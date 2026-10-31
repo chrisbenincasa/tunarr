@@ -1,4 +1,3 @@
-import { setShowWelcome } from '@/store/themeEditor/actions';
 import { createFileRoute, redirect } from '@tanstack/react-router';
 import {
   getApiSystemMigrationStateOptions,
@@ -12,12 +11,11 @@ export const Route = createFileRoute('/')({
       ...getApiSystemSettingsOptions(),
     });
 
-    const systemState = await context.queryClient.ensureQueryData({
+    const migrationState = await context.queryClient.ensureQueryData({
       ...getApiSystemMigrationStateOptions(),
     });
 
-    setShowWelcome(!!systemState.isFreshSettings);
-    if (systemState.isFreshSettings) {
+    if (migrationState.onboardingComplete === false) {
       throw redirect({
         to: '/welcome',
       });

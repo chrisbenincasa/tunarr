@@ -76,6 +76,12 @@ export const MigrationStateSchema = z.object({
   isFreshSettings: z.boolean().default(true).optional(),
   hasMigratedTo1_0: z.boolean().optional().default(false),
   hasEnabledLogRollByDefault: z.boolean().optional().default(false),
+  onboardingComplete: z
+    .boolean()
+    .optional()
+    .describe(
+      'Whether the first-run welcome checklist was finished or skipped',
+    ),
 });
 
 export type MigrationState = z.infer<typeof MigrationStateSchema>;

@@ -76,10 +76,9 @@ msgstr "{0, plural, other {# 个已选项}}"
 msgid "{0, plural, one {# session} other {# sessions}}"
 msgstr "{0, plural, other {# 个会话}}"
 
-#. placeholder {0}: mediaSources.length
 #: src/pages/welcome/WelcomePage.tsx
-msgid "{0, plural, one {# source connected.} other {# sources connected.}}"
-msgstr "{0, plural, other {# 个媒体源已连接}}"
+#~ msgid "{0, plural, one {# source connected.} other {# sources connected.}}"
+#~ msgstr "{0, plural, other {# 个媒体源已连接}}"
 
 #. placeholder {0}: currentBackupSchedule!.increment
 #: src/components/settings/general/BackupForm.tsx
@@ -328,11 +327,11 @@ msgstr "约 "
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Access Token"
-msgstr "访问令牌"
+msgstr "访问令牌<<<<<<< HEAD"
 
 #: src/components/ui/table/ActionsHeader.tsx
 msgid "Actions"
-msgstr ""
+msgstr "<<<<<<< HEAD"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/library/ProgramListItem.tsx
@@ -444,6 +443,10 @@ msgstr "添加剧集"
 msgid "Add Slot"
 msgstr "添加时段"
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Add these links to an IPTV client. Jellyfin and Emby can use Tunarr as either an M3U source or an HDHomeRun tuner. Plex can add Tunarr as an HDHomeRun tuner."
+msgstr ""
+
 #: src/components/filler/EditFillerListForm.tsx
 msgid "Add TV Shows or Movies to filler"
 msgstr "向垫片添加剧集或电影"
@@ -542,8 +545,8 @@ msgid "All lists are used"
 msgstr "所有列表均已使用"
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "All Set!"
-msgstr "一切就绪！"
+#~ msgid "All Set!"
+#~ msgstr "一切就绪！"
 
 #: src/components/channel_config/ChannelSubtitlePreferencesTable.tsx
 msgid "Allow External"
@@ -714,8 +717,8 @@ msgid "Average program length: {0}"
 msgstr "平均节目时长：{0}"
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Back"
-msgstr "返回"
+#~ msgid "Back"
+#~ msgstr "返回"
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
@@ -954,16 +957,32 @@ msgstr "配置为 HLS 直连流模式的频道将按所选容器格式输出。"
 
 #: src/pages/system/StatusPage.tsx
 msgid "Channels M3U Link:"
-msgstr "频道 M3U 链接："
+msgstr "频道 M3U 链接：<<<<<<< HEAD"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Channels play your content on a schedule, like live TV."
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+#~ msgid "Channels play your content on a schedule, like live TV.>>>>>>> b50ff0395 (feat(web): replace the welcome stepper with a skippable setup checklist)"
+#~ msgstr ""
 
 #: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
 msgid "Channels using this config cannot stream on the ErsatzTV next backend"
 msgstr ""
 
+#: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
+#~ msgid "Channels using this config cannot stream on the ErsatzTV next backend======="
+#~ msgstr ""
+
 #: src/pages/system/SystemDebugPage.tsx
 #: src/pages/system/SystemDebugPage.tsx
 msgid "Check"
 msgstr "检查"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Check FFmpeg"
+msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Choose the transcode configuration to use for this channel. Configure transcode configurations on the <0>FFmpeg settings page</0>."
@@ -1062,20 +1081,24 @@ msgid "Configure what appears on your channel when there is no suitable filler c
 msgstr "配置当没有合适的垫片内容时频道播放的内容。使用频道兜底需要 ffmpeg 转码。"
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Congrats, you're ready to start building channels! Just click Finish below to start working on your first channel."
-msgstr "恭喜，一切就绪，可以开始创建频道了！点击下方「完成」即可开始你的第一个频道。"
+#~ msgid "Congrats, you're ready to start building channels! Just click Finish below to start working on your first channel."
+#~ msgstr "恭喜，一切就绪，可以开始创建频道了！点击下方「完成」即可开始你的第一个频道。"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Connect a media source"
+msgstr ""
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "Connect Media Source"
 msgstr "连接媒体源"
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Connect Media Sources"
-msgstr "连接媒体源"
+#~ msgid "Connect Media Sources"
+#~ msgstr "连接媒体源"
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Connect Sources"
-msgstr "连接媒体源"
+#~ msgid "Connect Sources"
+#~ msgstr "连接媒体源"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Console"
@@ -1178,9 +1201,17 @@ msgstr ""
 msgid "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
 msgstr "无法解析此筛选表达式。请查看<0>文档</0>了解筛选表达式的用法。"
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Could not save setup progress. {message}"
+msgstr ""
+
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 msgid "Create"
 msgstr "创建"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Create a channel"
+msgstr ""
 
 #: src/components/channel_config/NoChannelsCreated.tsx
 msgid "Create a Channel"
@@ -1462,7 +1493,11 @@ msgstr "将节目分成 4、6、8 或 12 小时的块，然后按指定次数重
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Do not group programs at all. Normal shuffle."
-msgstr "不对节目做任何分组，普通随机。"
+msgstr "不对节目做任何分组，普通随机。<<<<<<< HEAD"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Docs"
+msgstr ""
 
 #: src/components/ui/patterns/AppShell/HelpMenu.tsx
 msgid "Documentation"
@@ -1549,7 +1584,6 @@ msgstr "即时"
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
-#: src/pages/welcome/WelcomePage.tsx
 msgid "Edit"
 msgstr "编辑"
 
@@ -1939,14 +1973,13 @@ msgstr "FFmpeg 命令"
 msgid "FFmpeg Executable Path"
 msgstr "FFmpeg 可执行文件路径"
 
-#. placeholder {0}: version?.ffmpeg
 #: src/pages/welcome/WelcomePage.tsx
-msgid "FFMPEG is installed. Detected version {0}"
-msgstr "FFmpeg 已安装，检测到版本 {0}"
+#~ msgid "FFMPEG is installed. Detected version {0}"
+#~ msgstr "FFmpeg 已安装，检测到版本 {0}"
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "FFMPEG is not detected."
-msgstr "未检测到 FFmpeg。"
+#~ msgid "FFMPEG is not detected."
+#~ msgstr "未检测到 FFmpeg。"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "FFmpeg Log"
@@ -1975,8 +2008,8 @@ msgid "FFmpeg Transcode Path"
 msgstr "FFmpeg 转码路径"
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "FFMPEG transcoding is required for some features like channel overlay, subtitles, and measures to prevent issues when switching episodes."
-msgstr "部分功能需要 FFmpeg 转码支持，例如频道水印、字幕，以及避免切换剧集时出现问题。"
+#~ msgid "FFMPEG transcoding is required for some features like channel overlay, subtitles, and measures to prevent issues when switching episodes."
+#~ msgstr "部分功能需要 FFmpeg 转码支持，例如频道水印、字幕，以及避免切换剧集时出现问题。"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "FFmpeg version 7.1+ recommended. Check your current version in the sidebar"
@@ -2135,11 +2168,15 @@ msgstr ""
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Flex Style"
-msgstr "弹性时间样式"
+msgstr "弹性时间样式<<<<<<< HEAD"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #~ msgid "Flex..."
-#~ msgstr ""
+#~ msgstr "======="
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Follow these steps to set up your first channel. Each step will update upon completion. You can skip setup at any time and do all of this from the menu later."
+msgstr ">>>>>>> 371edab88 (fix(web): address welcome checklist review)"
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
@@ -2227,7 +2264,11 @@ msgstr "硬件加速"
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Hardware Acceleration"
-msgstr "硬件加速"
+msgstr "硬件加速<<<<<<< HEAD<<<<<<< HEAD"
+
+#: src/pages/welcome/WelcomePage.tsx
+#~ msgid "HDHomeRun Settings"
+#~ msgstr "=======>>>>>>> 4e169fab3 (chore: regenerate OpenAPI spec and lingui catalogs after rebase)"
 
 #: src/components/shell/useShellNav.tsx
 msgid "HDHR"
@@ -2329,8 +2370,8 @@ msgid "If true, adjusting the weight of one slot will scale the weights of other
 msgstr "若为是，调整某个时段的权重时会自动缩放其他时段的权重，使总权重保持 100%。否则权重可自由调整，每个时段的权重仅相对于总权重而言。"
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "If you are confident FFMPEG is installed, you may just need to update the executable path in the settings. To do so, simply click Edit above to update the path."
-msgstr "如果你确定已安装 FFmpeg，可能只需在设置中更新可执行文件路径。点击上方的「编辑」即可修改路径。"
+#~ msgid "If you are confident FFMPEG is installed, you may just need to update the executable path in the settings. To do so, simply click Edit above to update the path."
+#~ msgstr "如果你确定已安装 FFmpeg，可能只需在设置中更新可执行文件路径。点击上方的「编辑」即可修改路径。"
 
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "If you proceed, all unsaved changes will be lost. Are you sure you want to proceed?"
@@ -2382,8 +2423,8 @@ msgstr "在节目时长的这些百分比位置插入广告"
 
 #: src/pages/welcome/WelcomePage.tsx
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Install FFMPEG"
-msgstr "安装 FFmpeg"
+#~ msgid "Install FFMPEG"
+#~ msgstr "安装 FFmpeg"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Interval (minutes)"
@@ -2460,8 +2501,8 @@ msgid "Leave blank to use the channel's icon."
 msgstr "留空则使用频道图标。"
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Let's get started..."
-msgstr "让我们开始吧…"
+#~ msgid "Let's get started..."
+#~ msgstr "让我们开始吧…"
 
 #: src/pages/system/SystemLogsPage.tsx
 msgid "Level"
@@ -2615,6 +2656,10 @@ msgstr "响度目标"
 msgid "Loudnorm Options"
 msgstr "Loudnorm 选项"
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "M3U playlist"
+msgstr ""
+
 #: src/components/ui/patterns/AppShell/PhoneNav.tsx
 #: src/components/ui/patterns/AppShell/ShellTopBar.tsx
 msgid "Main"
@@ -2735,6 +2780,10 @@ msgstr "媒体源"
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
 msgstr "媒体源是 Tunarr 获取内容的来源。内容可以来自你的文件系统，也可以来自远程服务器（如 Plex 或 Jellyfin）。Tunarr 至少需要连接一个媒体源，才能创建频道并播放媒体。"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Media sources provide the content for your channels. Tunarr supports Plex, Jellyfin, Emby, and local folders."
+msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
@@ -2894,6 +2943,7 @@ msgid "New"
 msgstr "新建"
 
 #: src/pages/channels/NewChannelPage.tsx
+#: src/pages/welcome/WelcomePage.tsx
 msgid "New Channel"
 msgstr "新建频道"
 
@@ -2923,8 +2973,8 @@ msgid "New Plex Server"
 msgstr "新建 Plex 服务器"
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "Next"
-msgstr "下一步"
+#~ msgid "Next"
+#~ msgstr "下一步"
 
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Next run"
@@ -2948,8 +2998,8 @@ msgid "No libraries enabled"
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "No media sources connected."
-msgstr "未连接任何媒体源。"
+#~ msgid "No media sources connected."
+#~ msgstr "未连接任何媒体源。"
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "No Media Sources detected."
@@ -3753,6 +3803,10 @@ msgstr "扫描"
 msgid "Scan {0}"
 msgstr "扫描 {0}"
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Scan your libraries"
+msgstr ""
+
 #: src/components/shell/useShellNav.tsx
 msgid "Scanner"
 msgstr "扫描器"
@@ -3900,6 +3954,7 @@ msgstr "设置用于解码输入流的线程数。设为 0 表示由 ffmpeg 自�
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/settings/SettingsLayout.tsx
+#: src/pages/welcome/WelcomePage.tsx
 msgid "Settings"
 msgstr "设置"
 
@@ -4005,6 +4060,10 @@ msgstr "随机打乱频道中的节目，可选择按特定条件对节目分组
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Skip mid-roll for programs shorter than this"
 msgstr "时长短于此值的节目跳过中插广告"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Skip Setup"
+msgstr ""
 
 #: src/hooks/useRouteName.ts
 msgid "Slot Editor"
@@ -4543,8 +4602,8 @@ msgid "To schedule movies, add them to a custom show and choose Custom Show."
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "To use Tunarr, you must first connect at least one media source. Media sources provide all content used to create channels in Tunarr. Plex and Jellyfin are currently supported."
-msgstr "使用 Tunarr 前，必须先连接至少一个媒体源。媒体源提供创建频道所需的全部内容。目前支持 Plex 和 Jellyfin。"
+#~ msgid "To use Tunarr, you must first connect at least one media source. Media sources provide all content used to create channels in Tunarr. Plex and Jellyfin are currently supported."
+#~ msgstr "使用 Tunarr 前，必须先连接至少一个媒体源。媒体源提供创建频道所需的全部内容。目前支持 Plex 和 Jellyfin。"
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "To use Tunarr, you need to first connect a media source. This will allow you to build custom channels with your content."
@@ -4662,6 +4721,18 @@ msgstr ""
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
 msgstr "Tunarr 会运行各类后台任务，其中一些按计划定时执行。"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Tunarr scans enabled libraries in the background. Channels can only use programs that have been scanned by Tunarr."
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Tunarr uses FFmpeg 6.1 or newer to transcode streams."
+msgstr ""
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Tunarr uses FFmpeg to transcode streams. Your container image includes it, but Tunarr could not use it."
+msgstr ""
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Tunarr will attempt to get Plex to pull Tunarr's updated XMLTV upon regeneration"
@@ -4848,6 +4919,10 @@ msgstr "在 {0} 中查看"
 #~ msgid "View Library"
 #~ msgstr "View Library"
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Waiting for the first scan to finish..."
+msgstr ""
+
 #: src/hooks/useRouteName.ts
 msgid "Watch"
 msgstr "观看"
@@ -4855,6 +4930,10 @@ msgstr "观看"
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Watch Channel"
 msgstr "观看频道"
+
+#: src/pages/welcome/WelcomePage.tsx
+msgid "Watch from a client"
+msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Watermark"
@@ -4936,6 +5015,10 @@ msgstr "即使已设置硬件加速，也强制使用软件滤镜（如缩放、
 msgid "XMLTV"
 msgstr "XMLTV"
 
+#: src/pages/welcome/WelcomePage.tsx
+msgid "XMLTV guide"
+msgstr ""
+
 #: src/pages/system/StatusPage.tsx
 msgid "XMLTV Link:"
 msgstr "XMLTV 链接："
@@ -4969,8 +5052,8 @@ msgid "You must create at least one <0>filler list</0> before assigning filler t
 msgstr "你必须先创建至少一个<0>垫片列表</0>，才能为时段分配垫片。"
 
 #: src/pages/welcome/WelcomePage.tsx
-msgid "You're All Set!"
-msgstr "一切就绪！"
+#~ msgid "You're All Set!"
+#~ msgstr "一切就绪！"
 
 #. placeholder {0}: field.value
 #: src/components/programming_controls/AddReplicateModal.tsx
