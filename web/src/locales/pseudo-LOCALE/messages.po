@@ -334,6 +334,7 @@ msgstr ""
 msgid "Actions"
 msgstr ""
 
+#: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/library/ProgramListItem.tsx
 #: src/components/settings/AddPlexServer.tsx
 #: src/components/settings/media_source/AddMediaSourceButton.tsx
@@ -367,9 +368,12 @@ msgstr ""
 #~ msgid "Add all selected programs to channel"
 #~ msgstr ""
 
-#: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Add Breaks"
+msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Add Breaks..."
 msgstr ""
 
 #: src/components/programming_controls/AddRedirectModal.tsx
@@ -385,8 +389,8 @@ msgid "Add filler"
 msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx
-msgid "Add Flex"
-msgstr ""
+#~ msgid "Add Flex"
+#~ msgstr ""
 
 #: src/components/programming_controls/AddFlexModal.tsx
 msgid "Add Flex Time"
@@ -400,14 +404,12 @@ msgstr ""
 msgid "Add Language Preference"
 msgstr ""
 
-#: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
 msgid "Add Media"
 msgstr ""
 
-#: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/programming_controls/AddPaddingModal.tsx
 msgid "Add Padding"
 msgstr ""
@@ -426,8 +428,8 @@ msgid "Add programming to custom show"
 msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx
-msgid "Add Redirect"
-msgstr ""
+#~ msgid "Add Redirect"
+#~ msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "Add Selected Media"
@@ -454,17 +456,29 @@ msgstr ""
 msgid "Adds a channel redirect. During this period of time, the channel will redirect to another channel."
 msgstr ""
 
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Adds Flex after each TV episode or movie so the next program starts at one of the allowed minute marks, such as XX:00 or XX:30. Removes existing Flex first."
+msgstr ""
+
 #: src/components/programming_controls/AddPaddingModal.tsx
 msgid "Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks."
 msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/channel_config/AddProgrammingButton.tsx
-msgid "Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large."
+#~ msgid "Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large."
+#~ msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Adds Flex breaks between programs so that no run of consecutive programs goes longer than the time you set. Existing Flex stays in place."
 msgstr ""
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes."
+msgstr ""
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Adds one Flex time slot. To add Flex across the whole lineup at once, use the Flex menu next to Add."
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
@@ -2094,8 +2108,7 @@ msgstr ""
 msgid "Fixed Interval"
 msgstr ""
 
-#: src/components/channel_config/AddProgrammingButton.tsx
-#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 #: src/components/channel_config/EditChannelForm.tsx
 #: src/hooks/programming_controls/useSlotProgramOptions.ts
 #: src/hooks/programming_controls/useSlotProgramOptions.ts
@@ -2105,12 +2118,20 @@ msgstr ""
 msgid "Flex"
 msgstr ""
 
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Flex Slot..."
+msgstr ""
+
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Flex Style"
 msgstr ""
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+#~ msgid "Flex..."
+#~ msgstr ""
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
@@ -2713,6 +2734,10 @@ msgstr ""
 msgid "Media Type"
 msgstr ""
 
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Media..."
+msgstr ""
+
 #: src/pages/system/SystemLogsPage.tsx
 msgid "Message"
 msgstr ""
@@ -3129,6 +3154,10 @@ msgstr ""
 msgid "Pad Start Times"
 msgstr ""
 
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Pad Start Times..."
+msgstr ""
+
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Pad Style"
@@ -3220,6 +3249,14 @@ msgstr ""
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Opens the shuffle settings, where you can start every show at its first episode or loop shorter shows."
 msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first, and removes programs longer than the allowed hours."
+msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+#~ msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first."
+#~ msgstr ""
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
@@ -3316,8 +3353,12 @@ msgid "Programs"
 msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx
-msgid "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases."
-msgstr ""
+#~ msgid "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases."
+#~ msgstr ""
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+#~ msgid "Programs a single Flex time slot. To add Flex across the whole lineup at once, use the Flex menu."
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "Programs saved!"
@@ -3405,6 +3446,10 @@ msgstr ""
 msgid "Redirect to Channel {0}"
 msgstr ""
 
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Redirect..."
+msgstr ""
+
 #: src/hooks/useVersion.tsx
 msgid "Refresh"
 msgstr ""
@@ -3464,6 +3509,10 @@ msgstr ""
 msgid "Remove All {movieCount} {movieCount, plural, one {Movie} other {Movies}}"
 msgstr ""
 
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Remove All Flex"
+msgstr ""
+
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #~ msgid "Remove custom icon"
 #~ msgstr ""
@@ -3480,7 +3529,7 @@ msgstr ""
 msgid "Remove..."
 msgstr ""
 
-#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 msgid "Removes all Flex periods from the schedule."
 msgstr ""
 
@@ -3577,9 +3626,12 @@ msgstr ""
 msgid "Restore Default Settings"
 msgstr ""
 
-#: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "Restrict Hours"
+msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Restrict Hours..."
 msgstr ""
 
 #: src/components/search/SearchInput.tsx
@@ -4261,7 +4313,6 @@ msgstr ""
 msgid "Test Transcode"
 msgstr ""
 
-#: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours."
 msgstr ""

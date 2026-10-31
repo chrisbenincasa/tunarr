@@ -24,6 +24,7 @@ export function ChannelProgrammingTools() {
   return (
     <>
       <Button
+        id="channel-programming-tools-button"
         startIcon={<OrganizeIcon />}
         endIcon={<KeyboardArrowDownIcon />}
         onClick={handleClick}
@@ -35,7 +36,7 @@ export function ChannelProgrammingTools() {
       <StyledMenu
         id="channel-programming-tools"
         MenuListProps={{
-          'aria-labelledby': 'channel-programming-tools',
+          'aria-labelledby': 'channel-programming-tools-button',
         }}
         anchorEl={anchorEl}
         open={open}

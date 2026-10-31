@@ -36,6 +36,7 @@ import { ProgramDayCalendarView } from '../slot_scheduler/ProgramDayCalendarView
 import { ProgramWeekCalendarView } from '../slot_scheduler/ProgramWeekCalendarView.tsx';
 import AddProgrammingButton from './AddProgrammingButton.tsx';
 import ChannelLineupList from './ChannelLineupList.tsx';
+import { ChannelProgrammingFlexTools } from './ChannelProgrammingFlexTools.tsx';
 import { ChannelProgrammingSort } from './ChannelProgrammingSort.tsx';
 import { ChannelProgrammingTools } from './ChannelProgrammingTools.tsx';
 
@@ -202,6 +203,7 @@ export function ChannelProgrammingConfig() {
             gap={{ xs: 1 }}
             sx={{
               display: 'flex',
+              flexWrap: { sm: 'wrap' },
               columnGap: 1,
               alignItems: 'center',
               justifyContent: { sm: 'flex-end' },
@@ -211,6 +213,7 @@ export function ChannelProgrammingConfig() {
           >
             <ChannelProgrammingTools />
             <ChannelProgrammingSort />
+            <ChannelProgrammingFlexTools />
             <AddProgrammingButton />
             <Divider sx={{ mx: 1 }} orientation="vertical" flexItem />
 

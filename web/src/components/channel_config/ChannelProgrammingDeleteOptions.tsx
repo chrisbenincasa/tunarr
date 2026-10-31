@@ -3,7 +3,6 @@ import { Delete } from '@mui/icons-material';
 import { MenuItem } from '@mui/material';
 import { useRemoveAllProgramming } from '../../hooks/programming_controls/useRemoveAllProgramming';
 import { useRemoveDuplicates } from '../../hooks/programming_controls/useRemoveDuplicates';
-import { useRemoveFlex } from '../../hooks/programming_controls/useRemoveFlex';
 import { useRemoveSpecials } from '../../hooks/programming_controls/useRemoveSpecials';
 import { ElevatedTooltip } from '../base/ElevatedTooltip.tsx';
 
@@ -18,7 +17,6 @@ export function ChannelProgrammingDeleteOptions({
 }: DeleteOptionsProps) {
   const { t } = useLingui();
   const removeDuplicatePrograms = useRemoveDuplicates();
-  const removeFlex = useRemoveFlex();
   const removeAllProgramming = useRemoveAllProgramming();
   const removeSpecials = useRemoveSpecials();
 
@@ -31,22 +29,6 @@ export function ChannelProgrammingDeleteOptions({
       <MenuItem divider disabled>
         <Trans>Delete</Trans>
       </MenuItem>
-      <ElevatedTooltip
-        title={t`Removes all Flex periods from the schedule.`}
-        placement="right"
-        elevation={10}
-      >
-        <MenuItem
-          disableRipple
-          onClick={() => {
-            removeFlex();
-            handleClose();
-          }}
-        >
-          <Delete />
-          <Trans>Flex</Trans>
-        </MenuItem>
-      </ElevatedTooltip>
       <ElevatedTooltip
         title={t`Removes repeated programs.`}
         placement="right"

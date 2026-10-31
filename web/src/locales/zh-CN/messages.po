@@ -334,6 +334,7 @@ msgstr "访问令牌"
 msgid "Actions"
 msgstr ""
 
+#: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/library/ProgramListItem.tsx
 #: src/components/settings/AddPlexServer.tsx
 #: src/components/settings/media_source/AddMediaSourceButton.tsx
@@ -367,10 +368,13 @@ msgstr "添加筛选表达式以微调搜索结果"
 #~ msgid "Add all selected programs to channel"
 #~ msgstr "Add all selected programs to channel"
 
-#: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Add Breaks"
 msgstr "添加广告时段"
+
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Add Breaks..."
+msgstr ""
 
 #: src/components/programming_controls/AddRedirectModal.tsx
 msgid "Add Channel Redirect"
@@ -385,8 +389,8 @@ msgid "Add filler"
 msgstr "添加垫片"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
-msgid "Add Flex"
-msgstr "添加弹性时间"
+#~ msgid "Add Flex"
+#~ msgstr "添加弹性时间"
 
 #: src/components/programming_controls/AddFlexModal.tsx
 msgid "Add Flex Time"
@@ -400,14 +404,12 @@ msgstr "添加分组"
 msgid "Add Language Preference"
 msgstr "添加语言偏好"
 
-#: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
 msgid "Add Media"
 msgstr "添加媒体"
 
-#: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/programming_controls/AddPaddingModal.tsx
 msgid "Add Padding"
 msgstr "添加填充"
@@ -426,8 +428,8 @@ msgid "Add programming to custom show"
 msgstr "向自定义剧集添加节目"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
-msgid "Add Redirect"
-msgstr "添加跳转"
+#~ msgid "Add Redirect"
+#~ msgstr "添加跳转"
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "Add Selected Media"
@@ -454,18 +456,30 @@ msgstr "向节目列表添加剧集或电影。"
 msgid "Adds a channel redirect. During this period of time, the channel will redirect to another channel."
 msgstr "添加频道跳转。在该时段内，频道将跳转到另一个频道。"
 
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Adds Flex after each TV episode or movie so the next program starts at one of the allowed minute marks, such as XX:00 or XX:30. Removes existing Flex first."
+msgstr ""
+
 #: src/components/programming_controls/AddPaddingModal.tsx
 msgid "Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks."
 msgstr "在每个剧集或电影后添加弹性间隔，确保节目在允许的分钟标记处开始。"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/channel_config/AddProgrammingButton.tsx
-msgid "Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large."
-msgstr "在每个剧集或电影后添加弹性间隔，确保节目在允许的分钟标记处开始。例如，你可以用此功能让所有节目都在 XX:00 或 XX:30 开始。添加新间隔前会先移除已有的弹性时段。若频道规模过大，此按钮可能被禁用。"
+#~ msgid "Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks. For example, you can use this to ensure that all your programs start at either XX:00 times or XX:30 times. Removes any existing Flex periods before adding the new ones. This button might be disabled if the channel is already too large."
+#~ msgstr "在每个剧集或电影后添加弹性间隔，确保节目在允许的分钟标记处开始。例如，你可以用此功能让所有节目都在 XX:00 或 XX:30 开始。添加新间隔前会先移除已有的弹性时段。若频道规模过大，此按钮可能被禁用。"
+
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Adds Flex breaks between programs so that no run of consecutive programs goes longer than the time you set. Existing Flex stays in place."
+msgstr ""
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes."
 msgstr "在节目之间添加弹性间隔，尽量避免连续节目的总时长超过指定的分钟数。"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Adds one Flex time slot. To add Flex across the whole lineup at once, use the Flex menu next to Add."
+msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Adjust the output volume (not recommended). Values higher than 100 will boost the audio."
@@ -2094,8 +2108,7 @@ msgstr "固定"
 msgid "Fixed Interval"
 msgstr "固定间隔"
 
-#: src/components/channel_config/AddProgrammingButton.tsx
-#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 #: src/components/channel_config/EditChannelForm.tsx
 #: src/hooks/programming_controls/useSlotProgramOptions.ts
 #: src/hooks/programming_controls/useSlotProgramOptions.ts
@@ -2105,12 +2118,20 @@ msgstr "固定间隔"
 msgid "Flex"
 msgstr "弹性时间"
 
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Flex Slot..."
+msgstr ""
+
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Flex Style"
 msgstr "弹性时间样式"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+#~ msgid "Flex..."
+#~ msgstr ""
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
@@ -2713,6 +2734,10 @@ msgstr "媒体源是 Tunarr 获取内容的来源。内容可以来自你的文�
 msgid "Media Type"
 msgstr "媒体类型"
 
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Media..."
+msgstr ""
+
 #: src/pages/system/SystemLogsPage.tsx
 msgid "Message"
 msgstr "消息"
@@ -3129,6 +3154,10 @@ msgstr "概览"
 msgid "Pad Start Times"
 msgstr "对齐开始时间"
 
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Pad Start Times..."
+msgstr ""
+
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Pad Style"
@@ -3220,6 +3249,14 @@ msgstr "播放列表"
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Opens the shuffle settings, where you can start every show at its first episode or loop shorter shows."
 msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first, and removes programs longer than the allowed hours."
+msgstr ""
+
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+#~ msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first."
+#~ msgstr ""
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
@@ -3316,8 +3353,12 @@ msgid "Programs"
 msgstr "节目"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
-msgid "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases."
-msgstr "安排一个弹性时间时段。通常你会使用填充时间、限制时段或添加广告来批量生成弹性时间，此功能则适用于更具体的场景。"
+#~ msgid "Programs a Flex time slot. Normally you'd use pad times, restrict times or add breaks to add a large quantity of Flex times at once, but this exists for more specific cases."
+#~ msgstr "安排一个弹性时间时段。通常你会使用填充时间、限制时段或添加广告来批量生成弹性时间，此功能则适用于更具体的场景。"
+
+#: src/components/channel_config/AddProgrammingButton.tsx
+#~ msgid "Programs a single Flex time slot. To add Flex across the whole lineup at once, use the Flex menu."
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "Programs saved!"
@@ -3407,6 +3448,10 @@ msgstr "跳转到「{0}」"
 msgid "Redirect to Channel {0}"
 msgstr "跳转到频道 {0}"
 
+#: src/components/channel_config/AddProgrammingButton.tsx
+msgid "Redirect..."
+msgstr ""
+
 #: src/hooks/useVersion.tsx
 msgid "Refresh"
 msgstr "刷新"
@@ -3466,6 +3511,10 @@ msgstr "全部移除"
 msgid "Remove All {movieCount} {movieCount, plural, one {Movie} other {Movies}}"
 msgstr "移除全部 {movieCount} {movieCount, plural, other {部电影}}"
 
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Remove All Flex"
+msgstr ""
+
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #~ msgid "Remove custom icon"
 #~ msgstr "Remove custom icon"
@@ -3482,7 +3531,7 @@ msgstr "移除节目"
 msgid "Remove..."
 msgstr "移除…"
 
-#: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 msgid "Removes all Flex periods from the schedule."
 msgstr "移除排期中的所有弹性时段。"
 
@@ -3579,10 +3628,13 @@ msgstr "恢复默认台标"
 msgid "Restore Default Settings"
 msgstr "恢复默认设置"
 
-#: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "Restrict Hours"
 msgstr "限制时段"
+
+#: src/components/channel_config/ChannelProgrammingFlexTools.tsx
+msgid "Restrict Hours..."
+msgstr ""
 
 #: src/components/search/SearchInput.tsx
 msgid "Restrict search fields"
@@ -4263,7 +4315,6 @@ msgstr "测试播放"
 msgid "Test Transcode"
 msgstr "测试转码"
 
-#: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours."
 msgstr "频道在指定时段内的常规节目安排，其余时间由弹性时间填充。"
