@@ -1,4 +1,6 @@
-import type { SettingsDB } from '@/db/SettingsDB.js';
+import { defaultXmlTvSettings, type SettingsDB } from '@/db/SettingsDB.js';
+import { globalOptions } from '@/globals.js';
+import { resolveXmlTvOutputPath } from '@/services/xmltvOutputPath.js';
 import type { ChannelOrm } from '@/db/schema/Channel.js';
 import { KEYS } from '@/types/inject.js';
 import { getChannelId } from '@/util/channels.js';
@@ -96,7 +98,20 @@ export class XmlTvWriter {
   private async writeInternal(channels: MaterializedChannelPrograms[]) {
     const content = await this.serialize(channels);
 
-    return await writeFile(this.settingsDB.xmlTvSettings().outputPath, content);
+    const configuredPath = this.settingsDB.xmlTvSettings().outputPath;
+    const outputPath = await resolveXmlTvOutputPath(
+      configuredPath,
+      defaultXmlTvSettings(globalOptions().databaseDirectory).outputPath,
+    );
+    if (outputPath !== configuredPath) {
+      this.logger.warn(
+        'Cannot write XMLTV file at %s. Writing to %s instead.',
+        configuredPath,
+        outputPath,
+      );
+    }
+
+    return await writeFile(outputPath, content);
   }
 
   /**

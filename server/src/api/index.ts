@@ -1,7 +1,9 @@
 import type { FfmpegEncoder } from '@/ffmpeg/ffmpegInfo.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { globalOptions, serverOptions } from '@/globals.js';
+import { defaultXmlTvSettings } from '@/db/SettingsDB.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
+import { resolveXmlTvOutputPath } from '@/services/xmltvOutputPath.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { fileExists } from '@/util/fsUtil.js';
@@ -241,11 +243,11 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       try {
         const host = `${req.protocol}://${req.host}`;
 
-        const xmltvSettings = req.serverCtx.settings.xmlTvSettings();
-        const fileContent = await fsPromises.readFile(
-          xmltvSettings.outputPath,
-          'utf8',
+        const outputPath = await resolveXmlTvOutputPath(
+          req.serverCtx.settings.xmlTvSettings().outputPath,
+          defaultXmlTvSettings(globalOptions().databaseDirectory).outputPath,
         );
+        const fileContent = await fsPromises.readFile(outputPath, 'utf8');
         const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
         return res
           .header('Cache-Control', 'no-store')
