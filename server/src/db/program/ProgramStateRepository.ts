@@ -50,6 +50,36 @@ export class ProgramStateRepository {
     }
   }
 
+  /** Returns the subset of `ids` that have a program row. */
+  async findExistingProgramIds(ids: readonly string[]): Promise<Set<string>> {
+    const existing = new Set<string>();
+    for (const idChunk of chunk(ids, 500)) {
+      const rows = await this.drizzleDB
+        .select({ uuid: Program.uuid })
+        .from(Program)
+        .where(inArray(Program.uuid, idChunk));
+      for (const { uuid } of rows) {
+        existing.add(uuid);
+      }
+    }
+    return existing;
+  }
+
+  /** Returns the subset of `ids` that have a program grouping row. */
+  async findExistingGroupingIds(ids: readonly string[]): Promise<Set<string>> {
+    const existing = new Set<string>();
+    for (const idChunk of chunk(ids, 500)) {
+      const rows = await this.drizzleDB
+        .select({ uuid: ProgramGrouping.uuid })
+        .from(ProgramGrouping)
+        .where(inArray(ProgramGrouping.uuid, idChunk));
+      for (const { uuid } of rows) {
+        existing.add(uuid);
+      }
+    }
+    return existing;
+  }
+
   async countMissingPrograms(): Promise<number> {
     const [result] = await this.drizzleDB
       .select({ count: sql<number>`count(*)` })
