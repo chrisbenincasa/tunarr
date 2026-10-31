@@ -37,6 +37,12 @@ export function mapLineupItemToPlaybackItem(
 
   if (isContentBackedLineupItem(lineupItem)) {
     const program = lineupItem.program;
+    // An episode's show title lives on the parent grouping, not on a column
+    // of the program row: nothing writes `program.showTitle` for a scanned
+    // item, so read the show relation the stream query loads. The flat column
+    // is still populated by the legacy v14 migration, so it stays as the
+    // fallback for installs that upgraded instead of rescanning (#2216).
+    const showTitle = program.show?.title ?? program.showTitle;
     return {
       type: 'content',
       itemStartedAtMs,
@@ -45,8 +51,8 @@ export function mapLineupItemToPlaybackItem(
       programId: program.uuid,
       // For TV episodes: show title is the primary title, episode title is secondary
       // For movies: program title is the primary title
-      title: program.showTitle ?? program.title,
-      episodeTitle: program.showTitle ? program.title : undefined,
+      title: showTitle ?? program.title,
+      episodeTitle: showTitle ? program.title : undefined,
       seasonNumber: program.seasonNumber ?? undefined,
       episodeNumber: program.episode ?? undefined,
       summary: program.summary ?? undefined,

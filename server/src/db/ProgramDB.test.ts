@@ -1971,6 +1971,46 @@ describe('ProgramDB', () => {
     });
   });
 
+  describe('stream program relations (#2216)', () => {
+    test('an episode loaded for streaming carries its show title', async ({
+      programDb,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle);
+
+      const showResult = await programDb.upsertProgramGrouping(
+        createProgramGrouping('show', library.uuid, 'plex', {
+          mediaSourceId: library.mediaSourceId,
+          title: 'Breaking Bad',
+        }),
+      );
+
+      const [episode] = await programDb.upsertPrograms([
+        {
+          program: createBaseProgram('episode', library.uuid, 'plex', {
+            mediaSourceId: library.mediaSourceId,
+            tvShowUuid: showResult.entity.uuid,
+            title: 'Pilot',
+          }),
+          externalIds: [],
+          genres: [],
+          studios: [],
+          artwork: [],
+          credits: [],
+          versions: [],
+          subtitles: [],
+          tags: [],
+        },
+      ]);
+
+      const loaded = await programDb.getStreamProgramById(episode.uuid);
+
+      // Stream code only joins what it needs to start a stream; native
+      // playback reads the show title, which lives on the parent grouping.
+      expect(loaded?.show?.title).toBe('Breaking Bad');
+    });
+  });
+
   describe('Program Parent-Child Relationships', () => {
     // Skip for now - this method requires inserting a program for each child grouping
     // in order to work

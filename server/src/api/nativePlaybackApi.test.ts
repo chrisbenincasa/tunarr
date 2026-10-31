@@ -108,6 +108,25 @@ describe('mapLineupItemToPlaybackItem', () => {
     }
   });
 
+  test('TV episode: title from the loaded show relation when showTitle is empty', () => {
+    const showTitle = 'Breaking Bad';
+    const episodeTitle = 'Pilot';
+    const item = makeProgramItem({
+      title: episodeTitle,
+      showTitle: null,
+      show: { title: showTitle } as StreamLineupProgram['show'],
+      type: 'episode',
+    });
+
+    const result = mapLineupItemToPlaybackItem(item, baseUrl, channelId);
+
+    expect(result.type).toBe('content');
+    if (result.type === 'content') {
+      expect(result.title).toBe(showTitle);
+      expect(result.episodeTitle).toBe(episodeTitle);
+    }
+  });
+
   test('content item maps season and episode numbers', () => {
     const item = makeProgramItem({
       type: 'episode',
