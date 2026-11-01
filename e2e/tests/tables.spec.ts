@@ -251,6 +251,7 @@ const TABLES: Record<string, TableTarget> = {
     url: () => '/system/logs',
     ready: 'info',
     persisted: false,
+    ported: true,
     sortColumn: 'Timestamp',
     hideColumn: 'Component',
     filter: async (page) => {
