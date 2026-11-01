@@ -327,11 +327,11 @@ msgstr "约 "
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Access Token"
-msgstr "访问令牌<<<<<<< HEAD"
+msgstr "访问令牌"
 
 #: src/components/ui/table/ActionsHeader.tsx
 msgid "Actions"
-msgstr "<<<<<<< HEAD"
+msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/library/ProgramListItem.tsx
@@ -957,23 +957,15 @@ msgstr "配置为 HLS 直连流模式的频道将按所选容器格式输出。"
 
 #: src/pages/system/StatusPage.tsx
 msgid "Channels M3U Link:"
-msgstr "频道 M3U 链接：<<<<<<< HEAD"
+msgstr "频道 M3U 链接："
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Channels play your content on a schedule, like live TV."
 msgstr ""
 
-#: src/pages/welcome/WelcomePage.tsx
-#~ msgid "Channels play your content on a schedule, like live TV.>>>>>>> b50ff0395 (feat(web): replace the welcome stepper with a skippable setup checklist)"
-#~ msgstr ""
-
 #: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
 msgid "Channels using this config cannot stream on the ErsatzTV next backend"
 msgstr ""
-
-#: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
-#~ msgid "Channels using this config cannot stream on the ErsatzTV next backend======="
-#~ msgstr ""
 
 #: src/pages/system/SystemDebugPage.tsx
 #: src/pages/system/SystemDebugPage.tsx
@@ -1493,7 +1485,7 @@ msgstr "将节目分成 4、6、8 或 12 小时的块，然后按指定次数重
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Do not group programs at all. Normal shuffle."
-msgstr "不对节目做任何分组，普通随机。<<<<<<< HEAD"
+msgstr "不对节目做任何分组，普通随机。"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Docs"
@@ -2173,15 +2165,15 @@ msgstr ""
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Flex Style"
-msgstr "弹性时间样式<<<<<<< HEAD"
+msgstr "弹性时间样式"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #~ msgid "Flex..."
-#~ msgstr "======="
+#~ msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Follow these steps to set up your first channel. Each step will update upon completion. You can skip setup at any time and do all of this from the menu later."
-msgstr ">>>>>>> 371edab88 (fix(web): address welcome checklist review)"
+msgstr ""
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
@@ -2269,11 +2261,11 @@ msgstr "硬件加速"
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Hardware Acceleration"
-msgstr "硬件加速<<<<<<< HEAD<<<<<<< HEAD"
+msgstr "硬件加速"
 
 #: src/pages/welcome/WelcomePage.tsx
 #~ msgid "HDHomeRun Settings"
-#~ msgstr "=======>>>>>>> 4e169fab3 (chore: regenerate OpenAPI spec and lingui catalogs after rebase)"
+#~ msgstr ""
 
 #: src/components/shell/useShellNav.tsx
 msgid "HDHR"

@@ -327,11 +327,11 @@ msgstr "about "
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Access Token"
-msgstr "Access Token<<<<<<< HEAD"
+msgstr "Access Token"
 
 #: src/components/ui/table/ActionsHeader.tsx
 msgid "Actions"
-msgstr "Actions<<<<<<< HEAD"
+msgstr "Actions"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/library/ProgramListItem.tsx
@@ -957,15 +957,15 @@ msgstr "Channels configured to use the HLS Direct stream mode will output in the
 
 #: src/pages/system/StatusPage.tsx
 msgid "Channels M3U Link:"
-msgstr "Channels M3U Link:<<<<<<< HEAD"
+msgstr "Channels M3U Link:"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Channels play your content on a schedule, like live TV."
-msgstr "Channels play your content on a schedule, like live TV.>>>>>>> b50ff0395 (feat(web): replace the welcome stepper with a skippable setup checklist)"
+msgstr "Channels play your content on a schedule, like live TV."
 
 #: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
 msgid "Channels using this config cannot stream on the ErsatzTV next backend"
-msgstr "Channels using this config cannot stream on the ErsatzTV next backend======="
+msgstr "Channels using this config cannot stream on the ErsatzTV next backend"
 
 #: src/pages/system/SystemDebugPage.tsx
 #: src/pages/system/SystemDebugPage.tsx
@@ -1485,7 +1485,7 @@ msgstr "Divides the programming in blocks of 4, 6, 8 or 12 hours then repeats ea
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Do not group programs at all. Normal shuffle."
-msgstr "Do not group programs at all. Normal shuffle.<<<<<<< HEAD"
+msgstr "Do not group programs at all. Normal shuffle."
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Docs"
@@ -2165,15 +2165,15 @@ msgstr "Flex Slot..."
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Flex Style"
-msgstr "Flex Style<<<<<<< HEAD"
+msgstr "Flex Style"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #~ msgid "Flex..."
-#~ msgstr "Flex...======="
+#~ msgstr "Flex..."
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Follow these steps to set up your first channel. Each step will update upon completion. You can skip setup at any time and do all of this from the menu later."
-msgstr "Follow these steps to set up your first channel. Each step will update upon completion. You can skip setup at any time and do all of this from the menu later.>>>>>>> 371edab88 (fix(web): address welcome checklist review)"
+msgstr "Follow these steps to set up your first channel. Each step will update upon completion. You can skip setup at any time and do all of this from the menu later."
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
@@ -2261,11 +2261,11 @@ msgstr "Hardware Accel."
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Hardware Acceleration"
-msgstr "Hardware Acceleration<<<<<<< HEAD<<<<<<< HEAD"
+msgstr "Hardware Acceleration"
 
 #: src/pages/welcome/WelcomePage.tsx
 #~ msgid "HDHomeRun Settings"
-#~ msgstr "HDHomeRun Settings=======>>>>>>> 4e169fab3 (chore: regenerate OpenAPI spec and lingui catalogs after rebase)"
+#~ msgstr "HDHomeRun Settings"
 
 #: src/components/shell/useShellNav.tsx
 msgid "HDHR"
