@@ -229,6 +229,7 @@ const TABLES: Record<string, TableTarget> = {
     url: () => '/system/tasks',
     ready: 'BackupTask',
     persisted: false,
+    ported: true,
     sortColumn: 'Name',
     hideColumn: 'Description',
     filter: async (page) => {

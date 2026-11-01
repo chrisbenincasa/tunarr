@@ -21,19 +21,23 @@ import {
 import { useMutation, useSuspenseQuery } from '@tanstack/react-query';
 import type { Task } from '@tunarr/types';
 import { maxBy, minBy } from 'lodash-es';
-import type { MRT_ColumnDef } from 'material-react-table';
-import {
-  MaterialReactTable,
-  useMaterialReactTable,
-} from 'material-react-table';
 import { useSnackbar } from 'notistack';
 import { useCallback, useMemo, useState } from 'react';
+import { DataTable } from '../../components/ui/table/DataTable.tsx';
+import { actionsColumn } from '../../components/ui/table/columns.tsx';
+import {
+  createAppColumnHelper,
+  useTunarrTable,
+} from '../../components/ui/table/tunarrTable.ts';
 import {
   getApiTasksOptions,
   postApiTasksByIdRunMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
+import { isNonEmptyString } from '../../helpers/util.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import type { Nullable } from '../../types/util.ts';
+
+const columnHelper = createAppColumnHelper<Task>();
 
 export default function TaskSettingsPage() {
   const { t } = useLingui();
@@ -86,54 +90,6 @@ export default function TaskSettingsPage() {
     [runTaskNowMutation, snackbar, t],
   );
 
-  const columns = useMemo<MRT_ColumnDef<Task>[]>(
-    () => [
-      {
-        header: t`Name`,
-        accessorKey: 'name',
-      },
-      {
-        header: t`Description`,
-        id: 'description',
-        accessorFn: (row) => {
-          return row.description ?? '-';
-        },
-        enableSorting: false,
-      },
-      {
-        header: t`Last Scheduled Execution`,
-        id: 'lastScheduledExecution',
-        accessorFn: (originalRow) => {
-          const max = maxBy(
-            originalRow.scheduledTasks,
-            (task) => task.lastExecutionEpoch,
-          );
-          const epoch = max?.lastExecutionEpoch;
-          if (!epoch) {
-            return '-';
-          }
-          return dayjs(epoch * 1000).format('llll');
-        },
-      },
-      {
-        header: t`Next Scheduled Execution`,
-        id: 'nextScheduledExecution',
-        accessorFn: (originalRow) => {
-          const min = minBy(
-            originalRow.scheduledTasks,
-            (task) => task.nextExecutionEpoch,
-          );
-          const epoch = min?.nextExecutionEpoch;
-          if (!epoch) {
-            return '-';
-          }
-          return dayjs(epoch * 1000).format('llll');
-        },
-      },
-    ],
-    [dayjs, t],
-  );
-
   const openTaskActionMenu = useCallback(
     (target: HTMLElement, taskId: string) => {
       setMenuRef(target);
@@ -142,49 +98,68 @@ export default function TaskSettingsPage() {
     [],
   );
 
-  const table = useMaterialReactTable<Task>({
-    columns,
-    data: tasks ?? [],
-    enableRowActions: true,
-    layoutMode: 'semantic',
-    displayColumnDefOptions: {
-      'mrt-row-actions': {
-        grow: true,
-        Header: '',
-        visibleInShowHideMenu: false,
-        muiTableBodyCellProps: {
-          sx: {
-            flexDirection: 'row',
-          },
-          align: 'right',
-        },
-      },
-    },
-    renderRowActions: ({ row }) => {
-      return (
-        <Box sx={{ display: 'flex', flexWrap: 'nowrap', gap: '8px' }}>
-          <IconButton
-            onClick={(e) =>
-              openTaskActionMenu(e.currentTarget, row.original.id)
+  const columns = useMemo(
+    () => [
+      ...columnHelper.columns([
+        columnHelper.accessor('name', { header: t`Name` }),
+        columnHelper.accessor((task) => task.description ?? '-', {
+          id: 'description',
+          header: t`Description`,
+          enableSorting: false,
+        }),
+        columnHelper.accessor(
+          (task) => {
+            const max = maxBy(
+              task.scheduledTasks,
+              (scheduled) => scheduled.lastExecutionEpoch,
+            );
+            const epoch = max?.lastExecutionEpoch;
+            if (!epoch) {
+              return '-';
             }
+            return dayjs(epoch * 1000).format('llll');
+          },
+          {
+            id: 'lastScheduledExecution',
+            header: t`Last Scheduled Execution`,
+          },
+        ),
+        columnHelper.accessor(
+          (task) => {
+            const min = minBy(
+              task.scheduledTasks,
+              (scheduled) => scheduled.nextExecutionEpoch,
+            );
+            const epoch = min?.nextExecutionEpoch;
+            if (!epoch) {
+              return '-';
+            }
+            return dayjs(epoch * 1000).format('llll');
+          },
+          {
+            id: 'nextScheduledExecution',
+            header: t`Next Scheduled Execution`,
+          },
+        ),
+      ]),
+      actionsColumn<Task>({
+        render: ({ original: task }) => (
+          <IconButton
+            aria-label={t`Actions`}
+            aria-haspopup="menu"
+            onClick={(e) => openTaskActionMenu(e.currentTarget, task.id)}
           >
             <MoreVert />
           </IconButton>
-          <Menu
-            open={!!menuRef && row.original.id === selectedTaskMenu}
-            anchorEl={menuRef}
-            onClose={() => setMenuRef(null)}
-          >
-            <MenuItem onClick={() => runTaskNow(row.original.id)}>
-              <ListItemIcon>
-                <PlayArrowOutlined />
-              </ListItemIcon>
-              <ListItemText primary={t`Run`} />
-            </MenuItem>
-          </Menu>
-        </Box>
-      );
-    },
+        ),
+      }),
+    ],
+    [dayjs, openTaskActionMenu, t],
+  );
+
+  const table = useTunarrTable({
+    columns,
+    data: tasks,
   });
 
   const renderMobileList = () => (
@@ -277,7 +252,29 @@ export default function TaskSettingsPage() {
           </Trans>
         </Typography>
       </Box>
-      {isMobile ? renderMobileList() : <MaterialReactTable table={table} />}
+      {isMobile ? (
+        renderMobileList()
+      ) : (
+        <DataTable table={table} aria-label={t`Tasks`} />
+      )}
+      <Menu
+        open={!!menuRef && isNonEmptyString(selectedTaskMenu)}
+        anchorEl={menuRef}
+        onClose={() => setMenuRef(null)}
+      >
+        <MenuItem
+          onClick={() => {
+            if (isNonEmptyString(selectedTaskMenu)) {
+              runTaskNow(selectedTaskMenu);
+            }
+          }}
+        >
+          <ListItemIcon>
+            <PlayArrowOutlined />
+          </ListItemIcon>
+          <ListItemText primary={t`Run`} />
+        </MenuItem>
+      </Menu>
     </Stack>
   );
 }
