@@ -311,7 +311,7 @@ export const ClassicTvDayPreset: ChannelPreset = {
     flexPreference: 'end',
     maxDays: 30,
     period: 'day',
-    padMs: 0,
+    padMs: 1,
     latenessMs: 900000,
     overflow: { type: 'duration', maxMs: 0 },
     timeZoneOffset: 0,
