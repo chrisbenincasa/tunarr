@@ -541,7 +541,6 @@ export class TroubleshootService {
           this.celService,
           celContext,
           selectionLineupItem,
-          { preferTextBased: true },
         );
 
         trace.levels = evaluation.levels.map((levelTrace, levelIdx) => {
