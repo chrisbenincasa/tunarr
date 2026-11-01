@@ -152,7 +152,6 @@
         "src/pages/channels/ChannelsPage.tsx",
         "src/pages/library/CustomShowsPage.tsx",
         "src/pages/library/TrashPage.tsx",
-        "src/pages/settings/MediaSourceSettingsPage.tsx",
         "src/pages/system/StatusPage.tsx",
         "src/pages/system/SystemLogsPage.tsx",
         "src/pages/system/TroubleshootPage.tsx"

@@ -187,6 +187,7 @@ const TABLES: Record<string, TableTarget> = {
     url: () => '/settings/sources',
     ready: 'E2E Shows',
     persisted: true,
+    ported: true,
     sortColumn: 'Name',
     hideColumn: 'URL',
     filter: async (page) => {
