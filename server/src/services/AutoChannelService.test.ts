@@ -4,6 +4,8 @@ import type { TranscodeConfigDB } from '@/db/TranscodeConfigDB.js';
 import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
 import { Result } from '@/types/result.js';
 import type { AutoChannelCreateRequest } from '@tunarr/types/api';
+import { BuiltInPresets } from '@tunarr/shared/channel-templates';
+import { AutoChannelCreateRequestSchema } from '@tunarr/types/api';
 import { describe, expect, test, vi } from 'vitest';
 import { AutoChannelService } from './AutoChannelService.ts';
 import type { MeilisearchService } from './MeilisearchService.ts';
@@ -17,6 +19,10 @@ vi.mock('@/services/Scheduler.js', () => ({
 vi.mock('@/db/converters/channelConverters.js', () => ({
   dbChannelToApiChannel: (channel: { uuid: string }) => ({ id: channel.uuid }),
 }));
+
+function collectionId(n: number) {
+  return `00000000-0000-4000-8000-${n.toString().padStart(12, '0')}`;
+}
 
 const DefaultConfigId = '5f0e7c2a-3b1d-4e8f-9a6c-1d2b3c4d5e6f';
 const ChannelId = 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d';
@@ -38,7 +44,9 @@ function makeService(opts: ServiceOptions = {}) {
   let collectionCount = 0;
   const smartCollectionsDB = {
     insert: vi.fn(() =>
-      Promise.resolve(Result.success({ uuid: `coll-${++collectionCount}` })),
+      Promise.resolve(
+        Result.success({ uuid: collectionId(++collectionCount) }),
+      ),
     ),
     materializeSmartCollection: vi.fn(() => Promise.resolve(programs)),
     delete: vi.fn(() => Promise.resolve()),
@@ -93,6 +101,44 @@ const weightedMixRequest = (
     type: 'weighted_mix',
     groups: Object.keys(queries).map((role) => ({ role, weight: 1 })),
   },
+});
+
+const Hour = 60 * 60 * 1000;
+
+function classicTvDayRequest(startTimes: number[]): AutoChannelCreateRequest {
+  const roles = startTimes.map((_, i) => `block_${i + 1}`);
+  return {
+    presetId: 'classic-tv-day',
+    contentAssignments: Object.fromEntries(
+      roles.map((role) => [
+        role,
+        { query: { filterString: 'genre = "News"' } },
+      ]),
+    ),
+    dynamicParams: {
+      type: 'classic_tv_day',
+      blocks: roles.map((role, i) => ({ role, startTime: startTimes[i] ?? 0 })),
+    },
+  };
+}
+
+describe('AutoChannelCreateRequestSchema', () => {
+  test.each([0.5, -1, 24 * Hour])(
+    'rejects a Classic TV Day start time of %s',
+    (startTime) => {
+      const request = classicTvDayRequest([startTime]);
+      expect(AutoChannelCreateRequestSchema.safeParse(request).success).toBe(
+        false,
+      );
+    },
+  );
+
+  test('accepts a start time within the day', () => {
+    const request = classicTvDayRequest([23 * Hour + 59 * 60 * 1000]);
+    expect(AutoChannelCreateRequestSchema.safeParse(request).success).toBe(
+      true,
+    );
+  });
 });
 
 describe('AutoChannelService.createChannel', () => {
@@ -229,6 +275,49 @@ describe('AutoChannelService.createChannel', () => {
     expect(smartCollectionsDB.insert).not.toHaveBeenCalled();
   });
 
+  test.each(
+    BuiltInPresets.filter((p) => !p.dynamicRequirements).map((p) => [p.id, p]),
+  )('creates a channel from the %s preset', async (_id, preset) => {
+    const { service, channelDB } = makeService();
+
+    await service.createChannel({
+      presetId: preset.id,
+      contentAssignments: Object.fromEntries(
+        preset.contentRequirements.map((req) => [
+          req.role,
+          { query: { filterString: 'genre = "News"' } },
+        ]),
+      ),
+    });
+
+    expect(channelDB.updateLineup).toHaveBeenCalledOnce();
+  });
+
+  test('builds a Classic TV Day schedule the strict validator accepts', async () => {
+    const { service, channelDB } = makeService();
+
+    await service.createChannel(classicTvDayRequest([0, 12 * Hour]));
+
+    expect(channelDB.updateLineup).toHaveBeenCalledWith(
+      ChannelId,
+      expect.objectContaining({
+        type: 'time',
+        schedule: expect.objectContaining({ padMs: 1 }) as unknown,
+      }),
+    );
+  });
+
+  test('rolls back when a block starts outside the day', async () => {
+    const { service, smartCollectionsDB, channelDB } = makeService();
+
+    await expect(
+      service.createChannel(classicTvDayRequest([0, 25 * Hour])),
+    ).rejects.toThrow('Invalid schedule');
+
+    expect(smartCollectionsDB.delete).toHaveBeenCalledTimes(2);
+    expect(channelDB.saveChannel).not.toHaveBeenCalled();
+  });
+
   test('deletes its collections when a role has too few programs', async () => {
     const { service, smartCollectionsDB, channelDB } = makeService({
       programs: [],
@@ -238,7 +327,7 @@ describe('AutoChannelService.createChannel', () => {
       'needs at least 1',
     );
 
-    expect(smartCollectionsDB.delete).toHaveBeenCalledWith('coll-1');
+    expect(smartCollectionsDB.delete).toHaveBeenCalledWith(collectionId(1));
     expect(channelDB.saveChannel).not.toHaveBeenCalled();
   });
 
@@ -251,7 +340,7 @@ describe('AutoChannelService.createChannel', () => {
     );
 
     expect(channelDB.deleteChannel).toHaveBeenCalledWith(ChannelId);
-    expect(smartCollectionsDB.delete).toHaveBeenCalledWith('coll-1');
+    expect(smartCollectionsDB.delete).toHaveBeenCalledWith(collectionId(1));
   });
 });
 
