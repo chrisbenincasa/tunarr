@@ -30,6 +30,7 @@
 - System Logs follows the app-wide density. Under MRT it defaulted to compact.
 - The Tasks row menu is one shared menu outside the table, so the column defs no longer rebuild when it opens.
 - The ports add no new Lingui strings. New accessible names reuse existing messages.
+- Phase 0's hidden "Actions" header label made every page with an actions column scroll sideways, Filler Lists included. `sx` reads `width: 1` as 100%, so the absolutely placed label spanned its containing block. It now uses `'1px'`, and ported pages in the parity spec must fit a 1440px viewport.
 
 ### Phase 0 notes
 

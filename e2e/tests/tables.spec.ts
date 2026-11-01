@@ -365,6 +365,17 @@ for (const [name, target] of Object.entries(TABLES)) {
     }
 
     if (target.ported) {
+      test('fits the page width', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await open(page);
+        const overflow = await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth -
+            document.documentElement.clientWidth,
+        );
+        expect(overflow).toBe(0);
+      });
+
       test('counts and clears filters', async ({ page }) => {
         await open(page);
         const rowsBefore = await bodyRows(page).count();
