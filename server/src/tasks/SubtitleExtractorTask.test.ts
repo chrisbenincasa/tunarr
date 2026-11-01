@@ -37,7 +37,7 @@ vi.mock('../util/fsUtil.ts', () => ({
 const MEDIA_SOURCE_ID = 'media-source-1' as MediaSourceId;
 const PROGRAM_ID = 'program-1';
 const CHANNEL_ID = 'channel-1';
-const OTHER_CHANNEL_ID = 'channel-2';
+const CUSTOM_SHOW_ID = 'custom-show-1';
 const SOURCE_SUBTITLE_PATH = '/data/media/movie.eng.srt';
 const SHARED_SUBTITLE_PATH = '/mnt/media/movie.eng.srt';
 const CACHED_SUBTITLE_PATH = '/tmp/test-tunarr/cache/subtitles/ab/cd/abcd.srt';
@@ -76,6 +76,7 @@ function makeHarness(opts: {
   subtitles: SubtitleRow[];
   sourceType?: 'jellyfin' | 'emby' | 'plex';
   replacePaths?: { localPath: string; serverPath: string }[];
+  anyProfileMayPickSubtitles?: boolean;
   mayPickSubtitles?: boolean;
   enableSubtitleExtraction?: boolean;
   downloadedPath?: string;
@@ -126,28 +127,28 @@ function makeHarness(opts: {
     getSubtitles: getSubtitlesByKey,
   };
 
-  const getChannelGuides = vi.fn((_range: unknown, channelIds: string[]) =>
-    Promise.resolve(
-      channelIds.includes(CHANNEL_ID)
-        ? [
-            {
-              id: CHANNEL_ID,
-              programs: [
-                {
-                  type: 'content',
-                  id: PROGRAM_ID,
-                  program: {
-                    title: 'Test Movie',
-                    externalId: 'jf-item-1',
-                    mediaSourceId: MEDIA_SOURCE_ID,
-                    sourceType,
-                  },
-                },
-              ],
+  const getChannelGuides = vi.fn((_range: unknown) =>
+    Promise.resolve([
+      {
+        id: CHANNEL_ID,
+        programs: [
+          {
+            type: 'content',
+            id: PROGRAM_ID,
+            program: {
+              title: 'Test Movie',
+              externalId: 'jf-item-1',
+              mediaSourceId: MEDIA_SOURCE_ID,
+              sourceType,
             },
-          ]
-        : [],
-    ),
+          },
+        ],
+      },
+    ]),
+  );
+
+  const mayPickSubtitles = vi.fn((_ctx: unknown) =>
+    Promise.resolve(opts.mayPickSubtitles ?? true),
   );
 
   const task = new SubtitleExtractorTask(
@@ -156,8 +157,17 @@ function makeHarness(opts: {
       getChannelGuides,
     } as never,
     {
-      getAllChannels: () =>
-        Promise.resolve([{ uuid: CHANNEL_ID }, { uuid: OTHER_CHANNEL_ID }]),
+      loadLineup: () =>
+        Promise.resolve({
+          items: [
+            {
+              type: 'content',
+              id: PROGRAM_ID,
+              durationMs: 1000,
+              customShowId: CUSTOM_SHOW_ID,
+            },
+          ],
+        }),
     } as never,
     {
       getStream: () => Promise.reject(new Error('should not be called')),
@@ -180,16 +190,16 @@ function makeHarness(opts: {
       getPlexApiClientForMediaSource: () => Promise.resolve(apiClient),
     } as never,
     {
-      channelMayPickSubtitles: (channelId: string) =>
-        Promise.resolve(
-          channelId === CHANNEL_ID && (opts.mayPickSubtitles ?? true),
-        ),
+      anyProfileMayPickSubtitles: () =>
+        Promise.resolve(opts.anyProfileMayPickSubtitles ?? true),
+      mayPickSubtitles,
     } as never,
   );
 
   return {
     task,
     getChannelGuides,
+    mayPickSubtitles,
     dbProgram,
     setSubtitlePath,
     downloadSubtitlesIfNecessary,
@@ -408,7 +418,18 @@ describe('SubtitleExtractorTask external subtitle top-up', () => {
     expect(harness.setSubtitlePath).not.toHaveBeenCalled();
   });
 
-  it('skips channels whose stream selection profiles never select subtitles', async () => {
+  it('skips the guide entirely when no stored profile selects subtitles', async () => {
+    const harness = makeHarness({
+      anyProfileMayPickSubtitles: false,
+      subtitles: [],
+    });
+
+    await run(harness);
+
+    expect(harness.getChannelGuides).not.toHaveBeenCalled();
+  });
+
+  it('skips a program whose profile chain never selects subtitles', async () => {
     const harness = makeHarness({
       mayPickSubtitles: false,
       downloadedPath: CACHED_SUBTITLE_PATH,
@@ -425,18 +446,18 @@ describe('SubtitleExtractorTask external subtitle top-up', () => {
 
     await run(harness);
 
-    expect(harness.getChannelGuides).not.toHaveBeenCalled();
     expect(harness.downloadSubtitlesIfNecessary).not.toHaveBeenCalled();
   });
 
-  it('loads guides only for channels whose profiles may select subtitles', async () => {
+  it("resolves each program's chain with its custom show from the lineup", async () => {
     const harness = makeHarness({ subtitles: [] });
 
     await run(harness);
 
-    expect(harness.getChannelGuides).toHaveBeenCalledExactlyOnceWith(
-      expect.anything(),
-      [CHANNEL_ID],
-    );
+    expect(harness.mayPickSubtitles).toHaveBeenCalledExactlyOnceWith({
+      channelId: CHANNEL_ID,
+      programId: PROGRAM_ID,
+      customShowId: CUSTOM_SHOW_ID,
+    });
   });
 });

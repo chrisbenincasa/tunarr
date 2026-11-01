@@ -47,6 +47,12 @@ export const BuiltInStreamSelectionProfile: StreamSelectionProfile = {
   ],
 };
 
+function profileMayPickSubtitles(
+  profile: Pick<StreamSelectionProfile, 'rules'>,
+): boolean {
+  return profile.rules.some((rule) => rule.subtitleAction.type !== 'disable');
+}
+
 const profileColumns = {
   uuid: StreamSelectionProfileTable.uuid,
   name: StreamSelectionProfileTable.name,
@@ -148,15 +154,24 @@ export class StreamSelectionProfileResolver {
   }
 
   /**
-   * Whether any channel-wide profile (channel → default → built-in) could
-   * select a subtitle. Program and source overrides are not considered.
-   * Used to decide whether subtitles are worth preparing ahead of time.
+   * Whether any profile in the context's chain could select a subtitle.
+   * Used to decide whether subtitles are worth preparing ahead of time, so
+   * it over-approximates: a rule that never matches still counts.
    */
-  async channelMayPickSubtitles(channelId: string): Promise<boolean> {
-    const chain = await this.resolveChain({ channelId });
-    return chain.some(({ profile }) =>
-      profile.rules.some((rule) => rule.subtitleAction.type !== 'disable'),
-    );
+  async mayPickSubtitles(ctx: StreamSelectionContext): Promise<boolean> {
+    const chain = await this.resolveChain(ctx);
+    return chain.some(({ profile }) => profileMayPickSubtitles(profile));
+  }
+
+  /**
+   * Whether any stored profile could select a subtitle. A false result means
+   * no context can pick one, whatever profiles are assigned.
+   */
+  async anyProfileMayPickSubtitles(): Promise<boolean> {
+    const profiles = await this.drizzle
+      .select({ rules: StreamSelectionProfileTable.rules })
+      .from(StreamSelectionProfileTable);
+    return profiles.some(profileMayPickSubtitles);
   }
 
   private async getProfileById(

@@ -202,38 +202,99 @@ describe('StreamSelectionProfileResolver', () => {
     });
   });
 
-  describe('channelMayPickSubtitles', () => {
-    it('is false when every channel-wide profile disables subtitles', async () => {
+  describe('mayPickSubtitles', () => {
+    const selectsSubtitles = (uuid: string) =>
+      makeProfile(uuid, {
+        rules: [
+          {
+            condition: 'program.type == "movie"',
+            audioAction: { type: 'default' },
+            subtitleAction: { type: 'default', preferTextBased: false },
+          },
+        ],
+      });
+
+    it('is false when every profile in the chain disables subtitles', async () => {
       const { resolver } = createResolver({
         channelProfile: makeProfile('channel'),
       });
 
-      expect(await resolver.channelMayPickSubtitles('ch-1')).toBe(false);
+      expect(await resolver.mayPickSubtitles({ channelId: 'ch-1' })).toBe(
+        false,
+      );
     });
 
-    it('is true when any channel-wide rule can select subtitles', async () => {
+    it('is true when a channel-wide rule can select subtitles', async () => {
       const { resolver } = createResolver({
-        channelProfile: makeProfile('channel', {
+        channelProfile: selectsSubtitles('channel'),
+      });
+
+      expect(await resolver.mayPickSubtitles({ channelId: 'ch-1' })).toBe(true);
+    });
+
+    it('counts a program profile on a channel that disables subtitles', async () => {
+      const { resolver } = createResolver({
+        programProfile: selectsSubtitles('program'),
+        channelProfile: makeProfile('channel'),
+      });
+
+      expect(
+        await resolver.mayPickSubtitles({
+          channelId: 'ch-1',
+          programId: 'p-1',
+        }),
+      ).toBe(true);
+    });
+
+    it('counts a custom show profile on a channel that disables subtitles', async () => {
+      const { resolver } = createResolver({
+        customShowProfile: selectsSubtitles('custom-show'),
+        channelProfile: makeProfile('channel'),
+      });
+
+      expect(
+        await resolver.mayPickSubtitles({
+          channelId: 'ch-1',
+          customShowId: 'cs-1',
+        }),
+      ).toBe(true);
+    });
+  });
+
+  describe('anyProfileMayPickSubtitles', () => {
+    function resolverWithStoredProfiles(profiles: StreamSelectionProfile[]) {
+      const drizzle = {
+        select: () => ({ from: () => Promise.resolve(profiles) }),
+      } as unknown as DrizzleDBAccess;
+      return new StreamSelectionProfileResolver(drizzle, {} as ISettingsDB);
+    }
+
+    it('is false when every stored profile disables subtitles', async () => {
+      const resolver = resolverWithStoredProfiles([builtIn, makeProfile('a')]);
+
+      expect(await resolver.anyProfileMayPickSubtitles()).toBe(false);
+    });
+
+    it('is true when any stored profile can select subtitles', async () => {
+      const resolver = resolverWithStoredProfiles([
+        builtIn,
+        makeProfile('a', {
           rules: [
             {
-              condition: 'program.type == "movie"',
+              condition: 'true',
               audioAction: { type: 'default' },
-              subtitleAction: { type: 'default', preferTextBased: false },
+              subtitleAction: { type: 'disable' },
+            },
+            {
+              condition: 'true',
+              audioAction: { type: 'default' },
+              subtitleAction: { type: 'default', preferTextBased: true },
             },
           ],
         }),
-      });
+      ]);
 
-      expect(await resolver.channelMayPickSubtitles('ch-1')).toBe(true);
-    });
-
-    it('ignores program and source overrides', async () => {
-      const { resolver, spies } = createResolver({});
-
-      await resolver.channelMayPickSubtitles('ch-1');
-
-      expect(spies.program).not.toHaveBeenCalled();
-      expect(spies.filler).not.toHaveBeenCalled();
+      expect(await resolver.anyProfileMayPickSubtitles()).toBe(true);
     });
   });
 });

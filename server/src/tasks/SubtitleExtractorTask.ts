@@ -12,6 +12,7 @@ import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { tmpName } from 'tmp-promise';
 import z from 'zod';
+import type { Lineup } from '../db/derived_types/Lineup.ts';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
@@ -143,29 +144,41 @@ export class SubtitleExtractorTask extends Task2<
     // On the first run we may have to block if the guide is updating.
     await this.guideService.get();
 
-    const channelIds: string[] = [];
-    for (const channel of await this.channelDB.getAllChannels()) {
-      if (await this.profileResolver.channelMayPickSubtitles(channel.uuid)) {
-        channelIds.push(channel.uuid);
-      }
-    }
-
-    if (channelIds.length === 0) {
+    if (!(await this.profileResolver.anyProfileMayPickSubtitles())) {
       this.logger.trace(
-        "Skipping subtitle extraction because no channel's stream selection profiles select subtitles",
+        'Skipping subtitle extraction because no stream selection profile selects subtitles',
       );
       return;
     }
 
     const nextHourGuide = await this.guideService.getChannelGuides(
       OpenDateTimeRange.create(now, now.add(filter.durationMs))!,
-      channelIds,
     );
     const mediaSources = await this.mediaSourceDB.getAll();
 
-    for (const { programs } of nextHourGuide) {
+    for (const { id: channelId, programs } of nextHourGuide) {
+      // Program and custom show profiles can select subtitles on a channel
+      // whose own profile never does, so each program resolves its own chain.
+      // The guide drops custom show IDs, so they come from the lineup.
+      let lineup: Lineup | undefined;
       for (const program of programs) {
         if (program.type !== 'content') {
+          continue;
+        }
+
+        lineup ??= await this.channelDB.loadLineup(channelId);
+        const lineupEntry = lineup.items.find(
+          (item) => item.type === 'content' && item.id === program.id,
+        );
+        const mayPickSubtitles = await this.profileResolver.mayPickSubtitles({
+          channelId,
+          programId: program.id,
+          customShowId:
+            lineupEntry?.type === 'content'
+              ? lineupEntry.customShowId
+              : undefined,
+        });
+        if (!mayPickSubtitles) {
           continue;
         }
 
