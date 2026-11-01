@@ -148,7 +148,6 @@
         "src/components/slot_scheduler/SlotFillerDialogPanel.tsx",
         "src/components/slot_scheduler/SlotOrderFormControl.tsx",
         "src/components/slot_scheduler/TimeSlotTable.tsx",
-        "src/components/smart_collections/SmartCollectionsTable.tsx",
         "src/hooks/useTableSettings.ts",
         "src/pages/channels/ChannelsPage.tsx",
         "src/pages/library/CustomShowsPage.tsx",

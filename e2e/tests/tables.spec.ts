@@ -148,6 +148,7 @@ const TABLES: Record<string, TableTarget> = {
     url: () => '/library/smart_collections',
     ready: 'E2E Movies Only',
     persisted: true,
+    ported: true,
     sortColumn: 'Name',
     filter: async (page) => {
       await showFilters(page);
