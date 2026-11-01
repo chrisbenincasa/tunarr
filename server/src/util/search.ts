@@ -4,10 +4,10 @@ import type {
   TerminalProgramSearchDocument,
 } from '../services/MeilisearchService.ts';
 
-export function isTerminalProgramDocument(
-  doc: Pick<ProgramSearchDocument, 'type'>,
-): doc is TerminalProgramSearchDocument {
-  switch (doc.type) {
+export function isTerminalProgramType(
+  type: ProgramSearchDocument['type'],
+): boolean {
+  switch (type) {
     case 'movie':
     case 'episode':
     case 'track':
@@ -22,10 +22,16 @@ export function isTerminalProgramDocument(
   }
 }
 
+export function isTerminalProgramDocument(
+  doc: ProgramSearchDocument,
+): doc is TerminalProgramSearchDocument {
+  return isTerminalProgramType(doc.type);
+}
+
 export function isProgramGroupingDocument(
-  doc: Pick<ProgramSearchDocument, 'type'>,
+  doc: ProgramSearchDocument,
 ): doc is ProgramGroupingSearchDocument {
-  return !isTerminalProgramDocument(doc);
+  return !isTerminalProgramType(doc.type);
 }
 
 /**
@@ -40,9 +46,9 @@ export function findDanglingSearchDocumentIds(
 ): string[] {
   return docs
     .filter((doc) =>
-      isProgramGroupingDocument(doc)
-        ? !groupingIds.has(doc.id)
-        : !programIds.has(doc.id),
+      isTerminalProgramType(doc.type)
+        ? !programIds.has(doc.id)
+        : !groupingIds.has(doc.id),
     )
     .map((doc) => doc.id);
 }
