@@ -15737,7 +15737,7 @@ export type PostApiAutoChannelsCreateResponses = {
         streamMode: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2';
         transcodeConfigId: string;
         sessions?: Array<{
-            type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat';
+            type: 'hls' | 'hls_slower' | 'mpegts' | 'hls_direct' | 'hls_direct_v2' | 'etv_next' | 'hls_concat' | 'hls_slower_concat' | 'mpegts_concat' | 'hls_direct_concat' | 'hls_direct_v2_concat' | 'etv_next_concat';
             state: string;
             numConnections: number;
             connections: Array<{
@@ -15748,6 +15748,7 @@ export type PostApiAutoChannelsCreateResponses = {
             }>;
         }>;
         subtitlesEnabled: boolean;
+        useEtvNext: boolean;
         subtitlePreferences?: Array<{
             langugeCode: string;
             priority: number;
@@ -15755,6 +15756,7 @@ export type PostApiAutoChannelsCreateResponses = {
             allowExternal: boolean;
             filter: 'none' | 'forced' | 'default' | 'any';
         }>;
+        streamSelectionProfileId: string | null;
     };
 };
 
