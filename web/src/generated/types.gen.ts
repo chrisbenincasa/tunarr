@@ -15583,6 +15583,9 @@ export type PostApiAutoChannelsCreateData = {
             type: 'classic_tv_day';
             blocks: Array<{
                 role: string;
+                /**
+                 * Milliseconds after midnight
+                 */
                 startTime: number;
             }>;
         };
