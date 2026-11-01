@@ -29,7 +29,6 @@ export const KNOWN_ISSUES: KnownIssue[] = [
       '/library/custom-shows',
       '/library/smart_collections',
       '/media_sources',
-      '/settings/ffmpeg',
       '/settings/sources',
     ],
     note: 'setState during render. The shared cause is likely in a table or layout component these pages use.',

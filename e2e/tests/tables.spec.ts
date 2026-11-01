@@ -166,6 +166,7 @@ const TABLES: Record<string, TableTarget> = {
     url: () => '/settings/ffmpeg',
     ready: 'Default',
     persisted: true,
+    ported: true,
     sortColumn: 'Name',
     hideColumn: 'Resolution',
     filter: async (page) => {
@@ -386,7 +387,9 @@ for (const [name, target] of Object.entries(TABLES)) {
 
 // Captured from the material-react-table build after hiding "# Programs",
 // choosing 5 rows per page and sorting by name. The extra mrt-row-actions key
-// is the kind of display-column id old builds could store.
+// is the kind of display-column id old builds could store. MRT keyed the
+// TranscodeConfigs Resolution column by its header, because it has no
+// accessor key.
 const savedByMrt = {
   state: {
     theme: {
@@ -408,6 +411,11 @@ const savedByMrt = {
             columnModel: { contentCount: false, 'mrt-row-actions': true },
             pagination: { pageIndex: 0, pageSize: 5 },
           },
+          TranscodeConfigs: {
+            sortState: [{ id: 'name', desc: true }],
+            columnModel: { Resolution: false, 'mrt-row-actions': true },
+            pagination: { pageIndex: 0, pageSize: 5 },
+          },
         },
         showAdvancedSettings: false,
       },
@@ -416,10 +424,13 @@ const savedByMrt = {
   version: 0,
 };
 
-test('table settings saved by the MRT build still load', async ({ page }) => {
-  await page.addInitScript((saved) => {
+const loadSavedByMrt = (page: Page) =>
+  page.addInitScript((saved) => {
     localStorage.setItem('tunarr', saved);
   }, JSON.stringify(savedByMrt));
+
+test('table settings saved by the MRT build still load', async ({ page }) => {
+  await loadSavedByMrt(page);
   await page.goto('/web/library/fillers');
   await expect(
     table(page).getByRole('cell', { name: 'E2E Bumpers', exact: true }),
@@ -433,4 +444,15 @@ test('table settings saved by the MRT build still load', async ({ page }) => {
 
   const stored = await page.evaluate(() => localStorage.getItem('tunarr'));
   expect(stored).toContain('"pageSize":5');
+});
+
+test('a column MRT keyed by its header stays hidden', async ({ page }) => {
+  await loadSavedByMrt(page);
+  await page.goto('/web/settings/ffmpeg');
+  await expect(
+    table(page).getByRole('cell', { name: 'Default', exact: true }),
+  ).toBeVisible();
+
+  await expect(header(page, 'Resolution')).toHaveCount(0);
+  await expect(header(page, 'Hardware Accel.')).toHaveCount(1);
 });

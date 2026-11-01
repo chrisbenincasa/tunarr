@@ -141,7 +141,6 @@
         "src/components/settings/ConnectMediaSources.tsx",
         "src/components/settings/DarkModeButton.tsx",
         "src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx",
-        "src/components/settings/ffmpeg/TranscodeConfigsTable.tsx",
         "src/components/settings/general/WebSettings.tsx",
         "src/components/slot_scheduler/EditRandomSlotDialogContent.tsx",
         "src/components/slot_scheduler/MidRollConfigPanel.tsx",
