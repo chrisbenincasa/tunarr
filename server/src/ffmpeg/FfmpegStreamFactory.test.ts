@@ -1548,7 +1548,6 @@ function runConcatSession(mode: SessionConcatStreamMode) {
     makeMockFfmpegInfo(),
     makeMockSettingsDB(makeFfmpegSettings()),
     factory,
-    makeMockChannelDB(),
     makeMockFeatureFlagService(),
     makeMockStreamSelector(),
     makeTranscodeConfig(),

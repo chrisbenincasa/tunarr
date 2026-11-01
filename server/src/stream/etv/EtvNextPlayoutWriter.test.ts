@@ -122,6 +122,11 @@ function makeWriter({
             selection ?? { audioStream: { index: 1 }, subtitleStream: null },
           ),
     ),
+    selectSubtitleStream: vi.fn(() =>
+      selectionFails
+        ? Promise.reject(new Error('profile did not evaluate'))
+        : Promise.resolve(selection?.subtitleStream ?? null),
+    ),
   };
 
   const watermarkResolver = {
@@ -397,7 +402,40 @@ describe('stream selection', () => {
     const { item } = await resolveOne(writer);
 
     expect(streamSelector.selectAudioAndSubtitleStreams).not.toHaveBeenCalled();
+    expect(streamSelector.selectSubtitleStream).not.toHaveBeenCalled();
     expect(item.tracks?.audio).toBeUndefined();
+  });
+
+  test('selects a subtitle for a file with no audio', async () => {
+    const { writer, streamSelector } = makeWriter({
+      items: [programItem(600_000)],
+      streamDetails: { duration: tenMinutes, subtitleDetails: [pgs] },
+      selection: { audioStream: english, subtitleStream: pgs },
+    });
+
+    const { item } = await resolveOne(writer);
+
+    expect(streamSelector.selectAudioAndSubtitleStreams).not.toHaveBeenCalled();
+    expect(streamSelector.selectSubtitleStream).toHaveBeenCalledWith(
+      expect.objectContaining({ subtitleStreams: [pgs] }),
+    );
+    expect(item.tracks).toEqual({ subtitle: { stream_index: 4 } });
+  });
+
+  test('skips subtitle selection for a file with no audio on a channel with subtitles off', async () => {
+    const { writer, streamSelector } = makeWriter({
+      items: [programItem(600_000)],
+      streamDetails: { duration: tenMinutes, subtitleDetails: [pgs] },
+      selection: { audioStream: english, subtitleStream: pgs },
+    });
+
+    const { item } = await resolveOne(writer, {
+      ...channel,
+      subtitlesEnabled: false,
+    } as ChannelOrmWithTranscodeConfig);
+
+    expect(streamSelector.selectSubtitleStream).not.toHaveBeenCalled();
+    expect(item.tracks).toBeUndefined();
   });
 
   test('selects on the materialized path too', async () => {
