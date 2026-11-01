@@ -1,5 +1,6 @@
 import type { StatusPillStatus } from '@/components/ui/StatusPill.tsx';
 import type { RolePreview } from '@/hooks/useAutoChannel.ts';
+import type { ContentRequirement } from '@tunarr/types/api';
 
 export type RolePreviewStatus = {
   status: StatusPillStatus;
@@ -29,4 +30,26 @@ export function rolePreviewStatus(
 
   const label = `${total.toLocaleString()} program${total === 1 ? '' : 's'}`;
   return { status: total < minPrograms ? 'warning' : 'live', label };
+}
+
+/**
+ * Whether every role has a settled preview with enough programs. A role with
+ * no matches would leave its slots empty, so it blocks creation even when its
+ * minimum is zero.
+ */
+export function canCreateChannel(
+  roles: Pick<ContentRequirement, 'role' | 'minPrograms'>[],
+  previews: Record<string, RolePreview>,
+): boolean {
+  return (
+    roles.length > 0 &&
+    roles.every((req) => {
+      const preview = previews[req.role];
+      if (!preview || preview.awaitingInput || preview.error !== null) {
+        return false;
+      }
+      const total = preview.data?.totalPrograms ?? 0;
+      return total > 0 && total >= req.minPrograms;
+    })
+  );
 }

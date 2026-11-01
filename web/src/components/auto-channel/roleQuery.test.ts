@@ -134,7 +134,18 @@ describe('hasRequiredPick', () => {
     ).toBe(true);
   });
 
-  test('roles without a picker are always ready', () => {
+  test('preset roles without a picker are always ready', () => {
     expect(hasRequiredPick({}, undefined)).toBe(true);
+  });
+
+  test('dynamic roles wait for a filter or a scope override', () => {
+    expect(hasRequiredPick({}, undefined, true)).toBe(false);
+    expect(hasRequiredPick({}, { advancedFilter: '  ' }, true)).toBe(false);
+    expect(
+      hasRequiredPick({}, { advancedFilter: 'genre = "Comedy"' }, true),
+    ).toBe(true);
+    expect(
+      hasRequiredPick({}, { override: { libraryIds: ['lib'] } }, true),
+    ).toBe(true);
   });
 });
