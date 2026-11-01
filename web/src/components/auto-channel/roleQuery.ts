@@ -91,10 +91,13 @@ function emptyToUndefined<T>(arr: T[] | undefined): T[] | undefined {
 /**
  * Whether the role has the input its picker needs. Roles with a facet, show,
  * or year picker match everything until the user picks, so they stay idle.
+ * Dynamic roles (weighted mix groups, classic TV blocks) have no picker and
+ * stay idle until the user sets a filter or a scope override.
  */
 export function hasRequiredPick(
   requirement: Pick<ContentRequirement, 'pickerHint'>,
   selection: RoleSelection | undefined,
+  isDynamic: boolean = false,
 ): boolean {
   switch (requirement.pickerHint?.type) {
     case 'facet':
@@ -103,6 +106,10 @@ export function hasRequiredPick(
     case 'single-show':
       return selection?.show !== undefined;
     default:
-      return true;
+      return (
+        !isDynamic ||
+        !isEmpty(selection?.advancedFilter?.trim()) ||
+        selection?.override !== undefined
+      );
   }
 }

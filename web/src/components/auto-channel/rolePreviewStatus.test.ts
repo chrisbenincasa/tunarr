@@ -1,6 +1,6 @@
 import type { RolePreview } from '@/hooks/useAutoChannel.ts';
 import { describe, expect, test } from 'vitest';
-import { rolePreviewStatus } from './rolePreviewStatus.ts';
+import { canCreateChannel, rolePreviewStatus } from './rolePreviewStatus.ts';
 
 function preview(overrides: Partial<RolePreview>): RolePreview {
   return {
@@ -77,5 +77,48 @@ describe('rolePreviewStatus', () => {
       status: 'live',
       label: '1 program',
     });
+  });
+});
+
+describe('canCreateChannel', () => {
+  const roles = [
+    { role: 'a', minPrograms: 1 },
+    { role: 'b', minPrograms: 5 },
+  ];
+
+  test('allows creation when every role has enough matches', () => {
+    expect(canCreateChannel(roles, { a: withTotal(1), b: withTotal(5) })).toBe(
+      true,
+    );
+  });
+
+  test('blocks creation while any role awaits input', () => {
+    expect(
+      canCreateChannel(roles, {
+        a: withTotal(10),
+        b: preview({ awaitingInput: true }),
+      }),
+    ).toBe(false);
+    expect(canCreateChannel(roles, { a: withTotal(10) })).toBe(false);
+  });
+
+  test('blocks creation when a role is below its minimum', () => {
+    expect(canCreateChannel(roles, { a: withTotal(10), b: withTotal(4) })).toBe(
+      false,
+    );
+  });
+
+  test('blocks creation when a role with no minimum matches nothing', () => {
+    expect(
+      canCreateChannel([{ role: 'a', minPrograms: 0 }], { a: withTotal(0) }),
+    ).toBe(false);
+  });
+
+  test('blocks creation when a preview failed', () => {
+    expect(
+      canCreateChannel([{ role: 'a', minPrograms: 0 }], {
+        a: preview({ error: new Error('boom') }),
+      }),
+    ).toBe(false);
   });
 });
