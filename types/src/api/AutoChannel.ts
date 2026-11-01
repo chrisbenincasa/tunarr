@@ -203,7 +203,12 @@ export const ClassicTvDayParamsSchema = z.object({
   blocks: z.array(
     z.object({
       role: z.string(),
-      startTime: z.number(), // ms offset from midnight
+      startTime: z
+        .number()
+        .int()
+        .min(0)
+        .lt(24 * 60 * 60 * 1000)
+        .describe('Milliseconds after midnight'),
     }),
   ),
 });

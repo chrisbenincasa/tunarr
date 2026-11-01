@@ -6,6 +6,10 @@ import { isNonEmptyString, search } from '@tunarr/shared/util';
 import type { MediaSourceId } from '@tunarr/shared';
 import type { Channel, SaveableChannel } from '@tunarr/types';
 import { isTerminalItemType, tag } from '@tunarr/types';
+import {
+  StrictRandomSlotScheduleSchema,
+  StrictTimeSlotScheduleSchema,
+} from '@tunarr/types/api';
 import type {
   AutoChannelCreateRequest,
   ChannelPreset,
@@ -185,6 +189,17 @@ export class AutoChannelService {
           : preset.scheduleConfig,
         smartCollectionIdsByRole,
       );
+
+      // Match the validation the channels API applies to saved schedules.
+      const strict =
+        scheduleConfig.type === 'time'
+          ? StrictTimeSlotScheduleSchema.safeParse(scheduleConfig)
+          : StrictRandomSlotScheduleSchema.safeParse(scheduleConfig);
+      if (!strict.success) {
+        throw new Error(
+          `Invalid schedule: ${strict.error.issues.map((i) => i.message).join('; ')}`,
+        );
+      }
 
       const channelData: SaveableChannel = {
         id: v4(),
@@ -369,7 +384,10 @@ export class AutoChannelService {
           flexPreference: 'end',
           period: 'day',
           maxDays: 30,
-          padMs: 0,
+
+          // The time slot scheduler pads with a modulo, so zero is invalid.
+          // One millisecond means no padding.
+          padMs: 1,
           latenessMs: 900000, // 15 minutes
           overflow: { type: 'duration', maxMs: 0 },
           timeZoneOffset: 0,
