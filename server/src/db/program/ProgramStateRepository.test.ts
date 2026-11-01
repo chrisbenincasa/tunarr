@@ -108,9 +108,10 @@ async function insertProgram(
     albumUuid?: string;
     artistUuid?: string;
   },
-): Promise<void> {
+): Promise<string> {
+  const uuid = v4();
   await drizzle.insert(Program).values({
-    uuid: v4(),
+    uuid,
     duration: 30000,
     type: parents.albumUuid ? 'track' : 'episode',
     sourceType: 'local',
@@ -120,6 +121,7 @@ async function insertProgram(
     state,
     ...parents,
   });
+  return uuid;
 }
 
 async function statesOf(
@@ -326,5 +328,46 @@ describe('ProgramStateRepository.syncGroupingStatesForLibrary', () => {
       [otherSeason]: 'ok',
       [album]: 'ok',
     });
+  });
+});
+
+describe('ProgramStateRepository existing-row lookups', () => {
+  test('return only the ids that have a row, across query chunks', async ({
+    drizzle,
+    repo,
+  }) => {
+    const libraryId = await createLibrary(drizzle);
+    const show = await insertGrouping(drizzle, libraryId, 'show', 'ok');
+    const season = await insertGrouping(
+      drizzle,
+      libraryId,
+      'season',
+      'missing',
+      {
+        showUuid: show,
+      },
+    );
+    const episode = await insertProgram(drizzle, 'missing', {
+      seasonUuid: season,
+      tvShowUuid: show,
+    });
+
+    // More ids than one 500-id chunk, with the real rows in the second chunk.
+    const ids = [
+      ...Array.from({ length: 600 }, () => v4()),
+      show,
+      season,
+      episode,
+    ];
+
+    expect(await repo.findExistingProgramIds(ids)).toEqual(new Set([episode]));
+    expect(await repo.findExistingGroupingIds(ids)).toEqual(
+      new Set([show, season]),
+    );
+  });
+
+  test('return an empty set for no ids', async ({ repo }) => {
+    expect(await repo.findExistingProgramIds([])).toEqual(new Set());
+    expect(await repo.findExistingGroupingIds([])).toEqual(new Set());
   });
 });

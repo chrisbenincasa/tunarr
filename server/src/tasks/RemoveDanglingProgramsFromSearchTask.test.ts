@@ -39,7 +39,7 @@ function setup(pages: Ref[][], programRows: string[], groupingRows: string[]) {
     programStateRepo as unknown as ProgramStateRepository,
   );
 
-  return { task, searchService };
+  return { task, searchService, programStateRepo };
 }
 
 describe('RemoveDanglingProgramsFromSearchTask', () => {
@@ -78,6 +78,24 @@ describe('RemoveDanglingProgramsFromSearchTask', () => {
     );
 
     await task.run({});
+
+    expect(searchService.deleteByIds).not.toHaveBeenCalled();
+  });
+
+  test('deletes nothing when a row lookup fails', async () => {
+    const { task, searchService, programStateRepo } = setup(
+      [
+        [{ id: 'movie-gone', type: 'movie' }],
+        [{ id: 'show-gone', type: 'show' }],
+      ],
+      [],
+      [],
+    );
+    programStateRepo.findExistingGroupingIds
+      .mockResolvedValueOnce(new Set())
+      .mockRejectedValueOnce(new Error('db down'));
+
+    await task.run({}).catch(() => {});
 
     expect(searchService.deleteByIds).not.toHaveBeenCalled();
   });
