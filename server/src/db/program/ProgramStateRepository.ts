@@ -53,8 +53,11 @@ export class ProgramStateRepository {
   /**
    * Trashes each grouping of the given types in a library that no longer has
    * an 'ok' program under it, and restores each trashed one that has one
-   * again. Returns the ids whose state changed so the caller can update the
-   * search index.
+   * again.
+   *
+   * missingIds holds every trashed grouping in scope, not just the ones this
+   * call trashed. Folder rescans reindex groupings as 'ok', so the caller
+   * resends all of them on each scan to keep the search index in sync.
    */
   async syncGroupingStatesForLibrary(
     libraryId: string,
@@ -72,17 +75,23 @@ export class ProgramStateRepository {
       inArray(ProgramGrouping.type, [...types]),
     );
 
-    const missing = await this.drizzleDB
+    await this.drizzleDB
       .update(ProgramGrouping)
       .set({ state: 'missing' })
-      .where(and(inScope, eq(ProgramGrouping.state, 'ok'), not(hasLiveProgram)))
-      .returning({ uuid: ProgramGrouping.uuid });
+      .where(
+        and(inScope, eq(ProgramGrouping.state, 'ok'), not(hasLiveProgram)),
+      );
 
     const restored = await this.drizzleDB
       .update(ProgramGrouping)
       .set({ state: 'ok' })
       .where(and(inScope, eq(ProgramGrouping.state, 'missing'), hasLiveProgram))
       .returning({ uuid: ProgramGrouping.uuid });
+
+    const missing = await this.drizzleDB
+      .select({ uuid: ProgramGrouping.uuid })
+      .from(ProgramGrouping)
+      .where(and(inScope, eq(ProgramGrouping.state, 'missing')));
 
     return {
       missingIds: missing.map(({ uuid }) => uuid),

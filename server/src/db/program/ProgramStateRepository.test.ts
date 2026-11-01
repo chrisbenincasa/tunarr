@@ -253,6 +253,55 @@ describe('ProgramStateRepository.syncGroupingStatesForLibrary', () => {
     });
   });
 
+  test('trashes a season and show left with no programs at all', async ({
+    drizzle,
+    repo,
+  }) => {
+    const libraryId = await createLibrary(drizzle);
+    const show = await insertGrouping(drizzle, libraryId, 'show', 'ok');
+    const season = await insertGrouping(drizzle, libraryId, 'season', 'ok', {
+      showUuid: show,
+    });
+
+    const result = await repo.syncGroupingStatesForLibrary(libraryId, [
+      'season',
+      'show',
+    ]);
+
+    expect(result.missingIds.sort()).toEqual([show, season].sort());
+    expect(await statesOf(drizzle, [show, season])).toEqual({
+      [show]: 'missing',
+      [season]: 'missing',
+    });
+  });
+
+  test('reports groupings that were already trashed', async ({
+    drizzle,
+    repo,
+  }) => {
+    const libraryId = await createLibrary(drizzle);
+    const show = await insertGrouping(drizzle, libraryId, 'show', 'missing');
+    const season = await insertGrouping(
+      drizzle,
+      libraryId,
+      'season',
+      'missing',
+      { showUuid: show },
+    );
+    await insertProgram(drizzle, 'missing', {
+      seasonUuid: season,
+      tvShowUuid: show,
+    });
+
+    const result = await repo.syncGroupingStatesForLibrary(libraryId, [
+      'season',
+      'show',
+    ]);
+
+    expect(result.missingIds.sort()).toEqual([show, season].sort());
+    expect(result.restoredIds).toEqual([]);
+  });
+
   test('leaves other libraries and other grouping types alone', async ({
     drizzle,
     repo,
