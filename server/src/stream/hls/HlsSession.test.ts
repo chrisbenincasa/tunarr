@@ -126,17 +126,7 @@ describe('HlsSession', () => {
       expect(trimResult!.playlist).toContain('#EXT-X-MEDIA-SEQUENCE:20');
     });
 
-    test('a client that has only ever requested an old video segment does not drag down the subtitle floor', async () => {
-      // Regression test for the "media sequence changed unexpectedly: 24 ->
-      // 13" bug: before BaseHlsSession tracked video/subtitle segment
-      // numbers independently, the default trim floor
-      // (`minSegmentRequested`) was a single per-IP value shared across
-      // both numbering spaces. A client that connected but has so far only
-      // fetched an old, low-numbered video segment would report that low
-      // number as its "last requested segment" — which then incorrectly
-      // became part of the *subtitle* trim's floor too, even though it has
-      // nothing to do with subtitle segment numbers, dragging the reported
-      // sequence back down on the next poll.
+    test('trims a long subtitle playlist to its newest 20 segments', async () => {
       const session = makeSession(dir.name);
       const workingDir = session.workingDirectory;
       await fs.mkdir(workingDir, { recursive: true });
@@ -152,17 +142,10 @@ describe('HlsSession', () => {
       }
       await fs.writeFile(path.join(workingDir, 'subs.m3u8'), lines.join('\n'));
 
-      // Client A has been following subtitles and is caught up.
-      session.onSegmentRequested('192.168.1.1', 'sub000050.vtt');
-      // Client B is lagging behind on video and hasn't touched subtitles.
-      session.onSegmentRequested('192.168.1.2', 'data000015.ts');
-
       const result = await session.trimSubtitlePlaylist();
       expect(result.isSuccess()).toBe(true);
       const trimResult = result.get();
       expect(trimResult).toBeDefined();
-      // Floor should come from client A's subtitle position (50), not
-      // client B's unrelated low video number (15).
       expect(trimResult!.sequence).toBe(40);
     });
   });
@@ -178,7 +161,7 @@ describe('HlsSession', () => {
       dir.removeCallback();
     });
 
-    test('never lists a segment below the pruning floor', async () => {
+    test('lists only segments that pruning kept', async () => {
       const session = makeSession(dir.name);
 
       // startInternal() sets the playlist start that trimPlaylist() needs.
@@ -213,7 +196,6 @@ describe('HlsSession', () => {
         lines.join('\n'),
       );
 
-      session.onSegmentRequested('10.0.0.1', 'data000050.ts');
       expect((await session.trimPlaylist()).get()?.sequence).toBe(40);
 
       // Let the prune finish removing everything below 40.
@@ -223,8 +205,6 @@ describe('HlsSession', () => {
         .sort();
       expect(onDisk[0]).toBe('data000040.ts');
 
-      // The client rewinds into the range pruning just deleted.
-      session.onSegmentRequested('10.0.0.1', 'data000020.ts');
       const playlist = (await session.trimPlaylist()).get()?.playlist ?? '';
       const listed = [...playlist.matchAll(/data\d{6}\.ts/g)]
         .map((m) => m[0])

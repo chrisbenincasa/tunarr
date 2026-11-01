@@ -424,13 +424,9 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(400).send('Invalid file path');
       }
 
-      // A request for a missing segment must not move this client's position.
-      // Otherwise its next playlist is built around segments that are gone.
       if (!(await fileExists(filePath))) {
         return res.status(404).send('File not found');
       }
-
-      session.onSegmentRequested(req.ip, req.params.file);
 
       const windowSegment = req.params.file.match(SubtitleWindowRegex)?.[1];
       if (windowSegment !== undefined && req.params.sessionType === 'hls') {

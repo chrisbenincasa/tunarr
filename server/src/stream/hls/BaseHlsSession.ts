@@ -7,7 +7,7 @@ import { isNonEmptyString, timeoutPromise } from '@/util/index.js';
 import retry from 'async-retry';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { filter, isError, isNaN, isString, some } from 'lodash-es';
+import { filter, isError, isString, some } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
@@ -20,14 +20,6 @@ export const SegmentNameRegex = /\D+(\d+)\.(ts|mp4|vtt)/;
 // FfmpegProcess escalates to SIGKILL after 15s, so this leaves room for the
 // kill to land.
 const ExitWaitTimeoutMs = 30_000;
-
-// Tracks the most recently requested segment number per client IP, split by
-// numbering space: video (.ts/.mp4) and subtitle (.vtt) segments are produced
-// at very different cadences and must not be conflated into a single floor.
-type SegmentRequestRecord = {
-  video?: number;
-  subtitle?: number;
-};
 
 export abstract class BaseHlsSession<
   HlsSessionOptsT extends BaseHlsSessionOptions = BaseHlsSessionOptions,
@@ -44,30 +36,6 @@ export abstract class BaseHlsSession<
   protected _serverPath: string;
 
   protected transcodedUntil?: Dayjs;
-
-  protected _minByIp = new Map<string, SegmentRequestRecord>();
-
-  private minRequestedFor(kind: keyof SegmentRequestRecord): number {
-    let min: number | undefined;
-    for (const record of this._minByIp.values()) {
-      const value = record[kind];
-      if (value === undefined) {
-        continue;
-      }
-      if (min === undefined || value < min) {
-        min = value;
-      }
-    }
-    return min ?? 0;
-  }
-
-  protected get minSegmentRequested(): number {
-    return this.minRequestedFor('video');
-  }
-
-  protected get minSubtitleSegmentRequested(): number {
-    return this.minRequestedFor('subtitle');
-  }
 
   constructor(
     channel: ChannelOrmWithTranscodeConfig,
@@ -109,25 +77,6 @@ export abstract class BaseHlsSession<
 
   get serverPath() {
     return this._serverPath;
-  }
-
-  onSegmentRequested(clientIp: string, filename: string) {
-    const base = basename(filename);
-    const matches = base.match(SegmentNameRegex);
-    if (matches && matches.length > 2) {
-      const parsed = parseInt(matches[1]!);
-      if (!isNaN(parsed)) {
-        const kind: keyof SegmentRequestRecord =
-          matches[2] === 'vtt' ? 'subtitle' : 'video';
-        const existing = this._minByIp.get(clientIp) ?? {};
-        this._minByIp.set(clientIp, { ...existing, [kind]: parsed });
-      }
-    }
-  }
-
-  override removeConnection(token: string) {
-    super.removeConnection(token);
-    this._minByIp.delete(token);
   }
 
   protected abstract getHlsOptions(): DeepRequired<HlsOptions>;

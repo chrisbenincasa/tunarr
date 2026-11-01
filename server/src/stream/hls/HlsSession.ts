@@ -69,12 +69,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #currentSession: Maybe<FfmpegTranscodeSession>;
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
   #lastSubtitleDelete: Dayjs = dayjs().subtract(1, 'year');
-  // Every video segment numbered below this has been deleted. ffmpeg's
-  // stream.m3u8 still lists them, so trimmed playlists must start at or above
-  // the floor. Subtitles need no floor. Their muxer keeps a 20-entry window
-  // (HlsSubtitleOutputFormat), and that window is also the deletion boundary,
-  // so subs.m3u8 never lists a pruned .vtt.
-  #segmentFloor = 0;
   #lastServedPlaylist: string | undefined;
 
   // Session time, in seconds, of the first entry in the on-disk stream.m3u8.
@@ -139,12 +133,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   async trimPlaylist(filterOpts?: HlsPlaylistFilterOptions) {
-    filterOpts ??= {
-      type: 'before_segment_number',
-      segmentNumber: this.minSegmentRequested,
-      segmentsToKeepBefore: 10,
-      segmentFloor: this.#segmentFloor,
-    };
     return Result.attemptAsync(async () => {
       return await this.lock.runExclusive(async () => {
         const playlistLines = await this.readPlaylist();
@@ -168,13 +156,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
               'Deleting old segments from stream (channel id = %s, number = %d)',
               this.channel.uuid,
               this.channel.number,
-            );
-
-            // A playlist of 20 or fewer entries skips the filter, so its
-            // sequence can fall below the floor.
-            this.#segmentFloor = Math.max(
-              this.#segmentFloor,
-              trimResult.sequence,
             );
             this.deleteOldSegmentFiles(trimResult.sequence, [
               '.ts',
@@ -294,11 +275,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   async trimSubtitlePlaylist(filterOpts?: FilterBeforeSegmentNumber) {
-    filterOpts ??= {
-      type: 'before_segment_number',
-      segmentNumber: this.minSubtitleSegmentRequested,
-      segmentsToKeepBefore: 10,
-    };
     return Result.attemptAsync(async () => {
       return await this.lock.runExclusive(async () => {
         const playlistLines = await this.readSubtitlePlaylist();
