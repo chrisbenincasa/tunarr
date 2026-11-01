@@ -34,6 +34,9 @@ const VARIANT_PLAYLIST = '#EXTM3U\n#EXTINF:4.0,\n/test/data000000.ts\n';
 
 class TestHlsSession extends BaseHlsSession {
   public readonly sessionType = 'hls' as const;
+  public readonly subtitleWindow = vi.fn(
+    async (_segmentNumber: number): Promise<string | undefined> => undefined,
+  );
 
   get minByIp() {
     return new Map(this._minByIp);
@@ -117,7 +120,7 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
 
   let dir: tmp.DirResult;
 
-  // The fragment route only records segments that exist on disk.
+  // Physical fragments must exist on disk before they are recorded.
   async function writeSegments(...names: string[]) {
     await fs.mkdir(session.workingDirectory, { recursive: true });
     for (const name of names) {
@@ -222,6 +225,56 @@ describe('streamApi HLS connection registration (issue #2045 invariant)', () => 
 
     expect(res.statusCode).toBe(404);
     expect(session.minByIp.get('203.0.113.10')?.video).toBe(100);
+  });
+
+  it('serves a virtual subtitle window even when no matching file exists', async () => {
+    session.subtitleWindow.mockResolvedValue(
+      'WEBVTT\n\n00:00:04.000 --> 00:00:05.000\nHello\n',
+    );
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}/hls/subs000010.vtt`,
+      remoteAddress: '203.0.113.10',
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toMatch(/^text\/vtt/);
+    expect(res.body).toContain('X-TIMESTAMP-MAP=MPEGTS:0,LOCAL:00:00:00.000');
+    expect(res.body).toContain('00:00:04.000 --> 00:00:05.000\nHello');
+    expect(session.subtitleWindow).toHaveBeenCalledWith(10);
+    expect(session.minByIp.get('203.0.113.10')?.subtitle).toBe(10);
+  });
+
+  it('does not record a virtual subtitle window that is unavailable', async () => {
+    session.subtitleWindow.mockResolvedValueOnce('WEBVTT\n');
+    await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}/hls/subs000100.vtt`,
+      remoteAddress: '203.0.113.10',
+    });
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}/hls/subs000035.vtt`,
+      remoteAddress: '203.0.113.10',
+    });
+
+    expect(res.statusCode).toBe(404);
+    expect(session.subtitleWindow).toHaveBeenLastCalledWith(35);
+    expect(session.minByIp.get('203.0.113.10')?.subtitle).toBe(100);
+  });
+
+  it('requires a physical subtitle fragment in HLS Direct v2', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/stream/channels/${makeChannel().uuid}/hls_direct_v2/subs000010.vtt`,
+      remoteAddress: '203.0.113.10',
+    });
+
+    expect(res.statusCode).toBe(404);
+    expect(session.subtitleWindow).not.toHaveBeenCalled();
+    expect(session.minByIp.get('203.0.113.10')?.subtitle).toBeUndefined();
   });
 });
 
