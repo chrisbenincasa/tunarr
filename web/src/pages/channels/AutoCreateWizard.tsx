@@ -4,6 +4,7 @@ import {
   BlockConfigurator,
   type TimeBlock,
 } from '@/components/auto-channel/BlockConfigurator';
+import { duplicateStartTimeRoles } from '@/components/auto-channel/blockTimes';
 import {
   DynamicRoleManager,
   type WeightedGroup,
@@ -444,7 +445,9 @@ export function AutoCreateWizard() {
             color="primary"
             onClick={handleCreate}
             disabled={
-              createMutation.isPending || !canCreateChannel(roles, previews)
+              createMutation.isPending ||
+              !canCreateChannel(roles, previews) ||
+              duplicateStartTimeRoles(timeBlocks).size > 0
             }
             startIcon={
               createMutation.isPending ? (
