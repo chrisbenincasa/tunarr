@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (10/25/2026):** Phase 0 merged in PR #2348 (tokens and theme) and PR #2349 (story diff script). Phase 2 (`AppShell`) lands with PR #2356, and `plans/mrt-replacement.md` Phase 0 (`DataTable`) is in review as PR #2350. `Segmented`, `KeyHint` and `EmptyState` merged in PR #2359, with `ToggleButtonGroup` banned. Phase 3 starts once #2350 merges. Next mock is forms/settings, which gates Phase 4.
+> **Status (11/01/2026):** Phases 0 and 2 are merged. Phase 0 shipped in PR #2348 (tokens and theme), PR #2349 (story diff script) and PR #2359 (`Segmented`, `KeyHint`, `EmptyState`, with `ToggleButtonGroup` banned). Phase 2 (`AppShell`) shipped in PR #2356. `plans/mrt-replacement.md` Phase 0 (`DataTable`) merged in PR #2350 on 10/25/2026, so Phase 3 is unblocked but not started. Next is `CollectionView` with `/channels` as the pilot. MRT replacement Phase 1 runs alongside it. The forms/settings mock is still due and gates Phase 4.
 
 ## Why
 
