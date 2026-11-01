@@ -15171,9 +15171,9 @@ export type PostApiAutoChannelsCreateData = {
         contentAssignments: {
             [key: string]: {
                 /**
-                 * Query-based: system finds matching content
+                 * The system finds matching content
                  */
-                query?: {
+                query: {
                     /**
                      * Existing search DSL filter (e.g., 'genre = "Action" AND year > 1980')
                      */
@@ -15199,10 +15199,6 @@ export type PostApiAutoChannelsCreateData = {
                      */
                     groupingId?: string;
                 };
-                /**
-                 * Explicit: user picked specific programs
-                 */
-                programIds?: Array<string>;
             };
         };
         /**
