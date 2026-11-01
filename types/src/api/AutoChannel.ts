@@ -178,14 +178,7 @@ export type ChannelPreset = z.infer<typeof ChannelPresetSchema>;
 // Content assignment for a role
 //
 export const ContentAssignmentSchema = z.object({
-  query: ContentQuerySchema.optional().describe(
-    'Query-based: system finds matching content',
-  ),
-  programIds: z
-    .string()
-    .array()
-    .optional()
-    .describe('Explicit: user picked specific programs'),
+  query: ContentQuerySchema.describe('The system finds matching content'),
 });
 
 export type ContentAssignment = z.infer<typeof ContentAssignmentSchema>;
