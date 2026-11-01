@@ -597,7 +597,7 @@ export default function ChannelsPage() {
             variant="outlined"
             startIcon={<AutoFixHigh />}
           >
-            Auto Create
+            <Trans>Auto Create</Trans>
           </RouterButtonLink>
           <RouterButtonLink
             to="/channels/new"
