@@ -11,12 +11,13 @@ import {
 } from '@mui/material';
 import type React from 'react';
 import { useCallback, useMemo } from 'react';
+import {
+  duplicateStartTimeRoles,
+  nextFreeStartTime,
+  type TimeBlock,
+} from './blockTimes.ts';
 
-export type TimeBlock = {
-  role: string;
-  label: string;
-  startTime: number; // ms offset from midnight
-};
+export type { TimeBlock } from './blockTimes.ts';
 
 type Props = {
   blocks: TimeBlock[];
@@ -28,7 +29,6 @@ type Props = {
 
 const MS_PER_MINUTE = 60 * 1000;
 const MS_PER_HOUR = 60 * MS_PER_MINUTE;
-const MAX_START_TIME = 23 * MS_PER_HOUR + 59 * MS_PER_MINUTE;
 
 function formatTime(ms: number): string {
   const totalMinutes = Math.floor(ms / MS_PER_MINUTE);
@@ -62,6 +62,8 @@ export function BlockConfigurator({
 }: Props) {
   const canRemove = blocks.length > min;
   const canAdd = blocks.length < max;
+
+  const duplicates = useMemo(() => duplicateStartTimeRoles(blocks), [blocks]);
 
   const sortedBlocks = useMemo(() => {
     const indexed = blocks.map((block, originalIndex) => ({
@@ -99,15 +101,10 @@ export function BlockConfigurator({
     if (!canAdd) return;
     const role = nextBlockId(blocks);
     const num = role.replace('block_', '');
-    const lastBlock = blocks.length > 0 ? blocks[blocks.length - 1] : undefined;
-    const defaultStartTime =
-      lastBlock !== undefined
-        ? Math.min(lastBlock.startTime + 3 * MS_PER_HOUR, MAX_START_TIME)
-        : 0;
     const newBlock: TimeBlock = {
       role,
       label: `Block ${num}`,
-      startTime: defaultStartTime,
+      startTime: nextFreeStartTime(blocks),
     };
     onBlocksChange([...blocks, newBlock]);
   }, [blocks, canAdd, onBlocksChange]);
@@ -119,6 +116,7 @@ export function BlockConfigurator({
         const minutes = Math.floor(
           (block.startTime % MS_PER_HOUR) / MS_PER_MINUTE,
         );
+        const isDuplicate = duplicates.has(block.role);
 
         return (
           <Paper key={block.role} variant="outlined" sx={{ p: 2 }}>
@@ -145,6 +143,7 @@ export function BlockConfigurator({
                   size="small"
                   label="Hour"
                   value={hours}
+                  error={isDuplicate}
                   onChange={(e) =>
                     handleTimeChange(
                       originalIndex,
@@ -162,6 +161,7 @@ export function BlockConfigurator({
                   size="small"
                   label="Min"
                   value={minutes}
+                  error={isDuplicate}
                   onChange={(e) =>
                     handleTimeChange(
                       originalIndex,
@@ -192,6 +192,12 @@ export function BlockConfigurator({
                 </IconButton>
               </Stack>
             </Stack>
+
+            {isDuplicate && (
+              <Typography variant="body2" color="error" sx={{ mb: 1.5 }}>
+                Another block starts at this time. Pick a different time.
+              </Typography>
+            )}
 
             <Box>{renderRoleContent(block, originalIndex)}</Box>
           </Paper>
