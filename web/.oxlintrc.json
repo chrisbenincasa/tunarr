@@ -150,7 +150,6 @@
         "src/components/slot_scheduler/TimeSlotTable.tsx",
         "src/hooks/useTableSettings.ts",
         "src/pages/channels/ChannelsPage.tsx",
-        "src/pages/library/CustomShowsPage.tsx",
         "src/pages/library/TrashPage.tsx",
         "src/pages/system/StatusPage.tsx",
         "src/pages/system/SystemLogsPage.tsx",

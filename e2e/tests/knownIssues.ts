@@ -26,7 +26,6 @@ export const KNOWN_ISSUES: KnownIssue[] = [
       '/channels',
       '/channels/$channelId/programming/slot-editor',
       '/library',
-      '/library/custom-shows',
       '/media_sources',
     ],
     note: 'setState during render. The shared cause is likely in a table or layout component these pages use.',

@@ -128,6 +128,7 @@ const TABLES: Record<string, TableTarget> = {
     url: () => '/library/custom-shows',
     ready: 'E2E Reruns',
     persisted: true,
+    ported: true,
     sortColumn: 'Name',
     hideColumn: '# Programs',
     filter: async (page) => {
