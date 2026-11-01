@@ -1,15 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  Alert,
-  Box,
-  Stack,
-  TextField,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from '@mui/material';
+import { Alert, Box, Stack, TextField, Typography } from '@mui/material';
 import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
+import { Segmented } from '../../ui/Segmented.tsx';
 import { Controller, useFormContext } from 'react-hook-form';
 import type { StreamSelectionProfileFormValues } from '../streamSelectionFormTypes.ts';
 import type { ConditionGroup, ConditionMode } from './types.ts';
@@ -70,11 +63,7 @@ export function ConditionEditor({ index, onValidateCondition }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const handleModeChange = (
-    _: React.MouseEvent<HTMLElement>,
-    newMode: ConditionMode | null,
-  ) => {
-    if (newMode === null) return;
+  const handleModeChange = (newMode: ConditionMode) => {
     setSwitchError(null);
 
     if (newMode === 'basic') {
@@ -102,25 +91,15 @@ export function ConditionEditor({ index, onValidateCondition }: Props) {
         <Typography variant="subtitle2">
           <Trans>Condition</Trans>
         </Typography>
-        <ToggleButtonGroup
+        <Segmented<ConditionMode>
+          aria-label={t`Condition mode`}
           value={mode}
-          exclusive
           onChange={handleModeChange}
-          size="small"
-        >
-          <ToggleButton
-            value="basic"
-            sx={{ px: 1.5, py: 0.25, textTransform: 'none' }}
-          >
-            <Trans>Basic</Trans>
-          </ToggleButton>
-          <ToggleButton
-            value="cel"
-            sx={{ px: 1.5, py: 0.25, textTransform: 'none' }}
-          >
-            <Trans>CEL</Trans>
-          </ToggleButton>
-        </ToggleButtonGroup>
+          options={[
+            { value: 'basic', label: t`Basic` },
+            { value: 'cel', label: t`CEL` },
+          ]}
+        />
       </Stack>
 
       {switchError && (

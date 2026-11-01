@@ -1,14 +1,8 @@
 import { Add } from '@mui/icons-material';
-import {
-  Box,
-  Button,
-  Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Stack, Typography } from '@mui/material';
 import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
+import { Segmented } from '../../ui/Segmented.tsx';
 import type {
   ConditionEntry,
   ConditionGroup,
@@ -51,13 +45,8 @@ export function ConditionGroupEditor({ group, onChange, depth = 0 }: Props) {
   const borderColor = BORDER_COLORS[depth % BORDER_COLORS.length];
   const totalLeaves = countLeaves(group);
 
-  const handleOperatorChange = (
-    _: React.MouseEvent<HTMLElement>,
-    newOp: ConditionOperator | null,
-  ) => {
-    if (newOp !== null) {
-      onChange({ ...group, operator: newOp });
-    }
+  const handleOperatorChange = (newOp: ConditionOperator) => {
+    onChange({ ...group, operator: newOp });
   };
 
   const updateEntry = (index: number, entry: ConditionEntry) => {
@@ -100,25 +89,15 @@ export function ConditionGroupEditor({ group, onChange, depth = 0 }: Props) {
           <Typography variant="body2" color="text.secondary">
             <Trans>Match</Trans>
           </Typography>
-          <ToggleButtonGroup
+          <Segmented<ConditionOperator>
+            aria-label={t`Condition operator`}
             value={group.operator}
-            exclusive
             onChange={handleOperatorChange}
-            size="small"
-          >
-            <ToggleButton
-              value="and"
-              sx={{ px: 1.5, py: 0.25, textTransform: 'none' }}
-            >
-              {t`ALL`}
-            </ToggleButton>
-            <ToggleButton
-              value="or"
-              sx={{ px: 1.5, py: 0.25, textTransform: 'none' }}
-            >
-              {t`ANY`}
-            </ToggleButton>
-          </ToggleButtonGroup>
+            options={[
+              { value: 'and', label: t`ALL` },
+              { value: 'or', label: t`ANY` },
+            ]}
+          />
           <Typography variant="body2" color="text.secondary">
             <Trans>of the following</Trans>
           </Typography>

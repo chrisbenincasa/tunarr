@@ -35,16 +35,21 @@ import {
 } from '@mui/material';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
-import {
-  MaterialReactTable,
-  useMaterialReactTable,
-  type MRT_ColumnDef,
-  type MRT_Row,
-} from 'material-react-table';
 import { useCallback, useMemo, useState } from 'react';
 import { RouterLink } from '../base/RouterLink.tsx';
+import { DataTable } from '../ui/table/DataTable.tsx';
+import { actionsColumn } from '../ui/table/columns.tsx';
+import {
+  createAppColumnHelper,
+  useTunarrTable,
+} from '../ui/table/tunarrTable.ts';
+import { useStoreBackedTableSettings } from '../ui/table/useStoreBackedTableSettings.ts';
 
 type Profile = GetApiStreamSelectionProfilesResponse[number];
+
+const columnHelper = createAppColumnHelper<Profile>();
+
+const TableName = 'StreamSelectionProfiles';
 
 function usageCount(profile: Profile) {
   const { channels, fillerLists, customShows, programCount } = profile.usage;
@@ -191,66 +196,14 @@ export const StreamSelectionProfilesTable = () => {
     },
   });
 
-  const renderRowActions = useCallback(
-    ({ row: { original: profile } }: { row: MRT_Row<Profile> }) => {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
-          <Tooltip title={profile.locked ? t`View` : t`Edit`} placement="top">
-            <IconButton
-              to={`/profiles/stream-selection/${profile.uuid}`}
-              component={Link}
-            >
-              {profile.locked ? <Visibility /> : <Edit />}
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t`Duplicate`} placement="top">
-            <IconButton
-              onClick={() =>
-                duplicateMutation.mutate({
-                  body: {
-                    name: t`Copy of ${profile.name}`,
-                    rules: profile.rules,
-                  },
-                })
-              }
-            >
-              <ContentCopy />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t`Set as default`} placement="top">
-            <span>
-              <IconButton
-                disabled={profile.isDefault}
-                onClick={() =>
-                  setDefaultMutation.mutate({
-                    body: { defaultProfileId: profile.uuid },
-                  })
-                }
-              >
-                <Star />
-              </IconButton>
-            </span>
-          </Tooltip>
-          {!profile.locked && (
-            <Tooltip title={t`Delete`} placement="top">
-              <IconButton onClick={() => setConfirmDelete(profile)}>
-                <Delete />
-              </IconButton>
-            </Tooltip>
-          )}
-        </Box>
-      );
-    },
-    [duplicateMutation, setDefaultMutation],
-  );
+  const tableState = useStoreBackedTableSettings(TableName);
 
-  const columns = useMemo<MRT_ColumnDef<Profile>[]>(
-    () => [
-      {
-        header: t`Name`,
-        accessorKey: 'name',
-        Cell({ row: { original } }) {
-          return (
+  const columns = useMemo(
+    () =>
+      columnHelper.columns([
+        columnHelper.accessor('name', {
+          header: t`Name`,
+          cell: ({ row: { original } }) => (
             <Stack direction="row" alignItems="center" spacing={1}>
               {original.locked && (
                 <Tooltip title={t`Built-in profiles cannot be edited`}>
@@ -262,79 +215,124 @@ export const StreamSelectionProfilesTable = () => {
                 <Chip label={t`Default`} size="small" color="success" />
               )}
             </Stack>
-          );
-        },
-      },
-      {
-        header: t`Rules`,
-        accessorFn: (row) => row.rules.length,
-        size: 100,
-      },
-      {
-        header: t`Used By`,
-        size: 240,
-        Cell({ row: { original } }) {
-          return <ProfileUsage profile={original} />;
-        },
-      },
-    ],
-    [],
+          ),
+        }),
+        columnHelper.accessor((row) => row.rules.length, {
+          id: 'rules',
+          header: t`Rules`,
+          meta: { numeric: true },
+        }),
+        columnHelper.display({
+          id: 'usedBy',
+          header: t`Used By`,
+          cell: ({ row: { original } }) => <ProfileUsage profile={original} />,
+        }),
+        actionsColumn<Profile>({
+          render: ({ original: profile }) => (
+            <>
+              <Tooltip
+                title={profile.locked ? t`View` : t`Edit`}
+                placement="top"
+              >
+                <IconButton
+                  aria-label={profile.locked ? t`View` : t`Edit`}
+                  to={`/profiles/stream-selection/${profile.uuid}`}
+                  component={Link}
+                >
+                  {profile.locked ? <Visibility /> : <Edit />}
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={t`Duplicate`} placement="top">
+                <IconButton
+                  aria-label={t`Duplicate`}
+                  onClick={() =>
+                    duplicateMutation.mutate({
+                      body: {
+                        name: t`Copy of ${profile.name}`,
+                        rules: profile.rules,
+                      },
+                    })
+                  }
+                >
+                  <ContentCopy />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title={t`Set as default`} placement="top">
+                <span>
+                  <IconButton
+                    aria-label={t`Set as default`}
+                    disabled={profile.isDefault}
+                    onClick={() =>
+                      setDefaultMutation.mutate({
+                        body: { defaultProfileId: profile.uuid },
+                      })
+                    }
+                  >
+                    <Star />
+                  </IconButton>
+                </span>
+              </Tooltip>
+              {!profile.locked && (
+                <Tooltip title={t`Delete`} placement="top">
+                  <IconButton
+                    aria-label={t`Delete`}
+                    onClick={() => setConfirmDelete(profile)}
+                  >
+                    <Delete />
+                  </IconButton>
+                </Tooltip>
+              )}
+            </>
+          ),
+        }),
+      ]),
+    [duplicateMutation, setDefaultMutation],
   );
 
-  const table = useMaterialReactTable({
-    data: profiles,
+  const table = useTunarrTable({
     columns,
-    renderRowActions,
-    enableRowActions: true,
-    displayColumnDefOptions: {
-      'mrt-row-actions': {
-        size: 180,
-        grow: false,
-        Header: '',
-        visibleInShowHideMenu: false,
-      },
-    },
-    renderTopToolbarCustomActions() {
-      return (
-        <Stack
-          direction={{ xs: 'column', sm: 'row' }}
-          alignItems={{ xs: 'stretch', sm: 'center' }}
-          gap={2}
-          useFlexGap
-        >
-          <Button
-            variant="contained"
-            startIcon={<AddCircle />}
-            component={Link}
-            to="/profiles/stream-selection/new"
-          >
-            <Trans>New</Trans>
-          </Button>
-          <FormControl size="small" sx={{ minWidth: 240 }}>
-            <InputLabel id="default-profile-label">
-              <Trans>Default profile</Trans>
-            </InputLabel>
-            <Select
-              labelId="default-profile-label"
-              label={t`Default profile`}
-              value={defaultProfile?.uuid ?? ''}
-              onChange={(e) =>
-                setDefaultMutation.mutate({
-                  body: { defaultProfileId: e.target.value },
-                })
-              }
-            >
-              {profiles.map((profile) => (
-                <MenuItem key={profile.uuid} value={profile.uuid}>
-                  {profile.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Stack>
-      );
-    },
+    data: profiles,
+    ...tableState,
   });
+
+  const toolbarActions = (
+    <Stack
+      direction={{ xs: 'column', sm: 'row' }}
+      alignItems={{ xs: 'stretch', sm: 'center' }}
+      gap={2}
+      useFlexGap
+    >
+      <Button
+        variant="contained"
+        startIcon={<AddCircle />}
+        component={Link}
+        to="/profiles/stream-selection/new"
+      >
+        <Trans>New</Trans>
+      </Button>
+      <FormControl size="small" sx={{ minWidth: 240 }}>
+        <InputLabel id="default-profile-label">
+          <Trans>Default profile</Trans>
+        </InputLabel>
+        <Select
+          labelId="default-profile-label"
+          label={t`Default profile`}
+          value={defaultProfile?.uuid ?? ''}
+          onChange={(e) =>
+            setDefaultMutation.mutate({
+              body: { defaultProfileId: e.target.value },
+            })
+          }
+        >
+          {profiles.map((profile) => (
+            <MenuItem key={profile.uuid} value={profile.uuid}>
+              {profile.name}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </Stack>
+  );
 
   const deleteBody = useMemo(() => {
     if (!confirmDelete) {
@@ -356,7 +354,11 @@ export const StreamSelectionProfilesTable = () => {
 
   return (
     <>
-      <MaterialReactTable table={table} />
+      <DataTable
+        table={table}
+        aria-label={t`Stream selection profiles`}
+        toolbarActions={toolbarActions}
+      />
       <DeleteConfirmationDialog
         open={confirmDelete !== null}
         title={t`Delete Profile "${confirmDelete?.name ?? ''}"?`}

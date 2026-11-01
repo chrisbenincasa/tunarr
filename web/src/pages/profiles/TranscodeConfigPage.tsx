@@ -1,6 +1,6 @@
 import { Trans } from '@lingui/react/macro';
 import { Check, VisibilityOff } from '@mui/icons-material';
-import { Paper, Stack, ToggleButton, Typography } from '@mui/material';
+import { Button, Paper, Stack, Typography } from '@mui/material';
 import { useNavigate } from '@tanstack/react-router';
 import type { ReactNode } from 'react';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
@@ -28,23 +28,19 @@ const TranscodeConfigPageLayout = ({
         <Typography variant="h3" flex={1}>
           {title}
         </Typography>
-        <ToggleButton
-          value={showAdvancedSettings}
-          selected={showAdvancedSettings}
-          onChange={() => setShowAdvancedSettings(!showAdvancedSettings)}
+        <Button
+          variant="outlined"
+          aria-pressed={showAdvancedSettings}
+          onClick={() => setShowAdvancedSettings(!showAdvancedSettings)}
+          startIcon={showAdvancedSettings ? <VisibilityOff /> : <Check />}
           sx={{ ml: 'auto' }}
         >
-          {showAdvancedSettings ? (
-            <VisibilityOff sx={{ mr: 0.5 }} />
-          ) : (
-            <Check sx={{ mr: 0.5 }} />
-          )}{' '}
           {showAdvancedSettings ? (
             <Trans>Hide Advanced</Trans>
           ) : (
             <Trans>Show Advanced</Trans>
           )}
-        </ToggleButton>
+        </Button>
       </Stack>
       <Paper sx={{ p: [1, 2], mt: 2 }}>{children}</Paper>
     </Stack>

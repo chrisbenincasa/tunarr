@@ -1176,6 +1176,14 @@ msgstr ""
 msgid "Condition is required"
 msgstr ""
 
+#: src/components/profiles/condition/ConditionEditor.tsx
+msgid "Condition mode"
+msgstr ""
+
+#: src/components/profiles/condition/ConditionGroupEditor.tsx
+msgid "Condition operator"
+msgstr ""
+
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 msgid "Config"
 msgstr ""
@@ -1490,6 +1498,7 @@ msgstr ""
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/pages/channels/ChannelsPage.tsx
@@ -1707,6 +1716,7 @@ msgid "Download last {0} {1, plural, one {# row} other {# rows}}"
 msgstr ""
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Duplicate"
@@ -1753,6 +1763,7 @@ msgstr ""
 msgid "Eager"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
@@ -4317,6 +4328,7 @@ msgid "Server Settings"
 msgstr ""
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "Set as default"
 msgstr ""
 
@@ -4641,6 +4653,10 @@ msgstr ""
 #: src/components/profiles/StreamSelectionProfileSelect.tsx
 #: src/components/profiles/StreamSelectionProfileSelect.tsx
 msgid "Stream Selection Profile"
+msgstr ""
+
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "Stream selection profiles"
 msgstr ""
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
@@ -5359,6 +5375,7 @@ msgstr ""
 msgid "Videos from the filler list will be randomly picked to play unless there are cooldown restrictions to place or if no videos are short enough for the remaining Flex time.<0/>Each filler can be assigned a cooldown, which restricts how frequently the list will be chosen during flex time."
 msgstr ""
 
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "View"
 msgstr ""
