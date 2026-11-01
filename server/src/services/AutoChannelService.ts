@@ -5,12 +5,14 @@ import {
 import { isNonEmptyString, search } from '@tunarr/shared/util';
 import type { MediaSourceId } from '@tunarr/shared';
 import type { Channel, SaveableChannel } from '@tunarr/types';
-import { tag } from '@tunarr/types';
+import { isTerminalItemType, tag } from '@tunarr/types';
 import type {
   AutoChannelCreateRequest,
   ChannelPreset,
+  ContentAssignment,
   ContentPreviewResponse,
   ContentQuery,
+  ContentRequirement,
   DynamicPresetParams,
   ScheduleSkeleton,
   UpdateChannelProgrammingRequest,
@@ -53,14 +55,8 @@ export class AutoChannelService {
   async previewContent(query: ContentQuery): Promise<ContentPreviewResponse> {
     const results = await this.resolveContentQuery(query);
 
-    // Filter to terminal programs only (programs with duration, not groupings)
     const terminalResults = results.filter(
-      (r): r is TerminalProgramSearchDocument =>
-        r.type === 'movie' ||
-        r.type === 'episode' ||
-        r.type === 'track' ||
-        r.type === 'music_video' ||
-        r.type === 'other_video',
+      (r): r is TerminalProgramSearchDocument => isTerminalItemType(r.type),
     );
 
     const byType: Record<string, number> = {
@@ -107,146 +103,143 @@ export class AutoChannelService {
       throw new Error('No default transcode config exists');
     }
 
-    // Step 1: Determine roles — dynamic presets derive roles from contentAssignments
-    const roles = preset.dynamicRequirements
+    const roles: ContentRequirement[] = preset.dynamicRequirements
       ? Object.keys(request.contentAssignments).map((role) => ({
           role,
           label: role,
-          defaultQuery: {} as ContentQuery,
+          defaultQuery: {},
           required: true,
           minPrograms: 0,
         }))
       : preset.contentRequirements;
 
-    // Validate dynamic params match content assignments
-    if (request.dynamicParams) {
-      const paramRoles =
-        request.dynamicParams.type === 'weighted_mix'
-          ? request.dynamicParams.groups.map((g) => g.role)
-          : request.dynamicParams.blocks.map((b) => b.role);
-      const assignmentKeys = Object.keys(request.contentAssignments);
-      const missing = paramRoles.filter((r) => !assignmentKeys.includes(r));
-      if (missing.length > 0) {
-        throw new Error(
-          `Missing content assignments for roles: ${missing.join(', ')}`,
-        );
-      }
-    }
+    this.validateAssignments(request, roles, !!preset.dynamicRequirements);
 
-    // Step 2: Resolve content for each role and create smart collections
-    const smartCollectionIdsByRole: Record<string, string> = {};
-
-    for (const requirement of roles) {
-      const assignment = request.contentAssignments[requirement.role];
-      const query = assignment?.query ?? requirement.defaultQuery;
-
-      // Create a smart collection for this role
-      const collectionName = `${request.channelName ?? preset.name} - ${requirement.label}`;
-      const filter = this.buildContentFilter(query);
-
-      const collectionResult = await this.smartCollectionsDB.insert({
-        name: collectionName,
-        keywords: query.keywords ?? '',
-        filter,
-        filterString: filter ? search.searchFilterToString(filter) : undefined,
-      });
-
-      if (collectionResult.isFailure()) {
-        throw new Error(
-          `Failed to create smart collection for role ${requirement.role}: ${collectionResult.error.message}`,
-        );
-      }
-
-      smartCollectionIdsByRole[requirement.role] = collectionResult.get().uuid;
-    }
-
-    // Step 3: Build the schedule config
-    const scheduleConfig = resolveScheduleSkeleton(
-      request.dynamicParams
-        ? this.buildScheduleFromDynamicParams(request.dynamicParams)
-        : preset.scheduleConfig,
-      smartCollectionIdsByRole,
+    // Parse every filter before writing, so a bad filter fails cleanly.
+    const filtersByRole = Object.fromEntries(
+      roles.map((requirement) => [
+        requirement.role,
+        this.buildContentFilter(
+          request.contentAssignments[requirement.role]?.query ??
+            requirement.defaultQuery,
+        ),
+      ]),
     );
 
-    // Step 4: Resolve program IDs for the schedule
-    const allProgramIds: string[] = [];
-    for (const requirement of roles) {
-      const assignment = request.contentAssignments[requirement.role];
-
-      if (assignment?.programIds?.length) {
-        allProgramIds.push(...assignment.programIds);
-      } else {
-        const collectionId = smartCollectionIdsByRole[requirement.role];
-        if (collectionId) {
-          const programs =
-            await this.smartCollectionsDB.materializeSmartCollection(
-              collectionId,
-              true,
-            );
-          allProgramIds.push(...programs.map((p) => p.id));
-        }
-      }
-    }
-
-    // Step 5: Determine the next available channel number
-    const channelNumber =
-      request.channelNumber ?? (await this.getNextChannelNumber());
+    const channelNumber = await this.resolveChannelNumber(
+      request.channelNumber,
+    );
     const channelName =
       request.channelName ?? `${preset.name} ${channelNumber}`;
 
-    // Step 6: Create the channel
-    const channelData: SaveableChannel = {
-      id: v4(),
-      name: channelName,
-      number: channelNumber,
-      duration: 0,
-      startTime: Date.now(),
-      groupTitle: 'Auto-Created',
-      icon: {
-        path: '',
-        width: 0,
+    const createdCollectionIds: string[] = [];
+    let createdChannelId: string | undefined;
+
+    try {
+      const smartCollectionIdsByRole: Record<string, string> = {};
+      const allProgramIds: string[] = [];
+
+      for (const requirement of roles) {
+        const assignment = request.contentAssignments[requirement.role];
+        const query = assignment?.query ?? requirement.defaultQuery;
+        const filter = filtersByRole[requirement.role];
+
+        const collectionResult = await this.smartCollectionsDB.insert({
+          name: `${request.channelName ?? preset.name} - ${requirement.label}`,
+          keywords: query.keywords ?? '',
+          filter,
+          filterString: filter
+            ? search.searchFilterToString(filter)
+            : undefined,
+        });
+
+        if (collectionResult.isFailure()) {
+          throw new Error(
+            `Failed to create smart collection for role ${requirement.role}: ${collectionResult.error.message}`,
+          );
+        }
+
+        const collectionId = collectionResult.get().uuid;
+        createdCollectionIds.push(collectionId);
+        smartCollectionIdsByRole[requirement.role] = collectionId;
+
+        const programIds = assignment?.programIds?.length
+          ? assignment.programIds
+          : (
+              await this.smartCollectionsDB.materializeSmartCollection(
+                collectionId,
+                true,
+              )
+            ).map((p) => p.id);
+
+        if (programIds.length < requirement.minPrograms) {
+          throw new Error(
+            `"${requirement.label}" matches ${programIds.length} programs but needs at least ${requirement.minPrograms}`,
+          );
+        }
+
+        allProgramIds.push(...programIds);
+      }
+
+      const scheduleConfig = resolveScheduleSkeleton(
+        request.dynamicParams
+          ? this.buildScheduleFromDynamicParams(request.dynamicParams)
+          : preset.scheduleConfig,
+        smartCollectionIdsByRole,
+      );
+
+      const channelData: SaveableChannel = {
+        id: v4(),
+        name: channelName,
+        number: channelNumber,
         duration: 0,
-        position: 'bottom-right',
-      },
-      stealth: false,
-      disableFillerOverlay: false,
-      guideMinimumDuration: 30000,
-      offline: {
-        mode: 'pic',
-        picture: undefined,
-        soundtrack: undefined,
-      },
-      streamMode: 'hls',
-      transcodeConfigId: transcodeConfig.uuid,
-      subtitlesEnabled: false,
-    };
-
-    const savedResult = await this.channelDB.saveChannel(channelData);
-
-    // Step 7: Set the lineup using the schedule
-    const channelId = savedResult.channel.uuid;
-    const seed = request.seed ? [request.seed] : undefined;
-
-    let lineupRequest: UpdateChannelProgrammingRequest;
-    if (scheduleConfig.type === 'time') {
-      lineupRequest = {
-        type: 'time',
-        programs: allProgramIds,
-        schedule: scheduleConfig,
-        seed,
+        startTime: Date.now(),
+        groupTitle: 'Auto-Created',
+        icon: {
+          path: '',
+          width: 0,
+          duration: 0,
+          position: 'bottom-right',
+        },
+        stealth: false,
+        disableFillerOverlay: false,
+        guideMinimumDuration: 30000,
+        offline: {
+          mode: 'pic',
+          picture: undefined,
+          soundtrack: undefined,
+        },
+        streamMode: 'hls',
+        transcodeConfigId: transcodeConfig.uuid,
+        subtitlesEnabled: false,
+        useEtvNext: false,
       };
-    } else {
-      lineupRequest = {
-        type: 'random',
-        programs: allProgramIds,
-        schedule: scheduleConfig,
-        seed,
-      };
+
+      const savedResult = await this.channelDB.saveChannel(channelData);
+      createdChannelId = savedResult.channel.uuid;
+
+      const seed = request.seed ? [request.seed] : undefined;
+      const lineupRequest: UpdateChannelProgrammingRequest =
+        scheduleConfig.type === 'time'
+          ? {
+              type: 'time',
+              programs: allProgramIds,
+              schedule: scheduleConfig,
+              seed,
+            }
+          : {
+              type: 'random',
+              programs: allProgramIds,
+              schedule: scheduleConfig,
+              seed,
+            };
+
+      await this.channelDB.updateLineup(createdChannelId, lineupRequest);
+    } catch (err) {
+      await this.rollBackCreate(createdChannelId, createdCollectionIds);
+      throw err;
     }
 
-    await this.channelDB.updateLineup(channelId, lineupRequest);
-
-    // Step 8: Trigger guide regeneration
     try {
       GlobalScheduler.getScheduledJob(UpdateXmlTvTask.ID)
         .runNow(true)
@@ -260,14 +253,85 @@ export class AutoChannelService {
       );
     }
 
-    // Reload and return the created channel with relations
     const channelAndLineup =
-      await this.channelDB.loadChannelAndLineupOrm(channelId);
+      await this.channelDB.loadChannelAndLineupOrm(createdChannelId);
     if (!channelAndLineup) {
       throw new Error('Channel was created but could not be retrieved');
     }
 
     return dbChannelToApiChannel(channelAndLineup);
+  }
+
+  /**
+   * Rejects requests that would schedule a role over the whole library: a
+   * required preset role with no assignment, or a dynamic role whose query
+   * selects nothing.
+   */
+  private validateAssignments(
+    request: AutoChannelCreateRequest,
+    roles: ContentRequirement[],
+    isDynamic: boolean,
+  ) {
+    if (request.dynamicParams) {
+      const paramRoles =
+        request.dynamicParams.type === 'weighted_mix'
+          ? request.dynamicParams.groups.map((g) => g.role)
+          : request.dynamicParams.blocks.map((b) => b.role);
+      const missing = paramRoles.filter(
+        (r) => !(r in request.contentAssignments),
+      );
+      if (missing.length > 0) {
+        throw new Error(
+          `Missing content assignments for roles: ${missing.join(', ')}`,
+        );
+      }
+    }
+
+    for (const requirement of roles) {
+      const assignment = request.contentAssignments[requirement.role];
+      if (requirement.required && !assignment) {
+        throw new Error(
+          `Missing content assignment for "${requirement.label}"`,
+        );
+      }
+      if (isDynamic && assignment && !selectsContent(assignment)) {
+        throw new Error(`"${requirement.label}" needs a content filter`);
+      }
+    }
+  }
+
+  private async resolveChannelNumber(requested: number | undefined) {
+    const channels = await this.channelDB.getAllChannels();
+    const usedNumbers = new Set(channels.map((c) => c.number));
+
+    if (requested !== undefined) {
+      if (usedNumbers.has(requested)) {
+        throw new Error(`Channel with number ${requested} already exists`);
+      }
+      return requested;
+    }
+
+    let next = 1;
+    while (usedNumbers.has(next)) {
+      next++;
+    }
+    return next;
+  }
+
+  private async rollBackCreate(
+    channelId: string | undefined,
+    collectionIds: string[],
+  ) {
+    try {
+      if (channelId) {
+        await this.channelDB.deleteChannel(channelId);
+      }
+      for (const id of collectionIds) {
+        await this.smartCollectionsDB.delete(id);
+      }
+    } catch (e) {
+      this.logger.error(e, 'Failed to clean up after auto-channel failure');
+    }
   }
 
   private buildScheduleFromDynamicParams(
@@ -358,11 +422,9 @@ export class AutoChannelService {
 
     if (isNonEmptyString(query.filterString)) {
       const parsed = this.parseFilterString(query.filterString);
-      if (parsed) {
-        children.push(
-          parsed.type === 'op' ? { ...parsed, grouped: true } : parsed,
-        );
-      }
+      children.push(
+        parsed.type === 'op' ? { ...parsed, grouped: true } : parsed,
+      );
     }
 
     if (isNonEmptyString(query.groupingId)) {
@@ -420,32 +482,36 @@ export class AutoChannelService {
     return { type: 'op', op: 'and', children };
   }
 
-  private parseFilterString(filterString: string): SearchFilter | undefined {
+  private parseFilterString(filterString: string): SearchFilter {
     const tokenized = search.tokenizeSearchQuery(filterString);
     if (tokenized.errors.length > 0) {
-      this.logger.warn('Could not tokenize filter string: %s', filterString);
-      return undefined;
+      throw new Error(`Could not parse filter: ${filterString}`);
     }
 
-    // Use the search parser from shared
     const parser = new search.SearchParser();
     parser.input = tokenized.tokens;
     const clause = parser.searchExpression();
     if (parser.errors.length > 0) {
-      this.logger.warn('Could not parse filter string: %s', filterString);
-      return undefined;
+      throw new Error(`Could not parse filter: ${filterString}`);
     }
 
     return search.parsedSearchToRequest(clause);
   }
+}
 
-  private async getNextChannelNumber(): Promise<number> {
-    const channels = await this.channelDB.getAllChannels();
-    const usedNumbers = new Set(channels.map((c) => c.number));
-    let next = 1;
-    while (usedNumbers.has(next)) {
-      next++;
-    }
-    return next;
+function selectsContent({ query, programIds }: ContentAssignment): boolean {
+  if (programIds?.length) {
+    return true;
   }
+  if (!query) {
+    return false;
+  }
+  return (
+    isNonEmptyString(query.filterString) ||
+    isNonEmptyString(query.keywords) ||
+    isNonEmptyString(query.groupingId) ||
+    !!query.mediaSourceIds?.length ||
+    !!query.libraryIds?.length ||
+    !!query.programTypes?.length
+  );
 }

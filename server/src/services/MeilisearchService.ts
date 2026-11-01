@@ -2181,7 +2181,7 @@ export class MeilisearchService implements ISearchService {
   }
 }
 
-export function encodeCaseSensitiveId(id: string): SingleCaseString {
+function encodeCaseSensitiveId(id: string): SingleCaseString {
   return tag(base32.encode(id));
 }
 
