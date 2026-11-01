@@ -906,6 +906,7 @@ describe('random slot padding in a zone with a quarter-hour offset', () => {
   // every local half hour.
   const TZ = 'Asia/Kathmandu';
   const oneMin = 60 * 1000;
+  const moviesShowId = randomUUID();
 
   let originalTZ: string | undefined;
   beforeAll(() => {
@@ -933,7 +934,7 @@ describe('random slot padding in a zone with a quarter-hour offset', () => {
             originalAirDate: `2000-01-${String(i + 1).padStart(2, '0')}`,
           }),
           parentFillerLists: [],
-          parentCustomShows: [],
+          parentCustomShows: [{ customShowId: moviesShowId, index: i }],
           parentSmartCollections: [],
         }),
       );
@@ -950,7 +951,8 @@ describe('random slot padding in a zone with a quarter-hour offset', () => {
         slots: [
           {
             id: randomUUID(),
-            type: 'movie',
+            type: 'custom-show',
+            customShowId: moviesShowId,
             order: 'next',
             direction: 'asc',
             weight: 1,
@@ -963,13 +965,19 @@ describe('random slot padding in a zone with a quarter-hour offset', () => {
       const starts: number[] = [];
       let t = result.startTime;
       for (const item of result.lineup) {
-        if (item.type === 'content') starts.push(t);
+        if (item.type === 'custom') starts.push(t);
         t += item.duration;
       }
 
       expect(starts[0]).toBe(+start);
       expect(starts.length).toBeGreaterThan(20);
       expect(starts.filter((s) => dayjs(s).minute() % 30 !== 0)).toEqual([]);
+
+      // Each 25-minute movie fills exactly one half hour. A UTC-anchored
+      // end-of-block pad overshoots to local :45, and the next block slips to
+      // the following hour.
+      const gaps = starts.slice(1).map((s, i) => s - (starts[i] ?? NaN));
+      expect(gaps.filter((g) => g !== 30 * oneMin)).toEqual([]);
     },
   );
 });

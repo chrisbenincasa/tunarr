@@ -4373,7 +4373,8 @@ describe('padding in a zone with a quarter-hour offset', () => {
         {
           id: randomUUID(),
           startTime: 0,
-          type: 'movie',
+          type: 'custom-show',
+          customShowId: moviesShowId,
           order: 'next',
           direction: 'asc',
         },
@@ -4383,7 +4384,7 @@ describe('padding in a zone with a quarter-hour offset', () => {
     const start = dayjs('2025-01-06');
     const result = await scheduleTimeSlots(
       schedule,
-      programs,
+      inMoviesShow(programs),
       undefined,
       0,
       start,
@@ -4392,7 +4393,7 @@ describe('padding in a zone with a quarter-hour offset', () => {
     const starts: number[] = [];
     let t = result.startTime;
     for (const item of result.lineup) {
-      if (item.type === 'content') starts.push(t);
+      if (item.type === 'custom') starts.push(t);
       t += item.duration;
     }
 
