@@ -26,9 +26,7 @@ describe('basicConditionToCel', () => {
     const group: ConditionGroup = {
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'program_type', operator: 'neq', value: 'episode' },
-      ],
+      conditions: [{ type: 'program_type', operator: 'neq', value: 'episode' }],
     };
     expect(basicConditionToCel(group)).toBe('program.type != "episode"');
   });
@@ -57,9 +55,7 @@ describe('basicConditionToCel', () => {
     const group: ConditionGroup = {
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'subtitle_language', operator: 'in', value: 'jpn' },
-      ],
+      conditions: [{ type: 'subtitle_language', operator: 'in', value: 'jpn' }],
     };
     expect(basicConditionToCel(group)).toBe('"jpn" in subtitle.languages');
   });
@@ -68,9 +64,7 @@ describe('basicConditionToCel', () => {
     const group: ConditionGroup = {
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'audio_channels', operator: 'gte', value: 6 },
-      ],
+      conditions: [{ type: 'audio_channels', operator: 'gte', value: 6 }],
     };
     expect(basicConditionToCel(group)).toBe(
       'audio.streams.exists(s, s.channels >= 6)',
@@ -142,9 +136,7 @@ describe('celToBasicCondition', () => {
     expect(result).toEqual({
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'program_type', operator: 'eq', value: 'movie' },
-      ],
+      conditions: [{ type: 'program_type', operator: 'eq', value: 'movie' }],
     });
   });
 
@@ -153,9 +145,7 @@ describe('celToBasicCondition', () => {
     expect(result).toEqual({
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'audio_language', operator: 'in', value: 'eng' },
-      ],
+      conditions: [{ type: 'audio_language', operator: 'in', value: 'eng' }],
     });
   });
 
@@ -226,9 +216,7 @@ describe('celToBasicCondition', () => {
     expect(result).toEqual({
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'audio_channels', operator: 'gte', value: 6 },
-      ],
+      conditions: [{ type: 'audio_channels', operator: 'gte', value: 6 }],
     });
   });
 
@@ -247,9 +235,7 @@ describe('round-trip', () => {
     {
       type: 'group',
       operator: 'and',
-      conditions: [
-        { type: 'program_type', operator: 'eq', value: 'movie' },
-      ],
+      conditions: [{ type: 'program_type', operator: 'eq', value: 'movie' }],
     },
     {
       type: 'group',

@@ -9,8 +9,16 @@ import {
 } from '@mui/material';
 import { t } from '@lingui/core/macro';
 import { Trans } from '@lingui/react/macro';
-import type { ConditionEntry, ConditionGroup, ConditionOperator } from './types.ts';
-import { createDefaultClause, createDefaultGroup, isConditionGroup } from './types.ts';
+import type {
+  ConditionEntry,
+  ConditionGroup,
+  ConditionOperator,
+} from './types.ts';
+import {
+  createDefaultClause,
+  createDefaultGroup,
+  isConditionGroup,
+} from './types.ts';
 import { ConditionClauseEditor } from './ConditionClauseEditor.tsx';
 
 interface Props {
@@ -98,10 +106,16 @@ export function ConditionGroupEditor({ group, onChange, depth = 0 }: Props) {
             onChange={handleOperatorChange}
             size="small"
           >
-            <ToggleButton value="and" sx={{ px: 1.5, py: 0.25, textTransform: 'none' }}>
+            <ToggleButton
+              value="and"
+              sx={{ px: 1.5, py: 0.25, textTransform: 'none' }}
+            >
               {t`ALL`}
             </ToggleButton>
-            <ToggleButton value="or" sx={{ px: 1.5, py: 0.25, textTransform: 'none' }}>
+            <ToggleButton
+              value="or"
+              sx={{ px: 1.5, py: 0.25, textTransform: 'none' }}
+            >
               {t`ANY`}
             </ToggleButton>
           </ToggleButtonGroup>

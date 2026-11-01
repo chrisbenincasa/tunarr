@@ -31,7 +31,10 @@ export function ConditionEditor({ index, onValidateCondition }: Props) {
 
   // Try to parse the current CEL value on mount
   const initialCel = getValues(`${prefix}.condition`);
-  const initialParsed = useMemo(() => celToBasicCondition(initialCel), [initialCel]);
+  const initialParsed = useMemo(
+    () => celToBasicCondition(initialCel),
+    [initialCel],
+  );
 
   const [mode, setMode] = useState<ConditionMode>(
     initialParsed ? 'basic' : 'cel',
@@ -150,8 +153,7 @@ export function ConditionEditor({ index, onValidateCondition }: Props) {
               {...field}
               label={t`CEL Expression`}
               helperText={
-                error?.message ??
-                t`CEL expression. Use "true" to always match.`
+                error?.message ?? t`CEL expression. Use "true" to always match.`
               }
               error={!!error}
               size="small"

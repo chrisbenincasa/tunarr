@@ -100,12 +100,12 @@ export default function ChannelTranscodingConfig() {
 
   const [watermark, transcodeConfigId, fadePeriod, streamMode, useEtvNext] =
     watch([
-    'watermark',
-    'transcodeConfigId',
-    'watermark.fadeConfig.0.periodMins',
-    'streamMode',
-    'useEtvNext',
-  ]);
+      'watermark',
+      'transcodeConfigId',
+      'watermark.fadeConfig.0.periodMins',
+      'streamMode',
+      'useEtvNext',
+    ]);
 
   const transcodeConfig = useMemo(
     () => find(transcodeConfigs.data, (conf) => conf.id === transcodeConfigId)!,

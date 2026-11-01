@@ -4,6 +4,7 @@ import type {
   ContentBackedStreamLineupItem,
   StreamLineupItem,
 } from '@/db/derived_types/StreamLineup.js';
+import type { Lineup } from '@/db/derived_types/Lineup.js';
 import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import {
   buildCelContext,
@@ -270,6 +271,7 @@ export class TroubleshootService {
         result,
         errors,
         channel: { ...channel, transcodeConfig },
+        lineup,
         program,
         streamDetails,
       });
@@ -279,6 +281,7 @@ export class TroubleshootService {
     // session will perform its own selection through the same code path)
     await this.traceStreamSelection({
       channel,
+      lineup,
       program,
       streamDetails,
       result,
@@ -472,12 +475,14 @@ export class TroubleshootService {
 
   private async traceStreamSelection({
     channel,
+    lineup,
     program,
     streamDetails,
     result,
     errors,
   }: {
     channel: Pick<ChannelOrmWithTranscodeConfig, 'uuid' | 'name' | 'number'>;
+    lineup: Lineup;
     program: TroubleshootProgram;
     streamDetails: ProgramStreamResult;
     result: TroubleshootResult;
@@ -486,7 +491,7 @@ export class TroubleshootService {
     try {
       // The request only names a program, so look for it in the channel's
       // lineup to learn whether it plays from a filler list or custom show.
-      const lineupEntry = lineup?.items.find(
+      const lineupEntry = lineup.items.find(
         (item) => item.type === 'content' && item.id === program.uuid,
       );
       const fillerListId =
@@ -508,10 +513,11 @@ export class TroubleshootService {
       const subtitleStreams = streamDetails.streamDetails.subtitleDetails;
 
       const trace: TroubleshootStreamSelectionTrace = { levels: [] };
+      const { mediaSourceId } = program;
 
-      if (isNonEmptyArray(audioStreams)) {
+      if (isNonEmptyArray(audioStreams) && mediaSourceId !== null) {
         const baseItem = {
-          program: { ...program, mediaSourceId: program.mediaSourceId },
+          program: { ...program, mediaSourceId },
           duration: program.duration,
           infiniteLoop: false,
           programBeginMs: +dayjs(),
@@ -624,6 +630,7 @@ export class TroubleshootService {
     result,
     errors,
     channel,
+    lineup,
     program,
     streamDetails,
   }: {
@@ -631,11 +638,13 @@ export class TroubleshootService {
     result: TroubleshootResult;
     errors: string[];
     channel: ChannelOrmWithTranscodeConfig;
+    lineup: Lineup;
     program: TroubleshootProgram;
     streamDetails: ProgramStreamResult;
   }): Promise<TroubleshootResult> {
     await this.traceStreamSelection({
       channel,
+      lineup,
       program,
       streamDetails,
       result,

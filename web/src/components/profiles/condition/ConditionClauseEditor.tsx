@@ -19,7 +19,11 @@ import {
   NUMERIC_OPERATOR_LABELS,
   PROGRAM_TYPES,
 } from './types.ts';
-import type { ComparisonOperator, ListOperator, NumericOperator } from './types.ts';
+import type {
+  ComparisonOperator,
+  ListOperator,
+  NumericOperator,
+} from './types.ts';
 import { LanguageAutocomplete } from '@/components/LanguageAutocomplete.tsx';
 
 interface Props {
@@ -63,7 +67,12 @@ export function ConditionClauseEditor({
   };
 
   return (
-    <Stack direction="row" spacing={1} alignItems="center" sx={{ minHeight: 40 }}>
+    <Stack
+      direction="row"
+      spacing={1}
+      alignItems="center"
+      sx={{ minHeight: 40 }}
+    >
       {/* Clause type selector */}
       <FormControl size="small" sx={{ minWidth: 170 }}>
         <InputLabel>
@@ -105,9 +114,7 @@ export function ConditionClauseEditor({
           <FormControl size="small" sx={{ minWidth: 140 }}>
             <Select
               value={clause.value}
-              onChange={(e) =>
-                onChange({ ...clause, value: e.target.value })
-              }
+              onChange={(e) => onChange({ ...clause, value: e.target.value })}
             >
               {PROGRAM_TYPES.map((pt) => (
                 <MenuItem key={pt.value} value={pt.value}>

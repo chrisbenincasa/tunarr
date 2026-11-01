@@ -51,10 +51,7 @@ function entryToCel(entry: ConditionEntry, parentOperator?: string): string {
   return groupToCel(entry, parentOperator);
 }
 
-function groupToCel(
-  group: ConditionGroup,
-  parentOperator?: string,
-): string {
+function groupToCel(group: ConditionGroup, parentOperator?: string): string {
   if (group.conditions.length === 0) {
     return 'true';
   }

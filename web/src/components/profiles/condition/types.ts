@@ -57,7 +57,10 @@ export const CLAUSE_TYPE_LABELS: Record<ClauseType, MessageDescriptor> = {
   audio_channels: msg`Audio channel count`,
 };
 
-export const COMPARISON_OPERATOR_LABELS: Record<ComparisonOperator, MessageDescriptor> = {
+export const COMPARISON_OPERATOR_LABELS: Record<
+  ComparisonOperator,
+  MessageDescriptor
+> = {
   eq: msg`is`,
   neq: msg`is not`,
 };
@@ -75,7 +78,9 @@ export const NUMERIC_OPERATOR_LABELS: Record<NumericOperator, string> = {
   lt: '<',
 };
 
-export function isConditionGroup(entry: ConditionEntry): entry is ConditionGroup {
+export function isConditionGroup(
+  entry: ConditionEntry,
+): entry is ConditionGroup {
   return entry.type === 'group';
 }
 
