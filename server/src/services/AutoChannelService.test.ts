@@ -199,11 +199,34 @@ describe('AutoChannelService.createChannel', () => {
     await service.createChannel(
       weightedMixRequest({
         group_1: { query: { filterString: 'genre = "Comedy"' } },
-        group_2: { programIds: ['p9'] },
+        group_2: { query: { libraryIds: ['lib-1'] } },
       }),
     );
 
     expect(smartCollectionsDB.insert).toHaveBeenCalledTimes(2);
+  });
+
+  test('rejects Classic TV Day blocks that share a start time', async () => {
+    const { service, smartCollectionsDB } = makeService();
+
+    await expect(
+      service.createChannel({
+        presetId: 'classic-tv-day',
+        contentAssignments: {
+          morning: { query: { filterString: 'genre = "News"' } },
+          evening: { query: { filterString: 'genre = "Drama"' } },
+        },
+        dynamicParams: {
+          type: 'classic_tv_day',
+          blocks: [
+            { role: 'morning', startTime: 3_600_000 },
+            { role: 'evening', startTime: 3_600_000 },
+          ],
+        },
+      }),
+    ).rejects.toThrow('cannot start at the same time');
+
+    expect(smartCollectionsDB.insert).not.toHaveBeenCalled();
   });
 
   test('deletes its collections when a role has too few programs', async () => {

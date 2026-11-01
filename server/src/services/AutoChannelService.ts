@@ -9,7 +9,6 @@ import { isTerminalItemType, tag } from '@tunarr/types';
 import type {
   AutoChannelCreateRequest,
   ChannelPreset,
-  ContentAssignment,
   ContentPreviewResponse,
   ContentQuery,
   ContentRequirement,
@@ -140,8 +139,9 @@ export class AutoChannelService {
       const allProgramIds: string[] = [];
 
       for (const requirement of roles) {
-        const assignment = request.contentAssignments[requirement.role];
-        const query = assignment?.query ?? requirement.defaultQuery;
+        const query =
+          request.contentAssignments[requirement.role]?.query ??
+          requirement.defaultQuery;
         const filter = filtersByRole[requirement.role];
 
         const collectionResult = await this.smartCollectionsDB.insert({
@@ -163,14 +163,12 @@ export class AutoChannelService {
         createdCollectionIds.push(collectionId);
         smartCollectionIdsByRole[requirement.role] = collectionId;
 
-        const programIds = assignment?.programIds?.length
-          ? assignment.programIds
-          : (
-              await this.smartCollectionsDB.materializeSmartCollection(
-                collectionId,
-                true,
-              )
-            ).map((p) => p.id);
+        const programIds = (
+          await this.smartCollectionsDB.materializeSmartCollection(
+            collectionId,
+            true,
+          )
+        ).map((p) => p.id);
 
         if (programIds.length < requirement.minPrograms) {
           throw new Error(
@@ -285,6 +283,13 @@ export class AutoChannelService {
           `Missing content assignments for roles: ${missing.join(', ')}`,
         );
       }
+
+      if (request.dynamicParams.type === 'classic_tv_day') {
+        const startTimes = request.dynamicParams.blocks.map((b) => b.startTime);
+        if (new Set(startTimes).size !== startTimes.length) {
+          throw new Error('Two blocks cannot start at the same time');
+        }
+      }
     }
 
     for (const requirement of roles) {
@@ -294,7 +299,7 @@ export class AutoChannelService {
           `Missing content assignment for "${requirement.label}"`,
         );
       }
-      if (isDynamic && assignment && !selectsContent(assignment)) {
+      if (isDynamic && assignment && !selectsContent(assignment.query)) {
         throw new Error(`"${requirement.label}" needs a content filter`);
       }
     }
@@ -499,13 +504,7 @@ export class AutoChannelService {
   }
 }
 
-function selectsContent({ query, programIds }: ContentAssignment): boolean {
-  if (programIds?.length) {
-    return true;
-  }
-  if (!query) {
-    return false;
-  }
+function selectsContent(query: ContentQuery): boolean {
   return (
     isNonEmptyString(query.filterString) ||
     isNonEmptyString(query.keywords) ||
