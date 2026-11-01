@@ -14,7 +14,12 @@ const meta = {
     ),
   ],
   args: {
-    version: { state: 'loaded', tunarr: '1.2.0', ffmpeg: '7.1.1' },
+    version: {
+      state: 'loaded',
+      tunarr: '1.2.0',
+      ffmpeg: '7.1.1',
+      etvNext: '0.2.0+linux-x64',
+    },
     onCopyXmlTvUrl: fn(),
     onCopyM3uUrl: fn(),
   },

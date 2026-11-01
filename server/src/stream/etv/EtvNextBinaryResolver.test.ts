@@ -145,3 +145,49 @@ describe('resolveChecked', () => {
     );
   });
 });
+
+describe('getInstalledVersion', () => {
+  test('returns undefined when the binary is missing', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'etv-resolver-'));
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    const childProcessHelper = {
+      getStdout: vi.fn(),
+    } as unknown as ChildProcessHelper;
+    const resolver = new EtvNextBinaryResolver(childProcessHelper);
+
+    await expect(resolver.getInstalledVersion()).resolves.toBeUndefined();
+    expect(childProcessHelper.getStdout).not.toHaveBeenCalled();
+  });
+
+  test('returns undefined when the version probe fails', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'etv-resolver-'));
+    await fs.writeFile(path.join(dir, ETV_NEXT_BINARY_NAME), '');
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    const childProcessHelper = {
+      getStdout: vi.fn(() => Promise.reject(new Error('timed out'))),
+    } as unknown as ChildProcessHelper;
+    const resolver = new EtvNextBinaryResolver(childProcessHelper);
+
+    await expect(resolver.getInstalledVersion()).resolves.toBeUndefined();
+  });
+
+  test('reads the full version once and caches it', async () => {
+    const dir = await fs.mkdtemp(path.join(os.tmpdir(), 'etv-resolver-'));
+    await fs.writeFile(path.join(dir, ETV_NEXT_BINARY_NAME), '');
+    vi.spyOn(process, 'cwd').mockReturnValue(dir);
+    const childProcessHelper = {
+      getStdout: vi.fn(() =>
+        Promise.resolve(
+          `${ETV_NEXT_BINARY_NAME} 0.2.0-96aa6cb6-develop+linux-x64`,
+        ),
+      ),
+    } as unknown as ChildProcessHelper;
+    const resolver = new EtvNextBinaryResolver(childProcessHelper);
+
+    await expect(resolver.getInstalledVersion()).resolves.toBe(
+      '0.2.0-96aa6cb6-develop+linux-x64',
+    );
+    await resolver.getInstalledVersion();
+    expect(childProcessHelper.getStdout).toHaveBeenCalledTimes(1);
+  });
+});

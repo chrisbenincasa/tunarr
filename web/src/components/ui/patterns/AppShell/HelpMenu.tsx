@@ -22,7 +22,7 @@ import { ShellIconButton, type ShellIconButtonVariant } from './shellLinks.ts';
 export type HelpMenuVersion =
   | { state: 'loading' }
   | { state: 'error' }
-  | { state: 'loaded'; tunarr: string; ffmpeg: string };
+  | { state: 'loaded'; tunarr: string; ffmpeg: string; etvNext?: string };
 
 export type HelpMenuProps = {
   version: HelpMenuVersion;
@@ -147,7 +147,16 @@ export const HelpMenu = ({
             }
             secondary={
               version.state === 'loaded' ? (
-                <Trans>FFmpeg {version.ffmpeg}</Trans>
+                <>
+                  <Box component="span" sx={{ display: 'block' }}>
+                    <Trans>FFmpeg {version.ffmpeg}</Trans>
+                  </Box>
+                  {version.etvNext ? (
+                    <Box component="span" sx={{ display: 'block' }}>
+                      <Trans>ErsatzTV Next {version.etvNext}</Trans>
+                    </Box>
+                  ) : null}
+                </>
               ) : undefined
             }
           />

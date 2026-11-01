@@ -31,6 +31,7 @@ export const HelpMenuContainer = ({
                 state: 'loaded',
                 tunarr: version.tunarr,
                 ffmpeg: version.ffmpeg,
+                etvNext: version.etvNext,
               }
       }
       onCopyXmlTvUrl={() => copy(xmlTvUrl, t`Copied XMLTV URL to clipboard`)}

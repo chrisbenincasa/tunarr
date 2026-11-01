@@ -246,6 +246,7 @@ export type InsertMediaSourceRequest = z.infer<
 export const VersionApiResponseSchema = z.object({
   tunarr: z.string(),
   ffmpeg: z.string(),
+  etvNext: z.string().optional(),
 });
 
 export type VersionApiResponse = z.infer<typeof VersionApiResponseSchema>;

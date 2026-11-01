@@ -14914,6 +14914,7 @@ export type GetApiVersionResponses = {
     200: {
         tunarr: string;
         ffmpeg: string;
+        etvNext?: string;
     };
 };
 

@@ -2,6 +2,7 @@ import type { FfmpegEncoder } from '@/ffmpeg/ffmpegInfo.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { globalOptions, serverOptions } from '@/globals.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
+import { EtvNextBinaryResolver } from '@/stream/etv/EtvNextBinaryResolver.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
 import { fileExists } from '@/util/fsUtil.js';
@@ -107,10 +108,14 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     },
     async (_, res) => {
       try {
-        const v = await container.get<FfmpegInfo>(FfmpegInfo).getVersion();
+        const [v, etvNext] = await Promise.all([
+          container.get<FfmpegInfo>(FfmpegInfo).getVersion(),
+          container.get(EtvNextBinaryResolver).getInstalledVersion(),
+        ]);
         return res.send({
           tunarr: getTunarrVersion(),
           ffmpeg: v.versionString,
+          etvNext,
         });
       } catch (err) {
         logger.error(err);
