@@ -21,7 +21,10 @@ import {
   buildRoleQuery,
   hasRequiredPick,
 } from '@/components/auto-channel/roleQuery';
-import { rolePreviewStatus } from '@/components/auto-channel/rolePreviewStatus';
+import {
+  canCreateChannel,
+  rolePreviewStatus,
+} from '@/components/auto-channel/rolePreviewStatus';
 import { SimpleContentControls } from '@/components/auto-channel/SimpleContentControls';
 import PaddedPaper from '@/components/base/PaddedPaper';
 import { RouterButtonLink } from '@/components/base/RouterButtonLink';
@@ -123,12 +126,16 @@ export function AutoCreateWizard() {
       Object.fromEntries(
         roles.map((req) => [
           req.role,
-          hasRequiredPick(req, roleSelections[req.role])
+          hasRequiredPick(
+            req,
+            roleSelections[req.role],
+            !!selectedPreset?.dynamicRequirements,
+          )
             ? roleQueries[req.role]
             : undefined,
         ]),
       ),
-    [roles, roleSelections, roleQueries],
+    [roles, roleSelections, roleQueries, selectedPreset],
   );
 
   const previews = useRolePreviews(previewQueries);
@@ -436,7 +443,9 @@ export function AutoCreateWizard() {
             variant="contained"
             color="primary"
             onClick={handleCreate}
-            disabled={createMutation.isPending || totalPrograms === 0}
+            disabled={
+              createMutation.isPending || !canCreateChannel(roles, previews)
+            }
             startIcon={
               createMutation.isPending ? (
                 <CircularProgress size={20} />

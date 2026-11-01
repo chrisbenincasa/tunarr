@@ -8,10 +8,7 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import { capitalize } from 'lodash-es';
-import {
-  getApiCustomShowsOptions,
-  getApiMediaSourcesOptions,
-} from '../../generated/@tanstack/react-query.gen.ts';
+import { getApiMediaSourcesOptions } from '../../generated/@tanstack/react-query.gen.ts';
 import {
   selectEnabledLibraries,
   useMediaSourceLibraries,
@@ -29,14 +26,11 @@ type Props = {
 
 export function GlobalContentControls({ context, onContextChange }: Props) {
   const { data: mediaSources } = useQuery(getApiMediaSourcesOptions());
-  const { data: customShows } = useQuery(getApiCustomShowsOptions());
-
-  const isCustomShows = context.mediaSourceId === 'custom-shows';
 
   const { data: libraries } = useMediaSourceLibraries(
     context.mediaSourceId ?? '',
     {
-      enabled: context.mediaSourceId !== undefined && !isCustomShows,
+      enabled: context.mediaSourceId !== undefined,
       select: selectEnabledLibraries,
     },
   );
@@ -66,40 +60,35 @@ export function GlobalContentControls({ context, onContextChange }: Props) {
                 {capitalize(source.type)}: {source.name}
               </MenuItem>
             ))}
-            {customShows && customShows.length > 0 && (
-              <MenuItem value="custom-shows">Custom Shows</MenuItem>
-            )}
           </Select>
         </FormControl>
 
-        {!isCustomShows && (
-          <FormControl
-            size="small"
-            sx={{ minWidth: 200 }}
-            disabled={!context.mediaSourceId}
+        <FormControl
+          size="small"
+          sx={{ minWidth: 200 }}
+          disabled={!context.mediaSourceId}
+        >
+          <InputLabel>Library</InputLabel>
+          <Select
+            multiple
+            value={context.libraryIds ?? []}
+            label="Library"
+            onChange={(e) => {
+              const val = e.target.value;
+              const ids = typeof val === 'string' ? [val] : val;
+              onContextChange({
+                ...context,
+                libraryIds: ids.length > 0 ? ids : undefined,
+              });
+            }}
           >
-            <InputLabel>Library</InputLabel>
-            <Select
-              multiple
-              value={context.libraryIds ?? []}
-              label="Library"
-              onChange={(e) => {
-                const val = e.target.value;
-                const ids = typeof val === 'string' ? [val] : val;
-                onContextChange({
-                  ...context,
-                  libraryIds: ids.length > 0 ? ids : undefined,
-                });
-              }}
-            >
-              {libraries?.map((lib) => (
-                <MenuItem key={lib.id} value={lib.id}>
-                  {lib.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        )}
+            {libraries?.map((lib) => (
+              <MenuItem key={lib.id} value={lib.id}>
+                {lib.name}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
       </Stack>
     </Stack>
   );
