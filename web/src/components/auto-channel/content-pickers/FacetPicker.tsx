@@ -7,6 +7,7 @@ import { capitalize } from 'lodash-es';
 import type { HTMLAttributes } from 'react';
 import { useCallback, useEffect, useState } from 'react';
 import { postApiProgramsFacetsByFacetName } from '../../../generated/sdk.gen.ts';
+import { facetRequest } from './facetRequest.ts';
 
 type FacetValue = { label: string; count: number };
 
@@ -60,12 +61,7 @@ export function FacetPicker({
   const fetchFacets = useMutation({
     mutationFn: async (query: string) => {
       const { data } = await postApiProgramsFacetsByFacetName({
-        path: { facetName: indexField },
-        query: {
-          facetQuery: query || undefined,
-          mediaSourceId,
-          libraryId,
-        },
+        ...facetRequest(indexField, query, mediaSourceId, libraryId),
         throwOnError: true,
       });
       return data;
