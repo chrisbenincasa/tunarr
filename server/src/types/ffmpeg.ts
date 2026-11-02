@@ -2,11 +2,38 @@ import { parseIntOrNull } from '@/util/index.js';
 import { isNull, split } from 'lodash-es';
 import { z } from 'zod/v4';
 
+// ffprobe reports a disposition object on every stream kind, including the
+// video streams. A local audio file's embedded cover art is a `video` stream
+// whose only marker is `attached_pic`, so the field has to be parsed to tell
+// art apart from a real video track (#2242).
+const FfprobeStreamDispositionSchema = z.object({
+  default: z.number().optional(),
+  dub: z.number().optional(),
+  original: z.number().optional(),
+  comment: z.number().optional(),
+  lyrics: z.number().optional(),
+  karaoke: z.number().optional(),
+  forced: z.number().optional(),
+  hearing_impaired: z.number().optional(),
+  visual_impaired: z.number().optional(),
+  clean_effects: z.number().optional(),
+  attached_pic: z.number().optional(),
+  timed_thumbnails: z.number().optional(),
+  non_diegetic: z.number().optional(),
+  captions: z.number().optional(),
+  descriptions: z.number().optional(),
+  metadata: z.number().optional(),
+  dependent: z.number().optional(),
+  still_image: z.number().optional(),
+  multilayer: z.number().optional(),
+});
+
 const BaseFfprobeMediaStreamSchema = z.object({
   index: z.number(),
   codec_long_name: z.string().optional(),
   profile: z.string().optional(),
   tags: z.record(z.string(), z.string()).optional(),
+  disposition: FfprobeStreamDispositionSchema.optional(),
 });
 
 const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({
@@ -63,29 +90,6 @@ export type FfprobeAudioStream = z.infer<typeof FfprobeAudioStreamSchema>;
 const FfprobeSubtitleStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('subtitle'),
   codec_name: z.string().optional(),
-  disposition: z
-    .object({
-      default: z.number().optional(),
-      dub: z.number().optional(),
-      original: z.number().optional(),
-      comment: z.number().optional(),
-      lyrics: z.number().optional(),
-      karaoke: z.number().optional(),
-      forced: z.number().optional(),
-      hearing_impaired: z.number().optional(),
-      visual_impaired: z.number().optional(),
-      clean_effects: z.number().optional(),
-      attached_pic: z.number().optional(),
-      timed_thumbnails: z.number().optional(),
-      non_diegetic: z.number().optional(),
-      captions: z.number().optional(),
-      descriptions: z.number().optional(),
-      metadata: z.number().optional(),
-      dependent: z.number().optional(),
-      still_image: z.number().optional(),
-      multilayer: z.number().optional(),
-    })
-    .optional(),
 });
 
 const FfprobeAttachmentStreamSchema = BaseFfprobeMediaStreamSchema.extend({
