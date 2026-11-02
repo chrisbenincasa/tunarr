@@ -114,6 +114,42 @@ describe('timing', () => {
       wallClock,
     );
   });
+
+  test('floors fractional durations so the item still maps', () => {
+    const { item, ignored } = map(
+      programItem({ startOffset: 0, streamDuration: 1_548_021.000000001 }),
+      { source: new FileStreamSource('/media/a.mkv') },
+    );
+
+    expect(ignored).toEqual([]);
+    expect(item.source).toMatchObject({
+      source_type: 'local',
+      path: '/media/a.mkv',
+      in_point_ms: 0,
+      out_point_ms: 1_548_021,
+    });
+  });
+
+  test('never ends past the unrounded media end', () => {
+    const startOffset = 60_000.7;
+    const streamDuration = 600_000.9;
+    const { item } = map(programItem({ startOffset, streamDuration }), {
+      source: new FileStreamSource('/media/a.mkv'),
+    });
+    const source = item.source;
+
+    if (source?.source_type !== 'local') {
+      throw new Error('expected a local source');
+    }
+    expect(source.in_point_ms).toBe(60_000);
+    expect(source.out_point_ms).toBe(660_000);
+    expect(source.out_point_ms ?? 0).toBeLessThanOrEqual(
+      startOffset + streamDuration,
+    );
+    expect(dayjs(item.finish).valueOf() - dayjs(item.start).valueOf()).toBe(
+      (source.out_point_ms ?? 0) - (source.in_point_ms ?? 0),
+    );
+  });
 });
 
 describe('stream sources', () => {
@@ -941,6 +977,24 @@ describe('watermarks', () => {
     }).timing;
 
     expect(timing).toMatchObject({ clock: 'wall', disable_after_ms: 120_000 });
+  });
+
+  test('floors fractional durations and periods to whole milliseconds', () => {
+    expect(layer({ duration: 8.021 }).timing).toMatchObject({
+      frequency_ms: 8021,
+      hold_ms: 8021,
+    });
+
+    expect(
+      layer({
+        duration: 8.021,
+        fadeConfig: [{ periodMins: 1.005, leadingEdge: true }],
+      }).timing,
+    ).toMatchObject({
+      frequency_ms: 2 * 60_299,
+      hold_ms: 60_299 - 1_000,
+      disable_after_ms: 8021,
+    });
   });
 
   test('uses only the first fade config, as the built-in pipeline does', () => {

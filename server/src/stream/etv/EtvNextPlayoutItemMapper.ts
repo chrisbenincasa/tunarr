@@ -126,11 +126,12 @@ const WatermarkFadeMs = 1_000;
  * Like Tunarr's own pipeline, only the first fade config applies.
  */
 function watermarkTiming(watermark: Watermark): GraphicsTiming | undefined {
-  const durationMs = watermark.duration * 1000;
+  // Upstream takes whole milliseconds, and both settings allow fractions.
+  const durationMs = Math.floor(watermark.duration * 1000);
   const fade = watermark.fadeConfig?.[0];
 
   if (fade && fade.periodMins > 0) {
-    const periodMs = fade.periodMins * 60_000;
+    const periodMs = Math.floor(fade.periodMins * 60_000);
     return {
       timing_type: 'periodic',
       clock: 'wall',
@@ -403,13 +404,18 @@ export function toPlayoutItem({
   }
 
   const ignored: string[] = [];
-  const inPointMs = lineupItem.startOffset ?? 0;
-  const outPointMs = inPointMs + lineupItem.streamDuration;
+
+  // Upstream takes whole milliseconds, and stored durations can be fractional.
+  // Rounding down drops under a millisecond of content, while rounding up would
+  // send ffmpeg past the end of the media.
+  const inPointMs = Math.floor(lineupItem.startOffset ?? 0);
+  const durationMs = Math.floor(lineupItem.streamDuration);
+  const outPointMs = inPointMs + durationMs;
 
   const base = {
     id,
     start: dayjs(startMs).toISOString(),
-    finish: dayjs(startMs + lineupItem.streamDuration).toISOString(),
+    finish: dayjs(startMs + durationMs).toISOString(),
   };
 
   // Sourcing audio separately sidesteps the backend erroring out on a

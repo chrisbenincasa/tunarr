@@ -27,6 +27,16 @@ import type {
 } from './types.ts';
 import { FileStreamSource, HttpStreamSource } from './types.ts';
 
+/**
+ * Converts ffprobe seconds to whole milliseconds, rounding down.
+ *
+ * ffprobe prints microsecond precision, so snapping to microseconds first
+ * strips float noise (8.021 * 1000 is 8021.000000000001) before the floor.
+ */
+export function secondsToWholeMs(seconds: number): number {
+  return Math.floor(Math.round(seconds * 1_000_000) / 1_000);
+}
+
 type FfprobeStreamDetailsRequest = {
   path: string;
 };
@@ -158,7 +168,9 @@ export class FfprobeStreamDetails
         subtitleDetails: isNonEmptyArray(subtitleStreamDetails)
           ? subtitleStreamDetails
           : undefined,
-        duration: dayjs.duration({ seconds: probeDetails.format.duration }),
+        duration: dayjs.duration(
+          secondsToWholeMs(probeDetails.format.duration),
+        ),
         formatTags: probeDetails.format.tags,
         chapters: seq.collect(
           orderBy(probeDetails.chapters, (c) => c.start, 'asc'),
@@ -172,10 +184,8 @@ export class FfprobeStreamDetails
             return {
               chapterType: 'chapter',
               index,
-              startTime: dayjs
-                .duration({ seconds: startSeconds })
-                .asMilliseconds(),
-              endTime: dayjs.duration({ seconds: endSeconds }).asMilliseconds(),
+              startTime: secondsToWholeMs(startSeconds),
+              endTime: secondsToWholeMs(endSeconds),
               title: chapter?.tags?.['title'],
             } satisfies MediaChapter;
           },

@@ -230,7 +230,7 @@ export class EtvNextPlayoutWriter {
 
     return {
       startMs,
-      finishMs: startMs + lineupItem.streamDuration,
+      finishMs: startMs + Math.floor(lineupItem.streamDuration),
       items: [item],
       ignored,
     };
@@ -284,10 +284,14 @@ export class EtvNextPlayoutWriter {
 
       const { lineupItem, channelContext } = lineupResult.get();
 
+      // The mapper floors each item to whole milliseconds, so the cursor
+      // advances by the same amount to keep items back to back.
+      const advanceMs = Math.floor(lineupItem.streamDuration);
+
       // A non-advancing item would spin this loop forever, and upstream picks
       // overlapping items by rfind, so a zero-length one could also mask its
       // predecessor.
-      if (lineupItem.streamDuration <= 0) {
+      if (advanceMs <= 0) {
         this.logger.warn(
           'Stopping playout window for channel %s: a %s item reported a stream duration of %d',
           channel.uuid,
@@ -313,7 +317,7 @@ export class EtvNextPlayoutWriter {
 
       items.push(mapping.item);
       mapping.ignored.forEach((reason) => ignored.add(reason));
-      cursorMs += lineupItem.streamDuration;
+      cursorMs += advanceMs;
     }
 
     return {

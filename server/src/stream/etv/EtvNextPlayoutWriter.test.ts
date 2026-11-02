@@ -210,6 +210,25 @@ describe('materializeWindow', () => {
     expect(Date.parse(items[0].finish)).toBe(Date.parse(items[1].start));
   });
 
+  test('stays gapless and on whole milliseconds with fractional durations', async () => {
+    const { writer } = makeWriter({
+      items: [programItem(1000.999), programItem(1000.999)],
+    });
+
+    const window = await writer.materializeWindow({
+      channel,
+      startMs,
+      windowMs: 2_000,
+    });
+
+    expect(window.items).toHaveLength(2);
+    expect(Date.parse(window.items[0].finish)).toBe(
+      Date.parse(window.items[1].start),
+    );
+    expect(Date.parse(window.items[1].start)).toBe(startMs + 1000);
+    expect(window.finishMs).toBe(startMs + 2000);
+  });
+
   test('stops at the window edge rather than overshooting it', async () => {
     const { writer } = makeWriter({ items: [programItem(600_000)] });
 
@@ -524,6 +543,18 @@ describe('loop guards', () => {
   // items by rfind, so it could also mask the item before it.
   test('stops rather than spinning on an item that does not advance', async () => {
     const { writer } = makeWriter({ items: [programItem(0)] });
+
+    const { items } = await writer.materializeWindow({
+      channel,
+      startMs,
+      windowMs: 600_000,
+    });
+
+    expect(items).toEqual([]);
+  });
+
+  test('stops on an item shorter than a millisecond', async () => {
+    const { writer } = makeWriter({ items: [programItem(0.5)] });
 
     const { items } = await writer.materializeWindow({
       channel,
