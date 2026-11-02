@@ -148,4 +148,18 @@ describe('hasRequiredPick', () => {
       hasRequiredPick({}, { override: { libraryIds: ['lib'] } }, true),
     ).toBe(true);
   });
+
+  test('a dynamic role override on all sources is not a pick', () => {
+    expect(hasRequiredPick({}, { override: {} }, true)).toBe(false);
+    expect(
+      hasRequiredPick(
+        {},
+        { override: { mediaSourceIds: [], libraryIds: [] } },
+        true,
+      ),
+    ).toBe(false);
+    expect(
+      hasRequiredPick({}, { override: { programTypes: ['movie'] } }, true),
+    ).toBe(true);
+  });
 });
