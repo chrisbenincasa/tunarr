@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { v4 as randomUUID } from 'uuid';
 import type { ChannelPreset, ScheduleSkeleton } from '@tunarr/types/api';
 
 function makeShuffleScheduleConfig(
