@@ -7,6 +7,8 @@ import {
   documents,
   renderDocument,
 } from '../../../scripts/generate-etv-schemas.ts';
+import serverPackage from '../../../package.json' with { type: 'json' };
+import { ChannelConfigVersion } from './EtvNextChannelConfigMapper.ts';
 import { ChannelConfigSchema } from './generated/channelConfig.ts';
 import { LineupConfigSchema } from './generated/lineupConfig.ts';
 import { PlayoutSchema, VideoHintSchema } from './generated/playout.ts';
@@ -45,6 +47,22 @@ describe('vendored ErsatzTV next schemas', () => {
       const actual = createHash('sha256').update(contents).digest('hex');
       expect(actual, `${name} does not match the manifest`).toEqual(expected);
     }
+  });
+
+  test('come from the pinned release commit', async () => {
+    const manifest = JSON.parse(await readSchemaFile('manifest.json')) as {
+      commit: string;
+    };
+
+    expect(manifest.commit).toEqual(serverPackage.ersatztvNext.commit);
+  });
+
+  test('describe the channel config version the mapper writes', async () => {
+    const schema = JSON.parse(await readSchemaFile('channel_config.json')) as {
+      $id: string;
+    };
+
+    expect(ChannelConfigVersion).toEqual(schema.$id);
   });
 
   test('the checked-in generated output is what the generator produces', async () => {

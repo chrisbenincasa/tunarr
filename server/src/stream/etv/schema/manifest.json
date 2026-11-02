@@ -1,9 +1,9 @@
 {
   "source": "https://github.com/ErsatzTV/next",
-  "commit": "54c6cb9ec03b7bd259144896c625c06fda09b3d0",
-  "committedAt": "2026-10-23T17:31:16Z",
+  "commit": "d6c415550c01a1287e5061fcd839cfc517958c90",
+  "committedAt": "2026-10-31T12:26:28Z",
   "files": {
-    "channel_config.json": "5f83a547237ee8aa5a6e4c9cc227da5fe2ac7b4f495d4f79e5b9739b4c44ef8d",
+    "channel_config.json": "f181ef18e2453608c39a2d2190bfc94567cd9c9e079ff1ab336e75fc9e915a47",
     "lineup_config.json": "05498875c1686d811eda5279482a7a7c4e615a8cc69f98a68a7612c41384822a",
     "playout.json": "136c4197ea905df2e7a921df7c52c391a392c23f053394031dece6fa1340a707",
     "example-playout.json": "77fe63242340c042488a0962f6c9f0cfe9e22b413a0a7a51d9ebe4982f2a5c88"

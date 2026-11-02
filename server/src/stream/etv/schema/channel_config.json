@@ -1,5 +1,5 @@
 {
-  "$id": "https://ersatztv.org/channel/version/0.1.2",
+  "$id": "https://ersatztv.org/channel/version/0.1.3",
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "ChannelConfig",
   "description": "Settings for one channel: where its playout is, which ffmpeg to use, and the output format.\nA relative path in any of these settings is relative to the file that sets it.",
@@ -251,6 +251,13 @@
       "description": "Controls the content that replaces scheduled content when there is nothing to play\n(a gap in the playout) or when the scheduled item fails",
       "type": "object",
       "properties": {
+        "background_image": {
+          "description": "Still image shown instead of black, scaled and padded to the output size. Black is used\nif the image fails to play.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
         "duration_seconds": {
           "description": "Fallback length in seconds when the fallback has no end time, e.g. after a failed\ndynamic source. Default 60. Raised to the source's `retry_budget_ms` if shorter.",
           "type": [
@@ -551,6 +558,21 @@
         }
       ]
     },
+    "VaapiLowPower": {
+      "title": "VaapiLowPower",
+      "oneOf": [
+        {
+          "description": "Use low-power for HEVC when it supports bitrate rate control. Faster on Intel iGPUs with\nboth entrypoints; slightly lower quality on grainy sources.",
+          "type": "string",
+          "const": "auto"
+        },
+        {
+          "description": "Use the default entrypoint when the GPU has it.",
+          "type": "string",
+          "const": "never"
+        }
+      ]
+    },
     "VideoFilterOptionsConfig": {
       "type": "object",
       "properties": {
@@ -841,6 +863,11 @@
               "type": "null"
             }
           ]
+        },
+        "vaapi_low_power": {
+          "description": "Whether VAAPI HEVC encoding may use the low-power entrypoint (Intel VDEnc) when the GPU also\nhas the default one. Default `auto`.",
+          "$ref": "#/$defs/VaapiLowPower",
+          "default": "auto"
         },
         "width": {
           "description": "Width in pixels. Applies only when `height` is also set; otherwise the source size is kept.\nThe fallback uses 1920 when unset.",
