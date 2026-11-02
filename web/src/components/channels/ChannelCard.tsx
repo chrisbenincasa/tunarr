@@ -88,9 +88,11 @@ export const ChannelCard = ({
       <Box
         sx={{
           position: 'relative',
-          height: heroHeight,
+          minHeight: heroHeight,
           display: 'flex',
-          alignItems: 'flex-end',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: 1,
           p: dense ? 1 : 1.75,
           backgroundColor: tokens.surfaceRaised,
           color: common.white,
@@ -130,42 +132,41 @@ export const ChannelCard = ({
           </Box>
         )}
 
-        <Box
-          sx={{
-            position: 'absolute',
-            top: dense ? 8 : 14,
-            left: dense ? 8 : 14,
-            minWidth: dense ? 34 : 44,
-            height: dense ? 34 : 44,
-            px: 1,
-            boxSizing: 'border-box',
-            display: 'grid',
-            placeItems: 'center',
-            borderRadius: `${theme.sizes.radiusControl}px`,
-            backgroundColor: scrim,
-          }}
+        <Stack
+          direction="row"
+          justifyContent="space-between"
+          alignItems="center"
+          sx={{ position: 'relative' }}
         >
-          <MonoText sx={{ fontWeight: 600, fontSize: dense ? 15 : 18 }}>
-            {channel.number}
-          </MonoText>
-        </Box>
-
-        <Box
-          sx={{
-            position: 'absolute',
-            top: dense ? 10 : 18,
-            right: dense ? 8 : 14,
-            borderRadius: 999,
-            backgroundColor: scrim,
-          }}
-        >
-          <ChannelStatusPill status={status} onOpenSessions={onOpenSessions} />
-        </Box>
+          <Box
+            sx={{
+              minWidth: dense ? 34 : 44,
+              height: dense ? 34 : 44,
+              px: 1,
+              boxSizing: 'border-box',
+              display: 'grid',
+              placeItems: 'center',
+              borderRadius: `${theme.sizes.radiusControl}px`,
+              backgroundColor: scrim,
+            }}
+          >
+            <MonoText sx={{ fontWeight: 600, fontSize: dense ? 15 : 18 }}>
+              {channel.number}
+            </MonoText>
+          </Box>
+          <Box sx={{ borderRadius: 999, backgroundColor: scrim }}>
+            <ChannelStatusPill
+              status={status}
+              onOpenSessions={onOpenSessions}
+            />
+          </Box>
+        </Stack>
 
         {nowTitle && (
           <Box
             sx={{
               position: 'relative',
+              alignSelf: 'flex-start',
               maxWidth: '100%',
               minWidth: 0,
               px: 1.5,

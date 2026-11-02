@@ -1,6 +1,7 @@
 import { MoreVert } from '@mui/icons-material';
 import { Box, IconButton } from '@mui/material';
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { expect, within } from 'storybook/test';
 import { StoryRouter } from '../ui/patterns/AppShell/storyComponents.tsx';
 import { ChannelCard } from './ChannelCard.tsx';
 import { channelStatus } from './channelSummary.ts';
@@ -46,7 +47,27 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
-export const Live: Story = {};
+// The now-playing box must never cover the channel number badge, even with a
+// title and detail line.
+const noHeroOverlap: Story['play'] = async ({ canvasElement, args }) => {
+  const canvas = within(canvasElement);
+  const badge = canvas.getByText(args.channel.number.toString());
+  const nowPlaying = canvas.getByText('Now playing').parentElement;
+  if (!nowPlaying) {
+    throw new Error('Now playing label has no container');
+  }
+  const badgeBottom = badge.getBoundingClientRect().bottom;
+  await expect(nowPlaying.getBoundingClientRect().top).toBeGreaterThanOrEqual(
+    badgeBottom,
+  );
+};
+
+export const Live: Story = { play: noHeroOverlap };
+
+export const LiveDense: Story = {
+  globals: { density: 'dense' },
+  play: noHeroOverlap,
+};
 
 export const Idle: Story = { args: cardFor(1) };
 
