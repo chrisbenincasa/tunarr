@@ -1,11 +1,26 @@
 import { betterHumanize } from '@/helpers/dayjs.ts';
 import { useThemeTokens } from '@/hooks/useTunarrTheme.ts';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
-import { Add, Edit, SettingsRemote } from '@mui/icons-material';
-import { Box, LinearProgress, Stack, Tooltip, Typography } from '@mui/material';
+import {
+  Add,
+  ContentCopy,
+  Delete,
+  Download,
+  Edit,
+  SettingsRemote,
+} from '@mui/icons-material';
+import {
+  Box,
+  Button,
+  LinearProgress,
+  Stack,
+  Tooltip,
+  Typography,
+} from '@mui/material';
+import type { RowSelectionState } from '@tanstack/react-table';
 import type { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
-import { type ReactNode, useMemo } from 'react';
+import { type ReactNode, useMemo, useState } from 'react';
 import {
   RouterButtonLink,
   RouterIconButtonLink,
@@ -14,12 +29,14 @@ import { RouterLink } from '../base/RouterLink.tsx';
 import { EmptyState } from '../ui/EmptyState.tsx';
 import { MonoText } from '../ui/MonoText.tsx';
 import { PageHeader } from '../ui/PageHeader.tsx';
+import { Segmented } from '../ui/Segmented.tsx';
 import {
   CollectionView,
+  SelectionBar,
   type CollectionLayout,
 } from '../ui/patterns/CollectionView/index.ts';
 import { DataTable } from '../ui/table/DataTable.tsx';
-import { actionsColumn } from '../ui/table/columns.tsx';
+import { actionsColumn, selectColumn } from '../ui/table/columns.tsx';
 import {
   createAppColumnHelper,
   useTunarrTable,
@@ -28,7 +45,14 @@ import { useStoreBackedTableSettings } from '../ui/table/useStoreBackedTableSett
 import { ChannelCard } from './ChannelCard.tsx';
 import { ChannelIconDisplay } from './ChannelIconDisplay.tsx';
 import { ChannelStatusPill } from './ChannelStatusPill.tsx';
-import { channelStatus, type NowPlayingSummary } from './channelSummary.ts';
+import { ChannelsDeleteDialog } from './ChannelsDeleteDialog.tsx';
+import {
+  type ChannelStatusFilter,
+  channelStatus,
+  channelsM3uUrl,
+  matchesStatusFilter,
+  type NowPlayingSummary,
+} from './channelSummary.ts';
 
 export type TranscodeConfigRef = { id: string; name: string };
 
@@ -42,6 +66,13 @@ export type ChannelsViewProps = {
   // Overflow menu for one channel. `place` says which layout shows it, so the
   // menu can leave out actions that layout already shows as buttons.
   renderMenu: (channel: Channel, place: CollectionLayout) => ReactNode;
+
+  // The full playlist's URL. Bulk export adds the selected channel numbers.
+  m3uUrl: string;
+  onDuplicateChannels: (channels: Channel[]) => void;
+
+  // Called after the user confirms.
+  onDeleteChannels: (channels: Channel[]) => void;
   layout?: CollectionLayout;
 };
 
@@ -57,11 +88,33 @@ export const ChannelsView = ({
   onOpenChannel,
   onOpenSessions,
   renderMenu,
+  m3uUrl,
+  onDuplicateChannels,
+  onDeleteChannels,
   layout,
 }: ChannelsViewProps) => {
   const { t } = useLingui();
   const { tokens } = useThemeTokens();
   const tableState = useStoreBackedTableSettings('Channels');
+  const [statusFilter, setStatusFilter] = useState<ChannelStatusFilter>('all');
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [pendingDelete, setPendingDelete] = useState<Channel[] | null>(null);
+
+  const visibleChannels = useMemo(
+    () => channels.filter((c) => matchesStatusFilter(c, statusFilter)),
+    [channels, statusFilter],
+  );
+
+  // Selection only counts channels still on screen, so deleted or filtered
+  // channels never reach a bulk action.
+  const selected = visibleChannels.filter((c) => rowSelection[c.id]);
+
+  const keyboardNavigation = useMemo(
+    () => ({
+      onOpen: (row: { original: Channel }) => onOpenChannel(row.original),
+    }),
+    [onOpenChannel],
+  );
 
   const transcodeById = useMemo(
     () => new Map(transcodeConfigs.map((c) => [c.id, c])),
@@ -71,6 +124,7 @@ export const ChannelsView = ({
   const columns = useMemo(
     () =>
       columnHelper.columns([
+        selectColumn<Channel>({ getLabel: (channel) => channel.name }),
         columnHelper.accessor('number', {
           header: t`Number`,
           meta: { numeric: true, filterVariant: 'range', width: 96 },
@@ -219,24 +273,72 @@ export const ChannelsView = ({
 
   const table = useTunarrTable({
     columns,
-    data: channels,
+    data: visibleChannels,
+    getRowId: (channel) => channel.id,
     ...tableState,
+    state: { ...tableState.state, rowSelection },
+    onRowSelectionChange: setRowSelection,
   });
 
   const streaming = channels.filter(
     (c) => channelStatus(c.sessions).status === 'live',
   ).length;
 
-  const empty = (
-    <EmptyState
-      icon={<SettingsRemote />}
-      title={<Trans>You haven't created any channels yet.</Trans>}
-      actions={
-        <RouterButtonLink to="/channels/new" variant="contained">
-          <Trans>Create a Channel</Trans>
-        </RouterButtonLink>
-      }
-    />
+  const empty =
+    channels.length === 0 ? (
+      <EmptyState
+        icon={<SettingsRemote />}
+        title={<Trans>You haven't created any channels yet.</Trans>}
+        actions={
+          <RouterButtonLink to="/channels/new" variant="contained">
+            <Trans>Create a Channel</Trans>
+          </RouterButtonLink>
+        }
+      />
+    ) : (
+      <EmptyState
+        icon={<SettingsRemote />}
+        title={<Trans>No channels match this filter.</Trans>}
+        actions={
+          <Button variant="outlined" onClick={() => setStatusFilter('all')}>
+            <Trans>Show all channels</Trans>
+          </Button>
+        }
+      />
+    );
+
+  const bulkActions = (
+    <>
+      <Button
+        size="small"
+        variant="outlined"
+        startIcon={<ContentCopy />}
+        onClick={() => onDuplicateChannels(selected)}
+      >
+        <Trans>Duplicate</Trans>
+      </Button>
+      <Button
+        size="small"
+        variant="outlined"
+        startIcon={<Download />}
+        href={channelsM3uUrl(
+          m3uUrl,
+          selected.map((c) => c.number),
+        )}
+        download="channels.m3u"
+      >
+        <Trans>Export M3U</Trans>
+      </Button>
+      <Button
+        size="small"
+        variant="outlined"
+        color="error"
+        startIcon={<Delete />}
+        onClick={() => setPendingDelete(selected)}
+      >
+        <Trans>Delete</Trans>
+      </Button>
+    </>
   );
 
   return (
@@ -251,19 +353,45 @@ export const ChannelsView = ({
           </>
         }
         actions={
-          <RouterButtonLink
-            to="/channels/new"
-            variant="contained"
-            startIcon={<Add />}
+          <Stack
+            direction="row"
+            sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1 }}
           >
-            <Trans>New Channel</Trans>
-          </RouterButtonLink>
+            <Segmented
+              aria-label={t`Status filter`}
+              value={statusFilter}
+              onChange={(next) => {
+                setStatusFilter(next);
+                setRowSelection({});
+              }}
+              options={[
+                { value: 'all', label: t`All` },
+                { value: 'streaming', label: t`Streaming` },
+                { value: 'stealth', label: t`Stealth` },
+              ]}
+            />
+            <Button
+              variant="outlined"
+              startIcon={<Download />}
+              href={m3uUrl}
+              download="channels.m3u"
+            >
+              <Trans>Export M3U</Trans>
+            </Button>
+            <RouterButtonLink
+              to="/channels/new"
+              variant="contained"
+              startIcon={<Add />}
+            >
+              <Trans>New Channel</Trans>
+            </RouterButtonLink>
+          </Stack>
         }
       />
       <CollectionView
         aria-label={t`Channels`}
         layout={layout}
-        items={channels}
+        items={visibleChannels}
         getItemKey={(channel) => channel.id}
         empty={empty}
         renderCard={(channel) => (
@@ -277,15 +405,35 @@ export const ChannelsView = ({
           />
         )}
         table={
-          <DataTable
-            table={table}
-            aria-label={t`Channels`}
-            emptyFallback={empty}
-            getRowProps={(row) => ({
-              onClick: () => onOpenChannel(row.original),
-            })}
-          />
+          <>
+            <SelectionBar
+              count={selected.length}
+              actions={bulkActions}
+              onClear={() => setRowSelection({})}
+              keyboardHints
+            />
+            <DataTable
+              table={table}
+              aria-label={t`Channels`}
+              emptyFallback={empty}
+              keyboardNavigation={keyboardNavigation}
+              getRowProps={(row) => ({
+                onClick: () => onOpenChannel(row.original),
+              })}
+            />
+          </>
         }
+      />
+      <ChannelsDeleteDialog
+        channels={pendingDelete}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => {
+          if (pendingDelete) {
+            onDeleteChannels(pendingDelete);
+          }
+          setPendingDelete(null);
+          setRowSelection({});
+        }}
       />
     </>
   );

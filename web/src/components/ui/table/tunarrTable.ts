@@ -17,6 +17,7 @@ import {
   globalFilteringFeature,
   metaHelper,
   rowPaginationFeature,
+  rowSelectionFeature,
   rowSortingFeature,
   sortFn_alphanumeric,
   sortFn_basic,
@@ -49,6 +50,7 @@ export const tunarrFeatures = tableFeatures({
   globalFilteringFeature,
   rowSortingFeature,
   rowPaginationFeature,
+  rowSelectionFeature,
   columnVisibilityFeature,
   filteredRowModel: createFilteredRowModel(),
   sortedRowModel: createSortedRowModel(),
@@ -86,6 +88,7 @@ export const { useAppTable: useTunarrTable, createAppColumnHelper } =
   createTableHook({ features: tunarrFeatures });
 
 export const ActionsColumnId = 'actions';
+export const SelectColumnId = 'select';
 
 export const columnLabel = <TData extends RowData>(
   column: TunarrColumn<TData>,

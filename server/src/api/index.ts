@@ -276,6 +276,13 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       querystring: z.object({
         forceHttps: TruthyQueryParam.optional(),
         hostOverride: z.string().optional(),
+        channels: z
+          .string()
+          .regex(/^\d+(,\d+)*$/)
+          .optional()
+          .describe(
+            'Comma-separated channel numbers. Limits the playlist to those channels.',
+          ),
       }),
       tags: ['Streaming'],
     },
@@ -295,7 +302,12 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         }
 
         const host = `${protocol}://${reqHost}`;
-        const data = await req.serverCtx.m3uService.getChannelsM3U(host);
+        const data = isNonEmptyString(req.query.channels)
+          ? await req.serverCtx.m3uService.getChannelsM3UFor(
+              host,
+              req.query.channels.split(',').map(Number),
+            )
+          : await req.serverCtx.m3uService.getChannelsM3U(host);
 
         return res.type('text').send(data);
       } catch (err) {

@@ -1,9 +1,9 @@
 import { renderWithProviders, screen, within } from '@/test/utils';
-import type { PaginationState } from '@tanstack/react-table';
+import type { PaginationState, RowSelectionState } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import { describe, expect, test, vi } from 'vitest';
 import { DataTable } from './DataTable.tsx';
-import { actionsColumn } from './columns.tsx';
+import { actionsColumn, selectColumn } from './columns.tsx';
 import { createAppColumnHelper, useTunarrTable } from './tunarrTable.ts';
 
 type Item = { id: string; name: string; count: number; active: boolean };
@@ -23,6 +23,9 @@ const Harness = ({
   emptyFallback,
   loading,
   initialPagination = { pageIndex: 0, pageSize: 10 },
+  selectable = false,
+  onSelectionChange,
+  onOpen,
 }: {
   data?: Item[];
   onRowClick?: (item: Item) => void;
@@ -30,10 +33,17 @@ const Harness = ({
   emptyFallback?: string;
   loading?: boolean;
   initialPagination?: PaginationState;
+  selectable?: boolean;
+  onSelectionChange?: (selection: RowSelectionState) => void;
+  onOpen?: (item: Item) => void;
 }) => {
   const [pagination, setPagination] = useState(initialPagination);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const columns = useMemo(
     () => [
+      ...(selectable
+        ? [selectColumn<Item>({ getLabel: (item) => item.name })]
+        : []),
       ...columnHelper.columns([
         columnHelper.accessor('name', { header: 'Name' }),
         columnHelper.accessor('count', {
@@ -53,13 +63,28 @@ const Harness = ({
         ),
       }),
     ],
-    [onAction],
+    [onAction, selectable],
+  );
+  const keyboardNavigation = useMemo(
+    () =>
+      onOpen
+        ? { onOpen: (row: { original: Item }) => onOpen(row.original) }
+        : undefined,
+    [onOpen],
   );
   const table = useTunarrTable({
     columns,
     data,
-    state: { pagination },
+    getRowId: (item) => item.id,
+    state: { pagination, rowSelection },
     onPaginationChange: setPagination,
+    onRowSelectionChange: (updater) => {
+      setRowSelection((old) => {
+        const next = typeof updater === 'function' ? updater(old) : updater;
+        onSelectionChange?.(next);
+        return next;
+      });
+    },
   });
   return (
     <DataTable
@@ -67,6 +92,7 @@ const Harness = ({
       aria-label="Items"
       emptyFallback={emptyFallback}
       loading={loading}
+      keyboardNavigation={keyboardNavigation}
       getRowProps={(row) => ({
         onClick: onRowClick ? () => onRowClick(row.original) : undefined,
       })}
@@ -77,7 +103,12 @@ const Harness = ({
 const names = () =>
   within(screen.getAllByRole('rowgroup')[1])
     .getAllByRole('row')
-    .map((row) => within(row).getAllByRole('cell')[0].textContent);
+    .map(
+      (row) =>
+        within(row)
+          .getAllByRole('cell')
+          .find((cell) => !cell.querySelector('input'))?.textContent,
+    );
 
 describe('DataTable', () => {
   test('sorts by a column and labels the sort button', async () => {
@@ -292,5 +323,60 @@ describe('DataTable', () => {
       .getAllByRole('option')
       .map((o) => Number(o.textContent));
     expect(options.every(Number.isFinite)).toBe(true);
+  });
+
+  test('selects rows and the page without triggering the row click', async () => {
+    const onRowClick = vi.fn();
+    const onSelectionChange = vi.fn();
+    const { user } = renderWithProviders(
+      <Harness
+        selectable
+        onRowClick={onRowClick}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+    await user.click(screen.getByRole('checkbox', { name: 'Select Alpha' }));
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ a: true });
+    expect(onRowClick).not.toHaveBeenCalled();
+
+    const all = screen.getByRole('checkbox', {
+      name: 'Select all on this page',
+    });
+    expect(all).toHaveAttribute('data-indeterminate', 'true');
+    await user.click(all);
+    expect(onSelectionChange).toHaveBeenLastCalledWith({
+      a: true,
+      b: true,
+      c: true,
+    });
+  });
+
+  test('moves with J and K, selects with X and opens with Enter', async () => {
+    const onOpen = vi.fn();
+    const onSelectionChange = vi.fn();
+    const { user } = renderWithProviders(
+      <Harness
+        selectable
+        onOpen={onOpen}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+    await user.keyboard('jjx');
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ a: true });
+
+    await user.keyboard('k{Enter}');
+    expect(onOpen).toHaveBeenCalledWith(items[0]);
+  });
+
+  test('ignores navigation keys while typing in a field', async () => {
+    const onOpen = vi.fn();
+    const { user } = renderWithProviders(
+      <Harness selectable onOpen={onOpen} />,
+    );
+    await user.click(screen.getByRole('button', { name: 'Show/Hide search' }));
+    await user.type(screen.getByRole('textbox', { name: 'Search' }), 'jk');
+    expect(screen.getByRole('textbox', { name: 'Search' })).toHaveValue('jk');
+    await user.keyboard('{Enter}');
+    expect(onOpen).not.toHaveBeenCalled();
   });
 });
