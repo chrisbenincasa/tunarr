@@ -244,8 +244,23 @@ jobs:
             exit 1
           fi
 
-          xcrun stapler staple Tunarr.dmg
-          xcrun stapler validate Tunarr.dmg
+          # Stapling fetches the ticket from Apple's CloudKit, which drops
+          # connections intermittently (stapler error 68). Retry with a
+          # linear backoff; the ticket already exists once notarization is
+          # Accepted, so retrying is safe.
+          max_attempts=6
+          for attempt in $(seq 1 "$max_attempts"); do
+            if xcrun stapler staple Tunarr.dmg && xcrun stapler validate Tunarr.dmg; then
+              break
+            fi
+            if (( attempt == max_attempts )); then
+              echo "::error::Stapling failed after $max_attempts attempts."
+              exit 1
+            fi
+            delay=$(( attempt * 30 ))
+            echo "::warning::Stapling failed (attempt $attempt/$max_attempts). Retrying in ${delay}s."
+            sleep "$delay"
+          done
 
       - name: Finalize
         shell: bash
