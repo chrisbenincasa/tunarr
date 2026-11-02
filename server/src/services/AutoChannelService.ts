@@ -31,6 +31,7 @@ import { dbChannelToApiChannel } from '../db/converters/channelConverters.ts';
 import { SmartCollectionsDB } from '../db/SmartCollectionsDB.ts';
 import { TranscodeConfigDB } from '../db/TranscodeConfigDB.ts';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
+import { GenericBadRequestError } from '../types/errors.ts';
 
 import type {
   ProgramSearchDocument,
@@ -98,7 +99,7 @@ export class AutoChannelService {
   async createChannel(request: AutoChannelCreateRequest): Promise<Channel> {
     const preset = getPresetById(request.presetId);
     if (!preset) {
-      throw new Error(`Preset not found: ${request.presetId}`);
+      throw new GenericBadRequestError(`Preset not found: ${request.presetId}`);
     }
 
     const transcodeConfig = await this.transcodeConfigDB.getDefaultConfig();
@@ -175,7 +176,7 @@ export class AutoChannelService {
         ).map((p) => p.id);
 
         if (programIds.length < requirement.minPrograms) {
-          throw new Error(
+          throw new GenericBadRequestError(
             `"${requirement.label}" matches ${programIds.length} programs but needs at least ${requirement.minPrograms}`,
           );
         }
@@ -196,7 +197,7 @@ export class AutoChannelService {
           ? StrictTimeSlotScheduleSchema.safeParse(scheduleConfig)
           : StrictRandomSlotScheduleSchema.safeParse(scheduleConfig);
       if (!strict.success) {
-        throw new Error(
+        throw new GenericBadRequestError(
           `Invalid schedule: ${strict.error.issues.map((i) => i.message).join('; ')}`,
         );
       }
@@ -294,7 +295,7 @@ export class AutoChannelService {
         (r) => !(r in request.contentAssignments),
       );
       if (missing.length > 0) {
-        throw new Error(
+        throw new GenericBadRequestError(
           `Missing content assignments for roles: ${missing.join(', ')}`,
         );
       }
@@ -302,7 +303,9 @@ export class AutoChannelService {
       if (request.dynamicParams.type === 'classic_tv_day') {
         const startTimes = request.dynamicParams.blocks.map((b) => b.startTime);
         if (new Set(startTimes).size !== startTimes.length) {
-          throw new Error('Two blocks cannot start at the same time');
+          throw new GenericBadRequestError(
+            'Two blocks cannot start at the same time',
+          );
         }
       }
     }
@@ -310,12 +313,14 @@ export class AutoChannelService {
     for (const requirement of roles) {
       const assignment = request.contentAssignments[requirement.role];
       if (requirement.required && !assignment) {
-        throw new Error(
+        throw new GenericBadRequestError(
           `Missing content assignment for "${requirement.label}"`,
         );
       }
       if (isDynamic && assignment && !selectsContent(assignment.query)) {
-        throw new Error(`"${requirement.label}" needs a content filter`);
+        throw new GenericBadRequestError(
+          `"${requirement.label}" needs a content filter`,
+        );
       }
     }
   }
@@ -326,7 +331,9 @@ export class AutoChannelService {
 
     if (requested !== undefined) {
       if (usedNumbers.has(requested)) {
-        throw new Error(`Channel with number ${requested} already exists`);
+        throw new GenericBadRequestError(
+          `Channel with number ${requested} already exists`,
+        );
       }
       return requested;
     }
@@ -508,14 +515,18 @@ export class AutoChannelService {
   private parseFilterString(filterString: string): SearchFilter {
     const tokenized = search.tokenizeSearchQuery(filterString);
     if (tokenized.errors.length > 0) {
-      throw new Error(`Could not parse filter: ${filterString}`);
+      throw new GenericBadRequestError(
+        `Could not parse filter: ${filterString}`,
+      );
     }
 
     const parser = new search.SearchParser();
     parser.input = tokenized.tokens;
     const clause = parser.searchExpression();
     if (parser.errors.length > 0) {
-      throw new Error(`Could not parse filter: ${filterString}`);
+      throw new GenericBadRequestError(
+        `Could not parse filter: ${filterString}`,
+      );
     }
 
     return search.parsedSearchToRequest(clause);
