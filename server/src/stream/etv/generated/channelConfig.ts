@@ -65,6 +65,7 @@ export type DeinterlaceVaapiOptions = z.infer<
 
 /** Controls the content that replaces scheduled content when there is nothing to play */
 export const FallbackConfigSchema = z.strictObject({
+  background_image: z.string().nullable().optional(),
   duration_seconds: z.number().int().min(1).nullable().optional(),
   show_error: z.boolean().optional(),
 });
@@ -175,6 +176,9 @@ export type ScalingMode = z.infer<typeof ScalingModeSchema>;
 export const VaapiDriverSchema = z.enum(['ihd', 'i965', 'radeonsi']);
 export type VaapiDriver = z.infer<typeof VaapiDriverSchema>;
 
+export const VaapiLowPowerSchema = z.enum(['auto', 'never']);
+export type VaapiLowPower = z.infer<typeof VaapiLowPowerSchema>;
+
 export const VideoNormalizationConfigSchema = z.strictObject({
   accel: HardwareAccelSchema.nullable().optional(),
   amf_device: z.number().int().min(0).nullable().optional(),
@@ -195,6 +199,7 @@ export const VideoNormalizationConfigSchema = z.strictObject({
   scaling_mode: ScalingModeSchema.optional(),
   vaapi_device: z.string().nullable().optional(),
   vaapi_driver: VaapiDriverSchema.nullable().optional(),
+  vaapi_low_power: VaapiLowPowerSchema.optional(),
   width: z.number().int().min(0).nullable().optional(),
 });
 export type VideoNormalizationConfig = z.infer<

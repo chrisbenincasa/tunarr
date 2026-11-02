@@ -247,7 +247,7 @@ export function findIgnoredSettings(
  * a config without it.
  */
 export const ChannelConfigVersion =
-  'https://ersatztv.org/channel/version/0.1.2';
+  'https://ersatztv.org/channel/version/0.1.3';
 
 /** How long the worker's fallback item plays after a failed callback. */
 export const FallbackDurationSeconds =
