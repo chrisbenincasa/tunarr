@@ -979,6 +979,24 @@ describe('watermarks', () => {
     expect(timing).toMatchObject({ clock: 'wall', disable_after_ms: 120_000 });
   });
 
+  test('floors fractional durations and periods to whole milliseconds', () => {
+    expect(layer({ duration: 8.021 }).timing).toMatchObject({
+      frequency_ms: 8021,
+      hold_ms: 8021,
+    });
+
+    expect(
+      layer({
+        duration: 8.021,
+        fadeConfig: [{ periodMins: 1.005, leadingEdge: true }],
+      }).timing,
+    ).toMatchObject({
+      frequency_ms: 2 * 60_299,
+      hold_ms: 60_299 - 1_000,
+      disable_after_ms: 8021,
+    });
+  });
+
   test('uses only the first fade config, as the built-in pipeline does', () => {
     const timing = layer({
       fadeConfig: [{ periodMins: 2 }, { periodMins: 9, programType: 'movie' }],
