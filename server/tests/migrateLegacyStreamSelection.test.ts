@@ -183,6 +183,31 @@ describe('MigrateLegacyStreamSelection', () => {
     ]);
   });
 
+  test('reuses the migrated default when run again', async () => {
+    await createChannel(false);
+    await runFixer();
+    const firstDefaultId =
+      settingsDB.streamSelectionSettings().defaultProfileId;
+    const migratedDefaultsCount = async () =>
+      (
+        await drizzle
+          .select()
+          .from(StreamSelectionProfile)
+          .where(eq(StreamSelectionProfile.name, 'Migrated Defaults'))
+      ).length;
+    const before = await migratedDefaultsCount();
+
+    await settingsDB.updateBaseSettings('migration', {
+      hasMigratedLegacyStreamSelection: false,
+    });
+    await runFixer();
+
+    expect(settingsDB.streamSelectionSettings().defaultProfileId).toBe(
+      firstDefaultId,
+    );
+    expect(await migratedDefaultsCount()).toBe(before);
+  });
+
   test('runs only once', async () => {
     await runFixer();
     const count = async () =>

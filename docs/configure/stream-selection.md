@@ -45,8 +45,8 @@ One profile is marked as the **default**. It applies to everything that has no p
 
 Earlier versions chose streams using two separate settings: a global list of preferred audio languages under **Settings > FFmpeg**, and an **Enable Subtitles** switch plus subtitle language preferences on each channel. On upgrade, Tunarr converts these into profiles:
 
-- **Migrated Defaults** holds your preferred audio languages, with subtitles off, and becomes the default profile.
-- For every distinct combination of subtitle preferences among channels that had subtitles enabled, Tunarr creates one profile named after its languages (for example, *Migrated: eng, spa subtitles*), and assigns it to those channels.
+- **Migrated Defaults** holds your preferred audio languages, with subtitles off, and becomes the default profile. If you have no preferred audio languages, or already chose a default profile, Tunarr skips it.
+- For every distinct combination of subtitle preferences among channels that had subtitles enabled, Tunarr creates one profile named after its languages (for example, *Migrated: eng, spa subtitles*), and assigns it to those channels. A channel whose subtitle languages are all set to **None** gets no profile, so it uses the default and shows no subtitles.
 
 Playback should be unchanged, with one exception. The old settings could give each subtitle language its own filter, such as forced-only German but any English. A migrated profile applies the top-priority language's filter, and its image-based and external options, to every language in the list. If your languages used different filters, check the migrated profile and split it into one rule per language if needed. The old settings are no longer shown. Subtitles are now controlled entirely by the profile, so to turn subtitles off for a channel, assign a profile whose subtitle action is **Disable**.
 

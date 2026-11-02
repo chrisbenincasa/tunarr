@@ -175,8 +175,14 @@ export class MigrateLegacyStreamSelection extends Fixer {
     });
 
     // Without audio preferences, the defaults profile would be identical to
-    // the built-in one, so the built-in stays the default.
-    const defaultsProfileId = audioAction.type === 'default' ? undefined : v4();
+    // the built-in one, so the built-in stays the default. A default the user
+    // already chose, or an earlier run created, is kept.
+    const defaultsProfileId =
+      audioAction.type !== 'default' &&
+      this.settingsDB.streamSelectionSettings().defaultProfileId ===
+        BuiltInStreamSelectionProfileId
+        ? v4()
+        : undefined;
 
     this.drizzle.transaction((tx) => {
       if (defaultsProfileId) {
@@ -209,11 +215,7 @@ export class MigrateLegacyStreamSelection extends Fixer {
       }
     });
 
-    if (
-      defaultsProfileId &&
-      this.settingsDB.streamSelectionSettings().defaultProfileId ===
-        BuiltInStreamSelectionProfileId
-    ) {
+    if (defaultsProfileId) {
       await this.settingsDB.updateSettings('streamSelection', {
         defaultProfileId: defaultsProfileId,
       });
