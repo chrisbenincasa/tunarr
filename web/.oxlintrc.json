@@ -151,7 +151,6 @@
         "src/components/slot_scheduler/TimeSlotTable.tsx",
         "src/components/smart_collections/SmartCollectionsTable.tsx",
         "src/hooks/useTableSettings.ts",
-        "src/pages/channels/ChannelsPage.tsx",
         "src/pages/library/CustomShowsPage.tsx",
         "src/pages/library/TrashPage.tsx",
         "src/pages/settings/MediaSourceSettingsPage.tsx",
