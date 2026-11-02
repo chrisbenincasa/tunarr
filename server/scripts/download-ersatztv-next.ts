@@ -30,6 +30,22 @@ const BINARY_NAME = 'ersatztv-channel';
 
 const DefaultOutPath = `./bin/${BINARY_NAME}`;
 
+/**
+ * Files the Windows worker needs in its own directory. It loads `libvpl.dll`
+ * at runtime for Intel QSV, and the library's MIT license ships with it.
+ */
+const WindowsCompanionFiles = ['libvpl.dll', 'libvpl-LICENSE.txt'];
+
+export type EtvNextFiles = {
+  binaryPath: string;
+  /** Files that must sit beside the binary, such as DLLs it loads. */
+  companionPaths: string[];
+};
+
+export function companionFilesFor(etvTarget: string): string[] {
+  return etvTarget.startsWith('windows') ? WindowsCompanionFiles : [];
+}
+
 const { releaseRepo, releaseTag, commit } = serverPackage.ersatztvNext;
 const pinnedSha256: Record<string, string> = serverPackage.ersatztvNext.sha256;
 
@@ -92,9 +108,14 @@ async function addExecPermission(targetPath: string) {
  * The worker prints its version, so the check needs no network call. It uses
  * the same exact-match rule as the server's startup check.
  */
-async function needsToDownloadNewBinary(targetPath: string) {
-  if (!(await fileExists(targetPath))) {
-    return true;
+async function needsToDownloadNewBinary(
+  targetPath: string,
+  companionPaths: string[],
+) {
+  for (const p of [targetPath, ...companionPaths]) {
+    if (!(await fileExists(p))) {
+      return true;
+    }
   }
 
   try {
@@ -123,18 +144,17 @@ async function needsToDownloadNewBinary(targetPath: string) {
 }
 
 /**
- * Downloads `ersatztv-channel` for one target and writes it to `targetPath`.
+ * Downloads `ersatztv-channel` for one target and writes it to `targetPath`,
+ * with any companion files beside it.
  *
- * Upstream ships a `.tar.gz` (or `.zip` on Windows) containing a single
- * directory with three binaries, so the archive is extracted to a temp dir and
- * only the worker is kept. The archive must match the SHA-256 pinned for its
- * target, or nothing is written.
+ * The archive must match the SHA-256 pinned for its target, or nothing is
+ * written.
  */
 export async function grabEtvNext(
   targetPath: string = DefaultOutPath,
   platform: string = os.platform(),
   arch: string = os.arch(),
-): Promise<Nullable<string>> {
+): Promise<Nullable<EtvNextFiles>> {
   const etvTarget = etvTargetFor(platform, arch);
   if (!etvTarget) {
     console.error(
@@ -149,9 +169,14 @@ export async function grabEtvNext(
     return null;
   }
 
-  if (!(await needsToDownloadNewBinary(targetPath))) {
+  const companionFiles = companionFilesFor(etvTarget);
+  const companionPaths = companionFiles.map((name) =>
+    path.join(dirname(targetPath), name),
+  );
+
+  if (!(await needsToDownloadNewBinary(targetPath, companionPaths))) {
     console.log(`${BINARY_NAME} ${releaseTag} is already at ${targetPath}`);
-    return targetPath;
+    return { binaryPath: targetPath, companionPaths };
   }
 
   const { url, archiveName, isZip } = getDownloadUrl(etvTarget);
@@ -170,6 +195,33 @@ export async function grabEtvNext(
     return null;
   }
 
+  return installEtvNextArchive(archive, {
+    archiveName,
+    isZip,
+    targetPath,
+    companionFiles,
+  });
+}
+
+/**
+ * Extracts a release archive and installs the worker at `targetPath`, with
+ * each companion file beside it.
+ *
+ * Upstream ships a `.tar.gz` (or `.zip` on Windows) containing a single
+ * directory of binaries, so the archive is extracted to a temp dir and only
+ * the worker and its companions are kept.
+ */
+export async function installEtvNextArchive(
+  archive: Buffer,
+  opts: {
+    archiveName: string;
+    isZip: boolean;
+    targetPath: string;
+    companionFiles: string[];
+  },
+): Promise<Nullable<EtvNextFiles>> {
+  const { archiveName, isZip, targetPath, companionFiles } = opts;
+
   await fs.mkdir(dirname(targetPath), { recursive: true });
 
   return await tmp.withDir(
@@ -184,22 +236,50 @@ export async function grabEtvNext(
         return null;
       }
 
-      await fs.rename(extractedBinary, targetPath).catch(async (e: unknown) => {
-        // A temp dir on another filesystem cannot be renamed across, so fall
-        // back to a copy.
-        if ((e as NodeJS.ErrnoException).code !== 'EXDEV') {
-          throw e;
+      // Check every companion before writing anything, so a bad archive
+      // leaves the previous install intact.
+      const extractedCompanions = companionFiles.map((name) =>
+        path.join(dirname(extractedBinary), name),
+      );
+      for (const companion of extractedCompanions) {
+        if (!(await fileExists(companion))) {
+          console.error(
+            `${archiveName} did not contain ${path.basename(companion)}`,
+          );
+          return null;
         }
-        await fs.copyFile(extractedBinary, targetPath);
-      });
+      }
 
+      await moveFile(extractedBinary, targetPath);
       await addExecPermission(targetPath);
       console.log(`Wrote ${BINARY_NAME} to ${targetPath}`);
 
-      return targetPath;
+      const companionPaths: string[] = [];
+      for (const companion of extractedCompanions) {
+        const destination = path.join(
+          dirname(targetPath),
+          path.basename(companion),
+        );
+        await moveFile(companion, destination);
+        companionPaths.push(destination);
+        console.log(`Wrote ${path.basename(companion)} to ${destination}`);
+      }
+
+      return { binaryPath: targetPath, companionPaths };
     },
     { unsafeCleanup: true },
   );
+}
+
+async function moveFile(from: string, to: string) {
+  await fs.rename(from, to).catch(async (e: unknown) => {
+    // A temp dir on another filesystem cannot be renamed across, so fall back
+    // to a copy.
+    if ((e as NodeJS.ErrnoException).code !== 'EXDEV') {
+      throw e;
+    }
+    await fs.copyFile(from, to);
+  });
 }
 
 /** Strips the archive's single top-level directory and returns the worker path. */
@@ -222,7 +302,7 @@ async function extractZip(
   data: stream.Readable,
   destination: string,
 ): Promise<Nullable<string>> {
-  await data.pipe(unzipper.Extract({ path: destination })).promise;
+  await data.pipe(unzipper.Extract({ path: destination })).promise();
 
   const exeName = `${BINARY_NAME}.exe`;
   const entries = await fs.readdir(destination, { withFileTypes: true });
