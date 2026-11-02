@@ -14,6 +14,7 @@ import { common } from '@mui/material/colors';
 import type { Channel } from '@tunarr/types';
 import dayjs from 'dayjs';
 import { type ReactNode, useState } from 'react';
+import { isNonEmptyString } from '../../helpers/util.ts';
 import { RouterButtonLink } from '../base/RouterButtonLink.tsx';
 import { RouterLink } from '../base/RouterLink.tsx';
 import { MonoText } from '../ui/MonoText.tsx';
@@ -51,6 +52,7 @@ export type ChannelCardProps = {
 
 // Text over artwork sits on a dark scrim, so it stays white in both schemes.
 const scrim = alpha(common.black, 0.55);
+const BLANK_LINE = '\u00a0';
 
 export const ChannelCard = ({
   channel,
@@ -70,6 +72,8 @@ export const ChannelCard = ({
     nowPlaying?.kind === 'redirect'
       ? t`Redirect to channel ${nowPlaying.redirectChannel}`
       : nowPlaying?.title;
+  const hasNowTitle = isNonEmptyString(nowTitle);
+  const nowDetail = nowPlaying?.detail;
 
   return (
     <Box
@@ -162,43 +166,43 @@ export const ChannelCard = ({
           </Box>
         </Stack>
 
-        {nowTitle && (
-          <Box
+        {/* The box keeps all three lines, even when they are blank, so every
+            card's artwork area has the same height. */}
+        <Box
+          aria-hidden={!hasNowTitle}
+          sx={{
+            visibility: hasNowTitle ? 'visible' : 'hidden',
+            position: 'relative',
+            alignSelf: 'flex-start',
+            maxWidth: '100%',
+            minWidth: 0,
+            px: 1.5,
+            py: 1,
+            borderRadius: `${theme.sizes.radiusSmall}px`,
+            backgroundColor: scrim,
+          }}
+        >
+          <Typography
             sx={{
-              position: 'relative',
-              alignSelf: 'flex-start',
-              maxWidth: '100%',
-              minWidth: 0,
-              px: 1.5,
-              py: 1,
-              borderRadius: `${theme.sizes.radiusSmall}px`,
-              backgroundColor: scrim,
+              fontSize: 11,
+              fontWeight: 700,
+              textTransform: 'uppercase',
+              letterSpacing: '0.08em',
+              opacity: 0.85,
             }}
           >
-            <Typography
-              sx={{
-                fontSize: 11,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                opacity: 0.85,
-              }}
-            >
-              <Trans>Now playing</Trans>
-            </Typography>
-            <Typography
-              noWrap
-              sx={{ fontWeight: 700, fontSize: dense ? 14 : 15 }}
-            >
-              {nowTitle}
-            </Typography>
-            {nowPlaying?.detail && (
-              <Typography noWrap sx={{ fontSize: 12, opacity: 0.85 }}>
-                {nowPlaying.detail}
-              </Typography>
-            )}
-          </Box>
-        )}
+            {hasNowTitle ? <Trans>Now playing</Trans> : BLANK_LINE}
+          </Typography>
+          <Typography
+            noWrap
+            sx={{ fontWeight: 700, fontSize: dense ? 14 : 15 }}
+          >
+            {hasNowTitle ? nowTitle : BLANK_LINE}
+          </Typography>
+          <Typography noWrap sx={{ fontSize: 12, opacity: 0.85 }}>
+            {isNonEmptyString(nowDetail) ? nowDetail : BLANK_LINE}
+          </Typography>
+        </Box>
       </Box>
 
       <LinearProgress
