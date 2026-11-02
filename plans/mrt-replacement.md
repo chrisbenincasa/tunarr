@@ -9,12 +9,12 @@
 
 ## Status
 
-- **Phase 0 in review (10/19/2026).** PR #2350, branch `feat/datatable`, based on `main`. Review fixes applied 10/19/2026.
+- **Phase 0 merged (10/25/2026).** PR #2350, branch `feat/datatable`.
   - The v9 spike hit none of the fallback triggers. No casts, no internals, no `useLegacyTable`.
   - The parity spec passes on MRT for 8 pages, and on the wrapper for `/library/fillers`. Settings saved by the MRT build load unchanged.
   - The ban is in `web/.oxlintrc.json`, with 15 legacy files.
 - Phase 0 runs alongside `plans/web-redesign.md` Phases 1 and 2, and must land before that plan's Phase 3 (decided 10/19/2026).
-- Next: Phase 1.
+- Next: Phase 1, not started as of 11/01/2026. It runs alongside `plans/web-redesign.md` Phase 3. It must not touch `ChannelsPage`, which is that phase's pilot and this plan's Phase 2.
 
 ### Phase 0 notes
 
