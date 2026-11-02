@@ -183,6 +183,25 @@ describe('MigrateLegacyStreamSelection', () => {
     ]);
   });
 
+  test('migrates the audio preferences when there are no channels', async () => {
+    const channelDB = container.get<ChannelDB>(KEYS.ChannelDB);
+    for (const { uuid } of await drizzle
+      .select({ uuid: Channel.uuid })
+      .from(Channel)) {
+      await channelDB.deleteChannel(uuid);
+    }
+
+    await runFixer();
+
+    const defaultId = settingsDB.streamSelectionSettings().defaultProfileId;
+    expect(defaultId).not.toBe(BuiltInStreamSelectionProfileId);
+    const [profile] = await drizzle
+      .select({ name: StreamSelectionProfile.name })
+      .from(StreamSelectionProfile)
+      .where(eq(StreamSelectionProfile.uuid, defaultId));
+    expect(profile?.name).toBe('Migrated Defaults');
+  });
+
   test('reuses the migrated default when run again', async () => {
     await createChannel(false);
     await runFixer();

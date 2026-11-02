@@ -126,11 +126,6 @@ export class MigrateLegacyStreamSelection extends Fixer {
       })
       .from(Channel);
 
-    if (channels.length === 0) {
-      await this.markDone();
-      return;
-    }
-
     const audioAction = legacyAudioAction(
       this.settingsDB.ffmpegSettings().languagePreferences?.preferences ?? [],
     );
