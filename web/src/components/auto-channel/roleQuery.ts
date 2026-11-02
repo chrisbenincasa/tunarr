@@ -92,7 +92,7 @@ function emptyToUndefined<T>(arr: T[] | undefined): T[] | undefined {
  * Whether the role has the input its picker needs. Roles with a facet, show,
  * or year picker match everything until the user picks, so they stay idle.
  * Dynamic roles (weighted mix groups, classic TV blocks) have no picker and
- * stay idle until the user sets a filter or a scope override.
+ * stay idle until the user sets a filter or narrows the scope with an override.
  */
 export function hasRequiredPick(
   requirement: Pick<ContentRequirement, 'pickerHint'>,
@@ -109,7 +109,17 @@ export function hasRequiredPick(
       return (
         !isDynamic ||
         !isEmpty(selection?.advancedFilter?.trim()) ||
-        selection?.override !== undefined
+        narrowsScope(selection?.override)
       );
   }
+}
+
+// An override left on "All Sources" selects the whole library, which the
+// server rejects for dynamic roles.
+function narrowsScope(scope: ContentScope | undefined): boolean {
+  return (
+    !isEmpty(scope?.mediaSourceIds) ||
+    !isEmpty(scope?.libraryIds) ||
+    !isEmpty(scope?.programTypes)
+  );
 }
