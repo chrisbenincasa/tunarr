@@ -11,12 +11,12 @@ real track layouts, real ffmpeg output.
 
 ## What is being verified
 
-| Fix | Behavior before | Behavior after |
-|---|---|---|
-| Parity fallback | `default` action returned `null` when no track carried the default flag | Falls back to the first candidate |
-| `audioDetails` requirement | Subtitle selection was skipped when a file had no audio streams | Subtitles resolve independently of audio |
-| `preferTextBased` ordering | Image-based subs sorted first, so text subs lost | Text-based subs sort first |
-| Untagged fallback | `by_language` dropped streams with no language tag | Untagged streams are tried after every listed language misses |
+| Fix                        | Behavior before                                                         | Behavior after                                                |
+| -------------------------- | ----------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Parity fallback            | `default` action returned `null` when no track carried the default flag | Falls back to the first candidate                             |
+| `audioDetails` requirement | Subtitle selection was skipped when a file had no audio streams         | Subtitles resolve independently of audio                      |
+| `preferTextBased` ordering | Image-based subs sorted first, so text subs lost                        | Text-based subs sort first                                    |
+| Untagged fallback          | `by_language` dropped streams with no language tag                      | Untagged streams are tried after every listed language misses |
 
 ## Why these cases
 
