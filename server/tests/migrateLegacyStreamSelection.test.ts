@@ -35,7 +35,11 @@ let nextChannelNumber = 700;
 
 async function createChannel(
   subtitlesEnabled: boolean,
-  subtitlePrefs: { languageCode: string; priority: number }[] = [],
+  subtitlePrefs: {
+    languageCode: string;
+    priority: number;
+    filterType?: 'none' | 'any' | 'forced' | 'default';
+  }[] = [],
 ) {
   const channelDB = container.get<ChannelDB>(KEYS.ChannelDB);
   const { channel } = await channelDB.saveChannel({
@@ -61,6 +65,7 @@ async function createChannel(
       channelId: channel.uuid,
       languageCode: pref.languageCode,
       priority: pref.priority,
+      filterType: pref.filterType,
     });
   }
   return channel.uuid;
@@ -146,6 +151,16 @@ describe('MigrateLegacyStreamSelection', () => {
     expect(engProfileA?.id).toBe(engProfileB?.id);
   });
 
+  test('leaves a channel whose preferences are all "none" unassigned', async () => {
+    const allNone = await createChannel(true, [
+      { languageCode: 'eng', priority: 0, filterType: 'none' },
+    ]);
+
+    await runFixer();
+
+    expect(await channelProfileName(allNone)).toBeNull();
+  });
+
   test('points the default at the migrated global audio preferences', async () => {
     await createChannel(false);
 
@@ -182,6 +197,27 @@ describe('MigrateLegacyStreamSelection', () => {
 });
 
 describe('legacySubtitleAction', () => {
+  test('uses the default track when there are no preferences', () => {
+    expect(legacySubtitleAction([])).toEqual({
+      type: 'default',
+      preferTextBased: false,
+    });
+  });
+
+  test('disables subtitles when every preference is "none"', () => {
+    expect(
+      legacySubtitleAction([
+        {
+          languageCode: 'eng',
+          priority: 0,
+          filterType: 'none',
+          allowImageBased: true,
+          allowExternal: true,
+        },
+      ]),
+    ).toEqual({ type: 'disable' });
+  });
+
   test('drops "none" preferences and uses the top preference for filters', () => {
     expect(
       legacySubtitleAction([

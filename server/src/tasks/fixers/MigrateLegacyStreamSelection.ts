@@ -62,7 +62,11 @@ export function legacySubtitleAction(
   );
   const [top] = active;
   if (!top) {
-    return { type: 'default', preferTextBased: false };
+    // The legacy picker used the default track only for an empty list. A list
+    // of "none" preferences selected nothing.
+    return preferences.length === 0
+      ? { type: 'default', preferTextBased: false }
+      : { type: 'disable' };
   }
   return {
     type: 'by_language',
@@ -147,8 +151,13 @@ export class MigrateLegacyStreamSelection extends Fixer {
 
     // Group channels by the subtitle action their settings produce.
     const groups: { action: SubtitleAction; channelIds: string[] }[] = [];
+    // A channel whose settings select no subtitle needs no profile of its own,
+    // because the defaults profile already disables subtitles.
     for (const channelId of subtitleChannelIds) {
       const action = legacySubtitleAction(prefsByChannel[channelId] ?? []);
+      if (action.type === 'disable') {
+        continue;
+      }
       const group = groups.find((g) => isEqual(g.action, action));
       if (group) {
         group.channelIds.push(channelId);
