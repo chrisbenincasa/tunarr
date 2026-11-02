@@ -163,15 +163,15 @@ for (const arch of args.target) {
       console.log(
         `Downloading ersatztv-channel (platform ${osString}, arch ${archString})`,
       );
-      const etvNextBinaryPath = await grabEtvNext(
+      const etvNext = await grabEtvNext(
         `./bin/ersatztv-channel-${arch}`,
         osString,
         archString,
       );
-      if (!etvNextBinaryPath) {
+      if (!etvNext) {
         throw new Error('Could not download ersatztv-channel binary');
       } else {
-        console.log(`ersatztv-channel found at ${etvNextBinaryPath}`);
+        console.log(`ersatztv-channel found at ${etvNext.binaryPath}`);
       }
 
       // Untar
@@ -270,9 +270,12 @@ for (const arch of args.target) {
         archive.file(`./bin/meilisearch-${arch}`, {
           name: 'meilisearch' + (targetIsWindows ? '.exe' : ''),
         });
-        archive.file(`./bin/ersatztv-channel-${arch}`, {
+        archive.file(etvNext.binaryPath, {
           name: 'ersatztv-channel' + (targetIsWindows ? '.exe' : ''),
         });
+        for (const companionPath of etvNext.companionPaths) {
+          archive.file(companionPath, { name: path.basename(companionPath) });
+        }
         await archive.finalize();
         await finishedPromise;
       }
