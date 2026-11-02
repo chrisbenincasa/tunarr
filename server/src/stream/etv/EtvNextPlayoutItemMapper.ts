@@ -403,13 +403,18 @@ export function toPlayoutItem({
   }
 
   const ignored: string[] = [];
-  const inPointMs = lineupItem.startOffset ?? 0;
-  const outPointMs = inPointMs + lineupItem.streamDuration;
+
+  // Upstream takes whole milliseconds, and stored durations can be fractional.
+  // Rounding down drops under a millisecond of content, while rounding up would
+  // send ffmpeg past the end of the media.
+  const inPointMs = Math.floor(lineupItem.startOffset ?? 0);
+  const durationMs = Math.floor(lineupItem.streamDuration);
+  const outPointMs = inPointMs + durationMs;
 
   const base = {
     id,
     start: dayjs(startMs).toISOString(),
-    finish: dayjs(startMs + lineupItem.streamDuration).toISOString(),
+    finish: dayjs(startMs + durationMs).toISOString(),
   };
 
   // Sourcing audio separately sidesteps the backend erroring out on a

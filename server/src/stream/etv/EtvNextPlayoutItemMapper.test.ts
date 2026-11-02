@@ -114,6 +114,42 @@ describe('timing', () => {
       wallClock,
     );
   });
+
+  test('floors fractional durations so the item still maps', () => {
+    const { item, ignored } = map(
+      programItem({ startOffset: 0, streamDuration: 1_548_021.000000001 }),
+      { source: new FileStreamSource('/media/a.mkv') },
+    );
+
+    expect(ignored).toEqual([]);
+    expect(item.source).toMatchObject({
+      source_type: 'local',
+      path: '/media/a.mkv',
+      in_point_ms: 0,
+      out_point_ms: 1_548_021,
+    });
+  });
+
+  test('never ends past the unrounded media end', () => {
+    const startOffset = 60_000.7;
+    const streamDuration = 600_000.9;
+    const { item } = map(programItem({ startOffset, streamDuration }), {
+      source: new FileStreamSource('/media/a.mkv'),
+    });
+    const source = item.source;
+
+    if (source?.source_type !== 'local') {
+      throw new Error('expected a local source');
+    }
+    expect(source.in_point_ms).toBe(60_000);
+    expect(source.out_point_ms).toBe(660_000);
+    expect(source.out_point_ms ?? 0).toBeLessThanOrEqual(
+      startOffset + streamDuration,
+    );
+    expect(dayjs(item.finish).valueOf() - dayjs(item.start).valueOf()).toBe(
+      (source.out_point_ms ?? 0) - (source.in_point_ms ?? 0),
+    );
+  });
 });
 
 describe('stream sources', () => {
