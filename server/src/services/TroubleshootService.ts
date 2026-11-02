@@ -650,13 +650,6 @@ export class TroubleshootService {
       errors,
     });
 
-    // The playout writer drops the subtitle on a channel with subtitles off.
-    if (!channel.subtitlesEnabled && result.streamSelection) {
-      result.streamSelection.selectedSubtitleStream = null;
-      result.streamSelection.subtitleReason =
-        'Subtitles are turned off for this channel';
-    }
-
     const { mediaSourceId } = program;
     if (mediaSourceId === null) {
       errors.push(
