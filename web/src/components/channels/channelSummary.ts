@@ -185,3 +185,31 @@ export const channelStatus = (
 
 export const streamModeLabel = (mode: Channel['streamMode']) =>
   mode.replaceAll('_', ' ').toUpperCase();
+
+export type ChannelStatusFilter = 'all' | 'streaming' | 'stealth';
+
+// "Streaming" means someone is watching, the same rule as the page's
+// streaming count.
+export const matchesStatusFilter = (
+  channel: Pick<Channel, 'sessions' | 'stealth'>,
+  filter: ChannelStatusFilter,
+) => {
+  switch (filter) {
+    case 'all':
+      return true;
+    case 'streaming':
+      return channelStatus(channel.sessions).status === 'live';
+    case 'stealth':
+      return channel.stealth;
+  }
+};
+
+// Limits the playlist at `m3uUrl` to the given channel numbers.
+export const channelsM3uUrl = (m3uUrl: string, numbers: readonly number[]) => {
+  const url = new URL(m3uUrl, window.location.origin);
+  url.searchParams.set(
+    'channels',
+    [...numbers].sort((a, b) => a - b).join(','),
+  );
+  return url.toString();
+};
