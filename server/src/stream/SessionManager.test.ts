@@ -498,9 +498,8 @@ describe('SessionManager', () => {
       // Heartbeat was just recorded by getOrCreateHlsSession → addConnection
       expect(session.isStale()).toBe(false);
 
-      // Advance 60 seconds — well within the 120s default threshold
-      vi.advanceTimersByTime(60_000);
-      session.recordHeartbeat('10.0.0.1');
+      // Advance to just inside the 60s default threshold
+      vi.advanceTimersByTime(59_000);
       expect(session.isStale()).toBe(false);
     });
 
@@ -517,8 +516,8 @@ describe('SessionManager', () => {
       });
       const session = sessions[0]!;
 
-      // Advance past the 120s default threshold
-      vi.advanceTimersByTime(121_000);
+      // Advance past the 60s default threshold
+      vi.advanceTimersByTime(61_000);
       expect(session.isStale()).toBe(true);
     });
 
@@ -536,7 +535,7 @@ describe('SessionManager', () => {
       const session = sessions[0]!;
 
       // Advance past staleness threshold
-      vi.advanceTimersByTime(121_000);
+      vi.advanceTimersByTime(61_000);
 
       // removeStaleConnections drops the connection
       expect(session.isStale()).toBe(true);
@@ -565,7 +564,7 @@ describe('SessionManager', () => {
       const session = sessions[0]!;
 
       // Advance past staleness threshold
-      vi.advanceTimersByTime(121_000);
+      vi.advanceTimersByTime(61_000);
 
       // Connection removed by staleness check
       expect(session.isStale()).toBe(true);
@@ -594,7 +593,7 @@ describe('SessionManager', () => {
       const session = sessions[0]!;
 
       // Advance past staleness threshold
-      vi.advanceTimersByTime(121_000);
+      vi.advanceTimersByTime(61_000);
 
       // First cleanup pass: marks as stale, removes connection
       manager.cleanupStaleSessions();

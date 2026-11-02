@@ -26,10 +26,9 @@ export const HeartbeatTimeoutMs = 90_000;
 /**
  * The staleness window an `etv_next` session runs with.
  *
- * Tunarr's own default is 120s, which is longer than the worker's reap window,
- * so leaving it alone would let the file clock end sessions before the
- * connection tracker noticed. Two thirds of the reap window leaves room for a
- * missed heartbeat without racing it.
+ * It must stay below the worker's reap window, or the file clock ends sessions
+ * before the connection tracker notices. Two thirds of the reap window leaves
+ * room for a missed heartbeat without racing it.
  */
 export const DefaultStalenessMs = 60_000;
 

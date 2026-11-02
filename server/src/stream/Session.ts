@@ -29,6 +29,12 @@ type SessionState =
   | 'stopped'
   | 'init';
 
+/**
+ * How long a viewer can go without a playlist or segment request before its
+ * connection is dropped. Active HLS clients poll every few seconds.
+ */
+export const DefaultSessionStalenessMs = 60_000;
+
 export type SessionOptions = {
   cleanupDelayMs?: number;
   stalenessMs?: number;
@@ -334,7 +340,7 @@ export abstract class Session<
       keys(this.connections()),
       (token) =>
         now - this.lastHeartbeat(token)! <
-        (this.sessionOptions.stalenessMs ?? 120_000),
+        (this.sessionOptions.stalenessMs ?? DefaultSessionStalenessMs),
     );
 
     // Cleanup stale connections

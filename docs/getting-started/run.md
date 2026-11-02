@@ -64,6 +64,7 @@ Tunarr has various command line / environment variables for configuration. These
 | Environment Variable | Command Line Flag | Default | Description |
 | -------------------- | ----------------- | ------- | ----------- |
 | `TUNARR_SESSION_CLEANUP_DELAY_SECONDS` | N/A | `15` | How long to wait before cleaning up a transcode session after the last disconnect |
+| `TUNARR_SESSION_STALENESS_MS` | N/A | `60000` | How long, in milliseconds, an HLS viewer can go without requesting a playlist or segment before Tunarr treats it as disconnected. Raise this if a client drops out during long pauses in the stream. Does not apply to the ErsatzTV next pipeline. |
 
 ### Search (Meilisearch)
 
