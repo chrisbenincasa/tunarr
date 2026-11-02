@@ -152,6 +152,11 @@ function makeHarness(opts: {
     Promise.resolve(opts.mayPickSubtitles ?? true),
   );
 
+  const fillerListMayPickSubtitles = vi.fn(
+    (_fillerListId: string, _channelIds: string[]) =>
+      Promise.resolve(opts.fillerMayPickSubtitles ?? false),
+  );
+
   const getStream = vi.fn(() =>
     Promise.reject(new Error('should not be called')),
   );
@@ -201,8 +206,7 @@ function makeHarness(opts: {
       anyProfileMayPickSubtitles: () =>
         Promise.resolve(opts.anyProfileMayPickSubtitles ?? true),
       mayPickSubtitles,
-      fillerListMayPickSubtitles: () =>
-        Promise.resolve(opts.fillerMayPickSubtitles ?? false),
+      fillerListMayPickSubtitles,
     } as never,
     {
       getAllFillerIds: () => Promise.resolve(['filler-1']),
@@ -214,6 +218,7 @@ function makeHarness(opts: {
     task,
     getChannelGuides,
     mayPickSubtitles,
+    fillerListMayPickSubtitles,
     getStream,
     getFillerPrograms,
     dbProgram,
@@ -503,6 +508,10 @@ describe('SubtitleExtractorTask external subtitle top-up', () => {
 
     await run(harness);
 
+    expect(harness.fillerListMayPickSubtitles).toHaveBeenCalledWith(
+      'filler-1',
+      [CHANNEL_ID],
+    );
     expect(harness.getFillerPrograms).toHaveBeenCalledWith('filler-1');
     expect(harness.downloadSubtitlesIfNecessary).toHaveBeenCalledOnce();
   });
@@ -547,5 +556,18 @@ describe('SubtitleExtractorTask external subtitle top-up', () => {
     await run(harness);
 
     expect(harness.getStream).not.toHaveBeenCalled();
+  });
+
+  it('fetches stream details for a filler program with no subtitle rows', async () => {
+    const harness = makeHarness({
+      mayPickSubtitles: false,
+      fillerMayPickSubtitles: true,
+      enableSubtitleExtraction: true,
+      subtitles: [],
+    });
+
+    await run(harness);
+
+    expect(harness.getStream).toHaveBeenCalledOnce();
   });
 });

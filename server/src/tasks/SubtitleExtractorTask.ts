@@ -194,20 +194,29 @@ export class SubtitleExtractorTask extends Task2<
       }
     }
 
-    await this.handleFillerLists(mediaSources);
+    await this.handleFillerLists(
+      mediaSources,
+      nextHourGuide.map(({ id }) => id),
+    );
   }
 
   /**
    * Filler plays when a slot needs it, so the guide can't say which filler
-   * program comes next. Every program in a list whose profile may select a
-   * subtitle is prepared instead. Programs with every embedded text subtitle
+   * program comes next. Every program in a list that may get a subtitle on
+   * some channel is prepared instead. Programs with every embedded text subtitle
    * already cached are skipped without fetching stream details.
    */
-  private async handleFillerLists(mediaSources: MediaSourceWithRelations[]) {
+  private async handleFillerLists(
+    mediaSources: MediaSourceWithRelations[],
+    channelIds: string[],
+  ) {
     const seen = new Set<string>();
     for (const fillerListId of await this.fillerListDB.getAllFillerIds()) {
       if (
-        !(await this.profileResolver.fillerListMayPickSubtitles(fillerListId))
+        !(await this.profileResolver.fillerListMayPickSubtitles(
+          fillerListId,
+          channelIds,
+        ))
       ) {
         continue;
       }
@@ -594,12 +603,15 @@ export class SubtitleExtractorTask extends Task2<
       : undefined;
   }
 
-  // Relies on the subtitle rows saved at scan time. A program with none has
-  // nothing to extract.
+  // Relies on the subtitle rows saved at scan time. A program with no rows may
+  // predate subtitle scanning, so its stream details are fetched to be sure.
   private async embeddedTextSubtitlesCached(
     dbProgram: ProgramWithRelationsOrm,
     mediaSource: MediaSourceWithRelations,
   ) {
+    if (!dbProgram.subtitles?.length) {
+      return false;
+    }
     for (const subtitle of dbProgram.subtitles ?? []) {
       if (
         subtitle.subtitleType !== 'embedded' ||

@@ -164,12 +164,21 @@ export class StreamSelectionProfileResolver {
   }
 
   /**
-   * Whether the profile assigned to a filler list could select a subtitle.
-   * Filler is picked at playtime, so its programs are prepared by list.
+   * Whether a filler list's programs could get a subtitle on any of the given
+   * channels. Filler is picked at playtime, so its programs are prepared by
+   * list. Slot schedules can play a list a channel never assigns, so every
+   * channel counts.
    */
-  async fillerListMayPickSubtitles(fillerListId: string): Promise<boolean> {
-    const profile = await this.getProfileForFillerList(fillerListId);
-    return profile ? profileMayPickSubtitles(profile) : false;
+  async fillerListMayPickSubtitles(
+    fillerListId: string,
+    channelIds: ReadonlyArray<string>,
+  ): Promise<boolean> {
+    for (const channelId of channelIds) {
+      if (await this.mayPickSubtitles({ channelId, fillerListId })) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**

@@ -262,26 +262,65 @@ describe('StreamSelectionProfileResolver', () => {
   });
 
   describe('fillerListMayPickSubtitles', () => {
-    it('is false when the filler list has no profile', async () => {
+    const picksSubtitles = (uuid: string) =>
+      makeProfile(uuid, {
+        rules: [
+          {
+            condition: 'true',
+            audioAction: { type: 'default' },
+            subtitleAction: { type: 'default', preferTextBased: false },
+          },
+        ],
+      });
+
+    it('is false when no profile in the chain can select subtitles', async () => {
       const { resolver } = createResolver({});
 
-      expect(await resolver.fillerListMayPickSubtitles('filler-1')).toBe(false);
+      expect(
+        await resolver.fillerListMayPickSubtitles('filler-1', ['ch-1']),
+      ).toBe(false);
     });
 
     it('is true when the filler list profile can select subtitles', async () => {
       const { resolver } = createResolver({
-        fillerProfile: makeProfile('filler', {
-          rules: [
-            {
-              condition: 'true',
-              audioAction: { type: 'default' },
-              subtitleAction: { type: 'default', preferTextBased: false },
-            },
-          ],
-        }),
+        fillerProfile: picksSubtitles('filler'),
       });
 
-      expect(await resolver.fillerListMayPickSubtitles('filler-1')).toBe(true);
+      expect(
+        await resolver.fillerListMayPickSubtitles('filler-1', ['ch-1']),
+      ).toBe(true);
+    });
+
+    it("is true when a channel's profile can select subtitles for unassigned filler", async () => {
+      const { resolver, spies } = createResolver({
+        channelProfile: picksSubtitles('channel'),
+      });
+
+      expect(
+        await resolver.fillerListMayPickSubtitles('filler-1', ['ch-1']),
+      ).toBe(true);
+      expect(spies.channel).toHaveBeenCalledWith('ch-1');
+    });
+
+    it('is true when the default profile can select subtitles', async () => {
+      const { resolver } = createResolver({
+        defaultProfileId: 'default',
+        profilesById: { default: picksSubtitles('default') },
+      });
+
+      expect(
+        await resolver.fillerListMayPickSubtitles('filler-1', ['ch-1']),
+      ).toBe(true);
+    });
+
+    it('is false when there are no channels to play the list', async () => {
+      const { resolver } = createResolver({
+        fillerProfile: picksSubtitles('filler'),
+      });
+
+      expect(await resolver.fillerListMayPickSubtitles('filler-1', [])).toBe(
+        false,
+      );
     });
   });
 
