@@ -6,12 +6,12 @@ import { DataTable } from './DataTable.tsx';
 import { actionsColumn } from './columns.tsx';
 import { createAppColumnHelper, useTunarrTable } from './tunarrTable.ts';
 
-type Item = { id: string; name: string; count: number };
+type Item = { id: string; name: string; count: number; active: boolean };
 
 const items: Item[] = [
-  { id: 'b', name: 'Bravo', count: 2 },
-  { id: 'a', name: 'Alpha', count: 10 },
-  { id: 'c', name: 'Charlie', count: 5 },
+  { id: 'b', name: 'Bravo', count: 2, active: true },
+  { id: 'a', name: 'Alpha', count: 10, active: false },
+  { id: 'c', name: 'Charlie', count: 5, active: true },
 ];
 
 const columnHelper = createAppColumnHelper<Item>();
@@ -39,6 +39,12 @@ const Harness = ({
         columnHelper.accessor('count', {
           header: 'Count',
           meta: { filterVariant: 'range', numeric: true },
+        }),
+        columnHelper.accessor('active', {
+          header: 'Active',
+          filterFn: 'equals',
+          cell: ({ getValue }) => (getValue() ? 'Yes' : 'No'),
+          meta: { filterVariant: 'boolean' },
         }),
       ]),
       actionsColumn<Item>({
@@ -116,6 +122,24 @@ describe('DataTable', () => {
     expect(screen.getByRole('textbox', { name: 'Max Count' })).toHaveValue('');
   });
 
+  test('boolean filter matches yes, no or any', async () => {
+    const { user } = renderWithProviders(<Harness />);
+    await user.click(screen.getByRole('button', { name: 'Show/Hide filters' }));
+    const pick = async (option: string) => {
+      await user.click(
+        screen.getByRole('combobox', { name: 'Filter by Active' }),
+      );
+      await user.click(screen.getByRole('option', { name: option }));
+    };
+
+    await pick('Yes');
+    expect(names()).toEqual(['Bravo', 'Charlie']);
+    await pick('No');
+    expect(names()).toEqual(['Alpha']);
+    await pick('Any');
+    expect(names()).toHaveLength(3);
+  });
+
   test('range filter keeps partial decimal input', async () => {
     const { user } = renderWithProviders(<Harness />);
     await user.click(screen.getByRole('button', { name: 'Show/Hide filters' }));
@@ -167,6 +191,7 @@ describe('DataTable', () => {
       id: String(i),
       name: `Item ${String(i + 1).padStart(2, '0')}`,
       count: i,
+      active: false,
     }));
     renderWithProviders(
       <Harness
@@ -183,6 +208,7 @@ describe('DataTable', () => {
       id: String(i),
       name: `Item ${String(i + 1).padStart(2, '0')}`,
       count: i,
+      active: false,
     }));
     renderWithProviders(
       <Harness data={many} initialPagination={{ pageIndex: 5, pageSize: 5 }} />,

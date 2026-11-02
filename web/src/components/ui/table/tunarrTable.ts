@@ -26,7 +26,7 @@ import {
   tableFeatures,
 } from '@tanstack/react-table';
 
-export type FilterVariant = 'text' | 'range' | 'multi-select';
+export type FilterVariant = 'text' | 'range' | 'multi-select' | 'boolean';
 
 export type TunarrColumnMeta = {
   // Plain-text column name for menus and accessible labels. Defaults to the
@@ -34,7 +34,8 @@ export type TunarrColumnMeta = {
   label?: string;
 
   // Defaults to 'text'. 'range' needs numeric values. 'multi-select' needs
-  // filterOptions and filterFn: 'arrHas' on the column.
+  // filterOptions and filterFn: 'arrHas' on the column. 'boolean' needs
+  // filterFn: 'equals'.
   filterVariant?: FilterVariant;
   filterOptions?: readonly string[];
 

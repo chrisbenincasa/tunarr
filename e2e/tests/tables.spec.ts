@@ -20,6 +20,10 @@ type TablePage = {
   // Set once the page uses DataTable, which adds steps MRT can't pass.
   ported?: boolean;
 
+  // Collection pages show cards at comfortable density and the table only at
+  // dense, so they run with dense density.
+  dense?: boolean;
+
   // A column whose values sort as plain text.
   sortColumn: string;
   hideColumn?: string;
@@ -208,6 +212,8 @@ const TABLES: Record<string, TableTarget> = {
     url: () => '/channels',
     ready: 'E2E Episodes',
     persisted: true,
+    ported: true,
+    dense: true,
     sortColumn: 'Name',
     hideColumn: 'Duration',
     filter: async (page) => {
@@ -279,6 +285,23 @@ for (const [name, target] of Object.entries(TABLES)) {
     if ('skip' in target) {
       test.skip(true, target.skip);
       return;
+    }
+
+    if (target.dense) {
+      test.beforeEach(async ({ page }) => {
+        await page.addInitScript(() => {
+          type Saved = {
+            state: { theme?: Record<string, unknown> };
+            version: number;
+          };
+          const raw: unknown = JSON.parse(
+            localStorage.getItem('tunarr') ?? 'null',
+          );
+          const next = (raw ?? { state: {}, version: 0 }) as Saved;
+          next.state.theme = { ...next.state.theme, density: 'dense' };
+          localStorage.setItem('tunarr', JSON.stringify(next));
+        });
+      });
     }
 
     const open = async (page: Page) => {

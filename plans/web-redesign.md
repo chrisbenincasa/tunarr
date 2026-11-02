@@ -138,6 +138,16 @@ Built on `feat/app-shell` (10/19/2026):
 - Pilot is `/channels`, which also needs a "now playing" field per channel. `GET /api/channels/all/lineups?from=<now>&to=<now>` supplies it in one call. It reads the in-memory guide cache (`TvGuideService.getChannelLineup`), so it needs no new endpoint.
 - Then the other collection routes.
 
+Built on `feat/collection-view` (11/01/2026):
+
+- `CollectionView` lives in `web/src/components/ui/patterns/CollectionView/`. It takes `items`, `renderCard` and a `table` element, and picks one from the density. `collectionLayout()` holds the rule, and phones always get cards.
+- `/channels` splits into `ChannelsView` (props only, with stories) and `ChannelsPage` (data). Both live under `web/src/components/channels/` and `web/src/pages/channels/`.
+- `ChannelCard` shows the now-playing program's artwork. It falls back to the channel icon when the art is missing or fails to load.
+- `useChannelsNowPlaying` reads `GET /api/channels/all/lineups` with `from` and `to` set to the same instant. It refetches when the first current program ends and recomputes progress every 30 seconds. The guide returns no artwork, so `programArtworkUrl` builds the URL from the program and its show. `ChannelNowPlayingCard` uses the same helper.
+- The pilot keeps today's behavior. Row selection, the bulk bar, J/K/X/Enter navigation and the All/Streaming/Stealth filter come in the next PR (decided 11/01/2026).
+- The mock's phone frame for collections was never drawn. Phones use the Comfortable card grid in one column.
+- The table parity spec runs Channels at dense density, because Comfortable shows cards.
+
 ### Phase 4. Forms and settings
 
 - `FormSection`, field rows and a sticky `SaveBar`, built for React Hook Form.

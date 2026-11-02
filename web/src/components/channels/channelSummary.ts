@@ -1,0 +1,149 @@
+import type {
+  Channel,
+  ChannelSession,
+  MediaArtwork,
+  TerminalProgram,
+  TvGuideProgram,
+} from '@tunarr/types';
+import { clamp, isNil, padStart, sumBy } from 'lodash-es';
+import { match, P } from 'ts-pattern';
+import { extractProgramGrandparent } from '../../helpers/programUtil.ts';
+
+// Wide art first, so it fills a card or a banner without heavy cropping.
+export const programArtworkUrl = (
+  backendUri: string,
+  program: TerminalProgram,
+) => {
+  const [id, artworkType, fallbackTypes] = match([
+    program,
+    extractProgramGrandparent(program),
+  ])
+    .returnType<[string, MediaArtwork['type'], MediaArtwork['type'][]]>()
+    .with([{ type: 'episode' }, P.nonNullable], ([_, show]) => [
+      show.uuid,
+      'fanart',
+      ['poster'],
+    ])
+    .with([{ type: 'episode' }, P._], ([ep, _]) => [ep.uuid, 'thumbnail', []])
+    .with([{ type: 'track' }, P.nonNullable], ([_, artist]) => [
+      artist.uuid,
+      'banner',
+      ['fanart', 'poster'],
+    ])
+    .with([{ type: 'movie' }, P._], ([movie, _]) => [
+      movie.uuid,
+      'banner',
+      ['fanart', 'poster'],
+    ])
+    .otherwise(([other, _]) => [other.uuid, 'fanart', ['poster']]);
+
+  return `${backendUri}/api/programs/${id}/artwork/${artworkType}?fallbackArtworkTypes=${fallbackTypes.join(',')}`;
+};
+
+export type NowPlayingSummary = {
+  kind: TvGuideProgram['type'];
+
+  // The show or artist for episodes and tracks, else the program's own title.
+  // Unset for redirects, which name a channel instead.
+  title?: string;
+
+  // Episode or track title, with its code when known.
+  detail?: string;
+
+  // Short episode code such as "S01E03", for tight table cells.
+  code?: string;
+  redirectChannel?: number;
+
+  // Fraction of the program already aired, from 0 to 1.
+  progress: number;
+  artworkUrl?: string;
+};
+
+const pad2 = (n: number) => padStart(String(n), 2, '0');
+
+const describeProgram = (
+  program: TerminalProgram,
+): Pick<NowPlayingSummary, 'title' | 'detail' | 'code'> => {
+  const grandparent = extractProgramGrandparent(program);
+  if (program.type !== 'episode' && program.type !== 'track') {
+    return { title: program.title };
+  }
+
+  const index =
+    program.type === 'episode' ? program.episodeNumber : program.trackNumber;
+  const parentIndex =
+    program.type === 'episode' ? program.season?.index : program.album?.index;
+  const code =
+    program.type === 'episode' && !isNil(index) && !isNil(parentIndex)
+      ? `S${pad2(parentIndex)}E${pad2(index)}`
+      : undefined;
+
+  if (!grandparent) {
+    return { title: program.title, code };
+  }
+
+  return {
+    title: grandparent.title,
+    detail: code ? `${code} · ${program.title}` : program.title,
+    code,
+  };
+};
+
+export const summarizeNowPlaying = (
+  program: TvGuideProgram,
+  now: number,
+  backendUri: string,
+): NowPlayingSummary => {
+  const length = program.stop - program.start;
+  const progress = length > 0 ? clamp((now - program.start) / length, 0, 1) : 0;
+
+  return match(program)
+    .returnType<NowPlayingSummary>()
+    .with({ type: 'content' }, (p) => ({
+      kind: p.type,
+      progress,
+      ...describeProgram(p.program),
+      artworkUrl: programArtworkUrl(backendUri, p.program),
+    }))
+    .with({ type: 'custom' }, (p) => {
+      const inner = p.program?.program;
+      return {
+        kind: p.type,
+        progress,
+        ...(inner ? describeProgram(inner) : {}),
+        artworkUrl: inner ? programArtworkUrl(backendUri, inner) : undefined,
+      };
+    })
+    .with({ type: 'flex' }, (p) => ({ kind: p.type, progress, title: p.title }))
+    .with({ type: 'redirect' }, (p) => ({
+      kind: p.type,
+      progress,
+      redirectChannel: p.channelNumber,
+    }))
+    .exhaustive();
+};
+
+export type ChannelStatus = {
+  // 'warning' means sessions are open but nobody is connected.
+  status: 'live' | 'warning' | 'idle';
+  connections: number;
+  sessions: number;
+};
+
+export const channelStatus = (
+  sessions: ChannelSession[] | undefined,
+): ChannelStatus => {
+  const count = sessions?.length ?? 0;
+  const connections = sumBy(sessions, (s) => s.numConnections);
+  if (count === 0) {
+    return { status: 'idle', connections: 0, sessions: 0 };
+  }
+  return {
+    status: connections > 0 ? 'live' : 'warning',
+    connections,
+    sessions: count,
+  };
+};
+
+export const streamModeLabel = (mode: Channel['streamMode']) =>
+  mode.replaceAll('_', ' ').toUpperCase();
