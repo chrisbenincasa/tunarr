@@ -60,6 +60,8 @@ export const CollectionView = <TItem,>({
           xs: '1fr',
           sm: `repeat(auto-fill, minmax(${minCardWidth}px, 1fr))`,
         },
+        // Every row takes the height of the tallest card on the page.
+        gridAutoRows: '1fr',
         gap: dense ? 1.5 : 2.5,
       }}
     >
