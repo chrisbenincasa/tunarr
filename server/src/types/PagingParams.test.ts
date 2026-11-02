@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { PagingParams } from './schemas.ts';
+import { LibraryProgramsPagingParams, PagingParams } from './schemas.ts';
 
 describe('PagingParams', () => {
   /**
@@ -56,5 +56,36 @@ describe('PagingParams', () => {
     { offset: 'abc' },
   ])('still rejects %o', (input) => {
     expect(() => PagingParams.parse(input)).toThrow();
+  });
+});
+
+describe('LibraryProgramsPagingParams', () => {
+  test('defaults to a bounded first page', () => {
+    expect(LibraryProgramsPagingParams.parse({})).toEqual({
+      limit: 100,
+      offset: 0,
+    });
+  });
+
+  test('treats a blank limit as absent', () => {
+    expect(LibraryProgramsPagingParams.parse({ limit: '' }).limit).toBe(100);
+  });
+
+  test.each(['1', '1000'])('accepts the limit %s', (value) => {
+    expect(LibraryProgramsPagingParams.parse({ limit: value }).limit).toBe(
+      Number(value),
+    );
+  });
+
+  test.each(['-1', '0', '1001', '1.5'])('rejects the limit %s', (value) => {
+    expect(
+      LibraryProgramsPagingParams.safeParse({ limit: value }).success,
+    ).toBe(false);
+  });
+
+  test('rejects a negative offset', () => {
+    expect(
+      LibraryProgramsPagingParams.safeParse({ offset: '-1' }).success,
+    ).toBe(false);
   });
 });

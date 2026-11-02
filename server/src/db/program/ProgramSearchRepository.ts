@@ -1,8 +1,11 @@
+import type { PageParams } from '@/db/interfaces/IChannelDB.js';
 import type {
   ProgramCanonicalIdLookupResult,
   ProgramGroupingCanonicalIdLookupResult,
 } from '@/db/interfaces/IProgramDB.js';
 import { KEYS } from '@/types/inject.js';
+import type { PagedResult } from '@/types/util.js';
+import { eq } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
@@ -11,12 +14,14 @@ import type { Dictionary, StrictExclude } from 'ts-essentials';
 import { match } from 'ts-pattern';
 import { AllProgramFields } from '../programQueryHelpers.ts';
 import type { ProgramType } from '../schema/Program.ts';
+import { Program } from '../schema/Program.ts';
 import type { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
 import type { MediaSourceId, MediaSourceType } from '../schema/base.ts';
 import type { DB } from '../schema/db.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
 import { isDefined } from '../../util/index.ts';
 import type { ProgramDao } from '../schema/Program.ts';
+import type { ProgramOrmWithExternalIds } from '../schema/derivedTypes.ts';
 import { MaterializedProgramRelations } from './programRelations.ts';
 
 @injectable()
@@ -46,11 +51,21 @@ export class ProgramSearchRepository {
       .then((dbResult) => dbResult?.programs ?? []);
   }
 
-  async getMediaSourceLibraryPrograms(libraryId: string) {
-    return this.drizzleDB.query.program.findMany({
-      where: (fields, { eq }) => eq(fields.libraryId, libraryId),
-      with: MaterializedProgramRelations,
-    });
+  async getMediaSourceLibraryPrograms(
+    libraryId: string,
+    params: PageParams,
+  ): Promise<PagedResult<ProgramOrmWithExternalIds>> {
+    const [total, results] = await Promise.all([
+      this.drizzleDB.$count(Program, eq(Program.libraryId, libraryId)),
+      this.drizzleDB.query.program.findMany({
+        where: (fields, { eq }) => eq(fields.libraryId, libraryId),
+        with: MaterializedProgramRelations,
+        orderBy: (fields, { asc }) => asc(fields.uuid),
+        offset: params.offset,
+        limit: params.limit,
+      }),
+    ]);
+    return { total, results };
   }
 
   async getProgramInfoForMediaSource(
