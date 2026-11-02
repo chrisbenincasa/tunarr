@@ -8,6 +8,7 @@ import { ChannelSchema } from '@tunarr/types/schemas';
 import { inject, injectable } from 'inversify';
 import { z } from 'zod/v4';
 import { AutoChannelService } from '../services/AutoChannelService.ts';
+import { findBadRequestError } from '../types/errors.ts';
 import type { RouterPluginAsyncCallback } from '../types/serverType.js';
 import type { ApiController } from './ApiController.ts';
 
@@ -73,8 +74,14 @@ export class AutoChannelApiController implements ApiController {
           const channel = await this.autoChannelService.createChannel(req.body);
           return res.status(201).send(channel);
         } catch (err) {
+          const badRequest = findBadRequestError(err);
+          if (badRequest) {
+            return res.status(400).send({ message: badRequest.message });
+          }
+
+          req.log.error(err, 'Auto channel creation failed');
           const message = err instanceof Error ? err.message : 'Unknown error';
-          return res.status(400).send({ message });
+          return res.status(500).send({ message });
         }
       },
     );

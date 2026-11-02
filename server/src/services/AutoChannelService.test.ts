@@ -2,6 +2,7 @@ import type { ChannelDB } from '@/db/ChannelDB.js';
 import type { SmartCollectionsDB } from '@/db/SmartCollectionsDB.js';
 import type { TranscodeConfigDB } from '@/db/TranscodeConfigDB.js';
 import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
+import { findBadRequestError, GenericBadRequestError } from '@/types/errors.js';
 import { Result } from '@/types/result.js';
 import type { AutoChannelCreateRequest } from '@tunarr/types/api';
 import { BuiltInPresets } from '@tunarr/shared/channel-templates';
@@ -199,6 +200,23 @@ describe('AutoChannelService.createChannel', () => {
 
     expect(smartCollectionsDB.insert).not.toHaveBeenCalled();
     expect(channelDB.saveChannel).not.toHaveBeenCalled();
+  });
+
+  test('reports invalid input as a bad request', async () => {
+    const { service } = makeService({ existingNumbers: [7] });
+
+    await expect(service.createChannel(shuffleRequest)).rejects.toBeInstanceOf(
+      GenericBadRequestError,
+    );
+  });
+
+  test('does not report a missing default config as a bad request', async () => {
+    const { service } = makeService({ defaultConfig: null });
+
+    const err: unknown = await service
+      .createChannel(shuffleRequest)
+      .catch((e: unknown) => e);
+    expect(findBadRequestError(err)).toBeUndefined();
   });
 
   test('rejects a missing required role before writing anything', async () => {

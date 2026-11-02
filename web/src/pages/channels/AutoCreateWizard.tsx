@@ -34,6 +34,7 @@ import { MonoText } from '@/components/ui/MonoText';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { StatusPill } from '@/components/ui/StatusPill';
 import { getApiMediaSourcesOptions } from '@/generated/@tanstack/react-query.gen';
+import { getApiErrorMessage } from '@/helpers/apiError.ts';
 import {
   useAutoChannelPresets,
   useAutoCreateChannel,
@@ -413,7 +414,9 @@ export function AutoCreateWizard() {
 
       {createMutation.error && (
         <Alert severity="error" sx={{ mt: 2 }}>
-          Failed to create channel: {createMutation.error.message}
+          Failed to create channel:{' '}
+          {getApiErrorMessage(createMutation.error) ??
+            createMutation.error.message}
         </Alert>
       )}
 
