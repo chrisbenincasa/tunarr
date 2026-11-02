@@ -78,6 +78,7 @@ function makeHarness(opts: {
   replacePaths?: { localPath: string; serverPath: string }[];
   anyProfileMayPickSubtitles?: boolean;
   mayPickSubtitles?: boolean;
+  fillerMayPickSubtitles?: boolean;
   enableSubtitleExtraction?: boolean;
   downloadedPath?: string;
 }) {
@@ -151,6 +152,13 @@ function makeHarness(opts: {
     Promise.resolve(opts.mayPickSubtitles ?? true),
   );
 
+  const getStream = vi.fn(() =>
+    Promise.reject(new Error('should not be called')),
+  );
+  const getFillerPrograms = vi.fn((_id: string) =>
+    Promise.resolve([dbProgram]),
+  );
+
   const task = new SubtitleExtractorTask(
     {
       get: () => Promise.resolve({}),
@@ -170,7 +178,7 @@ function makeHarness(opts: {
         }),
     } as never,
     {
-      getStream: () => Promise.reject(new Error('should not be called')),
+      getStream,
     } as never,
     { getAll: () => Promise.resolve([mediaSource]) } as never,
     {
@@ -193,6 +201,12 @@ function makeHarness(opts: {
       anyProfileMayPickSubtitles: () =>
         Promise.resolve(opts.anyProfileMayPickSubtitles ?? true),
       mayPickSubtitles,
+      fillerListMayPickSubtitles: () =>
+        Promise.resolve(opts.fillerMayPickSubtitles ?? false),
+    } as never,
+    {
+      getAllFillerIds: () => Promise.resolve(['filler-1']),
+      getFillerPrograms,
     } as never,
   );
 
@@ -200,6 +214,8 @@ function makeHarness(opts: {
     task,
     getChannelGuides,
     mayPickSubtitles,
+    getStream,
+    getFillerPrograms,
     dbProgram,
     setSubtitlePath,
     downloadSubtitlesIfNecessary,
@@ -459,5 +475,77 @@ describe('SubtitleExtractorTask external subtitle top-up', () => {
       programId: PROGRAM_ID,
       customShowId: CUSTOM_SHOW_ID,
     });
+  });
+
+  it('leaves filler lists alone when their profiles never select subtitles', async () => {
+    const harness = makeHarness({ mayPickSubtitles: false, subtitles: [] });
+
+    await run(harness);
+
+    expect(harness.getFillerPrograms).not.toHaveBeenCalled();
+  });
+
+  it('prepares programs in a filler list whose profile selects subtitles', async () => {
+    const harness = makeHarness({
+      mayPickSubtitles: false,
+      fillerMayPickSubtitles: true,
+      downloadedPath: CACHED_SUBTITLE_PATH,
+      subtitles: [
+        {
+          uuid: 'sub-1',
+          subtitleType: 'sidecar',
+          codec: 'subrip',
+          language: 'eng',
+          sourceKey: SUBTITLE_KEY,
+        },
+      ],
+    });
+
+    await run(harness);
+
+    expect(harness.getFillerPrograms).toHaveBeenCalledWith('filler-1');
+    expect(harness.downloadSubtitlesIfNecessary).toHaveBeenCalledOnce();
+  });
+
+  it('extracts an uncached embedded subtitle for a filler program', async () => {
+    const harness = makeHarness({
+      mayPickSubtitles: false,
+      fillerMayPickSubtitles: true,
+      enableSubtitleExtraction: true,
+      subtitles: [
+        {
+          uuid: 'sub-1',
+          subtitleType: 'embedded',
+          codec: 'subrip',
+          language: 'eng',
+          streamIndex: 3,
+        },
+      ],
+    });
+
+    await run(harness);
+
+    expect(harness.getStream).toHaveBeenCalledOnce();
+  });
+
+  it('skips fetching a filler program with no embedded text subtitles', async () => {
+    const harness = makeHarness({
+      mayPickSubtitles: false,
+      fillerMayPickSubtitles: true,
+      enableSubtitleExtraction: true,
+      subtitles: [
+        {
+          uuid: 'sub-1',
+          subtitleType: 'embedded',
+          codec: 'hdmv_pgs_subtitle',
+          language: 'eng',
+          streamIndex: 3,
+        },
+      ],
+    });
+
+    await run(harness);
+
+    expect(harness.getStream).not.toHaveBeenCalled();
   });
 });

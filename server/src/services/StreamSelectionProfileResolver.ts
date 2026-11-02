@@ -164,6 +164,15 @@ export class StreamSelectionProfileResolver {
   }
 
   /**
+   * Whether the profile assigned to a filler list could select a subtitle.
+   * Filler is picked at playtime, so its programs are prepared by list.
+   */
+  async fillerListMayPickSubtitles(fillerListId: string): Promise<boolean> {
+    const profile = await this.getProfileForFillerList(fillerListId);
+    return profile ? profileMayPickSubtitles(profile) : false;
+  }
+
+  /**
    * Whether any stored profile could select a subtitle. A false result means
    * no context can pick one, whatever profiles are assigned.
    */

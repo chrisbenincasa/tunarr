@@ -261,6 +261,30 @@ describe('StreamSelectionProfileResolver', () => {
     });
   });
 
+  describe('fillerListMayPickSubtitles', () => {
+    it('is false when the filler list has no profile', async () => {
+      const { resolver } = createResolver({});
+
+      expect(await resolver.fillerListMayPickSubtitles('filler-1')).toBe(false);
+    });
+
+    it('is true when the filler list profile can select subtitles', async () => {
+      const { resolver } = createResolver({
+        fillerProfile: makeProfile('filler', {
+          rules: [
+            {
+              condition: 'true',
+              audioAction: { type: 'default' },
+              subtitleAction: { type: 'default', preferTextBased: false },
+            },
+          ],
+        }),
+      });
+
+      expect(await resolver.fillerListMayPickSubtitles('filler-1')).toBe(true);
+    });
+  });
+
   describe('anyProfileMayPickSubtitles', () => {
     function resolverWithStoredProfiles(profiles: StreamSelectionProfile[]) {
       const drizzle = {
