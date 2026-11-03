@@ -165,7 +165,7 @@ const TABLES: Record<string, TableTarget> = {
   },
 
   TranscodeConfigs: {
-    url: () => '/settings/ffmpeg',
+    url: () => '/profiles/transcode',
     ready: 'Default',
     persisted: true,
     ported: true,
@@ -180,7 +180,7 @@ const TABLES: Record<string, TableTarget> = {
       clickEditLink(
         page,
         rowWith(page, 'Default'),
-        `/settings/ffmpeg/${ids.transcodeConfigId}`,
+        `/profiles/transcode/${ids.transcodeConfigId}`,
       ),
   },
 
@@ -267,9 +267,6 @@ const TABLES: Record<string, TableTarget> = {
 
   MediaSourceLibrary: {
     skip: 'Ported in Phase 2. Add its entry in that PR, green on MRT first.',
-  },
-  ChannelSubtitlePreferences: {
-    skip: 'Not persisted; channelSubtitlePreferences.spec.ts covers its edits.',
   },
   TimeSlots: { skip: 'Needs a time-slot schedule in the fixture (Phase 3).' },
   RandomSlots: {
