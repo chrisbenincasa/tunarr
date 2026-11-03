@@ -6,6 +6,7 @@ import {
 import { StreamSelectionRuleEditor } from '@/components/profiles/StreamSelectionRuleEditor';
 import {
   getApiStreamSelectionProfilesByIdOptions,
+  getApiStreamSelectionProfilesByIdQueryKey,
   getApiStreamSelectionProfilesQueryKey,
   postApiStreamSelectionProfilesMutation,
   putApiStreamSelectionProfilesByIdMutation,
@@ -168,11 +169,16 @@ export function StreamSelectionProfilePage({ isNew }: Props) {
 
   const updateMutation = useMutation({
     ...putApiStreamSelectionProfilesByIdMutation(),
-    onSuccess: async () => {
+    onSuccess: async (_data, { path }) => {
       snackbar.enqueueSnackbar(t`Profile saved`, { variant: 'success' });
-      await queryClient.invalidateQueries({
-        queryKey: getApiStreamSelectionProfilesQueryKey(),
-      });
+      await Promise.all([
+        queryClient.invalidateQueries({
+          queryKey: getApiStreamSelectionProfilesQueryKey(),
+        }),
+        queryClient.invalidateQueries({
+          queryKey: getApiStreamSelectionProfilesByIdQueryKey({ path }),
+        }),
+      ]);
       reset(methods.getValues());
     },
   });
