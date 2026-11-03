@@ -9020,12 +9020,16 @@ export type GetApiMediaLibrariesByLibraryIdProgramsErrors = {
     /**
      * Default Response
      */
-    400: unknown;
+    400: {
+        message: string;
+    };
     /**
      * Default Response
      */
     404: unknown;
 };
+
+export type GetApiMediaLibrariesByLibraryIdProgramsError = GetApiMediaLibrariesByLibraryIdProgramsErrors[keyof GetApiMediaLibrariesByLibraryIdProgramsErrors];
 
 export type GetApiMediaLibrariesByLibraryIdProgramsResponses = {
     /**

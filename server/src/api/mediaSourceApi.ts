@@ -320,7 +320,7 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         querystring: LibraryProgramsPagingParams,
         response: {
           200: PagedResult(ContentProgramSchema.array()),
-          400: z.void(),
+          400: z.object({ message: z.string() }),
           404: z.void(),
         },
       },
