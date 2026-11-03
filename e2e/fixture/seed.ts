@@ -28,7 +28,8 @@ type LineupItem = Extract<
   NonNullable<PostApiChannelsByIdProgrammingData['body']>,
   { type: 'manual' }
 >['lineup'][number];
-type LibraryProgram = GetApiMediaLibrariesByLibraryIdProgramsResponse[number];
+type LibraryProgram =
+  GetApiMediaLibrariesByLibraryIdProgramsResponse['result'][number];
 
 export type FixtureIds = {
   mediaSourceId: string;
@@ -44,6 +45,7 @@ export type FixtureIds = {
 };
 
 const SCAN_TIMEOUT_MS = 60_000;
+const LIBRARY_PAGE_SIZE = 1000;
 
 async function addLocalSource(
   name: string,
@@ -65,6 +67,20 @@ async function addLocalSource(
   return id;
 }
 
+async function listLibraryPrograms(libraryId: string) {
+  const programs: LibraryProgram[] = [];
+  for (;;) {
+    const page = await api<GetApiMediaLibrariesByLibraryIdProgramsResponse>(
+      'GET',
+      `/media-libraries/${libraryId}/programs?offset=${programs.length}&limit=${LIBRARY_PAGE_SIZE}`,
+    );
+    programs.push(...page.result);
+    if (page.size === 0 || programs.length >= page.total) {
+      return programs;
+    }
+  }
+}
+
 // Creating a local source starts its scan. Poll until each library reports
 // the expected number of programs.
 async function waitForPrograms(sourceId: string, expected: number) {
@@ -80,10 +96,7 @@ async function waitForPrograms(sourceId: string, expected: number) {
       library.lastScannedAt !== undefined &&
       !library.isLocked
     ) {
-      const programs = await api<LibraryProgram[]>(
-        'GET',
-        `/media-libraries/${library.id}/programs`,
-      );
+      const programs = await listLibraryPrograms(library.id);
       if (programs.length >= expected) {
         return { libraryId: library.id, programs };
       }
