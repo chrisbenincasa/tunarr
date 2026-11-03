@@ -3114,9 +3114,11 @@ msgid "move"
 msgstr ""
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Move down"
 msgstr ""
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Move up"
 msgstr ""
@@ -3959,6 +3961,7 @@ msgstr "移除图标"
 msgid "Remove Programming"
 msgstr "移除节目"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Remove rule"
 msgstr ""

@@ -120,53 +120,62 @@ export function StreamSelectionRuleEditor({
 
   return (
     <Accordion expanded={expanded} onChange={onToggleExpand}>
-      <AccordionSummary
-        expandIcon={<ExpandMore />}
-        sx={{ '& .MuiAccordionSummary-content': { alignItems: 'center' } }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
-          <DragIndicator
-            fontSize="small"
-            sx={{ color: 'text.secondary', mr: 0.5 }}
-          />
-          <Typography variant="subtitle2" sx={{ minWidth: 60 }}>
-            <Trans>Rule {index + 1}</Trans>
-          </Typography>
-          {!expanded && (
-            <>
-              {label && <Chip label={label} size="small" variant="outlined" />}
-              <Typography
-                variant="body2"
-                color="text.secondary"
-                noWrap
-                sx={{ maxWidth: 200 }}
-              >
-                {condition || t`No condition`}
-              </Typography>
-              <Chip
-                label={t`Audio` + ':' + t(getAudioSummary(audioType))}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
-              <Chip
-                label={t`Subs` + ':' + t(getSubtitleSummary(subtitleType))}
-                size="small"
-                color="secondary"
-                variant="outlined"
-              />
-            </>
-          )}
-        </Box>
+      {/* The summary renders a button, so the rule controls sit beside it. */}
+      <Box sx={{ display: 'flex', alignItems: 'center' }}>
+        <AccordionSummary
+          expandIcon={<ExpandMore />}
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            '& .MuiAccordionSummary-content': { alignItems: 'center' },
+          }}
+        >
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
+            <DragIndicator
+              fontSize="small"
+              sx={{ color: 'text.secondary', mr: 0.5 }}
+            />
+            <Typography variant="subtitle2" sx={{ minWidth: 60 }}>
+              <Trans>Rule {index + 1}</Trans>
+            </Typography>
+            {!expanded && (
+              <>
+                {label && (
+                  <Chip label={label} size="small" variant="outlined" />
+                )}
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  noWrap
+                  sx={{ maxWidth: 200 }}
+                >
+                  {condition || t`No condition`}
+                </Typography>
+                <Chip
+                  label={t`Audio` + ':' + t(getAudioSummary(audioType))}
+                  size="small"
+                  color="primary"
+                  variant="outlined"
+                />
+                <Chip
+                  label={t`Subs` + ':' + t(getSubtitleSummary(subtitleType))}
+                  size="small"
+                  color="secondary"
+                  variant="outlined"
+                />
+              </>
+            )}
+          </Box>
+        </AccordionSummary>
         <Stack
           direction="row"
           spacing={0}
-          onClick={(e) => e.stopPropagation()}
-          sx={{ display: readOnly ? 'none' : undefined }}
+          sx={{ pr: 1, display: readOnly ? 'none' : undefined }}
         >
           <Tooltip title={t`Move up`}>
             <span>
               <IconButton
+                aria-label={t`Move up`}
                 size="small"
                 disabled={index === 0}
                 onClick={onMoveUp}
@@ -178,6 +187,7 @@ export function StreamSelectionRuleEditor({
           <Tooltip title={t`Move down`}>
             <span>
               <IconButton
+                aria-label={t`Move down`}
                 size="small"
                 disabled={index === totalRules - 1}
                 onClick={onMoveDown}
@@ -189,6 +199,7 @@ export function StreamSelectionRuleEditor({
           <Tooltip title={t`Remove rule`}>
             <span>
               <IconButton
+                aria-label={t`Remove rule`}
                 size="small"
                 disabled={totalRules <= 1}
                 onClick={onRemove}
@@ -198,7 +209,7 @@ export function StreamSelectionRuleEditor({
             </span>
           </Tooltip>
         </Stack>
-      </AccordionSummary>
+      </Box>
       <AccordionDetails>
         <Stack
           spacing={3}
@@ -250,10 +261,14 @@ export function StreamSelectionRuleEditor({
                 name={`${prefix}.audioAction.type`}
                 render={({ field }) => (
                   <FormControl size="small" sx={{ maxWidth: 300 }}>
-                    <InputLabel>
+                    <InputLabel id={`rule-${index}-audio-strategy-label`}>
                       <Trans>Audio Strategy</Trans>
                     </InputLabel>
-                    <Select {...field} label={t`Audio Strategy`}>
+                    <Select
+                      {...field}
+                      labelId={`rule-${index}-audio-strategy-label`}
+                      label={t`Audio Strategy`}
+                    >
                       <MenuItem value="default">
                         <Trans>Default (first stream)</Trans>
                       </MenuItem>
@@ -290,10 +305,14 @@ export function StreamSelectionRuleEditor({
                 name={`${prefix}.subtitleAction.type`}
                 render={({ field }) => (
                   <FormControl size="small" sx={{ maxWidth: 300 }}>
-                    <InputLabel>
+                    <InputLabel id={`rule-${index}-subtitle-strategy-label`}>
                       <Trans>Subtitle Strategy</Trans>
                     </InputLabel>
-                    <Select {...field} label={t`Subtitle Strategy`}>
+                    <Select
+                      {...field}
+                      labelId={`rule-${index}-subtitle-strategy-label`}
+                      label={t`Subtitle Strategy`}
+                    >
                       <MenuItem value="disable">
                         <Trans>Disabled</Trans>
                       </MenuItem>
@@ -398,10 +417,11 @@ function AudioByLanguageFields({ index }: { index: number }) {
         name={`${prefix}.preferChannels`}
         render={({ field }) => (
           <FormControl size="small" sx={{ maxWidth: 300 }}>
-            <InputLabel>
+            <InputLabel id={`rule-${index}-prefer-channels-label`}>
               <Trans>Prefer Channel Count</Trans>
             </InputLabel>
             <Select
+              labelId={`rule-${index}-prefer-channels-label`}
               {...field}
               value={field.value ?? ''}
               label={t`Prefer Channel Count`}
@@ -505,10 +525,15 @@ function SubtitleByLanguageFields({ index }: { index: number }) {
         name={`${prefix}.filterType`}
         render={({ field }) => (
           <FormControl size="small" sx={{ maxWidth: 300 }}>
-            <InputLabel>
+            <InputLabel id={`rule-${index}-subtitle-filter-label`}>
               <Trans>Filter</Trans>
             </InputLabel>
-            <Select {...field} value={field.value ?? 'any'} label={t`Filter`}>
+            <Select
+              {...field}
+              value={field.value ?? 'any'}
+              labelId={`rule-${index}-subtitle-filter-label`}
+              label={t`Filter`}
+            >
               <MenuItem value="any">
                 <Trans>Any</Trans>
               </MenuItem>

@@ -3114,9 +3114,11 @@ msgid "move"
 msgstr "move"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Move down"
 msgstr "Move down"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Move up"
 msgstr "Move up"
@@ -3959,6 +3961,7 @@ msgstr "Remove icon"
 msgid "Remove Programming"
 msgstr "Remove Programming"
 
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Remove rule"
 msgstr "Remove rule"
