@@ -85,6 +85,7 @@ import { isNonEmptyString, isWindows, wait } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { getAvailablePort } from '../util/net.ts';
+import throttle from '../util/throttle.ts';
 import { FileSystemService } from './FileSystemService.ts';
 import type { ISearchService } from './ISearchService.ts';
 import { SearchParser } from './search/SearchParser.ts';
@@ -1628,6 +1629,34 @@ export class MeilisearchService implements ISearchService {
     }
 
     return await this.client().index(ProgramsIndex.name).deleteDocuments(ids);
+  }
+
+  /**
+   * Pages through the id and type of every document in the programs index.
+   * Writes during the scan can shift offsets, so a document may be skipped or
+   * seen twice.
+   */
+  async *allProgramDocumentRefs(
+    pageSize: number,
+  ): AsyncGenerator<Pick<ProgramSearchDocument, 'id' | 'type'>[]> {
+    let offset = 0;
+    for (;;) {
+      await throttle();
+      const page = await this.client()
+        .index<ProgramSearchDocument>(ProgramsIndex.name)
+        .getDocuments({ fields: ['id', 'type'], offset, limit: pageSize });
+
+      if (page.results.length === 0) {
+        return;
+      }
+
+      yield page.results;
+
+      offset += page.results.length;
+      if (offset >= page.total) {
+        return;
+      }
+    }
   }
 
   async deleteByMediaSourceIds(ids: string[]) {

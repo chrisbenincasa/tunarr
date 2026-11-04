@@ -1,3 +1,4 @@
+import { isTerminalItemType } from '@tunarr/types';
 import type {
   ProgramGroupingSearchDocument,
   ProgramSearchDocument,
@@ -7,23 +8,30 @@ import type {
 export function isTerminalProgramDocument(
   doc: ProgramSearchDocument,
 ): doc is TerminalProgramSearchDocument {
-  switch (doc.type) {
-    case 'movie':
-    case 'episode':
-    case 'track':
-    case 'music_video':
-    case 'other_video':
-      return true;
-    case 'show':
-    case 'season':
-    case 'artist':
-    case 'album':
-      return false;
-  }
+  return isTerminalItemType(doc.type);
 }
 
 export function isProgramGroupingDocument(
   doc: ProgramSearchDocument,
 ): doc is ProgramGroupingSearchDocument {
-  return !isTerminalProgramDocument(doc);
+  return !isTerminalItemType(doc.type);
+}
+
+/**
+ * Returns the ids of search documents whose program or grouping row is gone
+ * from the DB. These documents are stale. They still count toward the index's
+ * totals but can never be returned as results.
+ */
+export function findDanglingSearchDocumentIds(
+  docs: readonly Pick<ProgramSearchDocument, 'id' | 'type'>[],
+  programIds: ReadonlySet<string>,
+  groupingIds: ReadonlySet<string>,
+): string[] {
+  return docs
+    .filter((doc) =>
+      isTerminalItemType(doc.type)
+        ? !programIds.has(doc.id)
+        : !groupingIds.has(doc.id),
+    )
+    .map((doc) => doc.id);
 }
