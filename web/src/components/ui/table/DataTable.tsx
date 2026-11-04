@@ -32,7 +32,7 @@ import type { Row, RowData } from '@tanstack/react-table';
 import { clamp } from 'lodash-es';
 import { type ReactNode, useEffect, useState } from 'react';
 import { SortButton } from './SortButton.tsx';
-import { TablePager, lastPageIndex } from './TablePager.tsx';
+import { TablePager } from './TablePager.tsx';
 import { ColumnFilter } from './filters/ColumnFilter.tsx';
 import { sxList } from './sx.ts';
 import {
@@ -41,6 +41,7 @@ import {
   type TunarrFeatures,
   type TunarrTable,
   columnLabel,
+  lastPageIndex,
 } from './tunarrTable.ts';
 
 export type DataTableProps<TData extends RowData> = {

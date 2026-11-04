@@ -3,7 +3,8 @@ import { Box, useMediaQuery } from '@mui/material';
 import type { PaginationState } from '@tanstack/react-table';
 import { clamp } from 'lodash-es';
 import type { ReactNode } from 'react';
-import { TablePager, lastPageIndex } from '../../table/TablePager.tsx';
+import { TablePager } from '../../table/TablePager.tsx';
+import { lastPageIndex } from '../../table/tunarrTable.ts';
 import { type CollectionLayout, collectionLayout } from './collectionLayout.ts';
 
 export type CollectionViewProps<TItem> = {

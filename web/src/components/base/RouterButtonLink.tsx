@@ -36,6 +36,7 @@ const MUIIconButtonLinkComponent = React.forwardRef<
 
 // Exported as createLink returns it, so it forwards refs and can sit inside a
 // Tooltip.
+// eslint-disable-next-line react-refresh/only-export-components
 export const RouterIconButtonLink: LinkComponent<
   typeof MUIIconButtonLinkComponent
 > = createLink(MUIIconButtonLinkComponent);

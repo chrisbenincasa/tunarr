@@ -1,10 +1,7 @@
 import { useLingui } from '@lingui/react/macro';
 import { type SxProps, TablePagination, type Theme } from '@mui/material';
 import { clamp } from 'lodash-es';
-import { pageSizeOptions } from './tunarrTable.ts';
-
-export const lastPageIndex = (count: number, pageSize: number) =>
-  Math.max(0, Math.ceil(count / pageSize) - 1);
+import { lastPageIndex, pageSizeOptions } from './tunarrTable.ts';
 
 export type TablePagerProps = {
   count: number;
