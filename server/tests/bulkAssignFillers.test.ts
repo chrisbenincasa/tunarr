@@ -7,6 +7,7 @@ import { container } from '../src/container.ts';
 import type { ChannelDB } from '../src/db/ChannelDB.ts';
 import { DBAccess } from '../src/db/DBAccess.ts';
 import { ChannelFillerShow } from '../src/db/schema/ChannelFillerShow.ts';
+import type { IFillerListDB } from '../src/db/interfaces/IFillerListDB.ts';
 import { TranscodeConfigDB } from '../src/db/TranscodeConfigDB.ts';
 import { KEYS } from '../src/types/inject.ts';
 import { getAvailablePort } from '../src/util/net.ts';
@@ -200,6 +201,65 @@ describe('POST /channels/bulk/fillers', () => {
         weight: 3,
         cooldown: 60,
       });
+    }
+  });
+});
+
+describe('FillerDB.bulkAssignFillers in chunks', () => {
+  const fillerDB = () => container.get<IFillerListDB>(KEYS.FillerListDB);
+
+  test('finds unknown IDs across chunks', () => {
+    const unknownId = v4();
+    expect(() =>
+      fillerDB().bulkAssignFillers(
+        {
+          channelIds: [...channelIds, unknownId],
+          fillers: [
+            { fillerShowId: fillerIds[0], weight: 1, cooldownSeconds: 0 },
+          ],
+          mode: 'add',
+        },
+        1,
+      ),
+    ).toThrow(unknownId);
+  });
+
+  test('add mode counts updated pairs across chunks', () => {
+    const result = fillerDB().bulkAssignFillers(
+      {
+        channelIds,
+        fillers: [
+          { fillerShowId: fillerIds[0], weight: 2, cooldownSeconds: 10 },
+          { fillerShowId: fillerIds[1], weight: 4, cooldownSeconds: 20 },
+        ],
+        mode: 'add',
+      },
+      1,
+    );
+
+    expect(result).toEqual({ added: 2, updated: 2 });
+    for (const channelId of channelIds) {
+      expect(fillersFor(channelId)).toHaveLength(2);
+    }
+  });
+
+  test('replace mode clears every chunk of channels', () => {
+    const result = fillerDB().bulkAssignFillers(
+      {
+        channelIds,
+        fillers: [
+          { fillerShowId: fillerIds[0], weight: 1, cooldownSeconds: 0 },
+        ],
+        mode: 'replace',
+      },
+      1,
+    );
+
+    expect(result).toEqual({ added: 2, updated: 0 });
+    for (const channelId of channelIds) {
+      expect(fillersFor(channelId)).toEqual([
+        expect.objectContaining({ fillerShowUuid: fillerIds[0] }),
+      ]);
     }
   });
 });
