@@ -99,4 +99,28 @@ describe('RemoveDanglingProgramsFromSearchTask', () => {
 
     expect(searchService.deleteByIds).not.toHaveBeenCalled();
   });
+
+  test('waits for the media source delete before scanning', async () => {
+    const { task, searchService } = setup(
+      [[{ id: 'movie-gone', type: 'movie' }]],
+      [],
+      [],
+    );
+    const events: string[] = [];
+    searchService.deleteByMediaSourceIds.mockResolvedValue({ taskUid: 3 });
+    searchService.monitorTask.mockImplementation(async (id: number) => {
+      await Promise.resolve();
+      events.push(`monitor-done:${id}`);
+    });
+    const pages = searchService.allProgramDocumentRefs;
+    searchService.allProgramDocumentRefs = async function* () {
+      events.push('scan-start');
+      yield* pages();
+    };
+
+    await task.run({});
+
+    expect(events).toEqual(['monitor-done:3', 'scan-start']);
+    expect(searchService.deleteByIds).toHaveBeenCalledWith(['movie-gone']);
+  });
 });

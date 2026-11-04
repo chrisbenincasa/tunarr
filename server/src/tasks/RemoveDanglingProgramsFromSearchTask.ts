@@ -48,8 +48,10 @@ export class RemoveDanglingProgramsFromSearchTask extends SimpleTask {
     const result = await this.searchService.deleteByMediaSourceIds(ids);
     if (result) {
       this.logger.info('Scheduled search index deletion task: %O', result);
-      this.searchService.monitorTask(result.taskUid).catch(() => {
-        // Swallow
+
+      // The scan pages by offset, so it starts only after this delete lands.
+      await this.searchService.monitorTask(result.taskUid).catch((e) => {
+        this.logger.warn(e, 'Failed to monitor search index deletion task');
       });
     }
 

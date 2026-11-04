@@ -18,6 +18,7 @@ type SetupOpts = {
   programRows?: string[];
   groupingRows?: string[];
   lookupFails?: boolean;
+  filterPaging?: { offset: number; limit: number };
 };
 
 function setup({
@@ -28,20 +29,27 @@ function setup({
   programRows = loadedPrograms,
   groupingRows = loadedGroupings,
   lookupFails = false,
+  filterPaging,
 }: SetupOpts) {
+  const results = hits.map((hit) => ({
+    ...hit,
+    mediaSourceId: 'source-1',
+    libraryId: 'library-1',
+  }));
+
+  // A request with no text query takes the filter path, as the Trash page does.
+  const response = filterPaging
+    ? { type: 'filter', results, total: totalHits, ...filterPaging }
+    : {
+        type: 'search',
+        results,
+        page: 1,
+        totalHits,
+        totalPages: Math.ceil(totalHits / 20),
+        facetDistribution: {},
+      };
   const searchService = {
-    search: vi.fn().mockResolvedValue({
-      type: 'search',
-      results: hits.map((hit) => ({
-        ...hit,
-        mediaSourceId: 'source-1',
-        libraryId: 'library-1',
-      })),
-      page: 1,
-      totalHits,
-      totalPages: Math.ceil(totalHits / 20),
-      facetDistribution: {},
-    }),
+    search: vi.fn().mockResolvedValue(response),
     deleteByIds: vi.fn().mockResolvedValue({ taskUid: 7 }),
     monitorTask: vi.fn().mockResolvedValue(undefined),
   };
@@ -130,5 +138,28 @@ describe('SearchProgramsCommand', () => {
 
     expect(searchService.deleteByIds).not.toHaveBeenCalled();
     expect(response.totalHits).toBe(1);
+  });
+
+  test('leaves pruned hits out of the totals on the filter path', async () => {
+    const { command, searchService } = setup({
+      hits: [
+        { id: 'movie-kept', type: 'movie' },
+        { id: 'movie-gone', type: 'movie' },
+        { id: 'show-gone', type: 'show' },
+      ],
+      totalHits: 45,
+      loadedPrograms: ['movie-kept'],
+      filterPaging: { offset: 40, limit: 20 },
+    });
+
+    const response = await command.execute(request);
+
+    expect(searchService.deleteByIds).toHaveBeenCalledWith([
+      'movie-gone',
+      'show-gone',
+    ]);
+    expect(response.totalHits).toBe(43);
+    expect(response.totalPages).toBe(3);
+    expect(response.page).toBe(2);
   });
 });
