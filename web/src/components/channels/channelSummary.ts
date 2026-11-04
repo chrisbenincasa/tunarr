@@ -1,5 +1,6 @@
 import type {
   Channel,
+  ChannelLineup,
   ChannelSession,
   MediaArtwork,
   TerminalProgram,
@@ -121,6 +122,43 @@ export const summarizeNowPlaying = (
       redirectChannel: p.channelNumber,
     }))
     .exhaustive();
+};
+
+// The program each channel airs at `at`, keyed by channel id. Falls back to a
+// lineup's first program when none spans `at`.
+export const currentPrograms = (
+  lineups: readonly Pick<ChannelLineup, 'id' | 'programs'>[],
+  at: number,
+): Map<string, TvGuideProgram> => {
+  const programs = new Map<string, TvGuideProgram>();
+  for (const lineup of lineups) {
+    const program =
+      lineup.programs.find((p) => p.start <= at && p.stop > at) ??
+      lineup.programs[0];
+    if (program) {
+      programs.set(lineup.id, program);
+    }
+  }
+  return programs;
+};
+
+export const failedGuideRetryMs = 60_000;
+
+// Milliseconds until the guide should be refetched. That is just after the
+// first current program ends, or a fixed delay after a failed fetch.
+// Undefined means no refetch is due.
+export const guideRefreshDelay = (
+  stops: readonly number[],
+  now: number,
+  failed: boolean,
+): number | undefined => {
+  if (failed) {
+    return failedGuideRetryMs;
+  }
+  if (stops.length === 0) {
+    return;
+  }
+  return Math.max(Math.min(...stops) - now, 0) + 1_000;
 };
 
 export type ChannelStatus = {
