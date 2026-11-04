@@ -92,7 +92,7 @@ async function writeFileAtomicInternal(filePath: string, contents: string) {
 
 export type SyncWriteFs = {
   openSync: (path: string, flags: string) => number;
-  writeSync: (fd: number, contents: string) => number;
+  writeSync: (fd: number, buffer: Uint8Array, offset: number) => number;
   fsyncSync: (fd: number) => void;
   closeSync: (fd: number) => void;
   renameSync: (from: string, to: string) => void;
@@ -123,7 +123,7 @@ export function writeFileAtomicSync(
   let fd: number | undefined;
   try {
     fd = fsImpl.openSync(tempPath, 'w');
-    fsImpl.writeSync(fd, contents);
+    writeAllSync(fsImpl, fd, Buffer.from(contents, 'utf-8'));
     fsImpl.fsyncSync(fd);
     fsImpl.closeSync(fd);
     fd = undefined;
@@ -143,6 +143,22 @@ export function writeFileAtomicSync(
       // Best-effort cleanup.
     }
     throw e;
+  }
+}
+
+// write(2) can return a short count without an error, for example when the
+// disk fills mid-write. Loop until every byte lands so a partial scratch file
+// never gets renamed over the destination.
+function writeAllSync(fsImpl: SyncWriteFs, fd: number, buffer: Uint8Array) {
+  let offset = 0;
+  while (offset < buffer.byteLength) {
+    const written = fsImpl.writeSync(fd, buffer, offset);
+    if (written <= 0) {
+      throw new Error(
+        `Wrote ${offset} of ${buffer.byteLength} bytes; write made no progress`,
+      );
+    }
+    offset += written;
   }
 }
 

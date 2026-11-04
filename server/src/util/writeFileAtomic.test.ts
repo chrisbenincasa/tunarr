@@ -162,3 +162,48 @@ describe('fsync before rename', () => {
     await expect(fs.readdir(dir)).resolves.toEqual(['settings.json']);
   });
 });
+
+describe('short writes', () => {
+  function fakeFs(chunkSize: number, written: Buffer[]): SyncWriteFs {
+    return {
+      openSync: () => 7,
+      writeSync: (_fd, buffer, offset) => {
+        const end = Math.min(offset + chunkSize, buffer.byteLength);
+        written.push(Buffer.from(buffer.subarray(offset, end)));
+        return end - offset;
+      },
+      fsyncSync: () => {},
+      closeSync: () => {},
+      renameSync: () => {},
+      unlinkSync: () => {},
+    };
+  }
+
+  test('the sync write keeps writing until every byte lands', () => {
+    const written: Buffer[] = [];
+    const contents = '{"name":"Ünïcode channel","number":1}';
+
+    writeFileAtomicSync(
+      path.join(dir, 'settings.json'),
+      contents,
+      fakeFs(5, written),
+    );
+
+    expect(written.length).toBeGreaterThan(1);
+    expect(Buffer.concat(written).toString('utf-8')).toBe(contents);
+  });
+
+  test('the sync write fails without renaming when a write makes no progress', () => {
+    const calls: string[] = [];
+    const stalled: SyncWriteFs = {
+      ...fakeFs(0, []),
+      renameSync: () => void calls.push('rename'),
+      unlinkSync: () => void calls.push('unlink'),
+    };
+
+    expect(() =>
+      writeFileAtomicSync(path.join(dir, 'settings.json'), '{}', stalled),
+    ).toThrow(/no progress/);
+    expect(calls).toEqual(['unlink']);
+  });
+});

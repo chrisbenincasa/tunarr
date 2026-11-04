@@ -116,7 +116,7 @@ PBS will skip the `data.ms` directory during all future backup jobs that include
 
 ### What happens if `data.ms` is damaged?
 
-On startup, Tunarr checks the `data.ms` directory before starting Meilisearch. Meilisearch cannot open a `data.ms` directory whose `VERSION` file is missing, or holds something other than a version number such as `1.30.0`. A missing file can happen after a partial restore, or when something deletes files from the directory (for example, macOS clears old files out of its temporary directory, so don't keep Tunarr's data directory there). An empty `VERSION` file can happen when the machine crashes or loses power shortly after Tunarr starts. When the file is missing or invalid:
+On startup, Tunarr checks the `data.ms` directory before starting Meilisearch. Meilisearch can only open a `data.ms` directory whose `VERSION` file holds a version number, such as `1.30.0`. A missing file can happen after a partial restore, or when something deletes files from the directory (for example, macOS clears old files out of its temporary directory, so don't keep Tunarr's data directory there). An empty `VERSION` file can happen when the machine crashes or loses power shortly after Tunarr starts. When the file is missing or invalid:
 
 - If `data.ms` contains no other files, Tunarr deletes it.
 - If `data.ms` still contains data, Tunarr renames it to `data.ms.broken-<timestamp>` so nothing is lost. You can delete that directory once Tunarr is running normally.
