@@ -33,3 +33,36 @@ describe('findDanglingSearchDocumentIds', () => {
     ).toEqual([]);
   });
 });
+
+describe('findDanglingSearchDocumentIds type routing', () => {
+  test.each([
+    'movie',
+    'episode',
+    'track',
+    'music_video',
+    'other_video',
+  ] as const)('checks a %s against the program rows', (type) => {
+    const docs = [{ id: 'x', type }];
+
+    expect(
+      findDanglingSearchDocumentIds(docs, new Set(['x']), new Set()),
+    ).toEqual([]);
+    expect(
+      findDanglingSearchDocumentIds(docs, new Set(), new Set(['x'])),
+    ).toEqual(['x']);
+  });
+
+  test.each(['show', 'season', 'artist', 'album'] as const)(
+    'checks a %s against the grouping rows',
+    (type) => {
+      const docs = [{ id: 'x', type }];
+
+      expect(
+        findDanglingSearchDocumentIds(docs, new Set(), new Set(['x'])),
+      ).toEqual([]);
+      expect(
+        findDanglingSearchDocumentIds(docs, new Set(['x']), new Set()),
+      ).toEqual(['x']);
+    },
+  );
+});

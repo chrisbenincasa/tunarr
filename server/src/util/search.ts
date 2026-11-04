@@ -1,37 +1,20 @@
+import { isTerminalItemType } from '@tunarr/types';
 import type {
   ProgramGroupingSearchDocument,
   ProgramSearchDocument,
   TerminalProgramSearchDocument,
 } from '../services/MeilisearchService.ts';
 
-export function isTerminalProgramType(
-  type: ProgramSearchDocument['type'],
-): boolean {
-  switch (type) {
-    case 'movie':
-    case 'episode':
-    case 'track':
-    case 'music_video':
-    case 'other_video':
-      return true;
-    case 'show':
-    case 'season':
-    case 'artist':
-    case 'album':
-      return false;
-  }
-}
-
 export function isTerminalProgramDocument(
   doc: ProgramSearchDocument,
 ): doc is TerminalProgramSearchDocument {
-  return isTerminalProgramType(doc.type);
+  return isTerminalItemType(doc.type);
 }
 
 export function isProgramGroupingDocument(
   doc: ProgramSearchDocument,
 ): doc is ProgramGroupingSearchDocument {
-  return !isTerminalProgramType(doc.type);
+  return !isTerminalItemType(doc.type);
 }
 
 /**
@@ -46,7 +29,7 @@ export function findDanglingSearchDocumentIds(
 ): string[] {
   return docs
     .filter((doc) =>
-      isTerminalProgramType(doc.type)
+      isTerminalItemType(doc.type)
         ? !programIds.has(doc.id)
         : !groupingIds.has(doc.id),
     )

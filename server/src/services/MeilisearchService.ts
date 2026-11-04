@@ -85,6 +85,7 @@ import { isNonEmptyString, isWindows, wait } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { getAvailablePort } from '../util/net.ts';
+import throttle from '../util/throttle.ts';
 import { FileSystemService } from './FileSystemService.ts';
 import type { ISearchService } from './ISearchService.ts';
 import { SearchParser } from './search/SearchParser.ts';
@@ -1640,6 +1641,7 @@ export class MeilisearchService implements ISearchService {
   ): AsyncGenerator<Pick<ProgramSearchDocument, 'id' | 'type'>[]> {
     let offset = 0;
     for (;;) {
+      await throttle();
       const page = await this.client()
         .index<ProgramSearchDocument>(ProgramsIndex.name)
         .getDocuments({ fields: ['id', 'type'], offset, limit: pageSize });
