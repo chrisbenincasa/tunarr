@@ -8,7 +8,7 @@ import type {
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
@@ -415,27 +415,36 @@ export class FillerDB implements IFillerListDB {
     });
   }
 
+  // ID lists go to SQLite in chunks of `idChunkSize`, so no query binds an
+  // unbounded number of parameters.
   bulkAssignFillers(
     request: BulkAssignFillersRequest,
+    idChunkSize = 500,
   ): BulkAssignFillersResponse {
     const fillerIds = request.fillers.map((f) => f.fillerShowId);
+    const channelIdChunks = chunk(request.channelIds, idChunkSize);
+    const fillerIdChunks = chunk(fillerIds, idChunkSize);
 
     return this.drizzle.transaction((tx) => {
       const foundChannelIds = new Set(
-        tx
-          .select({ uuid: Channel.uuid })
-          .from(Channel)
-          .where(inArray(Channel.uuid, request.channelIds))
-          .all()
-          .map((row) => row.uuid),
+        channelIdChunks.flatMap((ids) =>
+          tx
+            .select({ uuid: Channel.uuid })
+            .from(Channel)
+            .where(inArray(Channel.uuid, ids))
+            .all()
+            .map((row) => row.uuid),
+        ),
       );
       const foundFillerIds = new Set(
-        tx
-          .select({ uuid: FillerShow.uuid })
-          .from(FillerShow)
-          .where(inArray(FillerShow.uuid, fillerIds))
-          .all()
-          .map((row) => row.uuid),
+        fillerIdChunks.flatMap((ids) =>
+          tx
+            .select({ uuid: FillerShow.uuid })
+            .from(FillerShow)
+            .where(inArray(FillerShow.uuid, ids))
+            .all()
+            .map((row) => row.uuid),
+        ),
       );
       const missingChannelIds = request.channelIds.filter(
         (id) => !foundChannelIds.has(id),
@@ -457,21 +466,28 @@ export class FillerDB implements IFillerListDB {
 
       let updated = 0;
       if (request.mode === 'replace') {
-        tx.delete(ChannelFillerShow)
-          .where(inArray(ChannelFillerShow.channelUuid, request.channelIds))
-          .run();
+        for (const ids of channelIdChunks) {
+          tx.delete(ChannelFillerShow)
+            .where(inArray(ChannelFillerShow.channelUuid, ids))
+            .run();
+        }
       } else {
-        updated =
-          tx
-            .select({ count: sql<number>`count(*)` })
-            .from(ChannelFillerShow)
-            .where(
-              and(
-                inArray(ChannelFillerShow.channelUuid, request.channelIds),
-                inArray(ChannelFillerShow.fillerShowUuid, fillerIds),
-              ),
-            )
-            .get()?.count ?? 0;
+        // IDs are unique, so no row falls in two chunk pairs.
+        for (const channelChunk of channelIdChunks) {
+          for (const fillerChunk of fillerIdChunks) {
+            updated +=
+              tx
+                .select({ count: count() })
+                .from(ChannelFillerShow)
+                .where(
+                  and(
+                    inArray(ChannelFillerShow.channelUuid, channelChunk),
+                    inArray(ChannelFillerShow.fillerShowUuid, fillerChunk),
+                  ),
+                )
+                .get()?.count ?? 0;
+          }
+        }
       }
 
       const rows = request.channelIds.flatMap((channelId) =>

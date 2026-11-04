@@ -50,6 +50,7 @@ export interface IFillerListDB {
 
   bulkAssignFillers(
     request: BulkAssignFillersRequest,
+    idChunkSize?: number,
   ): BulkAssignFillersResponse;
 }
 
