@@ -159,11 +159,9 @@ describe('the heartbeat protocol', () => {
   });
 
   // Tunarr's connection tracker has to give up first, or the worker reaps
-  // itself while Tunarr still believes the session is live. Tunarr's global
-  // default is 120s, which is on the wrong side of this.
+  // itself while Tunarr still believes the session is live.
   test('the session staleness window closes before the worker reaps itself', () => {
     expect(HeartbeatTimeoutMs).toBe(90_000);
     expect(DefaultStalenessMs).toBeLessThan(HeartbeatTimeoutMs);
-    expect(DefaultStalenessMs).toBeLessThan(120_000);
   });
 });
