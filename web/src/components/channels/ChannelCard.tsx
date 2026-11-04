@@ -64,8 +64,11 @@ export const ChannelCard = ({
 }: ChannelCardProps) => {
   const { t } = useLingui();
   const { theme, tokens, dense } = useThemeTokens();
-  const [artFailed, setArtFailed] = useState(false);
-  const artworkUrl = artFailed ? undefined : nowPlaying?.artworkUrl;
+  const [failedArtUrl, setFailedArtUrl] = useState<string>();
+  const artworkUrl =
+    nowPlaying?.artworkUrl === failedArtUrl
+      ? undefined
+      : nowPlaying?.artworkUrl;
   const heroHeight = dense ? 104 : 140;
 
   const nowTitle =
@@ -108,7 +111,7 @@ export const ChannelCard = ({
             src={artworkUrl}
             alt=""
             loading="lazy"
-            onError={() => setArtFailed(true)}
+            onError={() => setFailedArtUrl(artworkUrl)}
             sx={{
               position: 'absolute',
               inset: 0,
