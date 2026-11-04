@@ -40,7 +40,8 @@ const messages = () =>
   within(screen.getAllByRole('rowgroup', { hidden: true })[1])
     .getAllByRole('row', { hidden: true })
     .map(
-      (row) => within(row).getAllByRole('cell', { hidden: true })[0].textContent,
+      (row) =>
+        within(row).getAllByRole('cell', { hidden: true })[0].textContent,
     );
 
 describe('MultiSelectFilter', () => {

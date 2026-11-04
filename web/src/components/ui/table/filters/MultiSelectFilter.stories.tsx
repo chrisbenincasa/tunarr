@@ -66,7 +66,9 @@ const MultiSelectFilterDemo = ({
     data: logs,
     initialState: { columnFilters: initialFilters },
   });
-  return <DataTable table={table} aria-label="System logs" defaultShowFilters />;
+  return (
+    <DataTable table={table} aria-label="System logs" defaultShowFilters />
+  );
 };
 
 const meta = {

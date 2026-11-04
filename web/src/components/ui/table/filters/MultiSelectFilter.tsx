@@ -1,5 +1,11 @@
 import { useLingui } from '@lingui/react/macro';
-import { Box, Checkbox, ListItemText, MenuItem, TextField } from '@mui/material';
+import {
+  Box,
+  Checkbox,
+  ListItemText,
+  MenuItem,
+  TextField,
+} from '@mui/material';
 import type { RowData } from '@tanstack/react-table';
 import { type TunarrColumn, columnLabel } from '../tunarrTable.ts';
 import {
