@@ -117,6 +117,9 @@ export class FallbackMetadataService {
       year: null,
       artwork: [],
       state: 'ok',
+      summary: null,
+      plot: null,
+      tagline: null,
     };
   }
 

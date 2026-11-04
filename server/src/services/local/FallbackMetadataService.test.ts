@@ -26,4 +26,22 @@ describe('FallbackMetadataService', () => {
       });
     });
   });
+
+  describe('other video fallback metadata', () => {
+    const service = new FallbackMetadataService();
+
+    test('extracts the title and leaves summary fields empty', () => {
+      const result = service.getOtherVideoFallbackMetadata(
+        '/data/filler/commercial-01.mkv',
+      );
+
+      expect(result).toMatchObject({
+        title: 'commercial-01',
+        type: 'other_video',
+        summary: null,
+        plot: null,
+        tagline: null,
+      });
+    });
+  });
 });

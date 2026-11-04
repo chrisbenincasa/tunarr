@@ -477,6 +477,7 @@ export const MusicVideo = z.object({
 
 export const OtherVideoMetadata = z.object({
   ...BaseProgram.shape,
+  ...WithSummaryMetadata.shape,
   type: z.literal('other_video'),
 });
 

@@ -504,6 +504,7 @@ export class ProgramDaoMinter {
       updatedAt: now,
       canonicalId: video.canonicalId,
       state: 'ok',
+      summary: video.summary,
     } satisfies NewOtherVideoProgram;
 
     return {

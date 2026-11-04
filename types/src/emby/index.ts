@@ -587,6 +587,7 @@ export const EmbyItemSchema = z
     ListingsChannelName: z.string(),
     ListingsChannelNumber: z.string(),
     AffiliateCallSign: z.string(),
+    Summary: z.string().optional(),
   })
   .partial()
   .required({ Id: true });

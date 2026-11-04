@@ -303,3 +303,42 @@ describe('JellyfinApiClient library scans with Jellyfin collections', () => {
     expect(shows.map((s) => s.title)).toEqual(['Standalone', 'Member']);
   });
 });
+
+describe('JellyfinApiClient other video metadata', () => {
+  it('maps Overview to summary', async () => {
+    const client = makeMinimalJellyfinClient();
+    const video = {
+      ...movieWithExternalSubtitles,
+      Id: 'other-video-1',
+      Name: 'Filler Clip',
+      Type: 'Video',
+      Summary: 'A Jellyfin overview',
+    };
+
+    vi.spyOn(client, 'doTypeCheckedGet' as never).mockImplementation(((
+      _path: string,
+      _schema: unknown,
+      config: { params: Record<string, unknown> },
+    ) => {
+      const startIndex =
+        (config.params['startIndex'] as number | undefined) ?? 0;
+      const limit = (config.params['limit'] as number | undefined) ?? 50;
+      // The count request asks for limit 0; pagination then fetches 0..totalPages.
+      const items = limit > 0 && startIndex === 0 ? [video] : [];
+      return Promise.resolve(
+        Result.success({
+          Items: items,
+          TotalRecordCount: 1,
+          StartIndex: startIndex,
+        }),
+      );
+    }) as never);
+
+    const videos = await collect(
+      client.getOtherVideoLibraryContents('library-1'),
+    );
+
+    expect(videos).toHaveLength(1);
+    expect(videos[0]?.summary).toBe('A Jellyfin overview');
+  });
+});
