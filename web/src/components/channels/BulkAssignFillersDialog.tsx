@@ -24,6 +24,7 @@ import { useQuery } from '@tanstack/react-query';
 import type { FillerList } from '@tunarr/types';
 import { isEmpty } from 'lodash-es';
 import { useState } from 'react';
+import { useMap } from 'usehooks-ts';
 import {
   DefaultBulkFillerCooldownSeconds,
   DefaultBulkFillerWeight,
@@ -49,47 +50,32 @@ export function BulkAssignFillersDialog({
 }: Props) {
   const { t } = useLingui();
   const { data: fillerLists, isPending } = useQuery(fillerListsQuery());
-  const [selectedFillers, setSelectedFillers] = useState<
-    Record<string, FillerSelection>
-  >({});
+  const [selectedFillers, fillerActions] = useMap<string, FillerSelection>();
   const [replaceMode, setReplaceMode] = useState(false);
   const [confirmingReplace, setConfirmingReplace] = useState(false);
   const mutation = useBulkAssignFillers(onClose);
 
   const toggleFiller = (filler: FillerList) => {
-    setSelectedFillers((prev) => {
-      if (prev[filler.id] !== undefined) {
-        const next = { ...prev };
-        delete next[filler.id];
-        return next;
-      }
-      return {
-        ...prev,
-        [filler.id]: {
-          weight: DefaultBulkFillerWeight,
-          cooldownSeconds: DefaultBulkFillerCooldownSeconds,
-        },
-      };
-    });
+    if (selectedFillers.has(filler.id)) {
+      fillerActions.remove(filler.id);
+    } else {
+      fillerActions.set(filler.id, {
+        weight: DefaultBulkFillerWeight,
+        cooldownSeconds: DefaultBulkFillerCooldownSeconds,
+      });
+    }
   };
 
-  const updateFillerWeight = (fillerId: string, weight: number) => {
-    setSelectedFillers((prev) => ({
-      ...prev,
-      [fillerId]: { ...prev[fillerId], weight },
-    }));
-  };
-
-  const updateFillerCooldown = (fillerId: string, cooldownSeconds: number) => {
-    setSelectedFillers((prev) => ({
-      ...prev,
-      [fillerId]: { ...prev[fillerId], cooldownSeconds },
-    }));
+  const updateFiller = (fillerId: string, change: Partial<FillerSelection>) => {
+    const current = selectedFillers.get(fillerId);
+    if (current) {
+      fillerActions.set(fillerId, { ...current, ...change });
+    }
   };
 
   const submit = () => {
     setConfirmingReplace(false);
-    const fillers = Object.entries(selectedFillers).map(
+    const fillers = [...selectedFillers.entries()].map(
       ([fillerShowId, config]) => ({
         fillerShowId,
         weight: config.weight,
@@ -113,8 +99,6 @@ export function BulkAssignFillersDialog({
       submit();
     }
   };
-
-  const selectedIds = Object.keys(selectedFillers);
 
   const renderContent = () => {
     if (isPending) {
@@ -153,7 +137,7 @@ export function BulkAssignFillersDialog({
         />
         <List dense>
           {(fillerLists ?? []).map((filler) => {
-            const selection = selectedFillers[filler.id];
+            const selection = selectedFillers.get(filler.id);
             return (
               <ListItem
                 key={filler.id}
@@ -187,7 +171,9 @@ export function BulkAssignFillersDialog({
                     </Typography>
                     <Slider
                       value={selection.weight}
-                      onChange={(_, val) => updateFillerWeight(filler.id, val)}
+                      onChange={(_, weight) =>
+                        updateFiller(filler.id, { weight })
+                      }
                       min={1}
                       max={100}
                       valueLabelDisplay="auto"
@@ -200,10 +186,12 @@ export function BulkAssignFillersDialog({
                       fullWidth
                       value={selection.cooldownSeconds}
                       onChange={(e) =>
-                        updateFillerCooldown(
-                          filler.id,
-                          Math.max(0, parseInt(e.target.value, 10) || 0),
-                        )
+                        updateFiller(filler.id, {
+                          cooldownSeconds: Math.max(
+                            0,
+                            parseInt(e.target.value, 10) || 0,
+                          ),
+                        })
                       }
                       slotProps={{
                         htmlInput: { min: 0 },
@@ -241,7 +229,7 @@ export function BulkAssignFillersDialog({
           <Button
             variant="contained"
             onClick={handleApply}
-            disabled={isEmpty(selectedIds) || mutation.isPending}
+            disabled={selectedFillers.size === 0 || mutation.isPending}
           >
             <Trans>
               Apply to{' '}
