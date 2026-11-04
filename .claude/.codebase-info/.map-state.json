@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "tool": "codebase-mapper",
   "version": "2.15.10",
-  "mappedAt": "2026-10-19",
-  "gitCommit": "f081422e9a67d8ef9cdcb7bd9da314dbfd6df1e6",
+  "mappedAt": "2026-11-04",
+  "gitCommit": "e4a1c5a9874cfd5042c208ff22b156b32967f158",
   "documents": [
     "architecture.md",
     "database.md",
@@ -21,6 +21,6 @@
     "media-sources.md": "0ad4fc758833e4790d7c8e5ddcc054fe391d1b7fb12a98eb076166d6c4646862",
     "scheduling-and-lineups.md": "a67a299e317ec4ba629af06029912e2ccb1f1870486669566aa2dab9a3c18297",
     "streaming.md": "34ab617897261f304f53870a47148c9966543570ab22f109e02abadb0767aabd",
-    "testing.md": "c510aca5af355efe2f3b3eee8d71d538aadd59646d6584ead80ff376efff729c"
+    "testing.md": "c9648ebefaddd02570ea10bfbfd3ec60100f1bb58d320e5e4c4f1b676edfd82e"
   }
 }
