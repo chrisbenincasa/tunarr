@@ -9009,7 +9009,10 @@ export type GetApiMediaLibrariesByLibraryIdProgramsData = {
     path: {
         libraryId: string;
     };
-    query?: never;
+    query?: {
+        limit?: number;
+        offset?: number;
+    };
     url: '/api/media-libraries/{libraryId}/programs';
 };
 
@@ -9017,21 +9020,34 @@ export type GetApiMediaLibrariesByLibraryIdProgramsErrors = {
     /**
      * Default Response
      */
+    400: {
+        message: string;
+    };
+    /**
+     * Default Response
+     */
     404: unknown;
 };
+
+export type GetApiMediaLibrariesByLibraryIdProgramsError = GetApiMediaLibrariesByLibraryIdProgramsErrors[keyof GetApiMediaLibrariesByLibraryIdProgramsErrors];
 
 export type GetApiMediaLibrariesByLibraryIdProgramsResponses = {
     /**
      * Default Response
      */
-    200: Array<{
-        type: 'content';
-        duration: number;
-        icon?: string;
-        id: string;
-        startOffsetMs?: number;
-        program: TerminalProgram;
-    }>;
+    200: {
+        total: number;
+        result: Array<{
+            type: 'content';
+            duration: number;
+            icon?: string;
+            id: string;
+            startOffsetMs?: number;
+            program: TerminalProgram;
+        }>;
+        size: number;
+        offset?: number;
+    };
 };
 
 export type GetApiMediaLibrariesByLibraryIdProgramsResponse = GetApiMediaLibrariesByLibraryIdProgramsResponses[keyof GetApiMediaLibrariesByLibraryIdProgramsResponses];

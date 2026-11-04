@@ -27,6 +27,19 @@ export const PagingParams = z.object({
   offset: blankAsAbsent(z.coerce.number().int().nonnegative().default(0)),
 });
 
+const MaxLibraryProgramsPageSize = 1000;
+
+/**
+ * Paging for a whole media library. The limit is bounded because an unpaged
+ * response for a large library exhausts the server's heap.
+ */
+export const LibraryProgramsPagingParams = z.object({
+  limit: blankAsAbsent(
+    z.coerce.number().int().min(1).max(MaxLibraryProgramsPageSize).default(100),
+  ),
+  offset: blankAsAbsent(z.coerce.number().int().nonnegative().default(0)),
+});
+
 export const jsonSchema = z.json();
 export type Json = z.infer<typeof jsonSchema>;
 

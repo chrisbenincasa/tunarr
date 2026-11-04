@@ -303,8 +303,9 @@ export class ProgramDB implements IProgramDB {
 
   getMediaSourceLibraryPrograms(
     libraryId: string,
-  ): Promise<ProgramOrmWithExternalIds[]> {
-    return this.searchRepo.getMediaSourceLibraryPrograms(libraryId);
+    params: PageParams,
+  ): Promise<PagedResult<ProgramOrmWithExternalIds>> {
+    return this.searchRepo.getMediaSourceLibraryPrograms(libraryId, params);
   }
 
   getProgramInfoForMediaSource(

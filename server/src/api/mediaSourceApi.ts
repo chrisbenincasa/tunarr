@@ -20,6 +20,7 @@ import {
   BasicIdParamSchema,
   InsertMediaSourceRequestSchema,
   MediaSourceStatusSchema,
+  PagedResult,
   ScanProgressSchema,
   UpdateMediaSourceLibraryRequest,
   UpdateMediaSourceRequestSchema,
@@ -42,7 +43,10 @@ import type { MediaSourceWithRelations } from '../db/schema/derivedTypes.js';
 import { EntityMutex } from '../services/EntityMutex.ts';
 import { MediaSourceLibraryRefresher } from '../services/MediaSourceLibraryRefresher.ts';
 import { MediaSourceProgressService } from '../services/scanner/MediaSourceProgressService.ts';
-import { TruthyQueryParam } from '../types/schemas.ts';
+import {
+  LibraryProgramsPagingParams,
+  TruthyQueryParam,
+} from '../types/schemas.ts';
 import { fileExists } from '../util/fsUtil.ts';
 import { localSourcePaths } from '../util/mediaSources.ts';
 
@@ -313,8 +317,10 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         params: z.object({
           libraryId: z.string(),
         }),
+        querystring: LibraryProgramsPagingParams,
         response: {
-          200: z.array(ContentProgramSchema),
+          200: PagedResult(ContentProgramSchema.array()),
+          400: z.object({ message: z.string() }),
           404: z.void(),
         },
       },
@@ -328,22 +334,28 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
         return res.status(404).send();
       }
 
-      const programs =
+      const { total, results } =
         await req.serverCtx.programDB.getMediaSourceLibraryPrograms(
           req.params.libraryId,
+          req.query,
         );
 
       const materialized = await container
         .get<MaterializeProgramsCommand>(MaterializeProgramsCommand)
-        .execute(programs);
+        .execute(results);
 
-      return res.send(
-        seq.collect(materialized, (program) =>
-          req.serverCtx.programConverter.materializedProgramToContentProgram(
-            program,
-          ),
+      const programs = seq.collect(materialized, (program) =>
+        req.serverCtx.programConverter.materializedProgramToContentProgram(
+          program,
         ),
       );
+
+      return res.send({
+        total,
+        result: programs,
+        size: programs.length,
+        offset: req.query.offset,
+      });
     },
   );
 

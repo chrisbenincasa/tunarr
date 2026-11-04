@@ -202,7 +202,8 @@ export interface IProgramDB {
 
   getMediaSourceLibraryPrograms(
     libraryId: string,
-  ): Promise<ProgramOrmWithExternalIds[]>;
+    params: PageParams,
+  ): Promise<PagedResult<ProgramOrmWithExternalIds>>;
 
   getProgramInfoForMediaSource(
     mediaSourceId: MediaSourceId,
