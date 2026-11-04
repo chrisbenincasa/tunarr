@@ -1921,6 +1921,9 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
         this.embyArtworkProjection('thumbnail', video, 'Thumb'),
       ]),
       state: 'ok',
+      summary: video.Summary ?? null,
+      plot: null,
+      tagline: null,
     };
   }
 

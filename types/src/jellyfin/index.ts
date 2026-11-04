@@ -758,6 +758,7 @@ export const JellyfinItem = z.object({
   ParentArtItemId: z.string().nullable().optional(),
   ParentArtImageTag: z.string().nullable().optional(),
   SeriesThumbImageTag: z.string().nullable().optional(),
+  Summary: z.string().optional(),
   ImageBlurHashes: z
     .object({
       Primary: z.record(z.string(), z.string()),
