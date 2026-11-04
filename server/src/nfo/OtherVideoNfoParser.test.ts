@@ -93,4 +93,28 @@ describe('OtherVideoNfoParser', () => {
     expect(result.isSuccess()).toBeTruthy();
     expect(result.get().episodedetails?.[0]?.studio).toHaveLength(2);
   });
+
+  test('parse nfo plot for movie and episodedetails roots', async () => {
+    const movieResult = await new OtherVideoNfoParser().parse(`
+      <?xml version="1.0" encoding="utf-8" standalone="yes"?>
+      <movie>
+        <title>Movie Title</title>
+        <plot>Movie plot</plot>
+      </movie>
+    `);
+
+    expect(movieResult.isSuccess()).toBeTruthy();
+    expect(movieResult.get().movie?.plot).toBe('Movie plot');
+
+    const episodeResult = await new OtherVideoNfoParser().parse(`
+      <?xml version="1.0" encoding="utf-8" standalone="yes"?>
+      <episodedetails>
+        <title>Episode Title</title>
+        <plot>Episode plot</plot>
+      </episodedetails>
+    `);
+
+    expect(episodeResult.isSuccess()).toBeTruthy();
+    expect(episodeResult.get().episodedetails?.[0]?.plot).toBe('Episode plot');
+  });
 });

@@ -1901,6 +1901,9 @@ export class JellyfinApiClient extends MediaSourceApiClient<JellyfinItemTypes> {
         this.jellyfinArtworkProjection('thumbnail', video, 'Thumb'),
       ]),
       state: 'ok',
+      summary: video.Summary ?? null,
+      plot: null,
+      tagline: null,
     };
   }
 

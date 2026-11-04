@@ -678,6 +678,9 @@ const baseOtherVideo: OtherVideo = {
   type: 'other_video',
   title: 'Test Video',
   duration: 600000,
+  summary: null,
+  plot: null,
+  tagline: null,
 };
 
 describe('LocalMediaCanonicalizer - other_video', () => {

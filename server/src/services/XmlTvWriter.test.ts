@@ -406,6 +406,20 @@ describe('XmlTvWriter', () => {
         ]);
       },
     );
+
+    test('writes an other_video summary as <desc>', () => {
+      const { xml, children } = serializeProgram(
+        makeProgram({
+          type: 'other_video',
+          title: 'Filler Clip',
+          summary: 'A local NFO plot',
+          sourceType: 'local',
+        }),
+      );
+
+      expect(children.map((node) => node.tagName)).toContain('desc');
+      expect(xml).toContain('<desc>A local NFO plot</desc>');
+    });
   });
 
   describe('television', () => {
