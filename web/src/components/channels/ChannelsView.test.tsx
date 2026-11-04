@@ -9,6 +9,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { CollectionLayout } from '../ui/patterns/CollectionView/index.ts';
 import { ChannelsView } from './ChannelsView.tsx';
 import {
+  makeStoryChannel,
   storyChannels,
   storyNowPlaying,
   storyTranscodeConfigs,
@@ -54,5 +55,19 @@ describe('ChannelsView', () => {
       screen.getAllByRole('link', { name: 'Edit Channel Settings' }),
     ).not.toHaveLength(0);
     expect(consoleError).not.toHaveBeenCalled();
+  });
+
+  test('the cards show one page at the stored page size', async () => {
+    const channels = Array.from({ length: 12 }, (_, i) =>
+      makeStoryChannel({
+        id: `channel-${i + 1}`,
+        number: i + 1,
+        name: `Channel ${i + 1}`,
+      }),
+    );
+    await renderView('cards', channels);
+
+    expect(screen.getAllByRole('article')).toHaveLength(10);
+    expect(screen.getByText('1–10 of 12')).toBeInTheDocument();
   });
 });
