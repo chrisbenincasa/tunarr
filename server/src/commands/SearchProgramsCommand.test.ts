@@ -45,6 +45,7 @@ function setup({
         results,
         page: 1,
         totalHits,
+        hitsPerPage: 20,
         totalPages: Math.ceil(totalHits / 20),
         facetDistribution: {},
       };
@@ -161,5 +162,25 @@ describe('SearchProgramsCommand', () => {
     expect(response.totalHits).toBe(43);
     expect(response.totalPages).toBe(3);
     expect(response.page).toBe(2);
+  });
+
+  test('counts text search pages by the hits per page Meilisearch used', async () => {
+    const { command } = setup({
+      hits: [
+        { id: 'movie-kept', type: 'movie' },
+        { id: 'movie-gone', type: 'movie' },
+      ],
+      totalHits: 100,
+      loadedPrograms: ['movie-kept'],
+    });
+
+    // Meilisearch ignores limit when page is set and returns 20 hits per page.
+    const response = await command.execute({
+      query: { query: 'movie' },
+      limit: 45,
+    });
+
+    expect(response.totalHits).toBe(99);
+    expect(response.totalPages).toBe(5);
   });
 });

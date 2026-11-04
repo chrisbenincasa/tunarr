@@ -199,8 +199,10 @@ export class SearchProgramsCommand {
           : Math.floor((result.offset ?? 0) / (result.limit ?? 20)),
       totalHits,
       totalPages:
-        result.type === 'search' && danglingIds.length === 0
-          ? result.totalPages
+        result.type === 'search'
+          ? danglingIds.length === 0
+            ? result.totalPages
+            : Math.ceil(totalHits / result.hitsPerPage)
           : Math.ceil(totalHits / limit),
       facetDistribution:
         result.type === 'search' ? result.facetDistribution : undefined,
