@@ -266,6 +266,10 @@ export const ChannelsView = ({
         items={channels}
         getItemKey={(channel) => channel.id}
         empty={empty}
+        pagination={{
+          state: tableState.state.pagination,
+          onChange: tableState.onPaginationChange,
+        }}
         renderCard={(channel) => (
           <ChannelCard
             channel={channel}
