@@ -12,7 +12,7 @@ http://<tunarr-host>:<port>/api/xmltv.xml
 
 The full URL is also available in the Tunarr web UI under **Settings > HDHR / M3U**. Point your client's guide data source at this URL to populate the program guide.
 
-To write the file somewhere else, stop Tunarr and set `xmltv.outputPath` in `settings.json` in the data directory. Tunarr creates any missing directories on the next start. If it cannot write to that location, it logs a warning and uses the default path until the location becomes writable. Your setting is kept.
+To write the file somewhere else, stop Tunarr and set `xmltv.outputPath` in `settings.json` in the data directory. The directory must already exist, because Tunarr does not create it. If Tunarr cannot write to that location, it logs a warning and uses the default path until the location becomes writable, such as when a network share mounts. Your setting is kept.
 
 ## Program Metadata
 

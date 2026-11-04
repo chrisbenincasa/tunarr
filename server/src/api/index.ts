@@ -1,9 +1,8 @@
 import type { FfmpegEncoder } from '@/ffmpeg/ffmpegInfo.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { globalOptions, serverOptions } from '@/globals.js';
-import { defaultXmlTvSettings } from '@/db/SettingsDB.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
-import { resolveXmlTvOutputPath } from '@/services/xmltvOutputPath.js';
+import { XmlTvWriter } from '@/services/XmlTvWriter.js';
 import { EtvNextBinaryResolver } from '@/stream/etv/EtvNextBinaryResolver.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
@@ -248,10 +247,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       try {
         const host = `${req.protocol}://${req.host}`;
 
-        const outputPath = await resolveXmlTvOutputPath(
-          req.serverCtx.settings.xmlTvSettings().outputPath,
-          defaultXmlTvSettings(globalOptions().databaseDirectory).outputPath,
-        );
+        const outputPath = await container.get(XmlTvWriter).resolveOutputPath();
         const fileContent = await fsPromises.readFile(outputPath, 'utf8');
         const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
         return res

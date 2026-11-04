@@ -3,18 +3,17 @@ import path from 'node:path';
 import { isNodeError } from '@/util/index.js';
 
 /**
- * Prepares a location for the XMLTV file. Creates missing parent directories
- * and checks that the file can be written there. The file itself need not
- * exist yet, because the XMLTV writer creates it.
+ * Checks that the XMLTV file can be written at a path. The directory must
+ * already exist. The file need not, because the XMLTV writer creates it.
  *
- * Returns false when the location cannot hold a writable file.
+ * Missing directories are never created. An unmounted network share would
+ * otherwise get a directory on the local disk, and the guide would land there.
  */
-export async function prepareXmlTvOutputPath(
+export async function canWriteXmlTvOutputPath(
   outputPath: string,
 ): Promise<boolean> {
   const dir = path.dirname(outputPath);
   try {
-    await fs.mkdir(dir, { recursive: true });
     await fs.access(dir, constants.W_OK);
   } catch {
     return false;
@@ -34,8 +33,8 @@ export async function prepareXmlTvOutputPath(
 
 /**
  * Picks where the XMLTV file lives for this run. Uses the configured path
- * when it can be written and the fallback otherwise. The writer and the
- * XMLTV route both call this, so they agree without persisting the fallback.
+ * when it can be written and the fallback otherwise. The fallback is never
+ * saved to settings.
  * A path that becomes writable later, such as a late network mount, is
  * picked up again on the next call.
  */
@@ -43,7 +42,7 @@ export async function resolveXmlTvOutputPath(
   configuredPath: string,
   fallbackPath: string,
 ): Promise<string> {
-  if (await prepareXmlTvOutputPath(configuredPath)) {
+  if (await canWriteXmlTvOutputPath(configuredPath)) {
     return configuredPath;
   }
   return fallbackPath;

@@ -3,13 +3,13 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 import {
-  prepareXmlTvOutputPath,
+  canWriteXmlTvOutputPath,
   resolveXmlTvOutputPath,
 } from './xmltvOutputPath.ts';
 
 const isRoot = process.getuid?.() === 0;
 
-describe('prepareXmlTvOutputPath', () => {
+describe('canWriteXmlTvOutputPath', () => {
   let tmpDir: string;
 
   beforeEach(async () => {
@@ -24,30 +24,29 @@ describe('prepareXmlTvOutputPath', () => {
   test('accepts a path whose file does not exist yet', async () => {
     const outputPath = path.join(tmpDir, 'xmltv.xml');
 
-    await expect(prepareXmlTvOutputPath(outputPath)).resolves.toBe(true);
+    await expect(canWriteXmlTvOutputPath(outputPath)).resolves.toBe(true);
   });
 
   test('accepts an existing writable file', async () => {
     const outputPath = path.join(tmpDir, 'xmltv.xml');
     await fs.writeFile(outputPath, '<tv/>');
 
-    await expect(prepareXmlTvOutputPath(outputPath)).resolves.toBe(true);
+    await expect(canWriteXmlTvOutputPath(outputPath)).resolves.toBe(true);
   });
 
-  test('creates missing parent directories', async () => {
-    const outputPath = path.join(tmpDir, 'a', 'b', 'c', 'xmltv.xml');
+  test('rejects a missing directory without creating it', async () => {
+    const outputPath = path.join(tmpDir, 'unmounted', 'xmltv.xml');
 
-    await expect(prepareXmlTvOutputPath(outputPath)).resolves.toBe(true);
+    await expect(canWriteXmlTvOutputPath(outputPath)).resolves.toBe(false);
 
-    const stat = await fs.stat(path.dirname(outputPath));
-    expect(stat.isDirectory()).toBe(true);
+    await expect(fs.stat(path.dirname(outputPath))).rejects.toThrow();
   });
 
   test('rejects a path that is a directory', async () => {
     const outputPath = path.join(tmpDir, 'xmltv.xml');
     await fs.mkdir(outputPath);
 
-    await expect(prepareXmlTvOutputPath(outputPath)).resolves.toBe(false);
+    await expect(canWriteXmlTvOutputPath(outputPath)).resolves.toBe(false);
   });
 
   test('rejects a path whose parent is a file', async () => {
@@ -55,7 +54,7 @@ describe('prepareXmlTvOutputPath', () => {
     await fs.writeFile(parent, '');
 
     await expect(
-      prepareXmlTvOutputPath(path.join(parent, 'xmltv.xml')),
+      canWriteXmlTvOutputPath(path.join(parent, 'xmltv.xml')),
     ).resolves.toBe(false);
   });
 
@@ -63,7 +62,7 @@ describe('prepareXmlTvOutputPath', () => {
     await fs.chmod(tmpDir, 0o555);
 
     await expect(
-      prepareXmlTvOutputPath(path.join(tmpDir, 'xmltv.xml')),
+      canWriteXmlTvOutputPath(path.join(tmpDir, 'xmltv.xml')),
     ).resolves.toBe(false);
   });
 });
@@ -82,6 +81,7 @@ describe('resolveXmlTvOutputPath', () => {
   test('uses the configured path when it is writable', async () => {
     const configured = path.join(tmpDir, 'custom', 'xmltv.xml');
     const fallback = path.join(tmpDir, 'xmltv.xml');
+    await fs.mkdir(path.dirname(configured));
 
     await expect(resolveXmlTvOutputPath(configured, fallback)).resolves.toBe(
       configured,
@@ -100,16 +100,15 @@ describe('resolveXmlTvOutputPath', () => {
   });
 
   test('returns to the configured path once it becomes writable', async () => {
-    const blocker = path.join(tmpDir, 'mount');
-    await fs.writeFile(blocker, '');
-    const configured = path.join(blocker, 'xmltv.xml');
+    const mount = path.join(tmpDir, 'mount');
+    const configured = path.join(mount, 'xmltv.xml');
     const fallback = path.join(tmpDir, 'xmltv.xml');
 
     await expect(resolveXmlTvOutputPath(configured, fallback)).resolves.toBe(
       fallback,
     );
 
-    await fs.rm(blocker);
+    await fs.mkdir(mount);
 
     await expect(resolveXmlTvOutputPath(configured, fallback)).resolves.toBe(
       configured,
