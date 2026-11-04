@@ -34,11 +34,11 @@ const MUIIconButtonLinkComponent = React.forwardRef<
   MUIIconButtonProps
 >((props, ref) => <IconButton ref={ref} component="a" {...props} />);
 
-const CreatedIconButtonLinkComponent = createLink(MUIIconButtonLinkComponent);
-
+// Exported as createLink returns it, so it forwards refs and can sit inside a
+// Tooltip.
 export const RouterIconButtonLink: LinkComponent<
   typeof MUIIconButtonLinkComponent
-> = (props) => <CreatedIconButtonLinkComponent {...props} />;
+> = createLink(MUIIconButtonLinkComponent);
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 interface MUIMenuItemProps extends MenuItemProps<'a'> {}
