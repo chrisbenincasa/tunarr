@@ -37,7 +37,8 @@ export class M3uService {
 
   /**
    * Builds the playlist for the given channel numbers only. Skips the cache,
-   * because each subset is a one-off export.
+   * because each subset is a one-off export. Stealth channels are kept,
+   * because the caller picked them by number.
    */
   async getChannelsM3UFor(host: string, numbers: number[]): Promise<string> {
     const wanted = new Set(numbers);
@@ -46,7 +47,10 @@ export class M3uService {
     );
     return this.replaceHostOnM3u(
       host,
-      buildChannelsM3U(channels, { placeholderWhenEmpty: false }),
+      buildChannelsM3U(channels, {
+        placeholderWhenEmpty: false,
+        includeStealth: true,
+      }),
     );
   }
 
@@ -66,6 +70,7 @@ export class M3uService {
 
     const data = buildChannelsM3U(await this.channelDB.getAllChannels(), {
       placeholderWhenEmpty: true,
+      includeStealth: false,
     });
 
     try {
@@ -111,19 +116,22 @@ type M3UChannel = Pick<
 
 /**
  * Builds the playlist text with `{{host}}` placeholders. Stealth channels are
- * left out. With `placeholderWhenEmpty`, an empty channel list yields one
- * entry that points at the setup page.
+ * left out unless `includeStealth` is set. With `placeholderWhenEmpty`, an
+ * empty channel list yields one entry that points at the setup page.
  */
 export function buildChannelsM3U(
   channels: readonly M3UChannel[],
-  { placeholderWhenEmpty }: { placeholderWhenEmpty: boolean },
+  {
+    placeholderWhenEmpty,
+    includeStealth,
+  }: { placeholderWhenEmpty: boolean; includeStealth: boolean },
 ): string {
   const tvg = `{{host}}/api/xmltv.xml`;
 
   let data = `#EXTM3U url-tvg="${tvg}" x-tvg-url="${tvg}"\n`;
 
   for (const channel of sortBy(channels, 'number')) {
-    if (channel.stealth) {
+    if (channel.stealth && !includeStealth) {
       continue;
     }
     const channelId = getChannelId(channel.number);
