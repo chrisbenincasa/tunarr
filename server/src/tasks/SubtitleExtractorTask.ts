@@ -166,18 +166,33 @@ export class SubtitleExtractorTask extends Task2<
           continue;
         }
 
+        // Extraction is per program, so one airing whose chain selects
+        // subtitles is enough. A program can air both in and out of a custom
+        // show on the same channel.
         lineup ??= await this.channelDB.loadLineup(channelId);
-        const lineupEntry = lineup.items.find(
-          (item) => item.type === 'content' && item.id === program.id,
-        );
-        const mayPickSubtitles = await this.profileResolver.mayPickSubtitles({
-          channelId,
-          programId: program.id,
-          customShowId:
-            lineupEntry?.type === 'content'
-              ? lineupEntry.customShowId
-              : undefined,
-        });
+        const customShowIds = new Set<string | undefined>();
+        for (const item of lineup.items) {
+          if (item.type === 'content' && item.id === program.id) {
+            customShowIds.add(item.customShowId);
+          }
+        }
+        if (customShowIds.size === 0) {
+          customShowIds.add(undefined);
+        }
+
+        let mayPickSubtitles = false;
+        for (const customShowId of customShowIds) {
+          if (
+            await this.profileResolver.mayPickSubtitles({
+              channelId,
+              programId: program.id,
+              customShowId,
+            })
+          ) {
+            mayPickSubtitles = true;
+            break;
+          }
+        }
         if (!mayPickSubtitles) {
           continue;
         }

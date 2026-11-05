@@ -77,7 +77,8 @@ function makeHarness(opts: {
   sourceType?: 'jellyfin' | 'emby' | 'plex';
   replacePaths?: { localPath: string; serverPath: string }[];
   anyProfileMayPickSubtitles?: boolean;
-  mayPickSubtitles?: boolean;
+  mayPickSubtitles?: boolean | ((ctx: { customShowId?: string }) => boolean);
+  lineupCustomShowIds?: (string | undefined)[];
   fillerMayPickSubtitles?: boolean;
   enableSubtitleExtraction?: boolean;
   downloadedPath?: string;
@@ -148,8 +149,12 @@ function makeHarness(opts: {
     ]),
   );
 
-  const mayPickSubtitles = vi.fn((_ctx: unknown) =>
-    Promise.resolve(opts.mayPickSubtitles ?? true),
+  const mayPickSubtitles = vi.fn((ctx: { customShowId?: string }) =>
+    Promise.resolve(
+      typeof opts.mayPickSubtitles === 'function'
+        ? opts.mayPickSubtitles(ctx)
+        : (opts.mayPickSubtitles ?? true),
+    ),
   );
 
   const fillerListMayPickSubtitles = vi.fn(
@@ -172,14 +177,14 @@ function makeHarness(opts: {
     {
       loadLineup: () =>
         Promise.resolve({
-          items: [
-            {
+          items: (opts.lineupCustomShowIds ?? [CUSTOM_SHOW_ID]).map(
+            (customShowId) => ({
               type: 'content',
               id: PROGRAM_ID,
               durationMs: 1000,
-              customShowId: CUSTOM_SHOW_ID,
-            },
-          ],
+              customShowId,
+            }),
+          ),
         }),
     } as never,
     {
@@ -480,6 +485,27 @@ describe('SubtitleExtractorTask external subtitle top-up', () => {
       programId: PROGRAM_ID,
       customShowId: CUSTOM_SHOW_ID,
     });
+  });
+
+  it('prepares a program when a later airing in a custom show selects subtitles', async () => {
+    const harness = makeHarness({
+      lineupCustomShowIds: [undefined, CUSTOM_SHOW_ID],
+      mayPickSubtitles: ({ customShowId }) => customShowId === CUSTOM_SHOW_ID,
+      downloadedPath: CACHED_SUBTITLE_PATH,
+      subtitles: [
+        {
+          uuid: 'sub-1',
+          subtitleType: 'sidecar',
+          codec: 'subrip',
+          language: 'eng',
+          sourceKey: SUBTITLE_KEY,
+        },
+      ],
+    });
+
+    await run(harness);
+
+    expect(harness.downloadSubtitlesIfNecessary).toHaveBeenCalledOnce();
   });
 
   it('leaves filler lists alone when their profiles never select subtitles', async () => {
