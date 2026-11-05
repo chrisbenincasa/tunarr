@@ -1,6 +1,6 @@
 # Testing
 
-*Last Updated: 2026-10-19*
+*Last Updated: 2026-11-04*
 
 - Vitest everywhere. Tests sit next to the code as `*.test.ts`.
 - `server` runs tests with type-checking: `vitest --typecheck.tsconfig tsconfig.test.json --run`.
@@ -11,6 +11,16 @@
 
 - Two Vitest projects. `pnpm test` runs both; pick one with `--project unit` or `--project storybook`.
 - `unit` runs `*.test.ts(x)` in jsdom with `src/test/setup.ts`.
+- `src/test/utils.tsx` holds the component-test helpers:
+  - `renderWithProviders` mounts a component inside the app's providers and returns a `user`.
+  - `seededQueryClient` prefills the query cache, so suspense hooks render without fetching.
+  - `withinRow` scopes queries to the table row that contains a given text.
+- `src/test/routerMock.tsx` stubs `@tanstack/react-router`. Load it with
+  `vi.mock('@tanstack/react-router', () => import('@/test/routerMock.tsx'))`. Links render as
+  anchors, and navigate calls land in `navigateMock`.
+- To stub API mutations, override the generated `*Mutation` factories with `vi.mock` on
+  `@/generated/@tanstack/react-query.gen.ts`. The table tests (for example
+  `web/src/components/settings/ffmpeg/TranscodeConfigsTable.test.tsx`) show the pattern.
 - `storybook` runs every `*.stories.tsx` as a test in headless Chromium, through
   `@storybook/addon-vitest` and `@vitest/browser-playwright`. It needs a Playwright Chromium install.
 - `@storybook/addon-a11y` runs axe on each story. `a11y.test: 'todo'` in `web/.storybook/preview.tsx`

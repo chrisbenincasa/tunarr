@@ -9,6 +9,7 @@ import {
   createPaginatedRowModel,
   createSortedRowModel,
   createTableHook,
+  filterFn_arrHas,
   filterFn_arrIncludes,
   filterFn_equals,
   filterFn_inNumberRange,
@@ -25,15 +26,17 @@ import {
   tableFeatures,
 } from '@tanstack/react-table';
 
-export type FilterVariant = 'text' | 'range';
+export type FilterVariant = 'text' | 'range' | 'multi-select';
 
 export type TunarrColumnMeta = {
   // Plain-text column name for menus and accessible labels. Defaults to the
   // header when it is a string, then to the column id.
   label?: string;
 
-  // Defaults to 'text'. 'range' needs numeric values.
+  // Defaults to 'text'. 'range' needs numeric values. 'multi-select' needs
+  // filterOptions and filterFn: 'arrHas' on the column.
   filterVariant?: FilterVariant;
+  filterOptions?: readonly string[];
 
   // Right-aligns the column and sets its values in the mono face.
   numeric?: boolean;
@@ -58,6 +61,7 @@ export const tunarrFeatures = tableFeatures({
     equals: filterFn_equals,
     weakEquals: filterFn_weakEquals,
     arrIncludes: filterFn_arrIncludes,
+    arrHas: filterFn_arrHas,
   },
   sortFns: {
     alphanumeric: sortFn_alphanumeric,

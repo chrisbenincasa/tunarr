@@ -9,12 +9,28 @@
 
 ## Status
 
-- **Phase 0 merged (10/25/2026).** PR #2350, branch `feat/datatable`.
+- **Phase 0 shipped (10/25/2026).** PR #2350, merged as `35642b8a6`.
   - The v9 spike hit none of the fallback triggers. No casts, no internals, no `useLegacyTable`.
-  - The parity spec passes on MRT for 8 pages, and on the wrapper for `/library/fillers`. Settings saved by the MRT build load unchanged.
-  - The ban is in `web/.oxlintrc.json`, with 15 legacy files.
-- Phase 0 runs alongside `plans/web-redesign.md` Phases 1 and 2, and must land before that plan's Phase 3 (decided 10/19/2026).
-- Next: Phase 1, not started as of 11/01/2026. It runs alongside `plans/web-redesign.md` Phase 3. It must not touch `ChannelsPage`, which is that phase's pilot and this plan's Phase 2.
+  - The parity spec passed on MRT for 8 pages, and on the wrapper for `/library/fillers`. Settings saved by the MRT build load unchanged.
+  - The ban is in `web/.oxlintrc.json`. It started with 15 legacy table files.
+- **Phase 1 in review (11/01/2026).** Branch `feat/mrt-phase-1`, PR #2411. One commit per table. It runs alongside `plans/web-redesign.md` Phase 3 and does not touch `ChannelsPage`.
+  - All six tables use `DataTable`. Each left the oxlint legacy list in its port commit, so 9 table files remain on it.
+  - The parity spec passes with `ported: true` on 7 pages. The full e2e sweep passes.
+  - A new spec test loads MRT-saved settings that hide TranscodeConfigs' `Resolution` column. It fails if that column's id changes.
+  - The "Cannot update a component while rendering" warning no longer fires on `/settings/ffmpeg`, `/settings/sources`, `/library/custom-shows` or `/library/smart_collections`. Those routes left its `knownIssues.ts` entry, which now lists only pages that still use MRT.
+- `ChannelsPage` is the pilot for `plans/web-redesign.md` Phase 3 and this plan's Phase 2. Coordinate with that work before starting Phase 2.
+- Next: Phase 2.
+
+### Phase 1 notes
+
+- The `multi-select` filter needs `filterFn: 'arrHas'` and `meta.filterOptions` on its column. `arrHas` keeps a row when its value equals a checked option. MRT used `arrIncludesSome`, which matches substrings on string values.
+- TranscodeConfigs' `Resolution` column has no accessor key, so MRT used its translated header as the id. The port keeps `id: t\`Resolution\``. Switching locale resets that column's saved visibility, as it did under MRT.
+- MRT's `size` and `grow` column options are gone. Native table layout sizes the columns, so expect small layout shifts on Media Sources and Smart Collections.
+- SmartCollections shows its empty-state message only when there are no collections. A filter with no matches shows "No results found", as on Filler Lists.
+- System Logs follows the app-wide density. Under MRT it defaulted to compact.
+- The Tasks row menu is one shared menu outside the table, so the column defs no longer rebuild when it opens.
+- The ports add no new Lingui strings. New accessible names reuse existing messages.
+- Phase 0's hidden "Actions" header label made every page with an actions column scroll sideways, Filler Lists included. `sx` reads `width: 1` as 100%, so the absolutely placed label spanned its containing block. It now uses `'1px'`, and ported pages in the parity spec must fit a 1440px viewport.
 
 ### Phase 0 notes
 

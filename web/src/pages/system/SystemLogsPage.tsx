@@ -3,13 +3,12 @@ import { Download } from '@mui/icons-material';
 import { Button, Stack, Typography } from '@mui/material';
 import type { TupleToUnion } from '@tunarr/types';
 import { attempt, isError, isNil, isObject, isString } from 'lodash-es';
-import type { MRT_ColumnDef } from 'material-react-table';
-import {
-  MaterialReactTable,
-  useMaterialReactTable,
-} from 'material-react-table';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useTableDensity } from '../../hooks/useTableSettings.ts';
+import { DataTable } from '../../components/ui/table/DataTable.tsx';
+import {
+  createAppColumnHelper,
+  useTunarrTable,
+} from '../../components/ui/table/tunarrTable.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
 
 const ValidLogLevels = [
@@ -64,6 +63,8 @@ type ParsedLogLine = {
   msg: string;
   time: number;
 };
+
+const columnHelper = createAppColumnHelper<LogLine>();
 
 export function SystemLogsPage() {
   const { t } = useLingui();
@@ -121,63 +122,33 @@ export function SystemLogsPage() {
     };
   }, [backendUri, source]);
 
-  const columns = useMemo<MRT_ColumnDef<LogLine>[]>(() => {
-    return [
-      {
-        accessorKey: 'timestamp',
-        header: t`Timestamp`,
-      },
-      {
-        accessorKey: 'level',
-        header: t`Level`,
-        filterVariant: 'multi-select',
-        filterSelectOptions: ValidLogLevels,
-      },
-      {
-        accessorKey: 'component',
-        header: t`Component`,
-      },
-      {
-        accessorKey: 'message',
-        header: t`Message`,
-      },
-    ];
-  }, [t]);
+  const columns = useMemo(
+    () =>
+      columnHelper.columns([
+        columnHelper.accessor('timestamp', { header: t`Timestamp` }),
+        columnHelper.accessor('level', {
+          header: t`Level`,
+          filterFn: 'arrHas',
+          meta: {
+            filterVariant: 'multi-select',
+            filterOptions: ValidLogLevels,
+          },
+        }),
+        columnHelper.accessor('component', { header: t`Component` }),
+        columnHelper.accessor('message', { header: t`Message` }),
+      ]),
+    [t],
+  );
 
-  const { density, enableDensityToggle } = useTableDensity('compact');
-
-  const table = useMaterialReactTable({
+  const table = useTunarrTable({
     columns,
     data: logBuf,
-    state: { density },
-    enableDensityToggle,
     initialState: {
       pagination: {
         pageSize: 50,
         pageIndex: 0,
       },
     },
-    renderTopToolbarCustomActions: ({ table }) => (
-      <Stack direction="row" gap={2}>
-        <Button
-          startIcon={<Download />}
-          component="a"
-          href={`${backendUri}/api/system/debug/logs?download=true&pretty=true&lineLimit=${table.getRowCount()}`}
-        >
-          <Trans>
-            Download last {table.getRowCount()}{' '}
-            <Plural value={table.getRowCount()} one="# row" other="# rows" />
-          </Trans>
-        </Button>
-        <Button
-          startIcon={<Download />}
-          component="a"
-          href={`${backendUri}/api/system/debug/logs?download=true&pretty=true`}
-        >
-          <Trans>Download all logs</Trans>
-        </Button>
-      </Stack>
-    ),
   });
 
   return (
@@ -189,7 +160,35 @@ export function SystemLogsPage() {
           debugging.
         </Trans>
       </Typography>
-      <MaterialReactTable table={table} />
+      <DataTable
+        table={table}
+        aria-label={t`Logs`}
+        toolbarActions={
+          <Stack direction="row" sx={{ gap: 2 }}>
+            <Button
+              startIcon={<Download />}
+              component="a"
+              href={`${backendUri}/api/system/debug/logs?download=true&pretty=true&lineLimit=${table.getRowCount()}`}
+            >
+              <Trans>
+                Download last {table.getRowCount()}{' '}
+                <Plural
+                  value={table.getRowCount()}
+                  one="# row"
+                  other="# rows"
+                />
+              </Trans>
+            </Button>
+            <Button
+              startIcon={<Download />}
+              component="a"
+              href={`${backendUri}/api/system/debug/logs?download=true&pretty=true`}
+            >
+              <Trans>Download all logs</Trans>
+            </Button>
+          </Stack>
+        }
+      />
     </>
   );
 }
