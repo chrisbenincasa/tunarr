@@ -29,6 +29,9 @@ const renderView = async (
         onOpenSessions={() => {}}
         renderMenu={() => null}
         layout={layout}
+        m3uUrl="http://tunarr.test/api/channels.m3u"
+        onDuplicateChannels={() => {}}
+        onDeleteChannels={() => {}}
       />
     ),
   });

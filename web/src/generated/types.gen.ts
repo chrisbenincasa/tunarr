@@ -15048,6 +15048,10 @@ export type GetApiChannelsM3uData = {
     query?: {
         forceHttps?: boolean | 'true' | 'false' | number;
         hostOverride?: string;
+        /**
+         * Comma-separated channel numbers. Limits the playlist to those channels.
+         */
+        channels?: string;
     };
     url: '/api/channels.m3u';
 };
@@ -15065,6 +15069,10 @@ export type HeadApiChannelsM3uData = {
     query?: {
         forceHttps?: boolean | 'true' | 'false' | number;
         hostOverride?: string;
+        /**
+         * Comma-separated channel numbers. Limits the playlist to those channels.
+         */
+        channels?: string;
     };
     url: '/api/channels.m3u';
 };

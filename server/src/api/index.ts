@@ -20,6 +20,10 @@ import { container } from '../container.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import { isDev, isNonEmptyString, run } from '../util/index.js';
+import {
+  ChannelNumbersParamPattern,
+  parseChannelNumbersParam,
+} from '../services/M3UService.js';
 import { channelsApi } from './channelsApi.js';
 import { nativePlaybackApi } from './nativePlaybackApi.js';
 import { CreditsApiController } from './creditsApi.ts';
@@ -276,6 +280,13 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       querystring: z.object({
         forceHttps: TruthyQueryParam.optional(),
         hostOverride: z.string().optional(),
+        channels: z
+          .string()
+          .regex(ChannelNumbersParamPattern)
+          .optional()
+          .describe(
+            'Comma-separated channel numbers. Limits the playlist to those channels.',
+          ),
       }),
       tags: ['Streaming'],
     },
@@ -295,7 +306,12 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         }
 
         const host = `${protocol}://${reqHost}`;
-        const data = await req.serverCtx.m3uService.getChannelsM3U(host);
+        const data = isNonEmptyString(req.query.channels)
+          ? await req.serverCtx.m3uService.getChannelsM3UFor(
+              host,
+              parseChannelNumbersParam(req.query.channels),
+            )
+          : await req.serverCtx.m3uService.getChannelsM3U(host);
 
         return res.type('text').send(data);
       } catch (err) {
