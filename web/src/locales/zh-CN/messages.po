@@ -330,6 +330,7 @@ msgid "Access Token"
 msgstr "访问令牌"
 
 #: src/components/ui/table/ActionsHeader.tsx
+#: src/pages/settings/TaskSettingsPage.tsx
 msgid "Actions"
 msgstr ""
 
@@ -1257,6 +1258,7 @@ msgstr "自定义剧集：{0}"
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/CustomShowsPage.tsx
 msgid "Custom Shows"
 msgstr "自定义剧集"
 
@@ -1321,13 +1323,17 @@ msgstr "默认配置"
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Delete"
 msgstr "删除"
 
@@ -1523,6 +1529,7 @@ msgid "Download last {0} {1, plural, one {# row} other {# rows}}"
 msgstr "下载最后 {0} {1, plural, other {# 行}}"
 
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 msgid "Duplicate"
 msgstr "创建副本"
 
@@ -1569,10 +1576,13 @@ msgstr "即时"
 
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
+#: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
@@ -1600,9 +1610,11 @@ msgid "Edit Flex Time"
 msgstr "编辑弹性时间"
 
 #: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Edit Libraries"
 msgstr "编辑媒体库"
 
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Edit Media Source"
 msgstr "编辑媒体源"
@@ -2115,6 +2127,7 @@ msgstr "垫片选项"
 msgid "Filter"
 msgstr "筛选"
 
+#: src/components/ui/table/filters/MultiSelectFilter.tsx
 #: src/components/ui/table/filters/TextFilter.tsx
 #: src/components/ui/table/filters/TextFilter.tsx
 msgid "Filter by {label}"
@@ -2626,6 +2639,7 @@ msgid "Logging"
 msgstr "日志记录"
 
 #: src/components/shell/useShellNav.tsx
+#: src/pages/system/SystemLogsPage.tsx
 msgid "Logs"
 msgstr "日志"
 
@@ -2770,6 +2784,7 @@ msgstr "媒体源"
 msgid "Media Source: \"{0}\""
 msgstr "媒体源：「{0}」"
 
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Media Sources"
 msgstr "媒体源"
@@ -3512,6 +3527,7 @@ msgid "Refresh"
 msgstr "刷新"
 
 #: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Refresh Libraries"
 msgstr "刷新媒体库"
 
@@ -3668,6 +3684,7 @@ msgstr "将节目编排重置为最近一次保存的状态"
 msgid "Reset to current date/time"
 msgstr "重置为当前日期/时间"
 
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -4103,6 +4120,7 @@ msgstr "智能合集：{0}"
 
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
+#: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/hooks/useRouteName.ts
 #: src/routes/library/smart_collections/index.tsx
 msgid "Smart Collections"
@@ -4359,6 +4377,7 @@ msgid "Take Turns"
 msgstr ""
 
 #: src/components/shell/useShellNav.tsx
+#: src/pages/settings/TaskSettingsPage.tsx
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Tasks"
 msgstr "任务"
@@ -4658,6 +4677,7 @@ msgstr "转码配置（可选覆盖）"
 msgid "Transcode Config <0> <1/></0>"
 msgstr "转码配置 <0> <1/></0>"
 
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Transcoding Configs"
 msgstr "转码配置"
@@ -4896,6 +4916,7 @@ msgstr "视频流"
 msgid "Videos from the filler list will be randomly picked to play unless there are cooldown restrictions to place or if no videos are short enough for the remaining Flex time.<0/>Each filler can be assigned a cooldown, which restricts how frequently the list will be chosen during flex time."
 msgstr "垫片列表中的视频会被随机选取播放，除非存在冷却时间限制，或者没有足够短的视频能填入剩余的弹性时间。<0/>每个垫片都可设置冷却时间，用于限制该列表在弹性时间内被选中的频率。"
 
+#: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 msgid "View Collection"
 msgstr "查看合集"
