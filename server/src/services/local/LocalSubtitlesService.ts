@@ -2,7 +2,7 @@ import { isNonEmptyString } from '@tunarr/shared/util';
 import type { MediaSubtitles } from '@tunarr/types';
 import { injectable } from 'inversify';
 import fs from 'node:fs/promises';
-import { basename, dirname, extname } from 'node:path';
+import { basename, dirname, extname, join } from 'node:path';
 import { match, P } from 'ts-pattern';
 import type { Nullable } from '../../types/util.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
@@ -21,7 +21,6 @@ export class LocalSubtitlesService {
 
   async findExternalSubtitles(fullItemPath: string) {
     const subtitles: MediaSubtitles[] = [];
-    const itemName = basename(fullItemPath, extname(fullItemPath));
     for (const dirent of await fs.readdir(dirname(fullItemPath), {
       withFileTypes: true,
     })) {
@@ -29,14 +28,9 @@ export class LocalSubtitlesService {
         continue;
       }
 
-      if (!dirent.name.startsWith(itemName)) {
-        continue;
-      }
-
-      const filename = basename(dirent.name, extname(dirent.name));
       const parsedSubtitles = LocalSubtitlesService.parseSubtitleFilePath(
-        itemName,
-        filename,
+        fullItemPath,
+        join(dirname(fullItemPath), dirent.name),
       );
 
       if (!parsedSubtitles) {
@@ -65,11 +59,16 @@ export class LocalSubtitlesService {
       return null;
     }
 
-    // Subtitles generally are meant to be in the form {media_name}.{lang}(.{opts})*.{codec_ext}
-    // At this point we've removed the codec_ext and we want to read out the options in the filename
-    // and then derive the language.
-    const [lang = '', ...opts] = fileName
-      .replace(itemName, '')
+    // Sidecars are named {media_name}(.{lang})?(.{opts})*.{codec_ext}. Requiring
+    // the dot after the media name keeps "Movie Part 2.en.srt" off "Movie.mkv".
+
+    const prefix = `${itemName}.`;
+    if (!fileName.startsWith(prefix)) {
+      return null;
+    }
+
+    const [lang = 'und', ...opts] = basename(fileName, extname(fileName))
+      .slice(prefix.length)
       .toLowerCase()
       .split('.')
       .filter((s) => s.length > 0);

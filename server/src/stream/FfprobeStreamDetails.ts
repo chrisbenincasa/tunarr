@@ -27,6 +27,26 @@ import type {
 } from './types.ts';
 import { FileStreamSource, HttpStreamSource } from './types.ts';
 
+export function audioStreamDetailsFromProbe(
+  audioStream: FfprobeAudioStream,
+): AudioStreamDetails {
+  const lang = audioStream.tags?.['language'];
+  return {
+    bitrate: audioStream.bit_rate ?? undefined,
+    channels: audioStream.channels,
+    codec: audioStream.codec_name,
+    index: audioStream.index,
+    default: audioStream.disposition?.default === 1,
+    language:
+      lang && LanguageService.isValidLanguageCode(lang) ? lang : undefined,
+    languageCodeISO6392: lang
+      ? LanguageService.getAlpha3TCode(lang)
+      : undefined,
+    profile: audioStream.profile,
+    title: audioStream.tags?.['title'],
+  } satisfies AudioStreamDetails;
+}
+
 /**
  * Converts ffprobe seconds to whole milliseconds, rounding down.
  *
@@ -114,24 +134,7 @@ export class FfprobeStreamDetails
         probeDetails.streams,
         (stream): stream is FfprobeAudioStream => stream.codec_type === 'audio',
       ),
-      (audioStream) => {
-        const lang = audioStream.tags?.['language'];
-        return {
-          bitrate: audioStream.bit_rate ?? undefined,
-          channels: audioStream.channels,
-          codec: audioStream.codec_name,
-          index: audioStream.index,
-          language:
-            lang && LanguageService.isValidLanguageCode(lang)
-              ? lang
-              : undefined,
-          languageCodeISO6392: lang
-            ? LanguageService.getAlpha3TCode(lang)
-            : undefined,
-          profile: audioStream.profile,
-          title: audioStream.tags?.['title'],
-        } satisfies AudioStreamDetails;
-      },
+      audioStreamDetailsFromProbe,
     );
 
     const subtitleStreamDetails = map(

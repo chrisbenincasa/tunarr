@@ -42,12 +42,37 @@ const FfprobeVideoStreamSchema = BaseFfprobeMediaStreamSchema.extend({
 
 export type FfprobeVideoStream = z.infer<typeof FfprobeVideoStreamSchema>;
 
+const FfprobeDispositionSchema = z
+  .object({
+    default: z.number().optional(),
+    dub: z.number().optional(),
+    original: z.number().optional(),
+    comment: z.number().optional(),
+    lyrics: z.number().optional(),
+    karaoke: z.number().optional(),
+    forced: z.number().optional(),
+    hearing_impaired: z.number().optional(),
+    visual_impaired: z.number().optional(),
+    clean_effects: z.number().optional(),
+    attached_pic: z.number().optional(),
+    timed_thumbnails: z.number().optional(),
+    non_diegetic: z.number().optional(),
+    captions: z.number().optional(),
+    descriptions: z.number().optional(),
+    metadata: z.number().optional(),
+    dependent: z.number().optional(),
+    still_image: z.number().optional(),
+    multilayer: z.number().optional(),
+  })
+  .optional();
+
 const FfprobeAudioStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('audio'),
   codec_name: z.string(),
   sample_fmt: z.string().optional(),
   sample_rate: z.string().or(z.coerce.number()).optional(),
   channels: z.number().optional(),
+  disposition: FfprobeDispositionSchema,
   channel_layout: z.string().optional(),
   bits_per_sample: z.number().optional(),
   initial_padding: z.number().optional(),
@@ -63,29 +88,7 @@ export type FfprobeAudioStream = z.infer<typeof FfprobeAudioStreamSchema>;
 const FfprobeSubtitleStreamSchema = BaseFfprobeMediaStreamSchema.extend({
   codec_type: z.literal('subtitle'),
   codec_name: z.string().optional(),
-  disposition: z
-    .object({
-      default: z.number().optional(),
-      dub: z.number().optional(),
-      original: z.number().optional(),
-      comment: z.number().optional(),
-      lyrics: z.number().optional(),
-      karaoke: z.number().optional(),
-      forced: z.number().optional(),
-      hearing_impaired: z.number().optional(),
-      visual_impaired: z.number().optional(),
-      clean_effects: z.number().optional(),
-      attached_pic: z.number().optional(),
-      timed_thumbnails: z.number().optional(),
-      non_diegetic: z.number().optional(),
-      captions: z.number().optional(),
-      descriptions: z.number().optional(),
-      metadata: z.number().optional(),
-      dependent: z.number().optional(),
-      still_image: z.number().optional(),
-      multilayer: z.number().optional(),
-    })
-    .optional(),
+  disposition: FfprobeDispositionSchema,
 });
 
 const FfprobeAttachmentStreamSchema = BaseFfprobeMediaStreamSchema.extend({
