@@ -20,6 +20,10 @@ import { container } from '../container.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
 import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import { isDev, isNonEmptyString, run } from '../util/index.js';
+import {
+  ChannelNumbersParamPattern,
+  parseChannelNumbersParam,
+} from '../services/M3UService.js';
 import { channelsApi } from './channelsApi.js';
 import { nativePlaybackApi } from './nativePlaybackApi.js';
 import { CreditsApiController } from './creditsApi.ts';
@@ -278,7 +282,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         hostOverride: z.string().optional(),
         channels: z
           .string()
-          .regex(/^\d+(,\d+)*$/)
+          .regex(ChannelNumbersParamPattern)
           .optional()
           .describe(
             'Comma-separated channel numbers. Limits the playlist to those channels.',
@@ -305,7 +309,7 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         const data = isNonEmptyString(req.query.channels)
           ? await req.serverCtx.m3uService.getChannelsM3UFor(
               host,
-              req.query.channels.split(',').map(Number),
+              parseChannelNumbersParam(req.query.channels),
             )
           : await req.serverCtx.m3uService.getChannelsM3U(host);
 
