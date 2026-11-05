@@ -1,5 +1,5 @@
 import { useThemeTokens } from '@/hooks/useTunarrTheme.ts';
-import { Trans, useLingui } from '@lingui/react/macro';
+import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { Button, Stack, Typography } from '@mui/material';
 import type { ReactNode } from 'react';
 import { KeyHint } from '../../KeyHint.tsx';
@@ -47,7 +47,19 @@ export const SelectionBar = ({
       {count > 0 ? (
         <>
           <Typography aria-live="polite" sx={{ fontWeight: 600 }}>
-            <MonoText>{count}</MonoText> <Trans>selected</Trans>
+            <Plural
+              value={count}
+              one={
+                <>
+                  <MonoText>{count}</MonoText> selected
+                </>
+              }
+              other={
+                <>
+                  <MonoText>{count}</MonoText> selected
+                </>
+              }
+            />
           </Typography>
           {actions}
           <Button size="small" onClick={onClear}>

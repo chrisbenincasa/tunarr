@@ -18,7 +18,7 @@ describe('buildChannelsM3U', () => {
   test('lists channels by number and skips stealth channels', () => {
     const m3u = buildChannelsM3U(
       [channel(4, 'Four'), channel(1, 'One'), channel(2, 'Hidden', true)],
-      { placeholderWhenEmpty: true },
+      { placeholderWhenEmpty: true, includeStealth: false },
     );
     expect(streamLines(m3u)).toEqual([
       '{{host}}/stream/channels/uuid-1?streamMode=hls',
@@ -27,12 +27,29 @@ describe('buildChannelsM3U', () => {
     expect(m3u).toContain('tvg-chno="1" tvg-name="One"');
   });
 
+  test('keeps stealth channels when asked', () => {
+    const m3u = buildChannelsM3U(
+      [channel(1, 'One'), channel(2, 'Hidden', true)],
+      { placeholderWhenEmpty: false, includeStealth: true },
+    );
+    expect(streamLines(m3u)).toEqual([
+      '{{host}}/stream/channels/uuid-1?streamMode=hls',
+      '{{host}}/stream/channels/uuid-2?streamMode=hls',
+    ]);
+  });
+
   test('adds the setup entry only when asked and there are no channels', () => {
     expect(
-      streamLines(buildChannelsM3U([], { placeholderWhenEmpty: true })),
+      streamLines(buildChannelsM3U([], {
+          placeholderWhenEmpty: true,
+          includeStealth: false,
+        })),
     ).toEqual(['{{host}}/setup']);
     expect(
-      streamLines(buildChannelsM3U([], { placeholderWhenEmpty: false })),
+      streamLines(buildChannelsM3U([], {
+          placeholderWhenEmpty: false,
+          includeStealth: false,
+        })),
     ).toEqual([]);
   });
 });

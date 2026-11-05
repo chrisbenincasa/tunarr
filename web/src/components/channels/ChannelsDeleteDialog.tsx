@@ -9,34 +9,34 @@ import {
 } from '@mui/material';
 import type { Channel } from '@tunarr/types';
 
+type DeletableChannel = Pick<Channel, 'id' | 'name'>;
+
 type Props = {
   // Null keeps the dialog closed.
-  channels: Pick<Channel, 'id' | 'name'>[] | null;
+  channels: DeletableChannel[] | null;
   onConfirm: () => void;
   onClose: () => void;
 };
 
+type ContentProps = Omit<Props, 'channels'> & {
+  channels: DeletableChannel[];
+};
+
 const NamesShown = 5;
 
-export const ChannelsDeleteDialog = ({
+const ChannelsDeleteDialogContent = ({
   channels,
   onConfirm,
   onClose,
-}: Props) => {
-  const count = channels?.length ?? 0;
-  const shown = channels?.slice(0, NamesShown) ?? [];
-  const more = count - shown.length;
+}: ContentProps) => {
+  const shown = channels.slice(0, NamesShown);
+  const more = channels.length - shown.length;
 
   return (
-    <Dialog
-      open={channels !== null}
-      onClose={onClose}
-      aria-labelledby="delete-channels-title"
-      aria-describedby="delete-channels-description"
-    >
+    <>
       <DialogTitle id="delete-channels-title">
         <Plural
-          value={count}
+          value={channels.length}
           one="Delete # channel?"
           other="Delete # channels?"
         />
@@ -67,6 +67,29 @@ export const ChannelsDeleteDialog = ({
           <Trans>Delete</Trans>
         </Button>
       </DialogActions>
+    </>
+  );
+};
+
+export const ChannelsDeleteDialog = ({
+  channels,
+  onConfirm,
+  onClose,
+}: Props) => {
+  return (
+    <Dialog
+      open={channels !== null}
+      onClose={onClose}
+      aria-labelledby="delete-channels-title"
+      aria-describedby="delete-channels-description"
+    >
+      {channels && (
+        <ChannelsDeleteDialogContent
+          channels={channels}
+          onConfirm={onConfirm}
+          onClose={onClose}
+        />
+      )}
     </Dialog>
   );
 };
