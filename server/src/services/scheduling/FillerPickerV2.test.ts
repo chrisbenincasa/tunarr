@@ -270,7 +270,10 @@ describe('FillerPickerV2', () => {
       const filler = createFiller({
         cooldown: dayjs.duration({ days: 5 }).asSeconds(),
       });
-      const now = Date.now();
+
+      // The window spans the 11/01/2026 US DST change. The cooldown is an
+      // exact duration, so the expected value must not use calendar days.
+      const now = Date.parse('2026-11-03T12:00:00Z');
 
       vi.mocked(mockPlayHistoryDB.getFillerHistory).mockResolvedValue([]);
       vi.mocked(random.bool).mockReturnValue(true);
@@ -280,7 +283,7 @@ describe('FillerPickerV2', () => {
       const range = vi.mocked(mockPlayHistoryDB.getFillerHistory).mock
         .calls[0]?.[1];
       expect(range?.from?.valueOf()).toEqual(
-        dayjs(now).subtract(5, 'days').valueOf(),
+        now - dayjs.duration({ days: 5 }).asMilliseconds(),
       );
     });
 
