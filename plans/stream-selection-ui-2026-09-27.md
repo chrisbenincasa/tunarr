@@ -13,7 +13,7 @@ This plan replaces the legacy path entirely: every stream resolves through profi
 ### PR 1 — Engine, migration, assignment, docs (target: `main`, #1876)
 
 - [x] **1. Resolver cascade**
-  - [x] Resolver returns an ordered chain: program → source (custom show *or* filler list) → channel → default pointer → built-in (D1, D2)
+  - [x] Resolver returns an ordered chain: program → source (custom show _or_ filler list) → channel → default pointer → built-in (D1, D2)
   - [x] Evaluator walks the chain; cascades only when no rule condition matches (D3)
   - [x] Provenance: result records the matching level + profile (D4)
   - [x] Evaluator no-match path no longer returns `audioStreams[0]` (replaced by cascade)
@@ -95,8 +95,8 @@ This plan replaces the legacy path entirely: every stream resolves through profi
 Settled 2026-09-27.
 
 - **D1. Resolution order:** program (deferred, unreachable) → source → channel → default pointer → locked built-in.
-- **D2. Source level:** custom show and filler list are one level; an item never legitimately carries both. The filler level applies only when the item plays *as filler* (commercial stream item). Slot-materialized filler already persists `fillerListId` through `MaterializeLineupCommand` / `LineupRepository`, and `StreamProgramCalculator.ts:357-364` turns it into a commercial item. Channel fallback clips (`fallback` items) resolve at the channel level.
-- **D3. Cascade semantics:** move to the next level only when no rule *condition* matches. A matched rule is final: if its action finds nothing, audio uses the default heuristic and subtitles are none. Authors who want "X if present" put the check in the condition.
+- **D2. Source level:** custom show and filler list are one level; an item never legitimately carries both. The filler level applies only when the item plays _as filler_ (commercial stream item). Slot-materialized filler already persists `fillerListId` through `MaterializeLineupCommand` / `LineupRepository`, and `StreamProgramCalculator.ts:357-364` turns it into a commercial item. Channel fallback clips (`fallback` items) resolve at the channel level.
+- **D3. Cascade semantics:** move to the next level only when no rule _condition_ matches. A matched rule is final: if its action finds nothing, audio uses the default heuristic and subtitles are none. Authors who want "X if present" put the check in the condition.
 - **D4. Provenance:** the resolved result and traces record the matching level and profile.
 - **D5. Subtitles:** the profile owns subtitles. The `subtitlesEnabled` gate in `FfmpegStreamFactory` is deleted, and the channel toggle is removed from the UI.
 - **D6. Built-in profile:** a seeded row with a `locked` flag and a fixed UUID, containing first audio (default heuristic) and no subtitles. It cannot be edited or deleted, can be viewed and duplicated, and can be explicitly assigned.
