@@ -1,6 +1,6 @@
 import fs, { constants } from 'node:fs/promises';
 import path from 'node:path';
-import { isNodeError } from '@/util/index.js';
+import { isNodeError, isNonEmptyString } from '@/util/index.js';
 
 /**
  * Checks that the XMLTV file can be written at a path. The directory must
@@ -12,6 +12,11 @@ import { isNodeError } from '@/util/index.js';
 export async function canWriteXmlTvOutputPath(
   outputPath: string,
 ): Promise<boolean> {
+  // The path must name a file. An empty path or a trailing separator names none.
+  if (!isNonEmptyString(outputPath.trim()) || /[\\/]$/.test(outputPath)) {
+    return false;
+  }
+
   const dir = path.dirname(outputPath);
   try {
     await fs.access(dir, constants.W_OK);

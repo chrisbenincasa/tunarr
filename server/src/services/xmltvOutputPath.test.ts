@@ -42,6 +42,17 @@ describe('canWriteXmlTvOutputPath', () => {
     await expect(fs.stat(path.dirname(outputPath))).rejects.toThrow();
   });
 
+  test('rejects an empty path', async () => {
+    await expect(canWriteXmlTvOutputPath('')).resolves.toBe(false);
+    await expect(canWriteXmlTvOutputPath('   ')).resolves.toBe(false);
+  });
+
+  test('rejects a path with a trailing separator', async () => {
+    const outputPath = path.join(tmpDir, 'xmltv.xml') + '/';
+
+    await expect(canWriteXmlTvOutputPath(outputPath)).resolves.toBe(false);
+  });
+
   test('rejects a path that is a directory', async () => {
     const outputPath = path.join(tmpDir, 'xmltv.xml');
     await fs.mkdir(outputPath);
