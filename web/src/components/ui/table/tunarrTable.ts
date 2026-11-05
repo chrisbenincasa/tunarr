@@ -103,3 +103,6 @@ export const columnLabel = <TData extends RowData>(
 // Page sizes MRT offered. Saved settings may hold any of them. Never add
 // Infinity, which JSON stores as null and the settings schema rejects.
 export const pageSizeOptions = [5, 10, 15, 20, 25, 30, 50, 100];
+
+export const lastPageIndex = (count: number, pageSize: number) =>
+  Math.max(0, Math.ceil(count / pageSize) - 1);

@@ -10,6 +10,9 @@ import {
 import {
   channelStatus,
   channelsM3uUrl,
+  currentPrograms,
+  failedGuideRetryMs,
+  guideRefreshDelay,
   matchesStatusFilter,
   summarizeNowPlaying,
 } from './channelSummary.ts';
@@ -175,5 +178,60 @@ describe('channelsM3uUrl', () => {
     expect(channelsM3uUrl('/api/channels.m3u', [1])).toBe(
       `${window.location.origin}/api/channels.m3u?channels=1`,
     );
+  });
+});
+
+describe('currentPrograms', () => {
+  const at = (offset: number, length: number): TvGuideProgram => ({
+    ...content(makeMovie({ uuid: `movie-${offset}` })),
+    start: start + offset,
+    stop: start + offset + length,
+  });
+
+  test('picks the program that spans the instant', () => {
+    const earlier = at(0, 30_000);
+    const airing = at(30_000, 30_000);
+
+    const programs = currentPrograms(
+      [{ id: 'ch-1', programs: [earlier, airing] }],
+      start + 45_000,
+    );
+
+    expect(programs.get('ch-1')).toBe(airing);
+  });
+
+  test("falls back to a lineup's first program", () => {
+    const ended = at(0, 30_000);
+
+    const programs = currentPrograms(
+      [{ id: 'ch-1', programs: [ended] }],
+      start + 60_000,
+    );
+
+    expect(programs.get('ch-1')).toBe(ended);
+  });
+
+  test('skips a channel with an empty lineup', () => {
+    expect(currentPrograms([{ id: 'ch-1', programs: [] }], start).size).toBe(0);
+  });
+});
+
+describe('guideRefreshDelay', () => {
+  test('waits until just after the first program ends', () => {
+    expect(
+      guideRefreshDelay([start + 90_000, start + 30_000], start, false),
+    ).toBe(31_000);
+  });
+
+  test('refetches soon when a program has already ended', () => {
+    expect(guideRefreshDelay([start - 5_000], start, false)).toBe(1_000);
+  });
+
+  test('retries after a failed fetch, even with no programs', () => {
+    expect(guideRefreshDelay([], start, true)).toBe(failedGuideRetryMs);
+  });
+
+  test('schedules nothing when no channel has a program', () => {
+    expect(guideRefreshDelay([], start, false)).toBeUndefined();
   });
 });
