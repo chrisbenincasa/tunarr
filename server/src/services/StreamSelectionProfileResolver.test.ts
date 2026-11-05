@@ -53,6 +53,7 @@ function makeProfile(
 function createResolver(opts: {
   ffmpegSettings?: FfmpegSettings;
   subtitlePrefs?: ChannelSubtitlePreferences[];
+  subtitlesEnabled?: boolean;
   programProfile?: StreamSelectionProfile | undefined;
   fillerProfile?: StreamSelectionProfile | undefined;
   channelProfile?: StreamSelectionProfile | undefined;
@@ -67,6 +68,9 @@ function createResolver(opts: {
     getChannelSubtitlePreferences: vi
       .fn()
       .mockResolvedValue(opts.subtitlePrefs ?? []),
+    getChannel: vi.fn().mockResolvedValue({
+      subtitlesEnabled: opts.subtitlesEnabled ?? true,
+    }),
   } as unknown as IChannelDB;
 
   // Drizzle is only used in getProfileFor* methods which we override
@@ -229,7 +233,10 @@ describe('StreamSelectionProfileResolver', () => {
       const rule = result.rules[0]!;
       expect(rule.condition).toBe('true');
       expect(rule.audioAction).toEqual({ type: 'default' });
-      expect(rule.subtitleAction).toEqual({ type: 'default' });
+      expect(rule.subtitleAction).toEqual({
+        type: 'default',
+        preferTextBased: false,
+      });
     });
 
     it('creates by_language audio action from ffmpeg language preferences', async () => {
@@ -252,6 +259,21 @@ describe('StreamSelectionProfileResolver', () => {
         type: 'by_language',
         languages: ['jpn', 'eng'],
       });
+    });
+
+    it('disables subtitles when the channel has them turned off', async () => {
+      const { resolver } = createResolver({
+        programProfile: undefined,
+        fillerProfile: undefined,
+        channelProfile: undefined,
+        subtitlesEnabled: false,
+        subtitlePrefs: [makeSubtitlePref({ priority: 0, languageCode: 'eng' })],
+      });
+
+      const result = await resolver.resolve({ channelId: 'channel-1' });
+
+      const rule = result.rules[0]!;
+      expect(rule.subtitleAction).toEqual({ type: 'disable' });
     });
 
     it('creates by_language subtitle action from channel subtitle prefs', async () => {
@@ -287,6 +309,7 @@ describe('StreamSelectionProfileResolver', () => {
         filterType: 'forced',
         allowImageBased: false,
         allowExternal: false,
+        preferTextBased: false,
       });
     });
 
