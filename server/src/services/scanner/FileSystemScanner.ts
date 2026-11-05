@@ -1,7 +1,7 @@
 import type { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
 import { InjectLogger } from '@/util/inject.js';
 import { seq } from '@tunarr/shared/util';
-import type { MediaItem, MediaStream } from '@tunarr/types';
+import type { MediaItem } from '@tunarr/types';
 import dayjs from 'dayjs';
 import glob from 'fast-glob';
 import { head, orderBy } from 'lodash-es';
@@ -38,6 +38,7 @@ import {
   locateImageFile,
 } from './imageFileLookup.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
+import { mediaStreamsFromProbe } from './mediaStreamsFromProbe.ts';
 import type { RunState } from './MediaSourceScanner.ts';
 
 export type ScannerUpsertFolderResult = {
@@ -168,73 +169,7 @@ export abstract class FileSystemScanner {
 
       const streamDetails = streamDetailsResult.get();
 
-      const videoStreams = streamDetails.streamDetails.videoDetails;
-      const streams: MediaStream[] = [];
-      if (videoStreams) {
-        for (const probeVideoStream of videoStreams) {
-          const videoStream: MediaStream = {
-            ...probeVideoStream,
-            bitDepth: probeVideoStream.bitDepth,
-            streamType: 'video',
-            codec: probeVideoStream.codec ?? 'unknown',
-            channels: null,
-            index: probeVideoStream.streamIndex ?? 0,
-            default: true,
-            title: 'Main',
-            profile: probeVideoStream.profile ?? null,
-            pixelFormat: probeVideoStream.pixelFormat ?? null,
-            colorPrimaries: probeVideoStream.colorPrimaries ?? null,
-            colorRange: probeVideoStream.colorRange ?? null,
-            colorSpace: probeVideoStream.colorSpace ?? null,
-            colorTransfer: probeVideoStream.colorTransfer ?? null,
-          };
-          streams.push(videoStream);
-        }
-      }
-
-      for (const audioStream of streamDetails.streamDetails.audioDetails ??
-        []) {
-        const stream: MediaStream = {
-          ...audioStream,
-          // uuid: v4(),
-          // bitsPerSample: audioStream.bitrate ?? null,
-          streamType: 'audio',
-          codec: audioStream.codec ?? 'unknown',
-          channels: null,
-          index: audioStream.index ?? 0,
-          default: true,
-          // forced: true,
-          languageCodeISO6392:
-            audioStream.languageCodeISO6392 ?? audioStream.language,
-          // programVersionId: versionId,
-          profile: audioStream.profile ?? null,
-          pixelFormat: null,
-        };
-        streams.push(stream);
-      }
-
-      for (const subtitleStream of streamDetails.streamDetails
-        .subtitleDetails ?? []) {
-        const stream: MediaStream = {
-          ...subtitleStream,
-          // uuid: v4(),
-          streamType:
-            subtitleStream.type === 'external'
-              ? 'external_subtitles'
-              : 'subtitles',
-          codec: subtitleStream.codec ?? 'unknown',
-          channels: null,
-          index: subtitleStream.index ?? 0,
-          default: true,
-          // forced: true,
-          languageCodeISO6392:
-            subtitleStream.languageCodeISO6392 ?? subtitleStream.language,
-          // programVersionId: versionId,
-          profile: null,
-          pixelFormat: null,
-        };
-        streams.push(stream);
-      }
+      const streams = mediaStreamsFromProbe(streamDetails.streamDetails);
 
       // const statResult = await fs.stat(filePath);
 

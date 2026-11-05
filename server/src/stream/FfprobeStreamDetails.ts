@@ -33,6 +33,26 @@ import { FileStreamSource, HttpStreamSource } from './types.ts';
  * ffprobe prints microsecond precision, so snapping to microseconds first
  * strips float noise (8.021 * 1000 is 8021.000000000001) before the floor.
  */
+export function audioStreamDetailsFromProbe(
+  audioStream: FfprobeAudioStream,
+): AudioStreamDetails {
+  const lang = audioStream.tags?.['language'];
+  return {
+    bitrate: audioStream.bit_rate ?? undefined,
+    channels: audioStream.channels,
+    codec: audioStream.codec_name,
+    index: audioStream.index,
+    default: audioStream.disposition?.default === 1,
+    language:
+      lang && LanguageService.isValidLanguageCode(lang) ? lang : undefined,
+    languageCodeISO6392: lang
+      ? LanguageService.getAlpha3TCode(lang)
+      : undefined,
+    profile: audioStream.profile,
+    title: audioStream.tags?.['title'],
+  } satisfies AudioStreamDetails;
+}
+
 export function secondsToWholeMs(seconds: number): number {
   return Math.floor(Math.round(seconds * 1_000_000) / 1_000);
 }
@@ -114,24 +134,7 @@ export class FfprobeStreamDetails
         probeDetails.streams,
         (stream): stream is FfprobeAudioStream => stream.codec_type === 'audio',
       ),
-      (audioStream) => {
-        const lang = audioStream.tags?.['language'];
-        return {
-          bitrate: audioStream.bit_rate ?? undefined,
-          channels: audioStream.channels,
-          codec: audioStream.codec_name,
-          index: audioStream.index,
-          language:
-            lang && LanguageService.isValidLanguageCode(lang)
-              ? lang
-              : undefined,
-          languageCodeISO6392: lang
-            ? LanguageService.getAlpha3TCode(lang)
-            : undefined,
-          profile: audioStream.profile,
-          title: audioStream.tags?.['title'],
-        } satisfies AudioStreamDetails;
-      },
+      audioStreamDetailsFromProbe,
     );
 
     const subtitleStreamDetails = map(
