@@ -27,12 +27,6 @@ import type {
 } from './types.ts';
 import { FileStreamSource, HttpStreamSource } from './types.ts';
 
-/**
- * Converts ffprobe seconds to whole milliseconds, rounding down.
- *
- * ffprobe prints microsecond precision, so snapping to microseconds first
- * strips float noise (8.021 * 1000 is 8021.000000000001) before the floor.
- */
 export function audioStreamDetailsFromProbe(
   audioStream: FfprobeAudioStream,
 ): AudioStreamDetails {
@@ -53,6 +47,12 @@ export function audioStreamDetailsFromProbe(
   } satisfies AudioStreamDetails;
 }
 
+/**
+ * Converts ffprobe seconds to whole milliseconds, rounding down.
+ *
+ * ffprobe prints microsecond precision, so snapping to microseconds first
+ * strips float noise (8.021 * 1000 is 8021.000000000001) before the floor.
+ */
 export function secondsToWholeMs(seconds: number): number {
   return Math.floor(Math.round(seconds * 1_000_000) / 1_000);
 }

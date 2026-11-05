@@ -21,15 +21,10 @@ export class LocalSubtitlesService {
 
   async findExternalSubtitles(fullItemPath: string) {
     const subtitles: MediaSubtitles[] = [];
-    const itemName = basename(fullItemPath, extname(fullItemPath));
     for (const dirent of await fs.readdir(dirname(fullItemPath), {
       withFileTypes: true,
     })) {
       if (!dirent.isFile()) {
-        continue;
-      }
-
-      if (!dirent.name.startsWith(itemName)) {
         continue;
       }
 
@@ -64,11 +59,16 @@ export class LocalSubtitlesService {
       return null;
     }
 
-    // Subtitles generally are meant to be in the form {media_name}.{lang}(.{opts})*.{codec_ext}
-    // At this point we've removed the codec_ext and we want to read out the options in the filename
-    // and then derive the language.
-    const [lang = '', ...opts] = fileName
-      .replace(itemName, '')
+    // Sidecars are named {media_name}(.{lang})?(.{opts})*.{codec_ext}. Requiring
+    // the dot after the media name keeps "Movie Part 2.en.srt" off "Movie.mkv".
+
+    const prefix = `${itemName}.`;
+    if (!fileName.startsWith(prefix)) {
+      return null;
+    }
+
+    const [lang = 'und', ...opts] = basename(fileName, extname(fileName))
+      .slice(prefix.length)
       .toLowerCase()
       .split('.')
       .filter((s) => s.length > 0);

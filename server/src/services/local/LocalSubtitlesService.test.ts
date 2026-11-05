@@ -43,6 +43,25 @@ describe('LocalSubtitlesService', () => {
     expect(subs?.language).toEqual('eng');
     expect(subs?.sdh).toBeTruthy();
   });
+
+  test('marks a sidecar with no language tag as undetermined', () => {
+    const subs = LocalSubtitlesService.parseSubtitleFilePath(
+      '/a/b/c/Movie (2023).mkv',
+      '/a/b/c/Movie (2023).srt',
+    );
+
+    expect(subs?.language).toEqual('und');
+    expect(subs?.codec).toEqual('subrip');
+  });
+
+  test('rejects a sidecar for a different title that shares the prefix', () => {
+    const subs = LocalSubtitlesService.parseSubtitleFilePath(
+      '/a/b/c/Movie (2023).mkv',
+      '/a/b/c/Movie (2023) Part 2 (2024).en.srt',
+    );
+
+    expect(subs).toBeNull();
+  });
 });
 
 describe('LocalSubtitlesService.findExternalSubtitles', () => {
@@ -55,6 +74,8 @@ describe('LocalSubtitlesService.findExternalSubtitles', () => {
       'Mrs. Sureice (2023).en.srt',
       'Mrs. Sureice (2023).es.forced.ass',
       'Mrs. Sureice (2023).nfo',
+      'Mrs. Sureice (2023).srt',
+      'Mrs. Sureice (2023) Part 2 (2024).en.srt',
       'Another Movie (2023).en.srt',
     ]) {
       await fs.writeFile(path.join(dir, name), '');
@@ -84,6 +105,13 @@ describe('LocalSubtitlesService.findExternalSubtitles', () => {
         subtitleType: 'sidecar',
         forced: true,
         path: path.join(dir, 'Mrs. Sureice (2023).es.forced.ass'),
+      },
+      {
+        language: 'und',
+        codec: 'subrip',
+        subtitleType: 'sidecar',
+        forced: false,
+        path: path.join(dir, 'Mrs. Sureice (2023).srt'),
       },
     ]);
   });
