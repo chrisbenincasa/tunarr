@@ -105,8 +105,9 @@ export const ChannelsView = ({
     [channels, statusFilter],
   );
 
-  // Selection only counts channels still on screen, so deleted or filtered
-  // channels never reach a bulk action.
+  // Selection only counts channels that pass the status filter, so deleted or
+  // filtered channels never reach a bulk action. DataTable drops rows its own
+  // search and column filters hide.
   const selected = visibleChannels.filter((c) => rowSelection[c.id]);
 
   const keyboardNavigation = useMemo(

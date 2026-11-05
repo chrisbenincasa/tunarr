@@ -351,6 +351,20 @@ describe('DataTable', () => {
     });
   });
 
+  test('drops selected rows that the search hides', async () => {
+    const onSelectionChange = vi.fn();
+    const { user } = renderWithProviders(
+      <Harness selectable onSelectionChange={onSelectionChange} />,
+    );
+    await user.click(screen.getByRole('checkbox', { name: 'Select Alpha' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Select Bravo' }));
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ a: true, b: true });
+
+    await user.click(screen.getByRole('button', { name: 'Show/Hide search' }));
+    await user.type(screen.getByRole('textbox', { name: 'Search' }), 'alp');
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ a: true });
+  });
+
   test('moves with J and K, selects with X and opens with Enter', async () => {
     const onOpen = vi.fn();
     const onSelectionChange = vi.fn();

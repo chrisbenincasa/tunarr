@@ -109,6 +109,15 @@ export class M3uService {
   }
 }
 
+/**
+ * Matches the `channels` query param of `/api/channels.m3u`, such as `1,4,7`.
+ */
+export const ChannelNumbersParamPattern = /^\d+(,\d+)*$/;
+
+export function parseChannelNumbersParam(param: string): number[] {
+  return param.split(',').map(Number);
+}
+
 type M3UChannel = Pick<
   ChannelOrm,
   'uuid' | 'number' | 'name' | 'icon' | 'groupTitle' | 'stealth' | 'streamMode'

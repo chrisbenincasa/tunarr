@@ -28,7 +28,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { Row, RowData } from '@tanstack/react-table';
+import type { Row, RowData, RowSelectionState } from '@tanstack/react-table';
 import { clamp } from 'lodash-es';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { SortButton } from './SortButton.tsx';
@@ -98,6 +98,44 @@ const PageIndexRepair = <TData extends RowData>({
       table.setPageIndex(clamp(pageIndex, 0, lastPage));
     }
   }, [table, pageIndex, lastPage, ready]);
+  return null;
+};
+
+// Drops selected rows that the search or a column filter hides, so a bulk
+// action never reaches a row the user can no longer see.
+const SelectionPrune = <TData extends RowData>({
+  table,
+  selection,
+  globalFilter,
+  columnFilters,
+}: {
+  table: TunarrTable<TData>;
+  selection: RowSelectionState;
+  globalFilter: string;
+  columnFilters: unknown;
+}) => {
+  // Reads the selection from a ref, so selecting a row never re-runs the prune.
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+
+  useEffect(() => {
+    const selection = selectionRef.current;
+    const selectedIds = Object.keys(selection).filter((id) => selection[id]);
+    if (selectedIds.length === 0) {
+      return;
+    }
+    const shown = new Set(
+      table.getFilteredRowModel().rows.map((row) => row.id),
+    );
+    if (selectedIds.every((id) => shown.has(id))) {
+      return;
+    }
+    table.setRowSelection(
+      Object.fromEntries(
+        selectedIds.filter((id) => shown.has(id)).map((id) => [id, true]),
+      ),
+    );
+  }, [table, globalFilter, columnFilters]);
   return null;
 };
 
@@ -540,6 +578,14 @@ export const DataTable = <TData extends RowData>({
               pageIndex={pageIndex}
               lastPage={lastPage}
               ready={hasData && !loading}
+            />
+            <SelectionPrune
+              table={table}
+              selection={state.rowSelection}
+              globalFilter={
+                typeof state.globalFilter === 'string' ? state.globalFilter : ''
+              }
+              columnFilters={state.columnFilters}
             />
             <TablePager
               count={rowCount}
