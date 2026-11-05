@@ -245,9 +245,33 @@ export const ChannelsView = ({
         title={<Trans>Channels</Trans>}
         subtitle={
           <>
-            <MonoText>{channels.length}</MonoText>{' '}
-            <Plural value={channels.length} one="channel" other="channels" /> ·{' '}
-            <MonoText>{streaming}</MonoText> <Trans>streaming</Trans>
+            <Plural
+              value={channels.length}
+              one={
+                <>
+                  <MonoText>{channels.length}</MonoText> channel
+                </>
+              }
+              other={
+                <>
+                  <MonoText>{channels.length}</MonoText> channels
+                </>
+              }
+            />{' '}
+            ·{' '}
+            <Plural
+              value={streaming}
+              one={
+                <>
+                  <MonoText>{streaming}</MonoText> streaming
+                </>
+              }
+              other={
+                <>
+                  <MonoText>{streaming}</MonoText> streaming
+                </>
+              }
+            />
           </>
         }
         actions={
