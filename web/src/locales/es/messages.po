@@ -354,6 +354,7 @@ msgid "Access Token"
 msgstr ""
 
 #: src/components/ui/table/ActionsHeader.tsx
+#: src/pages/settings/TaskSettingsPage.tsx
 msgid "Actions"
 msgstr ""
 
@@ -1411,6 +1412,7 @@ msgstr ""
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
 #: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/CustomShowsPage.tsx
 msgid "Custom Shows"
 msgstr ""
 
@@ -1500,13 +1502,17 @@ msgstr ""
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Delete"
 msgstr ""
 
@@ -1718,6 +1724,7 @@ msgstr ""
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Duplicate"
 msgstr ""
@@ -1767,10 +1774,13 @@ msgstr ""
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
+#: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
@@ -1798,9 +1808,11 @@ msgid "Edit Flex Time"
 msgstr ""
 
 #: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Edit Libraries"
 msgstr ""
 
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Edit Media Source"
 msgstr ""
@@ -2337,6 +2349,7 @@ msgstr ""
 msgid "Filter"
 msgstr ""
 
+#: src/components/ui/table/filters/MultiSelectFilter.tsx
 #: src/components/ui/table/filters/TextFilter.tsx
 #: src/components/ui/table/filters/TextFilter.tsx
 msgid "Filter by {label}"
@@ -2875,6 +2888,7 @@ msgid "Logging"
 msgstr ""
 
 #: src/components/shell/useShellNav.tsx
+#: src/pages/system/SystemLogsPage.tsx
 msgid "Logs"
 msgstr ""
 
@@ -3032,6 +3046,7 @@ msgstr ""
 msgid "Media Source: \"{0}\""
 msgstr ""
 
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Media Sources"
 msgstr ""
@@ -3881,6 +3896,7 @@ msgid "Refresh"
 msgstr ""
 
 #: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Refresh Libraries"
 msgstr ""
 
@@ -4051,6 +4067,7 @@ msgstr ""
 msgid "Reset to current date/time"
 msgstr ""
 
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -4511,6 +4528,7 @@ msgstr ""
 
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
+#: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/hooks/useRouteName.ts
 #: src/routes/library/smart_collections/index.tsx
 msgid "Smart Collections"
@@ -4803,6 +4821,7 @@ msgid "Take Turns"
 msgstr ""
 
 #: src/components/shell/useShellNav.tsx
+#: src/pages/settings/TaskSettingsPage.tsx
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Tasks"
 msgstr ""
@@ -5131,6 +5150,7 @@ msgstr ""
 msgid "Transcode Configs"
 msgstr ""
 
+#: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/pages/profiles/TranscodeConfigsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Transcoding Configs"
@@ -5383,6 +5403,7 @@ msgstr ""
 msgid "View"
 msgstr ""
 
+#: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 msgid "View Collection"
 msgstr ""
