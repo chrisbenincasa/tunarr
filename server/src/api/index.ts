@@ -2,6 +2,7 @@ import type { FfmpegEncoder } from '@/ffmpeg/ffmpegInfo.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
 import { globalOptions, serverOptions } from '@/globals.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
+import { XmlTvWriter } from '@/services/XmlTvWriter.js';
 import { EtvNextBinaryResolver } from '@/stream/etv/EtvNextBinaryResolver.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
 import type { RouterPluginAsyncCallback } from '@/types/serverType.js';
@@ -246,11 +247,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
       try {
         const host = `${req.protocol}://${req.host}`;
 
-        const xmltvSettings = req.serverCtx.settings.xmlTvSettings();
-        const fileContent = await fsPromises.readFile(
-          xmltvSettings.outputPath,
-          'utf8',
-        );
+        const outputPath = await container.get(XmlTvWriter).resolveOutputPath();
+        const fileContent = await fsPromises.readFile(outputPath, 'utf8');
         const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
         return res
           .header('Cache-Control', 'no-store')

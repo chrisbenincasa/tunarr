@@ -1,12 +1,9 @@
-import { defaultXmlTvSettings } from '@/db/SettingsDB.js';
 import type { IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import { MediaSourceDB } from '@/db/mediaSourceDB.js';
 import { MediaSourceApiFactory } from '@/external/MediaSourceApiFactory.js';
-import { globalOptions } from '@/globals.js';
 import { TVGuideService } from '@/services/TvGuideService.js';
 import { KEYS } from '@/types/inject.js';
-import { fileExists } from '@/util/fsUtil.js';
 import { isNonEmptyString, mapAsyncSeq } from '@/util/index.js';
 import { InjectLogger } from '@/util/inject.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
@@ -64,20 +61,7 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
 
   private async updateXmlTv(channelId?: string) {
     try {
-      let xmltvSettings = this.settingsDB.xmlTvSettings();
-      if (!(await fileExists(xmltvSettings.outputPath))) {
-        this.logger.debug(
-          'XMLTV settings missing at path %s. Regenerating path.',
-          xmltvSettings.outputPath,
-        );
-        await this.settingsDB.updateSettings('xmltv', {
-          ...xmltvSettings,
-          outputPath: defaultXmlTvSettings(globalOptions().databaseDirectory)
-            .outputPath,
-        });
-        // Re-read
-        xmltvSettings = this.settingsDB.xmlTvSettings();
-      }
+      const xmltvSettings = this.settingsDB.xmlTvSettings();
 
       // Round start time down to the nearest hour so guide boundaries align
       // with the hour-granular requests made by the UI and other consumers.

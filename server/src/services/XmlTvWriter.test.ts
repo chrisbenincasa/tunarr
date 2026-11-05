@@ -1,6 +1,10 @@
+import { globalOptions } from '@/globals.js';
 import { faker } from '@faker-js/faker';
 import { parseXmltv, writeXmltv } from '@iptv/xmltv';
 import { tag } from '@tunarr/types';
+import fs from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
 import { v4 } from 'uuid';
 import type { Artwork } from '../db/schema/Artwork.ts';
 import type { MediaSourceId } from '../db/schema/base.ts';
@@ -98,6 +102,48 @@ function makeGrouping(
 }
 
 describe('XmlTvWriter', () => {
+  describe('write', () => {
+    let tmpDir: string;
+
+    beforeEach(async () => {
+      tmpDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tunarr-xmltv-'));
+    });
+
+    afterEach(async () => {
+      await fs.rm(tmpDir, { recursive: true, force: true });
+    });
+
+    function makeWriter(outputPath: string) {
+      return new XmlTvWriter(
+        inMemorySettingsDB({ settings: { xmltv: { outputPath } } }),
+        { ...globalOptions(), databaseDirectory: tmpDir },
+      );
+    }
+
+    test('writes to the configured path when it is writable', async () => {
+      const configured = path.join(tmpDir, 'custom', 'xmltv.xml');
+      await fs.mkdir(path.dirname(configured));
+      const writer = makeWriter(configured);
+
+      await writer.write([]);
+
+      await expect(fs.readFile(configured, 'utf8')).resolves.toContain('<tv');
+      await expect(writer.resolveOutputPath()).resolves.toBe(configured);
+    });
+
+    test('writes to the default path when the configured directory is missing', async () => {
+      const configured = path.join(tmpDir, 'unmounted', 'xmltv.xml');
+      const writer = makeWriter(configured);
+
+      await writer.write([]);
+
+      const fallback = path.join(tmpDir, 'xmltv.xml');
+      await expect(fs.readFile(fallback, 'utf8')).resolves.toContain('<tv');
+      await expect(fs.stat(path.dirname(configured))).rejects.toThrow();
+      await expect(writer.resolveOutputPath()).resolves.toBe(fallback);
+    });
+  });
+
   describe('serialize', () => {
     // Rotates through the shapes the writer branches on, so batch splicing is
     // checked against credits, categories, icons and episode numbers.
@@ -182,7 +228,7 @@ describe('XmlTvWriter', () => {
       vi.useFakeTimers({ toFake: ['Date'] });
       vi.setSystemTime(Date.parse('2026-09-22T00:00:00Z'));
       try {
-        const writer = new XmlTvWriter(inMemorySettingsDB());
+        const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
         // Enough programmes per channel to span several serialize batches.
         const channels: MaterializedChannelPrograms[] = [1, 2, 3].map(
           (number) => ({
@@ -236,7 +282,7 @@ describe('XmlTvWriter', () => {
     }
 
     it('keeps the header when a title contains ?xml', async () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const xml = await writer.serialize([
         channelWithTitles(['Parsing <?xml in Python']),
       ]);
@@ -248,7 +294,7 @@ describe('XmlTvWriter', () => {
     });
 
     it('does not throw when a title contains !DOCTYPE', async () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const xml = await writer.serialize([
         channelWithTitles(['The <!DOCTYPE story']),
       ]);
@@ -259,7 +305,7 @@ describe('XmlTvWriter', () => {
 
   describe('serialized program order', () => {
     function serializeProgram(program: ProgramWithRelationsOrm) {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const xml = writeXmltv(
         writer.generateXmltv([
           {
@@ -502,13 +548,13 @@ describe('XmlTvWriter', () => {
     ];
 
     test('escapes summaries', () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const output = writer.generateXmltv(channels);
       expect(output.programmes[0]?.desc?.[0]?._value).includes('&amp;');
     });
 
     test('adds and escapes genres as categories', () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const output = writer.generateXmltv(channels);
       expect(output.programmes[0]?.category?.map((c) => c._value)).toEqual([
         'Comedy',
@@ -519,7 +565,7 @@ describe('XmlTvWriter', () => {
     });
 
     test('adds and escapes tags as keywords', () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const output = writer.generateXmltv(channels);
       expect(output.programmes[0]?.keyword?.map((c) => c._value)).toEqual([
         'Theme Park',
@@ -529,7 +575,7 @@ describe('XmlTvWriter', () => {
     });
 
     test('zero-pads single digit onscreen season and episode numbers', () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const output = writer.generateXmltv(channels);
       const onscreenEpisodeNum = output.programmes[0]?.episodeNum?.find(
         (e) => e.system === 'onscreen',
@@ -538,7 +584,7 @@ describe('XmlTvWriter', () => {
     });
 
     test('generates xmltv_ns format with 0-based indices', () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const output = writer.generateXmltv(channels);
       const xmltvNs = output.programmes[0]?.episodeNum?.find(
         (e) => e.system === 'xmltv_ns',
@@ -547,7 +593,7 @@ describe('XmlTvWriter', () => {
     });
 
     test('handles double digit season and episode numbers', () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const channels: MaterializedChannelPrograms[] = [
         {
           channel: createChannel(),
@@ -577,7 +623,7 @@ describe('XmlTvWriter', () => {
     });
 
     test('omits season number for season 0 (specials) in xmltv_ns', () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const channels: MaterializedChannelPrograms[] = [
         {
           channel: createChannel(),
@@ -1071,7 +1117,7 @@ describe('XmlTvWriter', () => {
 
   describe('credits', () => {
     test('maps cast type to actor credits', () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const channels: MaterializedChannelPrograms[] = [
         {
           channel: createChannel(),
@@ -1110,7 +1156,7 @@ describe('XmlTvWriter', () => {
     });
 
     test('escapes quotes, apostrophes, and ampersands in actor roles', () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const xml = writeXmltv(
         writer.generateXmltv([
           {
@@ -1157,7 +1203,7 @@ describe('XmlTvWriter', () => {
     });
 
     test('maps director, writer, and producer credits correctly', () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const channels: MaterializedChannelPrograms[] = [
         {
           channel: createChannel(),
@@ -1206,7 +1252,7 @@ describe('XmlTvWriter', () => {
 
   describe('duration and metadata', () => {
     test('omits length when duration is zero or negative', () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const channels: MaterializedChannelPrograms[] = [
         {
           channel: createChannel(),
@@ -1233,7 +1279,7 @@ describe('XmlTvWriter', () => {
     });
 
     test('adds video present: false for tracks', () => {
-      const writer = new XmlTvWriter(inMemorySettingsDB());
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const channels: MaterializedChannelPrograms[] = [
         {
           channel: createChannel(),
