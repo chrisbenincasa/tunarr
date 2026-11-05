@@ -647,6 +647,9 @@ describe('the playout window', () => {
     await vi.advanceTimersByTimeAsync(windowMs / 4);
 
     expect(playoutWriter.materializeWindow).toHaveBeenCalledTimes(2);
+
+    // The timer's refresh writes to disk unawaited, and stop() waits for it.
+    await session.stop();
   });
 
   test('stops being topped up once the session stops', async () => {
