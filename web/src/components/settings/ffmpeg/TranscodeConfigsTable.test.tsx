@@ -2,6 +2,7 @@ import { getApiTranscodeConfigsQueryKey } from '@/generated/@tanstack/react-quer
 import type * as Gen from '@/generated/@tanstack/react-query.gen.ts';
 import useStore from '@/store/index.ts';
 import { setTableColumnModel } from '@/store/settings/actions.ts';
+import { navigateMock } from '@/test/routerMock.tsx';
 import {
   renderWithProviders,
   screen,
@@ -115,11 +116,42 @@ describe('TranscodeConfigsTable', () => {
     renderTable();
     expect(
       withinRow('Intel').getByRole('link', { name: 'Edit' }),
-    ).toHaveAttribute('href', '/settings/ffmpeg/qsv-id');
+    ).toHaveAttribute('href', '/profiles/transcode/qsv-id');
     expect(screen.getByRole('link', { name: 'New' })).toHaveAttribute(
       'href',
-      '/settings/ffmpeg/new',
+      '/profiles/transcode/new',
     );
+  });
+
+  test('opens the editor when a row is clicked', async () => {
+    const { user } = renderTable();
+    await user.click(withinRow('Intel').getByText('QuickSync'));
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/profiles/transcode/$configId',
+      params: { configId: 'qsv-id' },
+    });
+  });
+
+  // 2000x500 sorts after 1920x1080 as text but has fewer pixels.
+  test('sorts resolution by pixel count', async () => {
+    const wide: TranscodeConfig = {
+      ...baseConfig,
+      id: 'wide-id',
+      name: 'Wide',
+      resolution: { widthPx: 2000, heightPx: 500 },
+    };
+    const { user } = renderWithProviders(<TranscodeConfigsTable />, {
+      queryClient: seededQueryClient([
+        [getApiTranscodeConfigsQueryKey(), [...configs, wide]],
+      ]),
+    });
+    await user.click(
+      screen.getByRole('button', { name: /^Sort by Resolution/ }),
+    );
+    const resolutions = within(screen.getAllByRole('rowgroup')[1])
+      .getAllByRole('row')
+      .map((row) => within(row).getAllByRole('cell')[1].textContent);
+    expect(resolutions).toEqual(['1280x720', '2000x500', '1920x1080']);
   });
 
   test('duplicates the config in the clicked row', async () => {
