@@ -38,6 +38,7 @@ import type {
   HlsPlaylistFilterOptions,
 } from './HlsPlaylistMutator.js';
 import { HlsPlaylistMutator } from './HlsPlaylistMutator.js';
+import { compactHlsPlaylist } from './compactHlsPlaylist.js';
 import type { Cue } from './HlsSubtitlePlaylist.js';
 import {
   firstNeededCueFile,
@@ -82,6 +83,11 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #cueFiles = new Map<number, Cue[]>();
   #isFirstTranscode = true;
   #lastDiscontinuitySequence: number | undefined;
+  #lastServedSequence: number | undefined;
+
+  // Discontinuities compacted out of the on-disk stream.m3u8.
+  #discontinuityBase = 0;
+
   #currentSubtitleRendition: SubtitleRenditionInfo | undefined;
   #currentAudioRenditions: AudioRenditionInfo[] = [];
 
@@ -148,10 +154,14 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
               maxSegmentsToKeep: 20,
               targetDuration: this.getHlsOptions().hlsTime,
               previousDiscontinuitySequence: this.#lastDiscontinuitySequence,
+              baseDiscontinuitySequence: this.#discontinuityBase,
               endWithDiscontinuity: false,
             },
           );
           this.#lastDiscontinuitySequence = trimResult.discontinuitySequence;
+          if (trimResult.segmentCount > 0) {
+            this.#lastServedSequence = trimResult.sequence;
+          }
           this.#lastServedPlaylist = trimResult.playlist;
           const now = dayjs();
           if (now.isAfter(this.#lastDelete.add(30, 'seconds'))) {
@@ -212,12 +222,16 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   private async segmentWindow(segmentNumber: number) {
-    const playlistLines = await this.readPlaylist();
-    return playlistLines
-      ? segmentWindows(playlistLines.join('\n'), this.#playlistStartOffset).get(
-          segmentNumber,
-        )
-      : undefined;
+    // Compaction swaps the file and the offset together under this lock.
+    return this.lock.runExclusive(async () => {
+      const playlistLines = await this.readPlaylist();
+      return playlistLines
+        ? segmentWindows(
+            playlistLines.join('\n'),
+            this.#playlistStartOffset,
+          ).get(segmentNumber)
+        : undefined;
+    });
   }
 
   private async readCueFiles() {
@@ -344,8 +358,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         await this.transcode(realtime);
         this.#isFirstTranscode = false;
       } else {
-        // trim and delete
-        // await this.trimPlaylistAndDeleteSegments();
         await wait(dayjs.duration({ seconds: 5 }));
       }
     }
@@ -469,8 +481,10 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         this.#currentAudioRenditions = programStream.renditions?.audio ?? [];
       });
 
-      if (this.sessionOptions.streamMode === 'hls') {
-        // await this.trimPlaylistAndDeleteSegments();
+      if (!this.#isFirstTranscode) {
+        await this.compactPlaylist().catch((e) =>
+          this.logger.error(e, 'Error while compacting the HLS playlist'),
+        );
       }
       await programStream.start();
       return programStream.transcodeSession!.wait();
@@ -484,6 +498,54 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     }
 
     this.logger.debug('Stream ended.');
+  }
+
+  /**
+   * Rewrites stream.m3u8 without the segments that come before the last
+   * served window. ffmpeg runs with append_list and -hls_list_size 0, so
+   * without this the file, and the work per playlist request, grows for the
+   * whole session.
+   *
+   * ffmpeg rewrites the whole file from its in-memory list after every
+   * segment, so this only runs between ffmpeg processes.
+   */
+  private async compactPlaylist() {
+    const keepFrom = this.#lastServedSequence;
+
+    // Session.start() holds the lock until the stream is ready, which can
+    // span several short programs. Skip instead of waiting on it.
+    if (keepFrom === undefined || this.lock.isLocked()) {
+      return;
+    }
+
+    await this.lock.runExclusive(async () => {
+      const lines = await this.readPlaylist();
+      const compacted = lines ? compactHlsPlaylist(lines, keepFrom) : undefined;
+      let playlistStart = this.#playlistStart;
+      if (!compacted || !playlistStart) {
+        return;
+      }
+
+      const tmpPath = `${this._m3u8PlaylistPath}.tmp`;
+      await fs.writeFile(tmpPath, compacted.lines.join('\n'));
+      await fs.rename(tmpPath, this._m3u8PlaylistPath);
+
+      // Add durations one segment at a time, in file order, so start times
+      // match what HlsPlaylistMutator and segmentWindows computed before.
+      for (const duration of compacted.removedDurations) {
+        playlistStart = playlistStart.add(duration, 'seconds');
+        this.#playlistStartOffset += duration;
+      }
+      this.#playlistStart = playlistStart;
+      this.#discontinuityBase += compacted.removedDiscontinuities;
+
+      this.logger.debug(
+        'Compacted HLS playlist: removed %d segments and %d discontinuities, first segment is now %d',
+        compacted.removedDurations.length,
+        compacted.removedDiscontinuities,
+        keepFrom,
+      );
+    });
   }
 
   protected override getAdditionalRequiredFiles(): string[] {

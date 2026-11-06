@@ -22,6 +22,9 @@ type MutateOptions = {
   endWithDiscontinuity: boolean;
   targetDuration: number;
   previousDiscontinuitySequence?: number;
+
+  // Discontinuities already trimmed from the top of the playlist file.
+  baseDiscontinuitySequence?: number;
 };
 
 type FilterBeforeDate = {
@@ -61,6 +64,7 @@ export class HlsPlaylistMutator {
       opts.maxSegmentsToKeep,
       opts.targetDuration,
       opts.previousDiscontinuitySequence,
+      opts.baseDiscontinuitySequence,
     );
 
     return {
@@ -131,10 +135,11 @@ export class HlsPlaylistMutator {
     maxSegmentsToKeep: number,
     targetDuration: number,
     previousDiscontinuitySequence?: number,
+    baseDiscontinuitySequence = 0,
   ) {
     // Count and remove leading discontinuities
     let leadingDiscontinuities = 0;
-    let discontinuitySequence = 0;
+    let discontinuitySequence = baseDiscontinuitySequence;
     while (items[leadingDiscontinuities]?.type === 'discontinuity') {
       leadingDiscontinuities++;
     }

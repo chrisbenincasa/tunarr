@@ -361,6 +361,169 @@ describe('HlsSession', () => {
     });
   });
 
+  describe('compactPlaylist (private)', () => {
+    type Internals = {
+      startInternal(): Promise<void>;
+      compactPlaylist(): Promise<void>;
+      segmentWindow(n: number): Promise<[number, number] | undefined>;
+      lock: { runExclusive<T>(fn: () => Promise<T>): Promise<T> };
+    };
+
+    const internals = (session: HlsSession) =>
+      session as unknown as Internals;
+
+    let refDir: tmp.DirResult;
+    let dir: tmp.DirResult;
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
+      refDir = tmp.dirSync({ unsafeCleanup: true });
+      dir = tmp.dirSync({ unsafeCleanup: true });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      refDir.removeCallback();
+      dir.removeCallback();
+    });
+
+    async function startSession(transcodeDirectory: string) {
+      const session = makeSession(transcodeDirectory);
+      await internals(session).startInternal();
+      await fs.mkdir(session.workingDirectory, { recursive: true });
+      return session;
+    }
+
+    function playlistPath(session: HlsSession) {
+      return path.join(session.workingDirectory, 'stream.m3u8');
+    }
+
+    // Writes the playlist the way ffmpeg does with append_list and
+    // discont_start: a header DISCONTINUITY while the list starts at
+    // sequence 0, and a body DISCONTINUITY before each later process's
+    // first segment.
+    class FakeFfmpeg {
+      #body: string[] = [];
+      #mediaSequence = 0;
+      #headerDiscontinuity = false;
+
+      constructor(private session: HlsSession) {}
+
+      async loadFromDisk() {
+        const lines = (await fs.readFile(playlistPath(this.session), 'utf-8'))
+          .split('\n')
+          .filter((line) => line.length > 0);
+        const bodyStart = lines.findIndex((l) => l.startsWith('#EXTINF:'));
+        const sequence = lines
+          .find((l) => l.startsWith('#EXT-X-MEDIA-SEQUENCE:'))
+          ?.split(':')[1];
+        this.#mediaSequence = parseInt(sequence ?? '0');
+        this.#body = lines.slice(bodyStart);
+      }
+
+      startProcess(isFirst: boolean) {
+        if (!isFirst) {
+          this.#body.push('#EXT-X-DISCONTINUITY');
+          this.#headerDiscontinuity = this.#mediaSequence === 0;
+        }
+      }
+
+      async writeSegment(n: number, duration: number) {
+        this.#body.push(
+          `#EXTINF:${duration.toFixed(6)},`,
+          '#EXT-X-PROGRAM-DATE-TIME:2026-01-01T00:00:00.000+0000',
+          `/stream/channels/${channelUuid}/hls/data${String(n).padStart(6, '0')}.ts`,
+        );
+        const header = [
+          '#EXTM3U',
+          '#EXT-X-VERSION:6',
+          '#EXT-X-TARGETDURATION:4',
+          `#EXT-X-MEDIA-SEQUENCE:${this.#mediaSequence}`,
+          ...(this.#headerDiscontinuity ? ['#EXT-X-DISCONTINUITY'] : []),
+          '#EXT-X-INDEPENDENT-SEGMENTS',
+        ];
+        await fs.writeFile(
+          playlistPath(this.session),
+          [...header, ...this.#body, ''].join('\n'),
+        );
+      }
+
+      get segmentCount() {
+        return this.#body.filter((l) => l.startsWith('#EXTINF:')).length;
+      }
+    }
+
+    test('serves the same playlists as a session that never compacts', async () => {
+      const reference = await startSession(refDir.name);
+      const session = await startSession(dir.name);
+      const refFfmpeg = new FakeFfmpeg(reference);
+      const ffmpeg = new FakeFfmpeg(session);
+
+      // Short programs get folded out of the window whole, which exercises
+      // the discontinuity sequence cap.
+      const programLengths = [30, 1, 2, 25, 1, 1, 40, 3, 22, 2, 1, 35];
+      let segmentNumber = 0;
+      let maxFileSegments = 0;
+
+      for (const [program, length] of programLengths.entries()) {
+        const isFirst = program === 0;
+        if (!isFirst) {
+          await internals(session).compactPlaylist();
+          await ffmpeg.loadFromDisk();
+        }
+        refFfmpeg.startProcess(isFirst);
+        ffmpeg.startProcess(isFirst);
+
+        for (let i = 0; i < length; i++) {
+          // ffmpeg ends each program with a short segment.
+          const duration = i === length - 1 ? 1.5 + (program % 3) * 0.7 : 4.004;
+          await refFfmpeg.writeSegment(segmentNumber, duration);
+          await ffmpeg.writeSegment(segmentNumber, duration);
+          segmentNumber++;
+          maxFileSegments = Math.max(maxFileSegments, ffmpeg.segmentCount);
+
+          const expected = (await reference.trimPlaylist()).get();
+          const actual = (await session.trimPlaylist()).get();
+          expect(actual?.playlist).toEqual(expected?.playlist);
+          expect(actual?.sequence).toEqual(expected?.sequence);
+          expect(actual?.discontinuitySequence).toEqual(
+            expected?.discontinuitySequence,
+          );
+
+          for (let n = actual?.sequence ?? 0; n < segmentNumber; n++) {
+            expect(await internals(session).segmentWindow(n)).toEqual(
+              await internals(reference).segmentWindow(n),
+            );
+          }
+        }
+      }
+
+      expect(refFfmpeg.segmentCount).toBe(segmentNumber);
+      // Bounded by the served window plus the longest program.
+      expect(maxFileSegments).toBeLessThanOrEqual(20 + 40);
+    });
+
+    test('skips compaction while the session lock is held', async () => {
+      const session = await startSession(dir.name);
+      const ffmpeg = new FakeFfmpeg(session);
+      ffmpeg.startProcess(true);
+      for (let n = 0; n < 40; n++) {
+        await ffmpeg.writeSegment(n, 4);
+      }
+      await session.trimPlaylist();
+      const before = await fs.readFile(playlistPath(session), 'utf-8');
+
+      // Session.start() holds the lock while the first programs transcode.
+      // Waiting on it here would deadlock.
+      await internals(session).lock.runExclusive(() =>
+        internals(session).compactPlaylist(),
+      );
+
+      expect(await fs.readFile(playlistPath(session), 'utf-8')).toBe(before);
+    });
+  });
+
   describe('getLastSubtitleSegmentNumber (private)', () => {
     let dir: tmp.DirResult;
 
