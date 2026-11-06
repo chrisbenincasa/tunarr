@@ -267,7 +267,9 @@ describe('FixMislabeledGroupingExternalIdSourceType', () => {
     expect(await sourceTypeOf(db, withSource)).toBe('jellyfin');
     expect(await sourceTypeOf(db, withoutSource)).toBe('jellyfin');
   });
-  test('sets the media source id in the same pass as the label', async ({ db }) => {
+  test('sets the media source id in the same pass as the label', async ({
+    db,
+  }) => {
     const jellyfin = await insertMediaSource(db, 'jellyfin');
     const row = await insertExternalId(
       db,
@@ -285,7 +287,9 @@ describe('FixMislabeledGroupingExternalIdSourceType', () => {
     });
   });
 
-  test('leaves a row alone when a Plex source shares the name', async ({ db }) => {
+  test('leaves a row alone when a Plex source shares the name', async ({
+    db,
+  }) => {
     // media_source is unique on (type, name, uri), so a name is not an identity.
     const plex = await insertNamedMediaSource(db, 'plex', 'Shared Name');
     await insertNamedMediaSource(db, 'jellyfin', 'Shared Name');
@@ -299,10 +303,15 @@ describe('FixMislabeledGroupingExternalIdSourceType', () => {
 
     await new FixMislabeledGroupingExternalIdSourceType(db).run();
 
-    expect(await rowOf(db, row)).toEqual({ sourceType: 'plex', mediaSourceId: null });
+    expect(await rowOf(db, row)).toEqual({
+      sourceType: 'plex',
+      mediaSourceId: null,
+    });
   });
 
-  test('leaves a row alone when Jellyfin and Emby share the name', async ({ db }) => {
+  test('leaves a row alone when Jellyfin and Emby share the name', async ({
+    db,
+  }) => {
     const jellyfin = await insertNamedMediaSource(db, 'jellyfin', 'Both');
     await insertNamedMediaSource(db, 'emby', 'Both');
     const row = await insertExternalId(
@@ -315,7 +324,10 @@ describe('FixMislabeledGroupingExternalIdSourceType', () => {
 
     await new FixMislabeledGroupingExternalIdSourceType(db).run();
 
-    expect(await rowOf(db, row)).toEqual({ sourceType: 'plex', mediaSourceId: null });
+    expect(await rowOf(db, row)).toEqual({
+      sourceType: 'plex',
+      mediaSourceId: null,
+    });
   });
 
   test('skips a null-media-source row when a correct row with an id exists', async ({
