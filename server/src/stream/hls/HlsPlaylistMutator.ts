@@ -1,5 +1,4 @@
 import { isNonEmptyString } from '@/util/index.js';
-import { seq } from '@tunarr/shared/util';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
 import {
@@ -80,7 +79,12 @@ export class HlsPlaylistMutator {
     const items: PlaylistLine[] = [];
 
     let i = 0;
-    let currentTime = start;
+    // Segment start times are tracked as integer milliseconds and only turned
+    // into Dayjs objects when something reads them. The on-disk playlist holds
+    // every segment since the session began, so allocating a Dayjs per segment
+    // on every request made playlist latency grow with stream age.
+    const startMs = start.valueOf();
+    let currentMs = startMs;
 
     while (
       i < playlistLines.length &&
@@ -112,9 +116,17 @@ export class HlsPlaylistMutator {
 
       // EXTINF
       const duration = parseFloat(trimEnd(line.trim(), ',').split(':')[1]!);
-      items.push(new PlaylistSegment(currentTime, line, playlistLines[i + 2]!));
+      items.push(
+        new PlaylistSegment(
+          start,
+          currentMs - startMs,
+          line,
+          playlistLines[i + 2]!,
+        ),
+      );
 
-      currentTime = currentTime.add(duration, 'seconds');
+      // Truncate each step like Dayjs#add does via Date, so times match exactly.
+      currentMs = Math.trunc(currentMs + duration * 1000);
       i += 3;
     }
 
@@ -163,21 +175,23 @@ export class HlsPlaylistMutator {
                   beforeSeg.segmentNumber - beforeSeg.segmentsToKeepBefore,
                   beforeSeg.segmentFloor ?? 0,
                 );
-                return seq.collect(allSegments, (segment) => {
-                  const fileName = basename(segment.line);
-                  const matches = fileName.match(SegmentNameRegex);
-                  if (!matches || matches.length < 2) {
-                    return;
+                // Walk back from the live edge and stop once the window is
+                // full; the result is the last maxSegmentsToKeep segments at or
+                // above minSeg, without touching the rest of the history.
+                const kept: PlaylistSegment[] = [];
+                for (
+                  let j = allSegments.length - 1;
+                  j >= 0 && kept.length < maxSegmentsToKeep;
+                  j--
+                ) {
+                  const segment = allSegments[j]!;
+                  const int = segment.startSequence;
+                  if (int === null || isNaN(int) || int < minSeg) {
+                    continue;
                   }
-                  const int = parseInt(matches[1]!);
-                  if (isNaN(int)) {
-                    return;
-                  }
-                  if (int < minSeg) {
-                    return;
-                  }
-                  return segment;
-                });
+                  kept.push(segment);
+                }
+                return kept.reverse();
               },
             )
             .exhaustive()
@@ -193,14 +207,13 @@ export class HlsPlaylistMutator {
 
     const startSequence = first(allSegments)?.startSequence ?? 0;
 
+    // Selected segments are always elements of `items`, so identity is enough.
+    const selected = new Set<PlaylistLine>(allSegments);
+    let firstSegIndex = -1;
+
     if (!isEmpty(allSegments)) {
       const firstSeg = first(allSegments)!;
-      const firstSegIndex = firstSeg
-        ? items.findIndex(
-            (item): item is PlaylistSegment =>
-              item.type === 'segment' && item.equals(firstSeg),
-          )
-        : -1;
+      firstSegIndex = items.indexOf(firstSeg);
       // ALL discontinuities before the first selected segment are folded into
       // the discontinuity sequence number. They must never be emitted as tags
       // because there are no selected segments before them — emitting a tag
@@ -243,7 +256,9 @@ export class HlsPlaylistMutator {
     // handled above by incrementing discontinuitySequence).
     let hasEmittedSegment = false;
 
-    for (let i = 0; i < items.length; i++) {
+    // Nothing before the first selected segment is ever emitted (see above), so
+    // start there instead of walking the whole history.
+    for (let i = Math.max(firstSegIndex, 0); i < items.length; i++) {
       const item = items[i]!;
       switch (item.type) {
         case 'discontinuity': {
@@ -254,15 +269,14 @@ export class HlsPlaylistMutator {
           }
           const next = items[i + 1];
           const nextIsSelected =
-            next?.type === 'segment' &&
-            allSegments.some((seg) => seg.equals(next));
+            next?.type === 'segment' && selected.has(next);
           if (i === items.length - 1 || nextIsSelected) {
             lines.push('#EXT-X-DISCONTINUITY');
           }
           break;
         }
         case 'segment':
-          if (allSegments.some((seg) => seg.equals(item))) {
+          if (selected.has(item)) {
             lines.push(item.extInf);
             lines.push(
               `#EXT-X-PROGRAM-DATE-TIME:${item.startTime.format(
@@ -398,11 +412,22 @@ export class HlsPlaylistMutator {
 class PlaylistSegment {
   public readonly type = 'segment' as const;
 
+  #startTime?: Dayjs;
+
   constructor(
-    public startTime: Dayjs,
+    private base: Dayjs,
+    private offsetMs: number,
     public extInf: string,
     public line: string,
   ) {}
+
+  get startTime(): Dayjs {
+    this.#startTime ??=
+      this.offsetMs === 0
+        ? this.base
+        : this.base.add(this.offsetMs, 'millisecond');
+    return this.#startTime;
+  }
 
   get startSequence() {
     const matches = basename(this.line).match(SegmentNameRegex);

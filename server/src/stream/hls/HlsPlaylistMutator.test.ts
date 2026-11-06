@@ -1381,4 +1381,30 @@ describe('HlsPlaylistMutator', () => {
       expect(lagging.sequence).toBe(240);
     });
   });
+
+  describe('long-running sessions', () => {
+    it('serves the live-edge window and correct times from a long history', () => {
+      const start = dayjs('2024-10-18T14:00:00.000-04:00');
+      const playlist = createPlaylist(5000);
+      const result = mutator.trimPlaylist(
+        start,
+        {
+          type: 'before_segment_number',
+          segmentNumber: 4900,
+          segmentsToKeepBefore: 5,
+        },
+        playlist,
+        { ...defaultOpts, maxSegmentsToKeep: 20 },
+      );
+
+      expect(result.segmentCount).toBe(20);
+      expect(result.sequence).toBe(4980);
+      expect(result.playlist).toContain('data004999.ts');
+      expect(result.playlist).not.toContain('data004979.ts');
+      // Each segment is 4.004 s, so segment 4980 starts 4980 * 4004 ms in.
+      expect(result.playlistStart.valueOf()).toBe(
+        start.valueOf() + 4980 * 4004,
+      );
+    });
+  });
 });
