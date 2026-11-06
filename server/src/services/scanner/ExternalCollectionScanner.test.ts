@@ -165,8 +165,10 @@ function makeMocks() {
   const externalCollectionsRepo: ExternalCollectionRepo = {
     getByLibraryId: vi.fn().mockResolvedValue([]),
     insertCollection: vi.fn().mockResolvedValue(undefined),
+    upsertCollection: vi.fn().mockResolvedValue(undefined),
     deleteCollection: vi.fn().mockResolvedValue(undefined),
     getById: vi.fn().mockResolvedValue(undefined),
+    getCollectionByExternalId: vi.fn().mockResolvedValue(undefined),
     getCollectionProgramGroupings: vi.fn().mockResolvedValue([]),
     getCollectionPrograms: vi.fn().mockResolvedValue([]),
   } as unknown as ExternalCollectionRepo;
@@ -695,6 +697,173 @@ describe('ExternalCollectionScanner', () => {
           }),
         ]),
       );
+    });
+
+    it('reuses an existing collection row when the same BoxSet is returned through another library of the same media source (issue #1975)', async () => {
+      const msId = makeMediaSourceId();
+      const moviesLibrary = makeLibrary(msId, {
+        uuid: 'movies-lib',
+        externalKey: 'lib-movies',
+      });
+      const tvLibrary = makeLibrary(msId, {
+        uuid: 'tv-lib',
+        externalKey: 'lib-tv',
+      });
+      const mediaSource = makeMediaSource([moviesLibrary, tvLibrary], {
+        uuid: msId,
+      });
+      const sharedExtId = 'shared-boxset-ext-id';
+      const collectionInMovies = makeCollection({
+        externalId: sharedExtId,
+        libraryId: moviesLibrary.uuid,
+        mediaSourceId: msId,
+        title: 'Shared BoxSet',
+      });
+      const collectionFromTv = makeCollection({
+        externalId: sharedExtId,
+        libraryId: tvLibrary.uuid,
+        mediaSourceId: msId,
+        title: 'Shared BoxSet',
+      });
+      const existingRow = makeExternalCollection({
+        uuid: 'row-uuid',
+        externalKey: sharedExtId,
+        libraryId: moviesLibrary.uuid,
+        mediaSourceId: msId,
+        title: 'Shared BoxSet',
+      });
+      const tag = makeTag('Shared BoxSet');
+
+      vi.mocked(mocks.mediaSourceDB.getById).mockResolvedValue(mediaSource);
+      // Movies library scan: discovers the collection, the existing row is
+      // found via the library-scoped lookup and the new collection is not
+      // inserted again.
+      vi.mocked(mocks.externalCollectionsRepo.getByLibraryId)
+        .mockResolvedValueOnce([existingRow])
+        .mockResolvedValueOnce([]);
+      scanner.getAllLibraryCollections.mockImplementation(
+        (_client, libraryKey) => {
+          if (libraryKey === moviesLibrary.externalKey) {
+            return asyncOf(collectionInMovies);
+          }
+          if (libraryKey === tvLibrary.externalKey) {
+            return asyncOf(collectionFromTv);
+          }
+          return asyncOf();
+        },
+      );
+      scanner.getCollectionItems.mockReturnValue(asyncOf());
+      vi.mocked(mocks.tagRepo.upsertTag).mockResolvedValue(tag);
+      // TV library has no local copy of the row yet, but the media-source-wide
+      // lookup must find the row already saved by the Movies library so the
+      // scan reuses it instead of attempting the duplicate insert that
+      // violated the unique index on (mediaSourceId, externalKey).
+      vi.mocked(
+        mocks.externalCollectionsRepo.getCollectionByExternalId,
+      ).mockResolvedValueOnce(existingRow);
+
+      await scanner.scan({ mediaSourceId: msId });
+
+      // The duplicate insert path is never reached: insertCollection must
+      // not be called for the TV library's copy of the same BoxSet.
+      expect(
+        mocks.externalCollectionsRepo.insertCollection,
+      ).not.toHaveBeenCalled();
+      // And the media-source-wide lookup was consulted for the second
+      // library before giving up on a row.
+      expect(
+        mocks.externalCollectionsRepo.getCollectionByExternalId,
+      ).toHaveBeenCalledWith(msId, sharedExtId);
+    });
+
+    it('inserts a new collection row only when the media source has no record of the external key', async () => {
+      const msId = makeMediaSourceId();
+      const library = makeLibrary(msId);
+      const mediaSource = makeMediaSource([library], { uuid: msId });
+      const collection = makeCollection({
+        libraryId: library.uuid,
+        mediaSourceId: msId,
+      });
+      const tag = makeTag(collection.title);
+
+      vi.mocked(mocks.mediaSourceDB.getById).mockResolvedValue(mediaSource);
+      vi.mocked(mocks.externalCollectionsRepo.getByLibraryId).mockResolvedValue(
+        [],
+      );
+      // No row anywhere in the media source for this external key
+      vi.mocked(
+        mocks.externalCollectionsRepo.getCollectionByExternalId,
+      ).mockResolvedValue(undefined);
+      scanner.getAllLibraryCollections.mockReturnValue(asyncOf(collection));
+      scanner.getCollectionItems.mockReturnValue(asyncOf());
+      vi.mocked(mocks.tagRepo.upsertTag).mockResolvedValue(tag);
+
+      await scanner.scan({ mediaSourceId: msId });
+
+      expect(
+        mocks.externalCollectionsRepo.getCollectionByExternalId,
+      ).toHaveBeenCalledWith(msId, collection.externalId);
+      expect(
+        mocks.externalCollectionsRepo.insertCollection,
+      ).toHaveBeenCalledOnce();
+    });
+
+    it('does not delete a media-source-wide row that another library still owns (issue #1975)', async () => {
+      const msId = makeMediaSourceId();
+      const moviesLibrary = makeLibrary(msId, {
+        uuid: 'movies-lib',
+        externalKey: 'lib-movies',
+      });
+      const tvLibrary = makeLibrary(msId, {
+        uuid: 'tv-lib',
+        externalKey: 'lib-tv',
+      });
+      const mediaSource = makeMediaSource([moviesLibrary, tvLibrary], {
+        uuid: msId,
+      });
+      const tag = makeTag('Family BoxSet');
+
+      // Movies scan has discovered the collection; the row's libraryId has
+      // since been repointed at TV by the reuse branch in a prior scan, so
+      // it no longer belongs to the Movies library in our local cache.
+      const staleRow = makeExternalCollection({
+        uuid: 'family-row',
+        externalKey: 'family-ext',
+        libraryId: tvLibrary.uuid, // no longer points at moviesLibrary
+        mediaSourceId: msId,
+        title: 'Family BoxSet',
+      });
+
+      vi.mocked(mocks.mediaSourceDB.getById).mockResolvedValue(mediaSource);
+      vi.mocked(mocks.externalCollectionsRepo.getByLibraryId).mockResolvedValue(
+        [staleRow],
+      );
+      // Movies library no longer returns the collection; TV library still does.
+      const collectionFromTv = makeCollection({
+        externalId: 'family-ext',
+        libraryId: tvLibrary.uuid,
+        mediaSourceId: msId,
+        title: 'Family BoxSet',
+      });
+      scanner.getAllLibraryCollections.mockImplementation(
+        (_client, libraryKey) => {
+          if (libraryKey === tvLibrary.externalKey) {
+            return asyncOf(collectionFromTv);
+          }
+          return asyncOf();
+        },
+      );
+      scanner.getCollectionItems.mockReturnValue(asyncOf());
+      vi.mocked(mocks.tagRepo.upsertTag).mockResolvedValue(tag);
+
+      await scanner.scan({ mediaSourceId: msId });
+
+      // The row was missing from this library's API response, but its
+      // libraryId no longer matches the current library — it was repointed
+      // to TV. The cleanup pass must NOT delete it because TV still owns it.
+      expect(
+        mocks.externalCollectionsRepo.deleteCollection,
+      ).not.toHaveBeenCalled();
     });
   });
 
