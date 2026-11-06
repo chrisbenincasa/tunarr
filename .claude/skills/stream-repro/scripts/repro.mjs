@@ -344,9 +344,17 @@ async function buildSyntheticChannel(base, clipsDir) {
     180_000,
     1500,
   );
-  const programs = (
-    await api(base, 'GET', `/api/media-libraries/${source.libraries[0].id}/programs`)
-  ).sort((a, b) => String(a.program?.title).localeCompare(String(b.program?.title)));
+  const programs = [];
+  for (;;) {
+    const page = await api(
+      base,
+      'GET',
+      `/api/media-libraries/${source.libraries[0].id}/programs?offset=${programs.length}`,
+    );
+    programs.push(...page.result);
+    if (page.result.length === 0 || programs.length >= page.total) break;
+  }
+  programs.sort((a, b) => String(a.program?.title).localeCompare(String(b.program?.title)));
   if (programs.length === 0) throw new Error('scan finished but found no programs');
 
   const configs = await api(base, 'GET', '/api/transcode_configs');
