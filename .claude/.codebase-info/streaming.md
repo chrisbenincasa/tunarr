@@ -1,6 +1,6 @@
 # Streaming
 
-*Last Updated: 2026-10-13*
+*Last Updated: 2026-11-06*
 
 Streaming code is organized by session type, not by media source. Source-specific behavior lives
 in stream details fetchers and play-status plugins.
@@ -35,7 +35,12 @@ api/streamApi.ts
   leftover `stream_<uuid>[_<uuid>]` HLS directories and `etv_<uuid>[_<uuid>]` ErsatzTV next
   worker workspaces before the server listens.
 - Playlists: `stream/hls/HlsPlaylistCreator.ts`, `HlsPlaylistMutator.ts`,
-  `HlsMasterPlaylistMutator.ts`.
+  `HlsMasterPlaylistMutator.ts`. ffmpeg appends every segment to `stream.m3u8`
+  (`append_list`, `-hls_list_size 0`). Each request serves the newest 20.
+  `HlsSession.compactPlaylist` (`stream/hls/compactHlsPlaylist.ts`) cuts the file back to the last
+  served window between ffmpeg runs. It carries the playlist start time, the subtitle cue
+  offset, and the dropped discontinuity count forward. It never writes while ffmpeg runs, because
+  ffmpeg rewrites the whole file after each segment.
 - Viewer tracking: `stream/ConnectionTracker.ts`. Rate control: `stream/StreamThrottler.ts`.
 - Subtitles: `stream/ExternalSubtitleDownloader.ts`, `ffmpeg/SubtitleStreamPicker.ts`.
 - Stream selection (audio/subtitle language rules): `ffmpeg/StreamSelector.ts`,
