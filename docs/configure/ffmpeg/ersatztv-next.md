@@ -64,7 +64,7 @@ through untouched.
 
 The channel's stream selection profile picks the audio and subtitle tracks, the same way it does on Tunarr's own pipeline. Tunarr tells the worker which tracks to play for each program.
 
-- **Subtitles** play only when the channel has subtitles turned on.
+- **Subtitles** play only when the profile's matched rule selects one.
 - **Image subtitles** (PGS, DVD) are always burned into the picture.
 - **Text subtitles** depend on the sidecar subtitles feature in **Settings > Features**. With it on, they become a WebVTT track that players can toggle. With it off, they are burned in, but only when they come from a separate file. Text subtitles embedded in the media file are skipped.
 - **A file with no audio** plays with silence, so the channel keeps its audio track.

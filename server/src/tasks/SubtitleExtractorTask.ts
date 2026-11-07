@@ -1,6 +1,5 @@
 import { seq } from '@tunarr/shared/util';
-import type { ContentGuideProgram } from '@tunarr/types';
-import { tag } from '@tunarr/types';
+import { StreamSelectionProfileResolver } from '../services/StreamSelectionProfileResolver.ts';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { isUndefined } from 'lodash-es';
@@ -11,7 +10,9 @@ import { Transform } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import { tmpName } from 'tmp-promise';
 import z from 'zod';
+import type { Lineup } from '../db/derived_types/Lineup.ts';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
+import type { IFillerListDB } from '../db/interfaces/IFillerListDB.ts';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
@@ -112,6 +113,9 @@ export class SubtitleExtractorTask extends Task2<
     private externalSubtitleDownloader: ExternalSubtitleDownloader,
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
+    @inject(StreamSelectionProfileResolver)
+    private profileResolver: StreamSelectionProfileResolver,
+    @inject(KEYS.FillerListDB) private fillerListDB: IFillerListDB,
   ) {
     super();
   }
@@ -140,26 +144,56 @@ export class SubtitleExtractorTask extends Task2<
     // On the first run we may have to block if the guide is updating.
     await this.guideService.get();
 
-    const channelIds = (await this.channelDB.getAllChannels())
-      .filter((channel) => channel.subtitlesEnabled)
-      .map((channel) => channel.uuid);
-
-    if (channelIds.length === 0) {
+    if (!(await this.profileResolver.anyProfileMayPickSubtitles())) {
       this.logger.trace(
-        'Skipping subtitle extraction because no channel has subtitles enabled',
+        'Skipping subtitle extraction because no stream selection profile selects subtitles',
       );
       return;
     }
 
     const nextHourGuide = await this.guideService.getChannelGuides(
       OpenDateTimeRange.create(now, now.add(filter.durationMs))!,
-      channelIds,
     );
     const mediaSources = await this.mediaSourceDB.getAll();
 
-    for (const { programs } of nextHourGuide) {
+    for (const { id: channelId, programs } of nextHourGuide) {
+      // Program and custom show profiles can select subtitles on a channel
+      // whose own profile never does, so each program resolves its own chain.
+      // The guide drops custom show IDs, so they come from the lineup.
+      let lineup: Lineup | undefined;
       for (const program of programs) {
         if (program.type !== 'content') {
+          continue;
+        }
+
+        // Extraction is per program, so one airing whose chain selects
+        // subtitles is enough. A program can air both in and out of a custom
+        // show on the same channel.
+        lineup ??= await this.channelDB.loadLineup(channelId);
+        const customShowIds = new Set<string | undefined>();
+        for (const item of lineup.items) {
+          if (item.type === 'content' && item.id === program.id) {
+            customShowIds.add(item.customShowId);
+          }
+        }
+        if (customShowIds.size === 0) {
+          customShowIds.add(undefined);
+        }
+
+        let mayPickSubtitles = false;
+        for (const customShowId of customShowIds) {
+          if (
+            await this.profileResolver.mayPickSubtitles({
+              channelId,
+              programId: program.id,
+              customShowId,
+            })
+          ) {
+            mayPickSubtitles = true;
+            break;
+          }
+        }
+        if (!mayPickSubtitles) {
           continue;
         }
 
@@ -171,17 +205,73 @@ export class SubtitleExtractorTask extends Task2<
           continue;
         }
 
-        const result = await Result.attemptAsync(() =>
-          this.handleProgram(program, mediaSource),
-        );
-        if (result.isFailure()) {
-          this.logger.warn(
-            result.error,
-            'Failed to extract subtitles for program %s',
-            program.id,
-          );
-        }
+        await this.tryHandleProgram(program.id, mediaSource);
       }
+    }
+
+    await this.handleFillerLists(
+      mediaSources,
+      nextHourGuide.map(({ id }) => id),
+    );
+  }
+
+  /**
+   * Filler plays when a slot needs it, so the guide can't say which filler
+   * program comes next. Every program in a list that may get a subtitle on
+   * some channel is prepared instead. Programs with every embedded text subtitle
+   * already cached are skipped without fetching stream details.
+   */
+  private async handleFillerLists(
+    mediaSources: MediaSourceWithRelations[],
+    channelIds: string[],
+  ) {
+    const seen = new Set<string>();
+    for (const fillerListId of await this.fillerListDB.getAllFillerIds()) {
+      if (
+        !(await this.profileResolver.fillerListMayPickSubtitles(
+          fillerListId,
+          channelIds,
+        ))
+      ) {
+        continue;
+      }
+
+      for (const program of await this.fillerListDB.getFillerPrograms(
+        fillerListId,
+      )) {
+        if (seen.has(program.uuid)) {
+          continue;
+        }
+        seen.add(program.uuid);
+
+        const mediaSource = mediaSources.find(
+          (ms) => ms.uuid === program.mediaSourceId,
+        );
+        if (!mediaSource) {
+          continue;
+        }
+
+        await this.tryHandleProgram(program.uuid, mediaSource, {
+          skipWhenCached: true,
+        });
+      }
+    }
+  }
+
+  private async tryHandleProgram(
+    programId: string,
+    mediaSource: MediaSourceWithRelations,
+    opts: { skipWhenCached?: boolean } = {},
+  ) {
+    const result = await Result.attemptAsync(() =>
+      this.handleProgram(programId, mediaSource, opts),
+    );
+    if (result.isFailure()) {
+      this.logger.warn(
+        result.error,
+        'Failed to extract subtitles for program %s',
+        programId,
+      );
     }
   }
 
@@ -322,10 +412,11 @@ export class SubtitleExtractorTask extends Task2<
   }
 
   private async handleProgram(
-    program: ContentGuideProgram,
+    programId: string,
     mediaSource: MediaSourceWithRelations,
+    opts: { skipWhenCached?: boolean } = {},
   ) {
-    const dbProgram = await this.programDB.getProgramById(program.id);
+    const dbProgram = await this.programDB.getProgramById(programId);
     if (!dbProgram) {
       return;
     }
@@ -337,8 +428,15 @@ export class SubtitleExtractorTask extends Task2<
     if (!this.settingsDB.ffmpegSettings().enableSubtitleExtraction) {
       this.logger.trace(
         'Subtitle extraction is not enabled, skipping extraction for program %s',
-        program.id,
+        dbProgram.uuid,
       );
+      return;
+    }
+
+    if (
+      opts.skipWhenCached &&
+      (await this.embeddedTextSubtitlesCached(dbProgram, mediaSource))
+    ) {
       return;
     }
 
@@ -362,15 +460,11 @@ export class SubtitleExtractorTask extends Task2<
     const ffmpegSetting = this.settingsDB.ffmpegSettings();
 
     if (textBasedSubs.length === 0) {
-      this.logger.debug('No text-based subtitles for ID: %s', program.id);
+      this.logger.debug('No text-based subtitles for ID: %s', dbProgram.uuid);
       return;
     }
 
-    const cacheFolder = path.join(
-      this.globalOptions.databaseDirectory,
-      CacheFolderName,
-      SubtitlesCacheFolderName,
-    );
+    const cacheFolder = this.subtitleCacheFolder();
 
     // This should've been created on startup but double-check
     if (!(await fileExists(cacheFolder))) {
@@ -384,33 +478,28 @@ export class SubtitleExtractorTask extends Task2<
             return;
           }
 
-          const filePath = getSubtitleCacheFilePath(
-            {
-              externalKey: program.program.externalId,
-              externalSourceId: tag(program.program.mediaSourceId),
-              externalSourceType: program.program.sourceType,
-              id: program.id,
-            },
-            { streamIndex: subtitle.index, codec: subtitle.codec },
+          const fullPath = this.subtitleCachePath(
+            dbProgram,
+            mediaSource,
+            subtitle.index,
+            subtitle.codec,
           );
-          if (!filePath) {
+          if (!fullPath) {
             return;
           }
-
-          const fullPath = path.join(cacheFolder, filePath);
 
           if (!(await fileExists(fullPath))) {
             return {
               subtitle,
               outPath: fullPath,
-              tmpPath: await tmpName({ postfix: extname(filePath) }),
+              tmpPath: await tmpName({ postfix: extname(fullPath) }),
             };
           }
           this.logger.trace(
             'Skipping existing subtitle extraction (stream index = %d) path for program %s (%s). File already exists: %s',
             subtitle.index,
-            program.id,
-            program.program.title,
+            dbProgram.uuid,
+            dbProgram.title,
             fullPath,
           );
           return;
@@ -440,7 +529,7 @@ export class SubtitleExtractorTask extends Task2<
     if (subtitlesToSave.length === 0) {
       this.logger.trace(
         'No subtitles to extract for program ID = %s',
-        program.id,
+        dbProgram.uuid,
       );
       return;
     }
@@ -500,5 +589,62 @@ export class SubtitleExtractorTask extends Task2<
         this.logger.warn(result.reason, 'Failed to copy tmp subtitles');
       }
     }
+  }
+  private subtitleCacheFolder() {
+    return path.join(
+      this.globalOptions.databaseDirectory,
+      CacheFolderName,
+      SubtitlesCacheFolderName,
+    );
+  }
+
+  private subtitleCachePath(
+    dbProgram: ProgramWithRelationsOrm,
+    mediaSource: MediaSourceWithRelations,
+    streamIndex: number,
+    codec: string,
+  ): string | undefined {
+    const filePath = getSubtitleCacheFilePath(
+      {
+        externalKey: dbProgram.externalKey,
+        externalSourceId: mediaSource.uuid,
+        externalSourceType: dbProgram.sourceType,
+        id: dbProgram.uuid,
+      },
+      { streamIndex, codec },
+    );
+    return filePath
+      ? path.join(this.subtitleCacheFolder(), filePath)
+      : undefined;
+  }
+
+  // Relies on the subtitle rows saved at scan time. A program with no rows may
+  // predate subtitle scanning, so its stream details are fetched to be sure.
+  private async embeddedTextSubtitlesCached(
+    dbProgram: ProgramWithRelationsOrm,
+    mediaSource: MediaSourceWithRelations,
+  ) {
+    if (!dbProgram.subtitles?.length) {
+      return false;
+    }
+    for (const subtitle of dbProgram.subtitles ?? []) {
+      if (
+        subtitle.subtitleType !== 'embedded' ||
+        subtitle.streamIndex === null ||
+        isImageBasedSubtitle(subtitle.codec)
+      ) {
+        continue;
+      }
+      const cachePath = this.subtitleCachePath(
+        dbProgram,
+        mediaSource,
+        subtitle.streamIndex,
+        subtitle.codec,
+      );
+      if (cachePath && !(await fileExists(cachePath))) {
+        return false;
+      }
+    }
+    return true;
   }
 }

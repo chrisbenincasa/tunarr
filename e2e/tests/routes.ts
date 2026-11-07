@@ -39,6 +39,17 @@ export const ROUTES: Record<string, RouteTarget> = {
   '/settings/ffmpeg/$configId': (ids) => [
     `/settings/ffmpeg/${ids.transcodeConfigId}`,
   ],
+  '/profiles/transcode': () => ['/profiles/transcode'],
+  '/profiles/transcode/new': () => ['/profiles/transcode/new'],
+  '/profiles/transcode/$configId': (ids) => [
+    `/profiles/transcode/${ids.transcodeConfigId}`,
+  ],
+  '/profiles/stream-selection': () => ['/profiles/stream-selection'],
+  '/profiles/stream-selection/new': () => ['/profiles/stream-selection/new'],
+  // The built-in profile is seeded by migration, so every server has it.
+  '/profiles/stream-selection/$profileId': () => [
+    '/profiles/stream-selection/00000000-0000-4000-8000-000000000001',
+  ],
   '/settings/general': () => ['/settings/general'],
   '/settings/hdhr': () => ['/settings/hdhr'],
   '/settings/scanner': () => ['/settings/scanner'],
