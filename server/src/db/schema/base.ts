@@ -111,7 +111,7 @@ export type ChannelWatermark = z.infer<typeof ChannelWatermarkSchema>;
 export const ChannelOfflineSettingsSchema = z.object({
   picture: z.string().optional(),
   soundtrack: z.string().optional(),
-  mode: z.enum(['pic', 'clip']).catch('clip'),
+  mode: z.enum(['pic', 'clip']).catch('pic'),
 });
 
 export type ChannelOfflineSettings = z.infer<

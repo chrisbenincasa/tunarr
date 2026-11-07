@@ -98,6 +98,7 @@ function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
     useEtvNext: channel.useEtvNext,
     subtitlePreferences: channel.subtitlePreferences ?? [],
     streamSelectionProfileId: channel.streamSelectionProfileId ?? null,
+    fallbackProgramId: channel.fallbackProgramId ?? null,
   };
 }
 
@@ -110,7 +111,12 @@ const EditChannelTabsProps: EditChannelTabProps[] = [
   {
     value: 'flex',
     description: 'Flex',
-    fields: ['offline', 'fillerCollections', 'fillerRepeatCooldown'],
+    fields: [
+      'offline',
+      'fallbackProgramId',
+      'fillerCollections',
+      'fillerRepeatCooldown',
+    ],
   },
   {
     value: 'epg',
@@ -218,6 +224,11 @@ export function EditChannelForm({
           }
         : undefined,
       subtitlePreferences: preferences as NonEmptyArray<SubtitlePreference>,
+      // Omitted leaves the saved clip alone, so a channel loaded without one
+      // can't clear it by accident.
+      fallbackProgramId: formMethods.formState.dirtyFields.fallbackProgramId
+        ? data.fallbackProgramId
+        : undefined,
     } satisfies SaveableChannel;
 
     if (isNew) {

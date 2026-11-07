@@ -19,6 +19,7 @@ import { isDefined, isNonEmptyString } from '../../util/index.ts';
 import type { ChannelAndLineup } from '../interfaces/IChannelDB.ts';
 import type { NewChannelOrm } from '../schema/Channel.ts';
 import { Channel } from '../schema/Channel.ts';
+import { ChannelFallback } from '../schema/ChannelFallback.ts';
 import { ChannelFillerShow } from '../schema/ChannelFillerShow.ts';
 import { ChannelPrograms } from '../schema/ChannelPrograms.ts';
 import type { DB } from '../schema/db.ts';
@@ -177,6 +178,15 @@ export class BasicChannelRepository {
         tx.insert(ChannelSubtitlePreferences).values(subtitlePreferences).run();
       }
 
+      if (isNonEmptyString(createReq.fallbackProgramId)) {
+        tx.insert(ChannelFallback)
+          .values({
+            channelUuid: channel.uuid,
+            programUuid: createReq.fallbackProgramId,
+          })
+          .run();
+      }
+
       return {
         ...channel,
         fillerShows: filler,
@@ -265,6 +275,21 @@ export class BasicChannelRepository {
         .run();
       if (subtitlePreferences) {
         tx.insert(ChannelSubtitlePreferences).values(subtitlePreferences).run();
+      }
+
+      // A channel has at most one fallback, so replace rather than add.
+      if (updateReq.fallbackProgramId !== undefined) {
+        tx.delete(ChannelFallback)
+          .where(eq(ChannelFallback.channelUuid, channel.uuid))
+          .run();
+        if (isNonEmptyString(updateReq.fallbackProgramId)) {
+          tx.insert(ChannelFallback)
+            .values({
+              channelUuid: channel.uuid,
+              programUuid: updateReq.fallbackProgramId,
+            })
+            .run();
+        }
       }
     });
 
@@ -389,6 +414,18 @@ export class BasicChannelRepository {
             })
             .from(ChannelPrograms)
             .where(eq(ChannelPrograms.channelUuid, channel.uuid)),
+        )
+        .run();
+
+      tx.insert(ChannelFallback)
+        .select(
+          tx
+            .select({
+              channelUuid: sql<string>`${newChannelId}`.as('channelUuid'),
+              programUuid: ChannelFallback.programUuid,
+            })
+            .from(ChannelFallback)
+            .where(eq(ChannelFallback.channelUuid, channel.uuid)),
         )
         .run();
 

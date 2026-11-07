@@ -45,6 +45,7 @@ import { RouterLink } from '../base/RouterLink.tsx';
 import { FileUploadInput } from '../settings/FileUploadInput.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import { NumericFormController } from '../util/TypedController.tsx';
+import { ChannelFallbackClipInput } from './ChannelFallbackClipInput.tsx';
 
 export function ChannelFlexConfig() {
   const { t } = useLingui();
@@ -424,6 +425,7 @@ export function ChannelFlexConfig() {
               <Controller
                 name="offline.mode"
                 control={control}
+                rules={{ deps: ['fallbackProgramId'] }}
                 render={({ field }) => (
                   <FormControl fullWidth sx={{ mb: 1 }}>
                     <InputLabel>{t`Fallback Mode`}</InputLabel>
@@ -431,52 +433,58 @@ export function ChannelFlexConfig() {
                       <MenuItem value={'pic'}>
                         <Trans>Image</Trans>
                       </MenuItem>
-                      <MenuItem disabled value={'clip'}>
-                        <Trans>Library Clip (not yet implemented)</Trans>
+                      <MenuItem value={'clip'}>
+                        <Trans>Library Clip</Trans>
                       </MenuItem>
                     </Select>
                   </FormControl>
                 )}
               />
-              <Controller
-                name="offline.picture"
-                control={control}
-                render={({ field }) => (
-                  <ImageUploadInput
-                    // TODO: This should be something like {channel.id}_fallback_picture.ext
-                    fileRenamer={typedProperty('name')}
-                    label={t`Image URL`}
-                    onFormValueChange={(newPath) => {
-                      field.onChange(newPath);
-                    }}
-                    onUploadError={console.error}
-                    FormControlProps={{ fullWidth: true, sx: { mb: 1 } }}
-                    value={field.value ?? ''}
+              {offlineMode === 'clip' ? (
+                <ChannelFallbackClipInput />
+              ) : (
+                <>
+                  <Controller
+                    name="offline.picture"
+                    control={control}
+                    render={({ field }) => (
+                      <ImageUploadInput
+                        // TODO: This should be something like {channel.id}_fallback_picture.ext
+                        fileRenamer={typedProperty('name')}
+                        label={t`Image URL`}
+                        onFormValueChange={(newPath) => {
+                          field.onChange(newPath);
+                        }}
+                        onUploadError={console.error}
+                        FormControlProps={{ fullWidth: true, sx: { mb: 1 } }}
+                        value={field.value ?? ''}
+                      />
+                    )}
                   />
-                )}
-              />
-              <Controller
-                name="offline.soundtrack"
-                control={control}
-                render={({ field }) => (
-                  <FileUploadInput
-                    accept="audio/*"
-                    upload={uploadSoundtrack}
-                    label={t`Soundtrack`}
-                    onFormValueChange={field.onChange}
-                    onUploadError={console.error}
-                    FormControlProps={{ fullWidth: true }}
-                    value={field.value ?? ''}
-                  >
-                    <FormHelperText>
-                      <Trans>
-                        Audio file path or URL. It loops for as long as the
-                        fallback plays.
-                      </Trans>
-                    </FormHelperText>
-                  </FileUploadInput>
-                )}
-              />
+                  <Controller
+                    name="offline.soundtrack"
+                    control={control}
+                    render={({ field }) => (
+                      <FileUploadInput
+                        accept="audio/*"
+                        upload={uploadSoundtrack}
+                        label={t`Soundtrack`}
+                        onFormValueChange={field.onChange}
+                        onUploadError={console.error}
+                        FormControlProps={{ fullWidth: true }}
+                        value={field.value ?? ''}
+                      >
+                        <FormHelperText>
+                          <Trans>
+                            Audio file path or URL. It loops for as long as the
+                            fallback plays.
+                          </Trans>
+                        </FormHelperText>
+                      </FileUploadInput>
+                    )}
+                  />
+                </>
+              )}
             </Stack>
           </Stack>
         </Box>

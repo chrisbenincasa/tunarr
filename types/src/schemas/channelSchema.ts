@@ -1,7 +1,6 @@
 import z from 'zod/v4';
 import type { TupleToUnion } from '../util.js';
 import { ResolutionSchema } from './miscSchemas.js';
-import { ProgramSchema } from './programmingSchema.js';
 import { SubtitlePreference } from './subtitleSchema.js';
 import {
   ChannelIconSchema,
@@ -185,7 +184,6 @@ export const ChannelSessionSchema = z.object({
 export const ChannelSchema = z.object({
   disableFillerOverlay: z.boolean(),
   duration: z.number(),
-  fallback: z.array(ProgramSchema).optional(),
   fillerCollections: z.array(FillerCollectionSchema).optional(),
   fillerRepeatCooldown: z.number().optional(),
   groupTitle: z.string(),
@@ -224,13 +222,17 @@ export const ChannelSchema = z.object({
   subtitlePreferences: z.array(SubtitlePreference).nonempty().optional(),
   // The channel's stream selection profile. null means the default profile.
   streamSelectionProfileId: z.uuid().nullable(),
+
+  // The program that plays during flex when the offline mode is 'clip' and no
+  // filler is eligible. Only single-channel responses carry it. On save,
+  // omitted leaves it unchanged and null clears it.
+  fallbackProgramId: z.uuid().nullable().optional(),
 });
 
 // The write path validates strictly: a bad icon or watermark value is a 400,
 // not a 200 that stored something else. The read path (ChannelSchema, used on
 // channel responses) stays lenient so existing rows still serialize.
 export const SaveableChannelSchema = ChannelSchema.omit({
-  fallback: true, // Figure out how to update this
   programCount: true,
   transcoding: true,
   sessions: true,
