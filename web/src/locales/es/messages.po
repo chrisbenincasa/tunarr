@@ -4970,7 +4970,11 @@ msgid "The media server stopped reporting this library on {since}. Its programs 
 msgstr ""
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
-msgid "The rules changed since this test ran. Run it again."
+#~ msgid "The rules changed since this test ran. Run it again."
+#~ msgstr ""
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "The rules, program, or channel changed since this test ran. Run it again."
 msgstr ""
 
 #: src/components/LanguagePreferencesList.tsx

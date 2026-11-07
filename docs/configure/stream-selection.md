@@ -141,7 +141,7 @@ The **Test** panel at the bottom of the profile editor runs the rules you are ed
 2. Optionally pick a channel, which supplies `channel.name` and `channel.number` to conditions.
 3. Click **Run**.
 
-The panel shows whether each rule's condition matched, highlights the rule that would apply, and lists the audio and subtitle tracks it would pick. Conditions that don't parse are flagged. If you edit the rules after a run, the panel marks the result as out of date.
+The panel shows whether each rule's condition matched, highlights the rule that would apply, and lists the audio and subtitle tracks it would pick. Conditions that don't parse are flagged. If you change the rules, the program, or the channel after a run, the panel marks the result as out of date.
 
 The test checks only the profile you are editing. If no rule matches, it says so; during playback, Tunarr would move on to the next profile (see [Where profiles apply](#where-profiles-apply)). To see the whole chain for a program on a channel, use the panel's Troubleshoot link.
 

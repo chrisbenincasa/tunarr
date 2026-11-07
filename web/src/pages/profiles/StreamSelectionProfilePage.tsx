@@ -398,7 +398,7 @@ export function StreamSelectionProfilePage({ isNew }: Props) {
         <Box sx={{ mt: 3 }}>
           <StreamSelectionPreviewPanel
             getRules={() => formValuesToBody(methods.getValues()).rules}
-            canRun={isValid}
+            validateRules={() => methods.trigger('rules')}
           />
         </Box>
       </FormProvider>

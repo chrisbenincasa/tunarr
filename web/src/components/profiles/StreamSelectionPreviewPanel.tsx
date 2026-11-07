@@ -69,11 +69,21 @@ const usePreviewTarget = create<{
 type Props = {
   // Returns the rules exactly as a save would send them.
   getRules: () => PreviewRules;
-  // False while the rules fail form validation, which the API would reject.
-  canRun: boolean;
+  // Validates only the rules, so other fields such as the profile name don't
+  // block a test. Resolves false when a rule has errors.
+  validateRules: () => Promise<boolean>;
 };
 
-export function StreamSelectionPreviewPanel({ getRules, canRun }: Props) {
+type RunTarget = {
+  rules: string;
+  programId: string;
+  channelId: string;
+};
+
+export function StreamSelectionPreviewPanel({
+  getRules,
+  validateRules,
+}: Props) {
   const { program, channelId, setProgram, setChannelId } = usePreviewTarget();
   const [searchQuery, setSearchQuery] = useState<SearchRequest>({
     query: '',
@@ -82,8 +92,9 @@ export function StreamSelectionPreviewPanel({ getRules, canRun }: Props) {
   });
   const { data: channels } = useQuery(getChannelsOptions());
 
-  // Serialized form rules at the time of the last run, to flag stale results.
-  const [rulesAtRun, setRulesAtRun] = useState<string | null>(null);
+  // What the last run tested, to flag a result whose inputs have changed.
+  const [runTarget, setRunTarget] = useState<RunTarget | null>(null);
+  const [rulesInvalid, setRulesInvalid] = useState(false);
   const currentRules = JSON.stringify(
     useWatch<StreamSelectionProfileFormValues, 'rules'>({ name: 'rules' }),
   );
@@ -106,11 +117,16 @@ export function StreamSelectionPreviewPanel({ getRules, canRun }: Props) {
     [],
   );
 
-  const handleRun = () => {
+  const handleRun = async () => {
     if (!program) {
       return;
     }
-    setRulesAtRun(currentRules);
+    const valid = await validateRules();
+    setRulesInvalid(!valid);
+    if (!valid) {
+      return;
+    }
+    setRunTarget({ rules: currentRules, programId: program.uuid, channelId });
     previewMutation.mutate({
       rules: getRules(),
       programId: program.uuid,
@@ -119,8 +135,12 @@ export function StreamSelectionPreviewPanel({ getRules, canRun }: Props) {
   };
 
   const result = previewMutation.data;
-  const selectedChannel = channels?.find((ch) => ch.id === channelId);
-  const isStale = result !== undefined && rulesAtRun !== currentRules;
+  const isStale =
+    result !== undefined &&
+    runTarget !== null &&
+    (runTarget.rules !== currentRules ||
+      runTarget.programId !== program?.uuid ||
+      runTarget.channelId !== channelId);
 
   return (
     <Accordion disableGutters sx={{ mb: 2 }}>
@@ -189,14 +209,14 @@ export function StreamSelectionPreviewPanel({ getRules, canRun }: Props) {
                   <PlayArrow />
                 )
               }
-              disabled={!program || !canRun || previewMutation.isPending}
-              onClick={handleRun}
+              disabled={!program || previewMutation.isPending}
+              onClick={() => void handleRun()}
             >
               <Trans>Run</Trans>
             </Button>
           </Box>
 
-          {!canRun && (
+          {rulesInvalid && (
             <Typography variant="body2" color="text.secondary">
               <Trans>Fix the errors in the rules above to run a test.</Trans>
             </Typography>
@@ -216,8 +236,8 @@ export function StreamSelectionPreviewPanel({ getRules, canRun }: Props) {
               troubleshootLink={
                 <TroubleshootLink
                   programId={result.program.uuid}
-                  channelId={selectedChannel?.id}
-                  channelName={selectedChannel?.name}
+                  channelId={result.channel?.uuid}
+                  channelName={result.channel?.name}
                 />
               }
             />
@@ -243,7 +263,10 @@ function PreviewResults({
     <Stack spacing={2}>
       {isStale && (
         <Alert severity="warning">
-          <Trans>The rules changed since this test ran. Run it again.</Trans>
+          <Trans>
+            The rules, program, or channel changed since this test ran. Run it
+            again.
+          </Trans>
         </Alert>
       )}
 

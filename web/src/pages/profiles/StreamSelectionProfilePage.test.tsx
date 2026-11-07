@@ -1,4 +1,5 @@
 import type { GetApiStreamSelectionProfilesByIdResponse } from '@/generated/types.gen';
+import type { TerminalProgram } from '@tunarr/types';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type * as Sdk from '../../generated/sdk.gen.ts';
 
@@ -14,6 +15,8 @@ vi.mock('@tanstack/react-router', async () => ({
 
 const sdk = vi.hoisted(() => ({
   profile: undefined as Profile | undefined,
+  searchResult: undefined as TerminalProgram | undefined,
+  preview: vi.fn(),
   putProfile: vi.fn(),
   postProfile: vi.fn((_opts: unknown) =>
     Promise.resolve({ data: { uuid: 'created-1' } }),
@@ -29,6 +32,23 @@ vi.mock('../../generated/sdk.gen.ts', async (importOriginal) => ({
   postApiStreamSelectionProfiles: sdk.postProfile,
   postApiStreamSelectionProfilesValidateExpression: () =>
     Promise.resolve({ data: { valid: true } }),
+  postApiStreamSelectionProfilesPreview: sdk.preview,
+  getChannels: () => Promise.resolve({ data: [] }),
+}));
+
+vi.mock('../../components/ProgramSearchAutocomplete.tsx', () => ({
+  ProgramSearchAutocomplete: ({
+    onChange,
+  }: {
+    onChange: (program: TerminalProgram) => void;
+  }) => (
+    <button
+      type="button"
+      onClick={() => sdk.searchResult && onChange(sdk.searchResult)}
+    >
+      Pick program
+    </button>
+  ),
 }));
 
 const { renderWithProviders, screen, within } = await import(
@@ -37,6 +57,7 @@ const { renderWithProviders, screen, within } = await import(
 const { StreamSelectionProfilePage } = await import(
   './StreamSelectionProfilePage.tsx'
 );
+const { makeMovie } = await import('../../test/programFixtures.ts');
 
 const makeProfile = (overrides: Partial<Profile> = {}): Profile => ({
   uuid: 'anime',
@@ -144,5 +165,26 @@ describe('StreamSelectionProfilePage', () => {
         params: { profileId: 'created-1' },
       }),
     );
+  });
+
+  test('tests the rules of a new profile before it has a name', async () => {
+    sdk.searchResult = makeMovie({ uuid: 'movie-1', title: 'Akira' });
+    sdk.preview.mockReturnValue(new Promise(() => {}));
+    const { user } = renderWithProviders(<StreamSelectionProfilePage isNew />);
+
+    await user.click(screen.getByRole('button', { name: /^Test/ }));
+    await user.click(screen.getByRole('button', { name: 'Pick program' }));
+    await user.click(screen.getByRole('button', { name: 'Run' }));
+
+    await vi.waitFor(() =>
+      expect(sdk.preview).toHaveBeenCalledWith(
+        expect.objectContaining({
+          body: expect.objectContaining({ programId: 'movie-1' }),
+        }),
+      ),
+    );
+    expect(
+      screen.queryByText('Fix the errors in the rules above to run a test.'),
+    ).toBeNull();
   });
 });

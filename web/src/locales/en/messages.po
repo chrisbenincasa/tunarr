@@ -4972,8 +4972,12 @@ msgid "The media server stopped reporting this library on {since}. Its programs 
 msgstr "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
-msgid "The rules changed since this test ran. Run it again."
-msgstr "The rules changed since this test ran. Run it again."
+#~ msgid "The rules changed since this test ran. Run it again."
+#~ msgstr "The rules changed since this test ran. Run it again."
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "The rules, program, or channel changed since this test ran. Run it again."
+msgstr "The rules, program, or channel changed since this test ran. Run it again."
 
 #: src/components/LanguagePreferencesList.tsx
 #~ msgid "The selected languages will be considered in order they are selected."
