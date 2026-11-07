@@ -36,6 +36,7 @@ import {
   NumericFormControllerText,
 } from '../util/TypedController.tsx';
 import { StreamSelectionProfileSelect } from '../profiles/StreamSelectionProfileSelect.tsx';
+import { WatermarkTimingFields } from './WatermarkTimingFields.tsx';
 
 const watermarkPositionOptions: {
   value: Watermark['position'];
@@ -98,14 +99,12 @@ export default function ChannelTranscodingConfig() {
   const etvNextEnabledGlobally =
     featureFlags?.flags.ersatzTvNextEnabled === true;
 
-  const [watermark, transcodeConfigId, fadePeriod, streamMode, useEtvNext] =
-    watch([
-      'watermark',
-      'transcodeConfigId',
-      'watermark.fadeConfig.0.periodMins',
-      'streamMode',
-      'useEtvNext',
-    ]);
+  const [watermark, transcodeConfigId, streamMode, useEtvNext] = watch([
+    'watermark',
+    'transcodeConfigId',
+    'streamMode',
+    'useEtvNext',
+  ]);
 
   const transcodeConfig = useMemo(
     () => find(transcodeConfigs.data, (conf) => conf.id === transcodeConfigId)!,
@@ -305,7 +304,12 @@ export default function ChannelTranscodingConfig() {
           {watermark?.enabled &&
             streamMode !== 'hls_direct' &&
             streamMode !== 'hls_direct_v2' && (
-              <Stack direction="row" mt={2} gap={2} useFlexGap>
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                mt={2}
+                gap={2}
+                useFlexGap
+              >
                 <Stack sx={{ minWidth: '33%' }} spacing={2}>
                   <Box
                     sx={{
@@ -527,56 +531,7 @@ export default function ChannelTranscodingConfig() {
                       </FormHelperText>
                     </FormControl>
                   </Grid>
-
-                  <Grid size={{ xs: 12, lg: 6 }}>
-                    <NumericFormControllerText
-                      control={control}
-                      name="watermark.fadeConfig.0.periodMins"
-                      rules={{ min: 0 }}
-                      TextFieldProps={{
-                        label: 'Watermark Period (mins)',
-                        fullWidth: true,
-                        helperText:
-                          'Display/hide the watermark via a fade animation every N minutes. Set to 0 to disable.',
-                      }}
-                    />
-                  </Grid>
-                  {(fadePeriod ?? 0) > 0 && (
-                    <Grid size={{ xs: 12, lg: 6 }}>
-                      <FormControl fullWidth>
-                        <FormControlLabel
-                          control={
-                            <CheckboxFormController
-                              control={control}
-                              name="watermark.fadeConfig.0.leadingEdge"
-                            />
-                          }
-                          label={t`Display Watermark on Leading Edge`}
-                        />
-                        <FormHelperText>
-                          <Trans>
-                            When enabled, intermittent watermarks fade in
-                            immediately when a stream is initialized. When
-                            disabled, the first watermark fade-in occurs after a
-                            full period.
-                          </Trans>
-                        </FormHelperText>
-                      </FormControl>
-                    </Grid>
-                  )}
-                  <Grid size={{ xs: 12, lg: 6 }}>
-                    <NumericFormControllerText
-                      control={control}
-                      name="watermark.duration"
-                      rules={{ min: 0 }}
-                      TextFieldProps={{
-                        label: 'Total Watermark Duration (seconds)',
-                        fullWidth: true,
-                        helperText:
-                          "Sets the absolute duration of the watermark on the channel's stream. Set to 0 to make the overlay permantently visible.",
-                      }}
-                    />
-                  </Grid>
+                  <WatermarkTimingFields />
                 </Grid>
               </Stack>
             )}

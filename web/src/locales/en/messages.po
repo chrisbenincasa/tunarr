@@ -1371,6 +1371,10 @@ msgstr "Could not parse this filter expression. Check the <0>documentation</0> f
 msgid "Could not save setup progress. {message}"
 msgstr "Could not save setup progress. {message}"
 
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Counted from the start of each program. Set to 0 for no limit."
+msgstr "Counted from the start of each program. Set to 0 for no limit."
+
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 msgid "Create"
 msgstr "Create"
@@ -1689,7 +1693,7 @@ msgstr "Disabled"
 msgid "Dismiss"
 msgstr "Dismiss"
 
-#: src/components/channel_config/ChannelTranscodingConfig.tsx
+#: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Display Watermark on Leading Edge"
 msgstr "Display Watermark on Leading Edge"
 
@@ -2007,6 +2011,10 @@ msgstr "Enter a name for your Jellyfin Server"
 msgid "Enter a name for your Local Media Source"
 msgstr "Enter a name for your Local Media Source"
 
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Enter a number of minutes, 0 or more."
+msgstr "Enter a number of minutes, 0 or more."
+
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter your Emby password to generate a new access token."
 msgstr "Enter your Emby password to generate a new access token."
@@ -2165,6 +2173,14 @@ msgstr "Experimental: Make perfect schedule loop"
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "external"
 msgstr "external"
+
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Fade In and Out"
+msgstr "Fade In and Out"
+
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Fade Period (mins)"
+msgstr "Fade Period (mins)"
 
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Failed to load feature flags."
@@ -2572,9 +2588,17 @@ msgstr "Help and links"
 msgid "Hide Advanced"
 msgstr "Hide Advanced"
 
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Hide Watermark After (minutes)"
+msgstr "Hide Watermark After (minutes)"
+
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Hide watermark during filler"
 msgstr "Hide watermark during filler"
+
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Hides the watermark for the rest of each program once the limit is reached. This overrides the fade settings above."
+msgstr "Hides the watermark for the rest of each program once the limit is reached. This overrides the fade settings above."
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -4087,6 +4111,10 @@ msgstr "Removing overrun programs from the channel."
 msgid "Renders a channel icon (also known as bug or Digital On-screen Graphic) on top of the channel's stream."
 msgstr "Renders a channel icon (also known as bug or Digital On-screen Graphic) on top of the channel's stream."
 
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Repeatedly fades the watermark in and out while a program plays."
+msgstr "Repeatedly fades the watermark in and out while a program plays."
+
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "Repeats"
 msgstr "Repeats"
@@ -4995,6 +5023,10 @@ msgstr "The test could not be run."
 msgid "The type of media in the provided paths"
 msgstr "The type of media in the provided paths"
 
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "The watermark fades in, stays for this many minutes, then fades out for the same length. Set to 0 to keep it on screen without fading."
+msgstr "The watermark fades in, stays for this many minutes, then fades out for the same length. Set to 0 to keep it on screen without fading."
+
 #: src/components/settings/general/WebSettings.tsx
 msgid "Theme Settings"
 msgstr "Theme Settings"
@@ -5152,6 +5184,10 @@ msgstr "Time format"
 #: src/components/settings/general/WebSettings.tsx
 msgid "Time Format"
 msgstr "Time Format"
+
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Time Limit"
+msgstr "Time Limit"
 
 #: src/hooks/useRouteName.ts
 msgid "Time Slot Editor"
@@ -5626,7 +5662,7 @@ msgstr "Welcome to Tunarr!"
 msgid "What the ErsatzTV next worker recorded the last few times this channel failed to play an item. Attach it to a bug report."
 msgstr "What the ErsatzTV next worker recorded the last few times this channel failed to play an item. Attach it to a bug report."
 
-#: src/components/channel_config/ChannelTranscodingConfig.tsx
+#: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "When enabled, intermittent watermarks fade in immediately when a stream is initialized. When disabled, the first watermark fade-in occurs after a full period."
 msgstr "When enabled, intermittent watermarks fade in immediately when a stream is initialized. When disabled, the first watermark fade-in occurs after a full period."
 
