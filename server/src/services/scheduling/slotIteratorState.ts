@@ -33,6 +33,10 @@ export type ProgramIteratorSnapshot = z.infer<
 export const SlotIteratorStateSchema = z.object({
   iterators: z.record(z.string(), ProgramIteratorSnapshotSchema),
 
+  // All-rerun link groups only. How many of the group's slots have already
+  // aired the group's current program, keyed like `iterators`.
+  rerunPlays: z.record(z.string(), z.number().int().positive()).optional(),
+
   // Random slots only. The next slot for sequential distribution, and when
   // each slot last played, keyed by its index in the sorted slot list.
   nextSlotIndex: z.number().int().nonnegative().optional(),

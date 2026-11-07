@@ -142,7 +142,7 @@ export async function scheduleTimeSlots(
     schedule.slots,
     programMap,
     random,
-    cycle.iteratorState?.iterators,
+    cycle.iteratorState,
   );
 
   const periodDuration = dayjs.duration(1, schedule.period);
@@ -497,6 +497,6 @@ export async function scheduleTimeSlots(
     startTime: +t0,
     seed,
     discardCount: mt.getUseCount(),
-    iteratorState: { iterators: snapshotIterators() },
+    iteratorState: snapshotIterators(),
   };
 }
