@@ -1,6 +1,6 @@
 # Filler audio levels (#1023)
 
-> **Status (11/07/2026):** v1 built on branch `feat/flex-audio-volume`. It adds filler volume and filler loudnorm to the transcode config, legacy ffmpeg path only. §2 lists the gaps. §3 drafts the ErsatzTV next issue, which waits on Christian's review before filing. Next step is the PR.
+> **Status (11/07/2026):** v1 built on branch `feat/flex-audio-volume`. It adds filler volume and filler loudnorm to the transcode config, legacy ffmpeg path only. §2 lists the gaps. PR #2459 is open. The ErsatzTV next issue draft (§3.2) waits on Christian's review before filing.
 
 ## 1. What v1 does
 
@@ -31,34 +31,12 @@
 - `PlayoutItem` already carries per-item overrides, namely `watermark` and `graphics`.
 - Dynamic sources already call Tunarr once per item (`/api/etv/playout-item`). That gives a per-item callback for free, so the missing piece is the fields, not a new mechanism.
 
-### 3.2 Draft issue (for ErsatzTV/next)
+### 3.2 Draft issue
 
-Title: `feat: per-item audio overrides in the playout`
-
-> Tunarr lets users play filler (commercials, bumpers) at a different level than the main content on the same channel. Today loudness lives only in the channel config's `normalization.audio`, and there's no gain control at all, so a consumer can't vary audio level per item.
->
-> Proposal: an optional `audio` block on `PlayoutItem` that overrides the channel's audio normalization for that item only. Like `watermark` and `graphics`, it rides on the item, so dynamic sources can return it from the existing per-item callback.
->
-> ```json
-> {
->   "id": "abc",
->   "source": { "...": "..." },
->   "audio": {
->     "gain_db": -6.0,
->     "loudness": {
->       "integrated_target": -30,
->       "range_target": 7,
->       "true_peak": -2
->     }
->   }
-> }
-> ```
->
-> - `gain_db` applies on top of normalization. With loudnorm on, it could go through loudnorm's `offset` so the true-peak limiter still runs.
-> - `loudness` replaces the channel's targets for the item. `null` turns normalization off for the item. Leaving it out keeps the channel's.
-> - A channel-level `gain_db` in `normalization.audio` would let Tunarr map its existing volume setting too.
->
-> Starting with audio only. Is a general per-item override of `normalization` (deinterlace, subtitle mode) worth designing for now?
+- The draft lives in `etv-next-per-item-audio-issue-2026-11-07.md`, checked against the schema at `c5cb065`.
+- It proposes an optional `audio` block on `PlayoutItem`. The block reuses the channel's field names (`normalize_loudness`, `loudness`) and adds `gain_db`.
+- An omitted field keeps the channel's value, so `normalize_loudness: false` turns normalization off for one item.
+- Open questions are copy mode, a channel-level `gain_db`, and per-item overrides beyond audio.
 
 ### 3.3 Tunarr side once upstream lands
 
