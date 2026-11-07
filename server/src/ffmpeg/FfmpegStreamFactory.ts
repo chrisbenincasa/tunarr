@@ -476,6 +476,7 @@ export class FfmpegStreamFactory {
         streamDetails,
         subtitleRendition,
         isPassthrough,
+        audioCodecOverrides,
       ),
     };
   }
@@ -703,15 +704,11 @@ export class FfmpegStreamFactory {
     ).entries()) {
       if (isHls && audio.codec === AudioFormats.Flac) {
         const channels = audio.channels ?? 2;
-        if (channels > 6) {
-          throw new Error(
-            'HLS passthrough cannot convert FLAC with more than six channels to AC-3',
-          );
-        }
         overrides.push({
           outputIndex,
           codec: AudioFormats.Ac3,
           bitrateKbps: channels <= 2 ? 192 : 640,
+          channels: channels > 6 ? 6 : undefined,
         });
       } else if (
         audio.codec === AudioFormats.Dca ||
@@ -730,6 +727,7 @@ export class FfmpegStreamFactory {
     streamDetails: StreamDetails,
     subtitleRendition: SubtitleRenditionInfo | undefined,
     isPassthrough: boolean,
+    audioCodecOverrides: AudioCodecOverride[],
   ): StreamRenditions {
     // Transcode mode muxes only the selected audio track into the variant,
     // so there are no alternate audio renditions to advertise.
@@ -743,11 +741,12 @@ export class FfmpegStreamFactory {
       const defaultIndex = flaggedDefault === -1 ? 0 : flaggedDefault;
 
       audioDetails.forEach((audio, i) => {
+        const override = audioCodecOverrides.find((o) => o.outputIndex === i);
         audioRenditions.push({
           language: audio.languageCodeISO6392 ?? audio.language ?? 'und',
           languageName: audio.language,
           title: audio.title,
-          channels: audio.channels,
+          channels: override?.channels ?? audio.channels,
           default: i === defaultIndex,
         });
       });

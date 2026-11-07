@@ -724,14 +724,31 @@ describe('FfmpegStreamFactory', () => {
       },
     );
 
-    test('HLS passthrough rejects FLAC above the AC-3 channel limit', async () => {
-      const details = makeStreamDetails();
-      details.audioDetails = [
-        { codec: AudioFormats.Flac, channels: 8, index: 1 },
-      ];
-      const { sut } = createPassthroughSut({}, details);
-      await expect(
-        sut.createStreamSession({
+    test.each([true, false])(
+      'HLS advertises wide FLAC as 5.1 and preserves the source default (FLAC default: %s)',
+      async (flacDefault) => {
+        const details = makeStreamDetails();
+        details.audioDetails = [
+          {
+            codec: AudioFormats.Aac,
+            channels: 2,
+            index: 1,
+            default: !flacDefault,
+            language: 'eng',
+          },
+          {
+            codec: AudioFormats.Flac,
+            channels: 8,
+            index: 2,
+            default: flacDefault,
+            language: 'jpn',
+          },
+        ];
+        const { sut, getCapturedFfmpegState } = createPassthroughSut(
+          {},
+          details,
+        );
+        const result = await sut.createStreamSession({
           stream: {
             source: new HttpStreamSource('http://example.com/video.mkv'),
             details,
@@ -742,14 +759,24 @@ describe('FfmpegStreamFactory', () => {
             outputFormat: hlsDirectV2Format,
             ptsOffset: 0,
             realtime: true,
-            streamMode: 'hls',
+            streamMode: 'hls_direct_v2',
           },
           lineupItem: makeLineupItem(),
-        }),
-      ).rejects.toThrow(
-        'HLS passthrough cannot convert FLAC with more than six channels to AC-3',
-      );
-    });
+        });
+        expect(getCapturedFfmpegState()?.audioCodecOverrides).toEqual([
+          {
+            outputIndex: 1,
+            codec: AudioFormats.Ac3,
+            bitrateKbps: 640,
+            channels: 6,
+          },
+        ]);
+        expect(result?.renditions.audio).toMatchObject([
+          { language: 'eng', channels: 2, default: !flacDefault },
+          { language: 'jpn', channels: 6, default: flacDefault },
+        ]);
+      },
+    );
 
     test('passthrough uses source video dimensions for FrameState sizes', async () => {
       const details = makeStreamDetails();

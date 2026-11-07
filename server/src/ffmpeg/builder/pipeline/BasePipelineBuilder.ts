@@ -549,6 +549,12 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
           `${override.bitrateKbps}k`,
         );
       }
+      if (override.channels !== undefined) {
+        options.push(
+          `-ac:a:${override.outputIndex}`,
+          String(override.channels),
+        );
+      }
       this.pipelineSteps.push(makeConstantOutputOption(options));
     }
 
