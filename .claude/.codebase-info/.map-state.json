@@ -2,25 +2,27 @@
   "schemaVersion": 1,
   "tool": "codebase-mapper",
   "version": "2.15.10",
-  "mappedAt": "2026-11-04",
-  "gitCommit": "e4a1c5a9874cfd5042c208ff22b156b32967f158",
+  "mappedAt": "2026-11-07",
+  "gitCommit": "d22da9c19efaddd954dcf675dbfcf7c1e18d2ef2",
   "documents": [
     "architecture.md",
     "database.md",
     "entry-points.md",
+    "etv-next.md",
     "media-sources.md",
     "scheduling-and-lineups.md",
     "streaming.md",
     "testing.md"
   ],
   "hashes": {
-    "INDEX.md": "8097e23cb999140a2e08bd21c8d0cac1ebfafe4b10b8a7a9d57b89613d64cc39",
-    "architecture.md": "5fdc9cad903a6400c2b6d78d31cadfc10fde2b65d6aeeaafa7fc1010a5dcb18e",
+    "INDEX.md": "fb6185d91df15f5a74f7b1a0de19bec600d1fb7ec046c69173321f0bb5d92481",
+    "architecture.md": "90ba7b6e80e2a6392a67ea5af194688447daeab1dc23c46f7c5683deb29cb667",
     "database.md": "c9e51194ce6047f350dd217f367257b12c903fefb6e38a4c0fdc629484c96584",
-    "entry-points.md": "cae24797e14899038690d21e04d0de32eac6c1427429a299142baac2b59718bd",
+    "entry-points.md": "84aeaa6f9545c1a98d4a44d6a12aae3a691225995c6c6f4c6c73cdc6f5f2635c",
+    "etv-next.md": "8066fb850be4a1a485001879b83b380eb0614a79e8d4d6f02b5ef9ff60805d67",
     "media-sources.md": "0ad4fc758833e4790d7c8e5ddcc054fe391d1b7fb12a98eb076166d6c4646862",
     "scheduling-and-lineups.md": "a67a299e317ec4ba629af06029912e2ccb1f1870486669566aa2dab9a3c18297",
-    "streaming.md": "34ab617897261f304f53870a47148c9966543570ab22f109e02abadb0767aabd",
+    "streaming.md": "d98d4de47623d339921093d551b514c6f506635198ccbf0889480b8cc1f7887a",
     "testing.md": "c9648ebefaddd02570ea10bfbfd3ec60100f1bb58d320e5e4c4f1b676edfd82e"
   }
 }
