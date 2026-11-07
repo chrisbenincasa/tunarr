@@ -189,10 +189,28 @@ When enabled, the following parameters can be configured:
 | **Loudness Range (LRA)** | 1.0 to 50.0 LU | 7.0 | Target loudness range (dynamic range). Lower values compress dynamics more aggressively. |
 | **Max True Peak (TP)** | -9.0 to 0.0 dBTP | -2.0 | Maximum allowed true peak level, preventing clipping. |
 
-Loudness normalization and **Audio Volume %** can be used independently of each other.
+Tunarr applies **Audio Volume %** before loudness normalization, so normalization cancels out a volume change. To make a normalized channel quieter, lower the **Integrated Loudness (I)** target instead.
 
 !!! info
     Loudness normalization has no effect when **Audio Format** is set to **Copy**, since the audio stream is passed through without processing.
+
+### Filler Audio
+
+Filler and channel fallback content can play at different levels from regular programs. Commercials and bumpers are often mastered louder than shows, so a lower filler level evens out a channel.
+
+Set **Filler Audio Levels** to **Custom** to show two settings:
+
+| Setting | Effect |
+|---|---|
+| **Filler Audio Volume %** | Volume for filler items. Works like **Audio Volume %**. |
+| **Filler Loudness Normalization** | **Same as channel** uses the channel's loudness settings. **Custom** sets separate loudness targets for filler, and turns normalization on for filler even when the channel has it off. |
+
+- Filler levels apply to items from filler lists and to the channel's fallback filler.
+- When loudness normalization applies to filler, **Filler Audio Volume %** has no effect. Lower the filler **Integrated Loudness (I)** target instead.
+- Filler cannot turn loudness normalization off while the channel has it on.
+
+!!! info
+    Channels using the [ErsatzTV next](ersatztv-next.md) backend ignore filler audio levels. That backend has no per-item audio controls yet.
 
 ---
 

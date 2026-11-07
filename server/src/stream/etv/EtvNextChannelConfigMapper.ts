@@ -205,6 +205,15 @@ export function findIgnoredSettings(
   if (transcodeConfig.audioVolumePercent !== 100) {
     note('audioVolumePercent', 'the backend has no volume filter');
   }
+  if (transcodeConfig.fillerAudioVolumePercent !== null) {
+    note('fillerAudioVolumePercent', 'the backend has no per-item volume');
+  }
+  if (transcodeConfig.fillerAudioLoudnormConfig) {
+    note(
+      'fillerAudioLoudnormConfig',
+      'the backend normalizes loudness per channel, not per item',
+    );
+  }
   if (transcodeConfig.normalizeFrameRate === true) {
     note('normalizeFrameRate', 'the backend does not normalize frame rate');
   }

@@ -34,6 +34,8 @@ function makeTranscodeConfig(
     audioSampleRate: 48,
     audioVolumePercent: 100,
     audioLoudnormConfig: null,
+    fillerAudioVolumePercent: null,
+    fillerAudioLoudnormConfig: null,
     normalizeFrameRate: false,
     deinterlaceVideo: true,
     disableChannelOverlay: false,
