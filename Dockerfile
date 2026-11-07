@@ -1,5 +1,5 @@
 ARG base_image=ghcr.io/ersatztv/ersatztv-ffmpeg
-ARG base_image_tag=8.1.2-7
+ARG base_image_tag=8.1.2-8
 
 # Setup a node + ffmpeg + nvidia base
 FROM ${base_image}:${base_image_tag} AS ffmpeg-base

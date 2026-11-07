@@ -30,7 +30,7 @@ export const CanvasLayoutSchema = z.union([
 ]);
 export type CanvasLayout = z.infer<typeof CanvasLayoutSchema>;
 
-/** A placeholder source resolved at playback time by fetching a `PlayoutItem` JSON document over HTTP(S). The returned item replaces this one; its `start` is forced to the current transcode position and its `finish` is clamped to the placeholder's `finish`. Because `start` advances each tick, the resolver is re-hit while the transcode position remains inside the placeholder window, allowing a sequence of distinct items to be returned for a single placeholder. The resolved item's `source` may not itself be `dynamic`, but it may carry its own `probe_hint`, which is honored exactly as for a directly-specified source. */
+/** A placeholder source resolved at playback time by fetching a `PlayoutItem` JSON document over HTTP(S). The request and response are part of the playout schema: a change to either bumps its version, and the channel sends the version it implements in `x-etv-playout-schema`. */
 export const DynamicSourceSchema = z.strictObject({
   source_type: z.literal('dynamic'),
   uri: z.string(),
