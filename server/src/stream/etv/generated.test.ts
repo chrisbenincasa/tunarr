@@ -9,6 +9,7 @@ import {
 } from '../../../scripts/generate-etv-schemas.ts';
 import serverPackage from '../../../package.json' with { type: 'json' };
 import { ChannelConfigVersion } from './EtvNextChannelConfigMapper.ts';
+import { PlayoutVersion } from './EtvNextWorkspace.ts';
 import { ChannelConfigSchema } from './generated/channelConfig.ts';
 import { LineupConfigSchema } from './generated/lineupConfig.ts';
 import { PlayoutSchema, VideoHintSchema } from './generated/playout.ts';
@@ -63,6 +64,14 @@ describe('vendored ErsatzTV next schemas', () => {
     };
 
     expect(ChannelConfigVersion).toEqual(schema.$id);
+  });
+
+  test('describe the playout version the workspace writes', async () => {
+    const schema = JSON.parse(await readSchemaFile('playout.json')) as {
+      $id: string;
+    };
+
+    expect(PlayoutVersion).toEqual(schema.$id);
   });
 
   test('the checked-in generated output is what the generator produces', async () => {
