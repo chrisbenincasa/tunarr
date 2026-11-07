@@ -1,6 +1,6 @@
 # Codebase Map — Tunarr
 
-*Last Updated: 2026-09-29*
+*Last Updated: 2026-11-07*
 
 Tunarr builds live TV channels from Plex, Jellyfin, Emby, and local media, and serves them as
 HLS/MPEG-TS streams, M3U playlists, XMLTV guides, and an emulated HDHomeRun tuner.
@@ -18,6 +18,7 @@ doesn't: where flows start, how streaming and scheduling actually work, and wher
 | [architecture.md](./architecture.md) | Components, boundaries, and the main end-to-end flows |
 | [entry-points.md](./entry-points.md) | CLI commands, HTTP route files, workers, scheduled tasks |
 | [streaming.md](./streaming.md) | Stream routes → sessions → program streams → FFmpeg pipeline builder |
+| [etv-next.md](./etv-next.md) | ErsatzTV next worker backend: routing, sessions, playout callbacks, pinned binary, schemas |
 | [scheduling-and-lineups.md](./scheduling-and-lineups.md) | Slot schedulers, program iterators, lineup JSON files |
 | [media-sources.md](./media-sources.md) | Plex/Jellyfin/Emby/local clients, scanners, canonicalization |
 | [database.md](./database.md) | Drizzle schema, migrations, repositories, non-SQL stores |
