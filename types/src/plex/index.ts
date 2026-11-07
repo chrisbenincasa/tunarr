@@ -1099,7 +1099,9 @@ export function MakePlexMediaContainerResponseSchema<T extends z.ZodTypeAny>(
 
 export const PlexLibrariesResponseSchema = z.object({
   MediaContainer: BaseMediaContainerSchema.extend({
-    Directory: z.array(PlexLibrarySectionSchema),
+    // Plex drops empty arrays from JSON, so a token that can see no libraries
+    // gets a response with no Directory key.
+    Directory: z.array(PlexLibrarySectionSchema).default([]),
   }),
 });
 
