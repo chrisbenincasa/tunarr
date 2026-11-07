@@ -674,7 +674,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
               .get<SlotCycleBoundaryService>(SlotCycleBoundaryService)
               .initializeChannel(req.params.id);
 
-            // Those programs describe the lineup that was just replaced.
+            // Those programs cover only the replaced pass, and the cycles can
+            // air programs outside it, so the response reloads the lineup.
             return { ...saved, materializedPrograms: undefined };
           }),
       );
