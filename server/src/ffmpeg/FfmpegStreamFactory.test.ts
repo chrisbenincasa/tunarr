@@ -10,6 +10,7 @@ import {
   HlsDirectOutputFormat,
   HlsOutputFormat,
   MpegTsOutputFormat,
+  MkvOutputFormat,
   VideoFormats,
   VideoPresets,
   defaultHlsOptions,
@@ -671,37 +672,83 @@ describe('FfmpegStreamFactory', () => {
       expect(ffmpegState.softwareScalingAlgorithm).toBe('fast_bilinear');
     });
 
-    test('passthrough builds audio codec overrides for DTS/TrueHD', async () => {
+    test.each([
+      hlsDirectV2Format,
+      HlsOutputFormat(defaultHlsOptions),
+      MkvOutputFormat,
+    ])(
+      'passthrough preserves audio indexes and limits FLAC conversion to HLS ($type)',
+      async (outputFormat) => {
+        const details = makeStreamDetails();
+        details.audioDetails = [
+          { codec: AudioFormats.Aac, channels: 2, index: 1 },
+          { codec: AudioFormats.Dca, channels: 6, index: 2 },
+          { codec: AudioFormats.TrueHd, channels: 8, index: 3 },
+          { codec: AudioFormats.Flac, channels: 2, index: 4 },
+          { codec: AudioFormats.Flac, channels: 6, index: 5 },
+        ];
+
+        const { sut, getCapturedFfmpegState } = createPassthroughSut(
+          {},
+          details,
+        );
+
+        await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details,
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat,
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+            encoding: { mode: 'remux' },
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const ffmpegState = getCapturedFfmpegState()!;
+        expect(ffmpegState.audioCodecOverrides).toEqual([
+          { outputIndex: 1, codec: AudioFormats.Ac3 },
+          { outputIndex: 2, codec: AudioFormats.Ac3 },
+          ...(outputFormat.type === 'mkv'
+            ? []
+            : [
+                { outputIndex: 3, codec: AudioFormats.Ac3, bitrateKbps: 192 },
+                { outputIndex: 4, codec: AudioFormats.Ac3, bitrateKbps: 640 },
+              ]),
+        ]);
+      },
+    );
+
+    test('HLS passthrough rejects FLAC above the AC-3 channel limit', async () => {
       const details = makeStreamDetails();
       details.audioDetails = [
-        { codec: AudioFormats.Aac, channels: 2, index: 1 },
-        { codec: AudioFormats.Dca, channels: 6, index: 2 },
-        { codec: AudioFormats.TrueHd, channels: 8, index: 3 },
+        { codec: AudioFormats.Flac, channels: 8, index: 1 },
       ];
-
-      const { sut, getCapturedFfmpegState } = createPassthroughSut({}, details);
-
-      await sut.createStreamSession({
-        stream: {
-          source: new HttpStreamSource('http://example.com/video.ts'),
-          details,
-        },
-        options: {
-          startTime: dayjs.duration(0),
-          duration: dayjs.duration({ seconds: 30 }),
-          outputFormat: hlsDirectV2Format,
-          ptsOffset: 0,
-          realtime: true,
-          streamMode: 'hls',
-        },
-        lineupItem: makeLineupItem(),
-      });
-
-      const ffmpegState = getCapturedFfmpegState()!;
-      expect(ffmpegState.audioCodecOverrides).toEqual([
-        { outputIndex: 1, codec: AudioFormats.Ac3 },
-        { outputIndex: 2, codec: AudioFormats.Ac3 },
-      ]);
+      const { sut } = createPassthroughSut({}, details);
+      await expect(
+        sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.mkv'),
+            details,
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: hlsDirectV2Format,
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        }),
+      ).rejects.toThrow(
+        'HLS passthrough cannot convert FLAC with more than six channels to AC-3',
+      );
     });
 
     test('passthrough uses source video dimensions for FrameState sizes', async () => {

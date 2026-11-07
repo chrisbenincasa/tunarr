@@ -81,6 +81,40 @@ describe('BasePipelineBuilder', () => {
     scaledSize: FrameSize.FHD,
   });
 
+  test('FLAC compatibility overrides keep video copy and target audio output indexes', () => {
+    const builder = new NoopPipelineBuilder(
+      video,
+      null,
+      null,
+      null,
+      null,
+      EmptyFfmpegCapabilities,
+    );
+    const pipeline = builder.build(
+      FfmpegState.create({
+        version: state.version,
+        copyAllStreams: true,
+        audioCodecOverrides: [
+          { outputIndex: 1, codec: 'ac3', bitrateKbps: 192 },
+          { outputIndex: 2, codec: 'ac3', bitrateKbps: 640 },
+        ],
+      }),
+      frameState,
+      DefaultPipelineOptions,
+    );
+    const args = pipeline.getCommandArgs();
+    expect(args.slice(args.indexOf('-c:v'), args.indexOf('-c:v') + 2)).toEqual([
+      '-c:v',
+      'copy',
+    ]);
+    expect(
+      args.slice(args.indexOf('-c:a:1'), args.indexOf('-c:a:1') + 4),
+    ).toEqual(['-c:a:1', 'ac3', '-b:a:1', '192k']);
+    expect(
+      args.slice(args.indexOf('-c:a:2'), args.indexOf('-c:a:2') + 4),
+    ).toEqual(['-c:a:2', 'ac3', '-b:a:2', '640k']);
+  });
+
   test('set audio volume filter', () => {
     const audio = AudioInputSource.withStream(
       new FileStreamSource('/path/to/song.flac'),

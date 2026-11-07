@@ -382,7 +382,7 @@ export class FfmpegStreamFactory {
 
     // Build per-stream audio codec overrides for copy-all mode.
     const audioCodecOverrides = isPassthrough
-      ? this.buildAudioCodecOverrides(streamDetails)
+      ? this.buildAudioCodecOverrides(streamDetails, outputFormat)
       : [];
 
     const effectiveHwAccel = isPassthrough
@@ -690,21 +690,34 @@ export class FfmpegStreamFactory {
     return { subtitleSource, subtitleRendition };
   }
 
-  /**
-   * Builds per-stream audio codec overrides for passthrough (copy-all) mode.
-   * DTS and TrueHD cannot be muxed into MPEG-TS and are unsupported by
-   * AVPlayer on Apple devices — transcode those to AC-3.
-   */
   private buildAudioCodecOverrides(
     streamDetails: StreamDetails,
+    outputFormat: OutputFormat,
   ): AudioCodecOverride[] {
     const overrides: AudioCodecOverride[] = [];
-    if (streamDetails.audioDetails) {
-      for (let i = 0; i < streamDetails.audioDetails.length; i++) {
-        const codec = streamDetails.audioDetails[i]!.codec;
-        if (codec === AudioFormats.Dca || codec === AudioFormats.TrueHd) {
-          overrides.push({ outputIndex: i, codec: AudioFormats.Ac3 });
+    const isHls =
+      outputFormat.type === OutputFormatTypes.Hls ||
+      outputFormat.type === OutputFormatTypes.HlsDirectV2;
+    for (const [outputIndex, audio] of (
+      streamDetails.audioDetails ?? []
+    ).entries()) {
+      if (isHls && audio.codec === AudioFormats.Flac) {
+        const channels = audio.channels ?? 2;
+        if (channels > 6) {
+          throw new Error(
+            'HLS passthrough cannot convert FLAC with more than six channels to AC-3',
+          );
         }
+        overrides.push({
+          outputIndex,
+          codec: AudioFormats.Ac3,
+          bitrateKbps: channels <= 2 ? 192 : 640,
+        });
+      } else if (
+        audio.codec === AudioFormats.Dca ||
+        audio.codec === AudioFormats.TrueHd
+      ) {
+        overrides.push({ outputIndex, codec: AudioFormats.Ac3 });
       }
     }
     return overrides;

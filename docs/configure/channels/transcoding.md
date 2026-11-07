@@ -46,7 +46,7 @@ Because this mode does not perform stream normalization, there may be issues whe
 
 #### How does it work?
 
-HLS Direct v2 works like standard HLS mode, but without transcoding. Rather than returning a single-item m3u8 pointing directly to the program stream (as HLS Direct does), it produces a proper continuous HLS playlist of segmented chunks — the same structure as the regular HLS mode. No codec conversion or normalization is applied; the source content is remuxed directly into the segments.
+HLS Direct v2 produces a continuous playlist of MPEG-TS segments. Tunarr’s native pipeline copies the source video and converts incompatible audio tracks such as DTS, TrueHD, and FLAC to AC-3. For FLAC, this lossy conversion uses 192 kbps for mono or stereo and 640 kbps for three to six channels. A FLAC track with more than six channels prevents the passthrough session from starting. The same FLAC handling applies when remuxing to HLS.
 
 #### Things to consider
 
