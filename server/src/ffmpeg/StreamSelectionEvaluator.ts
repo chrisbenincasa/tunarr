@@ -33,7 +33,8 @@ export function buildCelContext(
   audioStreams: readonly AudioStreamDetails[],
   subtitleStreams: SubtitleStreamDetails[] | undefined,
   channel: { name: string; number: number },
-  program: { title: string; type: string },
+  program: Pick<StreamSelectionCelContext['program'], 'title' | 'type'> &
+    Partial<StreamSelectionCelContext['program']>,
 ): StreamSelectionCelContext {
   const audioLanguages = [
     ...new Set(
@@ -84,12 +85,24 @@ export function buildCelContext(
       languages: subtitleLanguages,
     },
     channel,
-    program,
+    program: {
+      showTitle: '',
+      genres: [],
+      libraryId: '',
+      ...program,
+    },
   };
 }
 
 export type StreamSelectionHints = {
+  /** Sort text subtitles first and return embedded text subtitles unextracted. */
   preferTextBased?: boolean;
+
+  /**
+   * Return embedded text subtitles unextracted without changing the sort.
+   * For callers that report the source stream rather than play it.
+   */
+  allowUnextracted?: boolean;
 };
 
 export type StreamSelectionRuleTrace = {
@@ -425,9 +438,10 @@ async function resolveSubtitleAction(
   // Sorting is a user preference, so the profile field and the caller hint both
   // feed it. Skipping extraction is a caller capability — only a caller that can
   // mux an embedded stream straight from the container may ask for it, so that
-  // is driven by the hint alone. A profile must never send an unextracted stream
+  // is driven by the hints alone. A profile must never send an unextracted stream
   // to a caller that needs a real file path.
-  const mayReturnUnextracted = hints?.preferTextBased ?? false;
+  const mayReturnUnextracted =
+    (hints?.preferTextBased || hints?.allowUnextracted) ?? false;
 
   switch (action.type) {
     case 'disable':

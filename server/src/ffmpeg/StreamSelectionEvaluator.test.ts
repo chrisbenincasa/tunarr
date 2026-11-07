@@ -183,7 +183,13 @@ describe('buildCelContext', () => {
   it('passes channel and program info through', () => {
     const ctx = buildCelContext(baseAudio, baseSubs, channel, program);
     expect(ctx.channel).toEqual({ name: 'Movies', number: 5 });
-    expect(ctx.program).toEqual({ title: 'The Matrix', type: 'movie' });
+    expect(ctx.program).toEqual({
+      title: 'The Matrix',
+      type: 'movie',
+      showTitle: '',
+      genres: [],
+      libraryId: '',
+    });
   });
 
   it('falls back through language code priority (ISO6392 > ISO6391 > language)', () => {
@@ -1600,6 +1606,82 @@ describe('evaluateStreamSelectionProfile', () => {
       expect((result.subtitleStream as Record<string, unknown>)['path']).toBe(
         '/fake/path.vtt',
       );
+    });
+
+    it('allowUnextracted returns embedded text subs unextracted', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 3,
+          languageCodeISO6392: 'eng',
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['eng'],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+          },
+        }),
+      ]);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        makeCelService(true),
+        celContext,
+        lineupItem,
+        { allowUnextracted: true },
+      );
+
+      expect(result.subtitleStream?.index).toBe(3);
+      expect(result.subtitleStream?.type).toBe('embedded');
+      expect(result.subtitleStream?.path).toBeUndefined();
+    });
+
+    it('allowUnextracted keeps the profile order instead of sorting text subs first', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          languageCodeISO6392: 'eng',
+          codec: 'hdmv_pgs_subtitle',
+          type: 'embedded',
+        }),
+        makeSubtitleStream({
+          index: 3,
+          languageCodeISO6392: 'eng',
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['eng'],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+          },
+        }),
+      ]);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        makeCelService(true),
+        celContext,
+        lineupItem,
+        { allowUnextracted: true },
+      );
+
+      expect(result.subtitleStream?.index).toBe(2);
     });
 
     it('by_language with the runtime hint returns embedded text subs unextracted', async () => {

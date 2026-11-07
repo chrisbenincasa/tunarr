@@ -11,9 +11,14 @@ export type ClauseType =
   | 'program_type'
   | 'audio_language'
   | 'subtitle_language'
-  | 'audio_channels';
+  | 'audio_channels'
+  | 'program_title'
+  | 'show_title'
+  | 'genre'
+  | 'library';
 
 export type ComparisonOperator = 'eq' | 'neq';
+export type TextOperator = ComparisonOperator | 'contains';
 export type ListOperator = 'in' | 'not_in';
 export type NumericOperator = 'eq' | 'gte' | 'lte' | 'gt' | 'lt';
 
@@ -26,7 +31,11 @@ export type ConditionClause =
       type: 'audio_channels';
       operator: NumericOperator;
       value: number;
-    };
+    }
+  | { type: 'program_title'; operator: TextOperator; value: string }
+  | { type: 'show_title'; operator: TextOperator; value: string }
+  | { type: 'genre'; operator: ListOperator; value: string }
+  | { type: 'library'; operator: ComparisonOperator; value: string };
 
 export interface ConditionGroup {
   type: 'group';
@@ -55,6 +64,10 @@ export const CLAUSE_TYPE_LABELS: Record<ClauseType, MessageDescriptor> = {
   audio_language: msg`Audio language`,
   subtitle_language: msg`Subtitle language`,
   audio_channels: msg`Audio channel count`,
+  program_title: msg`Program title`,
+  show_title: msg`Show title`,
+  genre: msg`Genre`,
+  library: msg`Library`,
 };
 
 export const COMPARISON_OPERATOR_LABELS: Record<
@@ -63,6 +76,12 @@ export const COMPARISON_OPERATOR_LABELS: Record<
 > = {
   eq: msg`is`,
   neq: msg`is not`,
+};
+
+export const TEXT_OPERATOR_LABELS: Record<TextOperator, MessageDescriptor> = {
+  eq: msg`is`,
+  neq: msg`is not`,
+  contains: msg`contains`,
 };
 
 export const LIST_OPERATOR_LABELS: Record<ListOperator, MessageDescriptor> = {

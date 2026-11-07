@@ -15,6 +15,7 @@ import {
   HlsOutputFormat,
 } from '@/ffmpeg/builder/constants.js';
 import { FfmpegInfo } from '@/ffmpeg/ffmpegInfo.js';
+import { StreamSelectionProgramContextLoader } from '@/services/StreamSelectionProgramContextLoader.js';
 import { ProgramStreamDetailsFetcher } from '@/stream/ProgramStreamDetailsFetcher.js';
 import { routesToEtvNext } from '@/stream/etv/EtvNextRouting.js';
 import type { EtvNextTroubleshootRunner } from '@/stream/etv/EtvNextTroubleshootRunner.js';
@@ -88,6 +89,8 @@ export class TroubleshootService {
     @inject(FeatureFlagService) private featureFlagService: FeatureFlagService,
     @inject(KEYS.EtvNextTroubleshootRunner)
     private etvNextRunner: EtvNextTroubleshootRunner,
+    @inject(StreamSelectionProgramContextLoader)
+    private programContextLoader: StreamSelectionProgramContextLoader,
   ) {}
 
   getSessionDirectory(sessionId: string): string | undefined {
@@ -531,7 +534,7 @@ export class TroubleshootService {
           audioStreams,
           subtitleStreams,
           { name: channel.name, number: channel.number },
-          { title: program.title, type: program.type },
+          await this.programContextLoader.load(program),
         );
 
         const evaluation = await evaluateStreamSelectionChain(

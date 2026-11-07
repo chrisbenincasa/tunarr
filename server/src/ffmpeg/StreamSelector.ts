@@ -8,6 +8,7 @@ import {
 import type { ChannelOrm } from '../db/schema/Channel.ts';
 import { CelEvaluationService } from '../services/CelEvaluationService.ts';
 import { StreamSelectionProfileResolver } from '../services/StreamSelectionProfileResolver.ts';
+import { StreamSelectionProgramContextLoader } from '../services/StreamSelectionProgramContextLoader.ts';
 import type {
   AudioStreamDetails,
   SubtitleStreamDetails,
@@ -37,6 +38,8 @@ export class StreamSelector {
     @inject(StreamSelectionProfileResolver)
     private streamSelectionResolver: StreamSelectionProfileResolver,
     @inject(CelEvaluationService) private celService: CelEvaluationService,
+    @inject(StreamSelectionProgramContextLoader)
+    private programContextLoader: StreamSelectionProgramContextLoader,
   ) {}
 
   async selectAudioAndSubtitleStreams({
@@ -55,7 +58,7 @@ export class StreamSelector {
       audioStreams,
       subtitleStreams,
       this.celService,
-      this.buildCelContextFor(
+      await this.buildCelContextFor(
         channel,
         lineupItem,
         audioStreams,
@@ -86,7 +89,7 @@ export class StreamSelector {
       chain,
       subtitleStreams,
       this.celService,
-      this.buildCelContextFor(
+      await this.buildCelContextFor(
         channel,
         lineupItem,
         audioStreams,
@@ -113,7 +116,7 @@ export class StreamSelector {
     };
   }
 
-  private buildCelContextFor(
+  private async buildCelContextFor(
     channel: ChannelOrm,
     lineupItem: ContentBackedStreamLineupItem,
     audioStreams: readonly AudioStreamDetails[],
@@ -123,7 +126,7 @@ export class StreamSelector {
       audioStreams,
       subtitleStreams,
       { name: channel.name, number: channel.number },
-      { title: lineupItem.program.title, type: lineupItem.program.type },
+      await this.programContextLoader.load(lineupItem.program),
     );
   }
 }
