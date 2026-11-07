@@ -33,6 +33,7 @@ import type {
 } from './slotIteratorState.ts';
 import type {
   PaddedProgram,
+  SlotIteratorResult,
   SlotSchedulerProgram,
 } from './slotSchedulerUtil.js';
 import {
@@ -73,7 +74,7 @@ class ScheduleContext {
   #random: Random;
   #engine: MersenneTwister19937;
   #unschedulablePrograms: SlotSchedulerProgram[];
-  #snapshotIterators: () => SlotIteratorState['iterators'];
+  #snapshotIterators: SlotIteratorResult['snapshotIterators'];
 
   constructor(
     schedule: RandomSlotSchedule,
@@ -103,7 +104,7 @@ class ScheduleContext {
       schedule.slots,
       programMap,
       this.#random,
-      iteratorState?.iterators,
+      iteratorState,
     );
     this.#snapshotIterators = snapshotIterators;
     this.#startTime = this.#timeCursor = startTime;
@@ -223,7 +224,7 @@ class ScheduleContext {
       startTime: +this.#startTime,
       discardCount: this.#engine.getUseCount(),
       iteratorState: {
-        iterators: this.#snapshotIterators(),
+        ...this.#snapshotIterators(),
         nextSlotIndex: this.#currentSlotIndex,
         slotLastPlayedMs: Object.fromEntries(this.#slotLastPlayed),
       },

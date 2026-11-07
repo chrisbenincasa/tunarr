@@ -107,12 +107,19 @@ export class RerunProgramIterator<
   ProgramT extends CondensedChannelProgram = CondensedChannelProgram,
 > implements ProgramIterator<ProgramT>
 {
-  #consumedCount = 0;
+  #consumedCount: number;
 
   constructor(
     private inner: ProgramIterator<ProgramT>,
     private groupSize: number,
-  ) {}
+    consumedCount = 0,
+  ) {
+    this.#consumedCount = consumedCount < groupSize ? consumedCount : 0;
+  }
+
+  get consumedCount() {
+    return this.#consumedCount;
+  }
 
   current(state: IterationState): ProgramT | null {
     return this.inner.current(state);

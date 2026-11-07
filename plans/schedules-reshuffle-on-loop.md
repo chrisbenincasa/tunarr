@@ -90,8 +90,10 @@ Each cycle stores a snapshot of the state it started from:
 - Shuffle iterators: the IDs played in the current pass.
 - Random slots: the next slot for sequential distribution, and each slot's last-played time for
   cooldowns.
-- Rerun counters and mixed-group replay buffers restart each cycle. Only the iterator they wrap
-  carries over.
+- All-rerun groups: how many of the group's slots have aired the current program, so a pair split
+  across cycles finishes instead of airing the program again.
+- Mixed-group replay buffers restart each cycle. Only the iterator they wrap carries over, so a
+  rerun slot that opens a cycle flexes until a continue slot has played.
 - Iterators are keyed by slot position or link group, not slot ID, because duplicate slot IDs are
   replaced with random ones on every build. Filler iterators are not carried over.
 - `playedIds` grows to every program played in the current pass. A large library means thousands

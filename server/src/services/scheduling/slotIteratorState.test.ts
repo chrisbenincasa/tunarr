@@ -417,8 +417,7 @@ describe('random slot cycles', () => {
   });
 
   // Builds a cycle ending mid-program, then the cycle that follows it.
-  function crossingCycles(slot: RandomSlot, endHours: number) {
-    const slots = [slot];
+  function crossingCycles(slots: RandomSlot[], endHours: number) {
     const cycle1 = new RandomSlotScheduler(schedule(slots)).generateSchedule(
       fixtureEpisodes('a', 40, oneHour),
       [42],
@@ -440,22 +439,37 @@ describe('random slot cycles', () => {
   }
 
   test('the program crossing the end time airs in the cycle', () => {
-    const { cycle1, cycle2 } = crossingCycles(randomShowSlot(1, 'a'), 2.5);
+    const { cycle1, cycle2 } = crossingCycles([randomShowSlot(1, 'a')], 2.5);
     expect(contentIds(cycle1.lineup)).toEqual(['a-ep1', 'a-ep2', 'a-ep3']);
     expect(contentIds(cycle2.lineup)[0]).toBe('a-ep4');
   });
 
   test('a fixed slot crossing the end time airs its whole group', () => {
     const { cycle1, cycle2 } = crossingCycles(
-      randomShowSlot(1, 'a', {
-        durationSpec: { type: 'fixed', durationMs: 3 * oneHour },
-      }),
+      [
+        randomShowSlot(1, 'a', {
+          durationSpec: { type: 'fixed', durationMs: 3 * oneHour },
+        }),
+      ],
       4.5,
     );
     expect(contentIds(cycle1.lineup)).toEqual(
       ['1', '2', '3', '4', '5', '6'].map((n) => `a-ep${n}`),
     );
     expect(contentIds(cycle2.lineup)[0]).toBe('a-ep7');
+  });
+
+  test('an all-rerun group finishes a rerun pair across cycles', () => {
+    const group = '00000000-0000-4000-8000-0000000000a2';
+    const { cycle1, cycle2 } = crossingCycles(
+      [
+        randomShowSlot(1, 'a', { iterationGroup: group, linkMode: 'rerun' }),
+        randomShowSlot(2, 'a', { iterationGroup: group, linkMode: 'rerun' }),
+      ],
+      3,
+    );
+    expect(contentIds(cycle1.lineup)).toEqual(['a-ep1', 'a-ep1', 'a-ep2']);
+    expect(contentIds(cycle2.lineup)).toEqual(['a-ep2', 'a-ep3']);
   });
 
   test('cooldowns carry across cycles', () => {
@@ -488,6 +502,7 @@ describe('random slot cycles', () => {
 describe('worker schemas', () => {
   const iteratorState = {
     iterators: { 'slot:0': { type: 'shuffle', playedIds: ['x'] } },
+    rerunPlays: { 'group:g': 1 },
     nextSlotIndex: 1,
   } as const;
 

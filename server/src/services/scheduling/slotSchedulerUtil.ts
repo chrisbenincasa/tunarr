@@ -496,10 +496,15 @@ export type SlotIteratorResult = {
   iterators: Map<string, ProgramIterator>;
   resetPeriodCallbacks: (() => void)[];
   // Where each iterator left off, for the next build to resume from.
-  snapshotIterators: () => SlotIteratorState['iterators'];
+  snapshotIterators: () => SlotIteratorResumeState;
 };
 
 type GroupClassification = 'all-rerun' | 'all-continue' | 'mixed';
+
+type SlotIteratorResumeState = Pick<
+  SlotIteratorState,
+  'iterators' | 'rerunPlays'
+>;
 
 /**
  * Ensures every slot in the array has a unique `id`. If duplicate IDs are
@@ -525,7 +530,7 @@ export function createSlotIterators(
   slots: BaseSlot[],
   programBySlotType: ProgramMapping,
   random: Random,
-  resumeFrom: SlotIteratorState['iterators'] = {},
+  resumeFrom: SlotIteratorResumeState = { iterators: {} },
 ): SlotIteratorResult {
   const result = new Map<string, ProgramIterator>();
   const resetPeriodCallbacks: (() => void)[] = [];
@@ -534,12 +539,13 @@ export function createSlotIterators(
   // group. Slot IDs would not work, because duplicate IDs are replaced with
   // random ones on every build.
   const keyedIterators = new Map<string, ProgramIterator>();
+  const rerunIterators = new Map<string, RerunProgramIterator>();
   const createKeyedIterator = (key: string, slot: BaseSlot) => {
     const iterator = createSlotProgramIterator(
       slot,
       programBySlotType,
       random,
-      resumeFrom[key],
+      resumeFrom.iterators[key],
     );
     keyedIterators.set(key, iterator);
     return iterator;
@@ -618,12 +624,18 @@ export function createSlotIterators(
         const existing = groupIterators.get(group);
         if (existing) return existing;
 
-        const baseIterator = createKeyedIterator(`group:${group}`, slot);
+        const key = `group:${group}`;
+        const baseIterator = createKeyedIterator(key, slot);
         const meta = rerunGroupMeta.get(group);
         if (!meta) {
           throw new Error(`Missing rerun group metadata for group ${group}`);
         }
-        const newIterator = new RerunProgramIterator(baseIterator, meta.count);
+        const newIterator = new RerunProgramIterator(
+          baseIterator,
+          meta.count,
+          resumeFrom.rerunPlays?.[key],
+        );
+        rerunIterators.set(key, newIterator);
         groupIterators.set(group, newIterator);
         return newIterator;
       }
@@ -659,15 +671,23 @@ export function createSlotIterators(
     }
   }
 
-  const snapshotIterators = () => {
-    const snapshots: SlotIteratorState['iterators'] = {};
+  const snapshotIterators = (): SlotIteratorResumeState => {
+    const iterators: SlotIteratorState['iterators'] = {};
     for (const [key, iterator] of keyedIterators) {
       const snapshot = iterator.snapshot?.();
       if (snapshot) {
-        snapshots[key] = snapshot;
+        iterators[key] = snapshot;
       }
     }
-    return snapshots;
+
+    const rerunPlays: Record<string, number> = {};
+    for (const [key, iterator] of rerunIterators) {
+      if (iterator.consumedCount > 0) {
+        rerunPlays[key] = iterator.consumedCount;
+      }
+    }
+
+    return isEmpty(rerunPlays) ? { iterators } : { iterators, rerunPlays };
   };
 
   return { iterators: result, resetPeriodCallbacks, snapshotIterators };
