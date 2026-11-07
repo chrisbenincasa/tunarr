@@ -1,9 +1,12 @@
 # Streaming
 
-*Last Updated: 2026-10-13*
+*Last Updated: 2026-11-07*
 
 Streaming code is organized by session type, not by media source. Source-specific behavior lives
 in stream details fetchers and play-status plugins.
+
+Channels on the ErsatzTV next backend skip Tunarr's FFmpeg pipeline and run an external worker
+through `EtvNextSession`. See [etv-next.md](./etv-next.md).
 
 ## Request to bytes
 
