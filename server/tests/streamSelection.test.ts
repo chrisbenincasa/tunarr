@@ -4,6 +4,7 @@ import type {
   StreamSelectionProfileWithUsage,
 } from '@tunarr/types/schemas';
 import { BuiltInStreamSelectionProfileId } from '@tunarr/types/schemas';
+import { eq } from 'drizzle-orm';
 import type { FastifyInstance } from 'fastify';
 import { v4 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
@@ -12,9 +13,11 @@ import type { ChannelDB } from '../src/db/ChannelDB.ts';
 import type { ISettingsDB } from '../src/db/interfaces/ISettingsDB.ts';
 import { FillerShow } from '../src/db/schema/FillerShow.ts';
 import type { DrizzleDBAccess } from '../src/db/schema/index.ts';
+import { Program } from '../src/db/schema/Program.ts';
 import { TranscodeConfigDB } from '../src/db/TranscodeConfigDB.ts';
 import { KEYS } from '../src/types/inject.ts';
 import { getAvailablePort } from '../src/util/net.ts';
+import { seedPrograms } from './support/seed.ts';
 import { initTestApp } from './testServer.js';
 
 let app: FastifyInstance;
@@ -393,6 +396,43 @@ describe('rule preview', () => {
     expect(res.statusCode, res.body).toBe(404);
     expect(res.json<{ message: string }>().message).toContain(
       NON_EXISTENT_UUID,
+    );
+  });
+
+  test('returns 404 for an unknown channel', async () => {
+    const [programId] = await seedPrograms(1);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/stream-selection-profiles/preview',
+      payload: { rules, programId, channelId: NON_EXISTENT_UUID },
+    });
+    expect(res.statusCode, res.body).toBe(404);
+    expect(res.json<{ message: string }>().message).toBe(
+      `Channel not found: ${NON_EXISTENT_UUID}`,
+    );
+  });
+
+  test('returns 502 when the program has no streams to read', async () => {
+    const [programId] = await seedPrograms(1);
+    if (!programId) {
+      throw new Error('Expected a seeded program');
+    }
+    container
+      .get<DrizzleDBAccess>(KEYS.DrizzleDB)
+      .update(Program)
+      .set({ mediaSourceId: null })
+      .where(eq(Program.uuid, programId))
+      .run();
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/stream-selection-profiles/preview',
+      payload: { rules, programId },
+    });
+    expect(res.statusCode, res.body).toBe(502);
+    expect(res.json<{ message: string }>().message).toBe(
+      `Program ${programId} has no media source`,
     );
   });
 });
