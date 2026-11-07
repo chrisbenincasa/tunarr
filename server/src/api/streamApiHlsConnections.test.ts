@@ -337,6 +337,12 @@ describe('streamApi HLS playlist window with a stalled viewer', () => {
     expect(res.headers['content-type']).toContain('text/vtt');
     expect(res.body).toContain('window cue');
   });
+
+  it('rejects a file path outside the session directory', async () => {
+    const res = await request('..%2F..%2Fetc%2Fpasswd', LIVE);
+
+    expect(res.statusCode).toBe(400);
+  });
 });
 
 describe('streamApi channel playlist variant flag', () => {
