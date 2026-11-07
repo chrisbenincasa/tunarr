@@ -10,6 +10,7 @@ import {
   fixtureCustomShowPrograms,
   fixtureEpisodes,
   fixtureSlotId,
+  fixtureSmartCollectionPrograms,
 } from '../../testing/fakes/slotScheduleFixtures.ts';
 import {
   WorkerRequest,
@@ -29,6 +30,7 @@ import {
   ContentProgramShuffleIterator,
   CustomProgramShuffleIterator,
 } from './ShuffleProgramIterator.ts';
+import type { SlotIteratorState } from './slotIteratorState.ts';
 import type { SlotSchedulerProgram } from './slotSchedulerUtil.ts';
 import { scheduleTimeSlots } from './TimeSlotService.ts';
 
@@ -339,6 +341,73 @@ describe('time slot cycles', () => {
     expect(contentIds(cycle2.lineup)[0]).toBe(all[24]);
   });
 
+  test('a cycle runs to the end of the slot its end time falls in', async () => {
+    const group = '00000000-0000-4000-8000-0000000000a2';
+    const slots = [
+      showSlot(1, 'next', { iterationGroup: group, linkMode: 'continue' }),
+      showSlot(2, 'next', {
+        startTime: 12 * oneHour,
+        iterationGroup: group,
+        linkMode: 'continue',
+      }),
+    ];
+    const cycle1 = await scheduleTimeSlots(
+      daySchedule(slots),
+      fixtureEpisodes('show', 30, oneHour),
+      [42],
+      0,
+      day1,
+      { endTime: day1.add(2, 'hour') },
+    );
+    const total = cycle1.lineup.reduce((sum, p) => sum + p.duration, 0);
+    expect(total).toBe(12 * oneHour);
+
+    const cycle2 = await scheduleTimeSlots(
+      daySchedule(slots),
+      fixtureEpisodes('show', 30, oneHour),
+      [42],
+      cycle1.discardCount,
+      day1.add(total),
+      { endTime: day1.add(1, 'day'), iteratorState: cycle1.iteratorState },
+    );
+    const all = ids(fixtureEpisodes('show', 30, oneHour));
+    expect(contentIds(cycle1.lineup)).toEqual(all.slice(0, 12));
+    expect(contentIds(cycle2.lineup)).toEqual(all.slice(12, 24));
+  });
+
+  test('a smart collection continues across cycles', async () => {
+    const collectionId = '00000000-0000-4000-8000-0000000000d1';
+    const slot = {
+      id: fixtureSlotId(1),
+      startTime: 0,
+      type: 'smart-collection',
+      smartCollectionId: collectionId,
+      order: 'next',
+      direction: 'asc',
+    } as TimeSlot;
+    const build = (
+      start: dayjs.Dayjs,
+      discardCount: number,
+      iteratorState?: SlotIteratorState,
+    ) =>
+      scheduleTimeSlots(
+        daySchedule([slot]),
+        fixtureSmartCollectionPrograms(collectionId, 30, oneHour),
+        [42],
+        discardCount,
+        start,
+        { endTime: start.add(1, 'day'), iteratorState },
+      );
+    const cycle1 = await build(day1, 0);
+    const cycle2 = await build(
+      day1.add(1, 'day'),
+      cycle1.discardCount,
+      cycle1.iteratorState,
+    );
+    expect(contentIds(cycle1.lineup).at(-1)).toBe('movie-24');
+    expect(contentIds(cycle2.lineup)[0]).toBe('movie-25');
+  });
+
   test('the same seed and state build the same cycles', async () => {
     const slots = [showSlot(1, 'shuffle')];
     const first = await twoTimeSlotCycles(slots, 30);
@@ -470,6 +539,39 @@ describe('random slot cycles', () => {
     );
     expect(contentIds(cycle1.lineup)).toEqual(['a-ep1', 'a-ep1', 'a-ep2']);
     expect(contentIds(cycle2.lineup)).toEqual(['a-ep2', 'a-ep3']);
+  });
+
+  test('weighted slots and their shows continue across cycles', () => {
+    const slots = [
+      randomShowSlot(1, 'a', { weight: 3 }),
+      randomShowSlot(2, 'b', { weight: 1 }),
+    ];
+    const build = (
+      start: dayjs.Dayjs,
+      discardCount: number,
+      iteratorState?: SlotIteratorState,
+    ) =>
+      new RandomSlotScheduler(
+        schedule(slots, { randomDistribution: 'weighted' }),
+      ).generateSchedule(programs(), [42], discardCount, start, {
+        endTime: start.add(12, 'hour'),
+        iteratorState,
+      });
+    const cycle1 = build(day1, 0);
+    const cycle2 = build(
+      day1.add(12, 'hour'),
+      cycle1.discardCount,
+      cycle1.iteratorState,
+    );
+
+    const episodes = [
+      ...contentIds(cycle1.lineup),
+      ...contentIds(cycle2.lineup),
+    ];
+    for (const show of ['a', 'b']) {
+      const played = episodes.filter((id) => id.startsWith(`${show}-`));
+      expect(played).toEqual(played.map((_, i) => `${show}-ep${i + 1}`));
+    }
   });
 
   test('cooldowns carry across cycles', () => {

@@ -47,10 +47,11 @@ export type SlotIteratorState = z.infer<typeof SlotIteratorStateSchema>;
 
 export type SlotCycleOptions = {
   iteratorState?: SlotIteratorState;
-  // Replaces the `maxDays` limit. Programs that cross this time still air, so
-  // a cycle ends at the end of its last program, not exactly here. Time slots
-  // stop after the crossing program. Random slots stop after the crossing
-  // slot's whole group, because collecting the group advanced its iterators.
+  // Replaces the `maxDays` limit. A cycle ends at the end of its last program,
+  // not exactly here, so the next cycle must start where this one ended.
+  // Time slots check this time only when a slot starts, so the slot it falls
+  // in fills its whole window. Random slots stop after the crossing slot's
+  // whole group, because collecting the group advanced its iterators.
   // Also stops `startTomorrow` from moving the start, because the caller
   // picks each cycle's start.
   endTime?: Dayjs;
