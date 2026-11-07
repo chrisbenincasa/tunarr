@@ -70,4 +70,14 @@ describe('ChannelsView', () => {
     expect(screen.getAllByRole('article')).toHaveLength(10);
     expect(screen.getByText('1–10 of 12')).toBeInTheDocument();
   });
+
+  test('the header counts channels and streaming channels', async () => {
+    await renderView('cards', [makeStoryChannel({ id: 'a', sessions: [] })]);
+
+    expect(
+      screen.getByText(
+        (_, el) => el?.textContent === '1 channel · 0 streaming',
+      ),
+    ).toBeInTheDocument();
+  });
 });

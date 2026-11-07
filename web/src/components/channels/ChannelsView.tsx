@@ -223,6 +223,7 @@ export const ChannelsView = ({
     ...tableState,
   });
 
+  const channelCount = channels.length;
   const streaming = channels.filter(
     (c) => channelStatus(c.sessions).status === 'live',
   ).length;
@@ -244,35 +245,11 @@ export const ChannelsView = ({
       <PageHeader
         title={<Trans>Channels</Trans>}
         subtitle={
-          <>
-            <Plural
-              value={channels.length}
-              one={
-                <>
-                  <MonoText>{channels.length}</MonoText> channel
-                </>
-              }
-              other={
-                <>
-                  <MonoText>{channels.length}</MonoText> channels
-                </>
-              }
-            />{' '}
-            ·{' '}
-            <Plural
-              value={streaming}
-              one={
-                <>
-                  <MonoText>{streaming}</MonoText> streaming
-                </>
-              }
-              other={
-                <>
-                  <MonoText>{streaming}</MonoText> streaming
-                </>
-              }
-            />
-          </>
+          <Trans>
+            <MonoText>{channelCount}</MonoText>{' '}
+            <Plural value={channelCount} one="channel" other="channels" /> ·{' '}
+            <MonoText>{streaming}</MonoText> streaming
+          </Trans>
         }
         actions={
           <RouterButtonLink
