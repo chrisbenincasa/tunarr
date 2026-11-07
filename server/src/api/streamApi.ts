@@ -419,15 +419,8 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
           .send(playlist.playlist);
       }
 
-      const filePath = resolve(session.workingDirectory, req.params.file);
-      if (!filePath.startsWith(session.workingDirectory + sep)) {
-        return res.status(400).send('Invalid file path');
-      }
-
-      if (!(await fileExists(filePath))) {
-        return res.status(404).send('File not found');
-      }
-
+      // Subtitle windows are built from the cue files on each request, so no
+      // file with this name exists on disk.
       const windowSegment = req.params.file.match(SubtitleWindowRegex)?.[1];
       if (windowSegment !== undefined && req.params.sessionType === 'hls') {
         const vtt = await (session as HlsSession).subtitleWindow(
@@ -436,6 +429,16 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         return vtt === undefined
           ? res.status(404).send('Subtitle segment not found')
           : res.type('text/vtt').send(injectTimestampMap(vtt));
+      }
+
+      // Everything below is a file ffmpeg wrote to the session directory.
+      const filePath = resolve(session.workingDirectory, req.params.file);
+      if (!filePath.startsWith(session.workingDirectory + sep)) {
+        return res.status(400).send('Invalid file path');
+      }
+
+      if (!(await fileExists(filePath))) {
+        return res.status(404).send('File not found');
       }
 
       if (req.params.file.endsWith('.vtt')) {
