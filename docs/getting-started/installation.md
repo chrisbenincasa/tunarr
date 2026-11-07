@@ -39,7 +39,7 @@ TODO! If you run Tunarr on Synology and would like to contribute a guide for Tun
 
 ## Binaries
 
-Tunarr is released in pre-built binaries for Linux (x64/ARM), Windows (x64), and macOS (x64/ARM). Tunarr currently does not provide a version of FFmpeg along with these binaries, so you must have your own build ready to go. We recommend using the pre-built FFmpeg 8.1.2 binaries provided by [ErsatzTV](https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/tag/8.1.2-7). If these don't work, builds from [BtbN/FFmpegBuilds](https://github.com/BtbN/FFmpeg-Builds) or [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) should _generally_ work as well. If you are planning on using hardware acceleration, ensure that the build of FFmpeg you use includes the proper libraries built-in.
+Tunarr is released in pre-built binaries for Linux (x64/ARM), Windows (x64), and macOS (x64/ARM). Tunarr currently does not provide a version of FFmpeg along with these binaries, so you must have your own build ready to go. We recommend using the pre-built FFmpeg 8.1.2 binaries provided by [ErsatzTV](https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/tag/8.1.2-8). If these don't work, builds from [BtbN/FFmpegBuilds](https://github.com/BtbN/FFmpeg-Builds) or [gyan.dev](https://www.gyan.dev/ffmpeg/builds/) should _generally_ work as well. If you are planning on using hardware acceleration, ensure that the build of FFmpeg you use includes the proper libraries built-in.
 
 * [Latest release](http://github.com/chrisbenincasa/tunarr/releases/latest)
 * [Pre-releases](https://github.com/chrisbenincasa/tunarr/releases?q=-dev&expanded=true)
