@@ -544,7 +544,7 @@ function SubtitleByLanguageFields({ index }: { index: number }) {
                 <Trans>Default only</Trans>
               </MenuItem>
               <MenuItem value="none">
-                <Trans>None (no filter)</Trans>
+                <Trans>None (no subtitles)</Trans>
               </MenuItem>
             </Select>
           </FormControl>

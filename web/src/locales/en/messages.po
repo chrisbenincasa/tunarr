@@ -3368,8 +3368,12 @@ msgid "None"
 msgstr "None"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
-msgid "None (no filter)"
-msgstr "None (no filter)"
+#~ msgid "None (no filter)"
+#~ msgstr "None (no filter)"
+
+#: src/components/profiles/StreamSelectionRuleEditor.tsx
+msgid "None (no subtitles)"
+msgstr "None (no subtitles)"
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx

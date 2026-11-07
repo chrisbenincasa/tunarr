@@ -123,6 +123,23 @@ describe('StreamSelectionRuleEditor', () => {
     ).toBeInTheDocument();
   });
 
+  test('labels the None filter as selecting no subtitles', async () => {
+    const { user } = renderEditor({ expanded: true });
+
+    await user.click(
+      screen.getByRole('combobox', { name: 'Subtitle Strategy' }),
+    );
+    await user.click(screen.getByRole('option', { name: 'By Language' }));
+    await user.click(screen.getByRole('combobox', { name: 'Filter' }));
+
+    expect(
+      screen.getByRole('option', { name: 'None (no subtitles)' }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole('option', { name: 'None (no filter)' }),
+    ).toBeNull();
+  });
+
   test('hides the rule controls and locks the fields when read-only', () => {
     renderEditor({ expanded: true, readOnly: true });
 
