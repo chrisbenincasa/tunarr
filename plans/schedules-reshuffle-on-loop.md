@@ -134,7 +134,7 @@ One seed per channel, with skip counts, keeps every cycle reproducible from the 
 
 - `rebuildEachCycle: boolean`. Missing reads as off.
 - `cycles: Array<{ itemCount, durationMs, snapshot }>`, in lineup order.
-- `nextCycleSnapshot`, the end snapshot of the last built cycle. Cycles store their own *start*
+- `nextCycleSnapshot`, the end snapshot of the last built cycle. Cycles store their own _start_
   snapshot, so the end snapshot of the last one needs its own field or the last cycle would need
   a non-deterministic rebuild to recover it.
 
