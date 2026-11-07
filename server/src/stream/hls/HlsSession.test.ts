@@ -11,7 +11,7 @@ import path from 'node:path';
 import tmp from 'tmp';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { ProgramStream } from '../ProgramStream.ts';
-import { HlsSession } from './HlsSession.js';
+import { HlsSession, type HlsSessionOptions } from './HlsSession.js';
 
 vi.mock('@/util/logging/LoggerFactory.js', () => ({
   LoggerFactory: {
@@ -38,14 +38,17 @@ vi.mock('@/stream/ConnectionTracker.ts', () => {
 
 const channelUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 
-function makeSession(transcodeDirectory: string): HlsSession {
+function makeSession(
+  transcodeDirectory: string,
+  streamMode: HlsSessionOptions['streamMode'] = 'hls',
+): HlsSession {
   const channel = {
     uuid: channelUuid,
     transcodeConfig: {},
   } as ChannelOrmWithTranscodeConfig;
 
   const options = {
-    streamMode: 'hls' as const,
+    streamMode,
     initialSegmentCount: 2,
     transcodeDirectory,
   };
@@ -225,8 +228,7 @@ describe('HlsSession', () => {
       lock: { runExclusive<T>(fn: () => Promise<T>): Promise<T> };
     };
 
-    const internals = (session: HlsSession) =>
-      session as unknown as Internals;
+    const internals = (session: HlsSession) => session as unknown as Internals;
 
     let refDir: tmp.DirResult;
     let dir: tmp.DirResult;
@@ -244,8 +246,11 @@ describe('HlsSession', () => {
       dir.removeCallback();
     });
 
-    async function startSession(transcodeDirectory: string) {
-      const session = makeSession(transcodeDirectory);
+    async function startSession(
+      transcodeDirectory: string,
+      streamMode: HlsSessionOptions['streamMode'] = 'hls',
+    ) {
+      const session = makeSession(transcodeDirectory, streamMode);
       await internals(session).startInternal();
       await fs.mkdir(session.workingDirectory, { recursive: true });
       return session;
@@ -310,55 +315,59 @@ describe('HlsSession', () => {
       }
     }
 
-    test('serves the same playlists as a session that never compacts', async () => {
-      const reference = await startSession(refDir.name);
-      const session = await startSession(dir.name);
-      const refFfmpeg = new FakeFfmpeg(reference);
-      const ffmpeg = new FakeFfmpeg(session);
+    test.each(['hls', 'hls_direct_v2'] as const)(
+      'serves the same playlists as a session that never compacts (%s)',
+      async (streamMode) => {
+        const reference = await startSession(refDir.name, streamMode);
+        const session = await startSession(dir.name, streamMode);
+        const refFfmpeg = new FakeFfmpeg(reference);
+        const ffmpeg = new FakeFfmpeg(session);
 
-      // Short programs get folded out of the window whole, which exercises
-      // the discontinuity sequence cap.
-      const programLengths = [30, 1, 2, 25, 1, 1, 40, 3, 22, 2, 1, 35];
-      let segmentNumber = 0;
-      let maxFileSegments = 0;
+        // Short programs get folded out of the window whole, which exercises
+        // the discontinuity sequence cap.
+        const programLengths = [30, 1, 2, 25, 1, 1, 40, 3, 22, 2, 1, 35];
+        let segmentNumber = 0;
+        let maxFileSegments = 0;
 
-      for (const [program, length] of programLengths.entries()) {
-        const isFirst = program === 0;
-        if (!isFirst) {
-          await internals(session).compactPlaylist();
-          await ffmpeg.loadFromDisk();
-        }
-        refFfmpeg.startProcess(isFirst);
-        ffmpeg.startProcess(isFirst);
+        for (const [program, length] of programLengths.entries()) {
+          const isFirst = program === 0;
+          if (!isFirst) {
+            await internals(session).compactPlaylist();
+            await ffmpeg.loadFromDisk();
+          }
+          refFfmpeg.startProcess(isFirst);
+          ffmpeg.startProcess(isFirst);
 
-        for (let i = 0; i < length; i++) {
-          // ffmpeg ends each program with a short segment.
-          const duration = i === length - 1 ? 1.5 + (program % 3) * 0.7 : 4.004;
-          await refFfmpeg.writeSegment(segmentNumber, duration);
-          await ffmpeg.writeSegment(segmentNumber, duration);
-          segmentNumber++;
-          maxFileSegments = Math.max(maxFileSegments, ffmpeg.segmentCount);
+          for (let i = 0; i < length; i++) {
+            // ffmpeg ends each program with a short segment.
+            const duration =
+              i === length - 1 ? 1.5 + (program % 3) * 0.7 : 4.004;
+            await refFfmpeg.writeSegment(segmentNumber, duration);
+            await ffmpeg.writeSegment(segmentNumber, duration);
+            segmentNumber++;
+            maxFileSegments = Math.max(maxFileSegments, ffmpeg.segmentCount);
 
-          const expected = (await reference.trimPlaylist()).get();
-          const actual = (await session.trimPlaylist()).get();
-          expect(actual?.playlist).toEqual(expected?.playlist);
-          expect(actual?.sequence).toEqual(expected?.sequence);
-          expect(actual?.discontinuitySequence).toEqual(
-            expected?.discontinuitySequence,
-          );
-
-          for (let n = actual?.sequence ?? 0; n < segmentNumber; n++) {
-            expect(await internals(session).segmentWindow(n)).toEqual(
-              await internals(reference).segmentWindow(n),
+            const expected = (await reference.trimPlaylist()).get();
+            const actual = (await session.trimPlaylist()).get();
+            expect(actual?.playlist).toEqual(expected?.playlist);
+            expect(actual?.sequence).toEqual(expected?.sequence);
+            expect(actual?.discontinuitySequence).toEqual(
+              expected?.discontinuitySequence,
             );
+
+            for (let n = actual?.sequence ?? 0; n < segmentNumber; n++) {
+              expect(await internals(session).segmentWindow(n)).toEqual(
+                await internals(reference).segmentWindow(n),
+              );
+            }
           }
         }
-      }
 
-      expect(refFfmpeg.segmentCount).toBe(segmentNumber);
-      // Bounded by the served window plus the longest program.
-      expect(maxFileSegments).toBeLessThanOrEqual(20 + 40);
-    });
+        expect(refFfmpeg.segmentCount).toBe(segmentNumber);
+        // Bounded by the served window plus the longest program.
+        expect(maxFileSegments).toBeLessThanOrEqual(20 + 40);
+      },
+    );
 
     test('skips compaction while the session lock is held', async () => {
       const session = await startSession(dir.name);

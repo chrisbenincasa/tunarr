@@ -96,8 +96,6 @@ export class HlsPlaylistMutator {
       // all DISCs are in the body; counting both would double-count.
       // This is beacuse Tunarr has discrete ffmpeg processes continuouly write
       // to the same underlying playlist file.
-      // TODO: We could consider writing out the trimmed playlist periodically
-      // in the session manager to keep things cleaner
       i++;
     }
 
