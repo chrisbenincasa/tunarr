@@ -114,7 +114,7 @@ export class SlotCycleBoundaryService {
   /**
    * Rebuilds every cycle in place after the library changed, keeping the
    * channel's start time and its place in the schedule. A channel whose
-   * cycles have all aired starts over instead.
+   * cycles have all aired catches up instead, as `advanceChannel` does.
    */
   async regenerateChannel(channelId: string, now: number = Date.now()) {
     await this.lineupLock.run(channelId, async () => {
@@ -128,14 +128,22 @@ export class SlotCycleBoundaryService {
 
       // Once every built cycle has aired there is nothing to cascade from.
       // Rebuilding from the old start time would run a scheduling pass per
-      // cycle between then and now and produce content nobody can see, so the
-      // channel starts over at the current period, as a missed boundary does.
-      const allAired = trimAiredCycles(state, now).cycles.length === 0;
-      const built = allAired
-        ? await initializeCycles(cycleStartTime(schedule, now), opts)
-        : await cascadeCycles(state, opts);
+      // cycle between then and now and produce content nobody can see. Catch
+      // up instead, which starts at the current period and continues from the
+      // last end snapshot.
+      if (trimAiredCycles(state, now).cycles.length === 0) {
+        const { state: caughtUp, changed } = await advanceCycles(
+          state,
+          cycleStartTime(schedule, now),
+          opts,
+        );
+        if (changed) {
+          await this.persist(channelId, state, caughtUp);
+        }
+        return;
+      }
 
-      await this.persist(channelId, state, built);
+      await this.persist(channelId, state, await cascadeCycles(state, opts));
     });
   }
 
