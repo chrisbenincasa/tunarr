@@ -2,7 +2,7 @@
 
 The Trash holds items that Tunarr scanned previously but did not find in a recent scan — a deleted file, a renamed folder, or a media server that stopped returning the item from its API. Trashed items stay in the database so you can review them before they are removed for good. They are unplayable in channels while they sit in the Trash.
 
-In local libraries, a season or show goes to the Trash once every one of its episodes is trashed, and an album or artist does the same once every one of its tracks is. A folder that holds no playable files at all goes to the Trash too. It comes back out when a later scan finds one of its items again.
+A season or show goes to the Trash once every one of its episodes is trashed, and an album or artist does the same once every one of its tracks is. This holds even when a Plex, Jellyfin, or Emby server still lists the empty season or album. In local libraries, a folder that holds no playable files at all goes to the Trash too. A trashed season, show, album, or artist comes back out when a later scan finds one of its items again.
 
 Removing a folder from a local media source also sends everything it held to the Trash. The path is marked unavailable rather than deleted, so its programs and groupings stay recoverable until you empty the Trash, and adding the path back restores them.
 
