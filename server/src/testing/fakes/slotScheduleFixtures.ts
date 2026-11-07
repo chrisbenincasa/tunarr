@@ -6,13 +6,15 @@ import { createFakeProgramOrm } from './entityCreators.ts';
 
 function slotProgram(
   overrides: Parameters<typeof createFakeProgramOrm>[0],
-  extra: Partial<Pick<SlotSchedulerProgram, 'parentCustomShows'>> = {},
+  extra: Partial<
+    Pick<SlotSchedulerProgram, 'parentCustomShows' | 'parentSmartCollections'>
+  > = {},
 ): SlotSchedulerProgram {
   return {
     ...createFakeProgramOrm(overrides),
     parentCustomShows: extra.parentCustomShows ?? [],
     parentFillerLists: [],
-    parentSmartCollections: [],
+    parentSmartCollections: extra.parentSmartCollections ?? [],
   };
 }
 
@@ -49,6 +51,25 @@ export function fixtureCustomShowPrograms(
         duration: durationMs,
       },
       { parentCustomShows: [{ customShowId, index: i }] },
+    ),
+  );
+}
+
+// Movies in a smart collection, titled so `next` order is `movie-1` .. `movie-n`.
+export function fixtureSmartCollectionPrograms(
+  smartCollectionId: string,
+  count: number,
+  durationMs: number,
+) {
+  return Array.from({ length: count }, (_, i) =>
+    slotProgram(
+      {
+        uuid: `movie-${i + 1}`,
+        title: `Movie ${String(i + 1).padStart(3, '0')}`,
+        type: 'movie',
+        duration: durationMs,
+      },
+      { parentSmartCollections: [smartCollectionId] },
     ),
   );
 }

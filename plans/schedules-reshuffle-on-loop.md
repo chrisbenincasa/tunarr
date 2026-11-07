@@ -61,6 +61,9 @@ stream and each iterator's state. Users get a fresh shuffle every cycle without 
 - A cycle ends where its last program ends, so lengths vary and are not whole minutes.
 - The program crossing the end time airs in that cycle. A random fixed-duration slot airs its whole
   packed group, because collecting the group already advanced its iterators.
+- A time-slot cycle checks the end time only when a slot starts, so the slot the end time falls in
+  fills its whole window. When the last slot's window wraps past the period boundary (slots at
+  06:00 and 18:00, say), the cycle ends at 06:00, and the next cycle starts there.
 - Each cycle starts exactly where the previous one ended.
 - Each time-slot cycle is generated from its own `t0`, so DST is handled per cycle.
 
