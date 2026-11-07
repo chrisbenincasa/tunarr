@@ -92,6 +92,27 @@ const sineAudio: PlayoutItemSource = lavfi('sine=f=400');
 const whiteNoiseAudio: PlayoutItemSource = lavfi('anoisesrc=c=white:a=0.7');
 
 /**
+ * Escapes a filter option value for a filter graph. ffmpeg unescapes twice,
+ * once for the graph and once for the option value, so each level gets its own
+ * pass, innermost first.
+ */
+export function escapeFilterGraphValue(value: string): string {
+  const optionLevel = value.replace(/[\\':]/g, (c) => `\\${c}`);
+  return optionLevel.replace(/[\\'[\],;]/g, (c) => `\\${c}`);
+}
+
+/**
+ * Plays a soundtrack on repeat. Playout sources have no loop flag, so the file
+ * is read through `amovie`, which loops it itself and picks the best audio
+ * stream past any cover art. Each pass restarts its timestamps, and `asetpts`
+ * keeps them rising so the output duration limit still ends the run.
+ */
+export const loopedSoundtrack = (location: string): PlayoutItemSource =>
+  lavfi(
+    `amovie=filename=${escapeFilterGraphValue(location)}:loop=0,asetpts=N/SR/TB`,
+  );
+
+/**
  * Channel media settings hold either a local path or a URL, including the URL
  * of a screen Tunarr serves itself.
  */
@@ -445,7 +466,7 @@ export function toPlayoutItem({
 
   if (lineupItem.type === 'offline') {
     const soundtrack = isNonEmptyString(offlineSoundtrack)
-      ? fileOrHttpSource(offlineSoundtrack)
+      ? loopedSoundtrack(offlineSoundtrack)
       : undefined;
 
     // A clip reaches the mapper as a `fallback` program and takes the content
