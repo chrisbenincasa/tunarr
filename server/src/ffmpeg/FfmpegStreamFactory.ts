@@ -702,20 +702,24 @@ export class FfmpegStreamFactory {
     for (const [outputIndex, audio] of (
       streamDetails.audioDetails ?? []
     ).entries()) {
-      if (isHls && audio.codec === AudioFormats.Flac) {
-        const channels = audio.channels ?? 2;
-        overrides.push({
-          outputIndex,
-          codec: AudioFormats.Ac3,
-          bitrateKbps: channels <= 2 ? 192 : 640,
-          channels: channels > 6 ? 6 : undefined,
-        });
-      } else if (
-        audio.codec === AudioFormats.Dca ||
-        audio.codec === AudioFormats.TrueHd
+      const isHlsFlac = isHls && audio.codec === AudioFormats.Flac;
+      if (
+        !isHlsFlac &&
+        audio.codec !== AudioFormats.Dca &&
+        audio.codec !== AudioFormats.TrueHd
       ) {
-        overrides.push({ outputIndex, codec: AudioFormats.Ac3 });
+        continue;
       }
+      const channels = audio.channels ?? 2;
+      const override: AudioCodecOverride = {
+        outputIndex,
+        codec: AudioFormats.Ac3,
+        channels: channels > 6 ? 6 : undefined,
+      };
+      if (isHlsFlac) {
+        override.bitrateKbps = channels <= 2 ? 192 : 640;
+      }
+      overrides.push(override);
     }
     return overrides;
   }

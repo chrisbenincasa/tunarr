@@ -46,7 +46,7 @@ Because this mode does not perform stream normalization, there may be issues whe
 
 #### How does it work?
 
-HLS Direct v2 produces a continuous playlist of MPEG-TS segments. Tunarr’s native pipeline copies the source video and converts incompatible audio tracks such as DTS, TrueHD, and FLAC to AC-3. For FLAC, this lossy conversion uses 192 kbps for mono or stereo and 640 kbps for multichannel audio. Tracks with more than six channels are mixed down to 5.1 and advertised as six channels in the playlist. The original track order and default are preserved. The same FLAC handling applies when remuxing to HLS.
+HLS Direct v2 produces a continuous playlist of MPEG-TS segments. Tunarr’s native pipeline copies the source video and converts incompatible audio tracks such as DTS, TrueHD, and FLAC to AC-3. For FLAC, this lossy conversion uses 192 kbps for mono or stereo and 640 kbps for multichannel audio. When converting FLAC, DTS, or TrueHD to AC-3, tracks with more than six channels are mixed down to 5.1 and advertised as six channels in the playlist. The original track order and default are preserved. The same FLAC handling applies when remuxing to HLS.
 
 #### Things to consider
 

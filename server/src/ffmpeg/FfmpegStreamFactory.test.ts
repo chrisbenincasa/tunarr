@@ -713,7 +713,7 @@ describe('FfmpegStreamFactory', () => {
         const ffmpegState = getCapturedFfmpegState()!;
         expect(ffmpegState.audioCodecOverrides).toEqual([
           { outputIndex: 1, codec: AudioFormats.Ac3 },
-          { outputIndex: 2, codec: AudioFormats.Ac3 },
+          { outputIndex: 2, codec: AudioFormats.Ac3, channels: 6 },
           ...(outputFormat.type === 'mkv'
             ? []
             : [
@@ -724,23 +724,32 @@ describe('FfmpegStreamFactory', () => {
       },
     );
 
-    test.each([true, false])(
-      'HLS advertises wide FLAC as 5.1 and preserves the source default (FLAC default: %s)',
-      async (flacDefault) => {
+    test.each([
+      { codec: AudioFormats.Flac, sourceDefault: true, bitrateKbps: 640 },
+      { codec: AudioFormats.Flac, sourceDefault: false, bitrateKbps: 640 },
+      {
+        codec: AudioFormats.TrueHd,
+        sourceDefault: true,
+        bitrateKbps: undefined,
+      },
+      { codec: AudioFormats.Dca, sourceDefault: false, bitrateKbps: undefined },
+    ])(
+      'HLS advertises 7.1 $codec as 5.1 and preserves the source default (source default: $sourceDefault)',
+      async ({ codec, sourceDefault, bitrateKbps }) => {
         const details = makeStreamDetails();
         details.audioDetails = [
           {
             codec: AudioFormats.Aac,
             channels: 2,
             index: 1,
-            default: !flacDefault,
+            default: !sourceDefault,
             language: 'eng',
           },
           {
-            codec: AudioFormats.Flac,
+            codec,
             channels: 8,
             index: 2,
-            default: flacDefault,
+            default: sourceDefault,
             language: 'jpn',
           },
         ];
@@ -767,13 +776,13 @@ describe('FfmpegStreamFactory', () => {
           {
             outputIndex: 1,
             codec: AudioFormats.Ac3,
-            bitrateKbps: 640,
+            bitrateKbps,
             channels: 6,
           },
         ]);
         expect(result?.renditions.audio).toMatchObject([
-          { language: 'eng', channels: 2, default: !flacDefault },
-          { language: 'jpn', channels: 6, default: flacDefault },
+          { language: 'eng', channels: 2, default: !sourceDefault },
+          { language: 'jpn', channels: 6, default: sourceDefault },
         ]);
       },
     );
