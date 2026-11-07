@@ -67,11 +67,13 @@ Program iterators decide the order within a slot: `ProgramOrdereredIterator.ts` 
 
 - `slotIteratorState.ts` defines `SlotIteratorState`, where each iterator left off. Ordered and
   `ordered_shuffle` iterators store the last program played; shuffle iterators store the programs
-  played in the current pass. Random slots also store the next sequential slot and cooldown times.
+  played in the current pass. All-rerun link groups store how many slots have aired the current
+  program (`rerunPlays`). Random slots also store the next sequential slot and cooldown times.
 - `createSlotIterators` keys iterators by slot position (`slot:<n>`) or link group (`group:<id>`).
 - `scheduleTimeSlots` and `RandomSlotScheduler.generateSchedule` take optional
   `{ iteratorState, endTime }` and return `iteratorState` next to `discardCount`. `endTime` replaces
-  the `maxDays` limit. With no state passed, output is unchanged.
+  the `maxDays` limit. Time slots check it only when a slot starts, so the slot it falls in fills
+  its whole window. With no state passed, output is unchanged.
 - The worker request and reply schemas (`server/src/types/worker_schemas.ts`) carry both fields.
 
 ## Related
