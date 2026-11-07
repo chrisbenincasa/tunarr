@@ -1,4 +1,5 @@
-import { Plural, useLingui } from '@lingui/react/macro';
+import { plural } from '@lingui/core/macro';
+import { useLingui } from '@lingui/react/macro';
 import { ButtonBase } from '@mui/material';
 import { StatusPill } from '../ui/StatusPill.tsx';
 import type { ChannelStatus } from './channelSummary.ts';
@@ -14,13 +15,11 @@ export const ChannelStatusPill = ({ status, onOpenSessions }: Props) => {
   const { t } = useLingui();
 
   const label =
-    status.status === 'live' ? (
-      <Plural value={status.connections} one="# watching" other="# watching" />
-    ) : status.status === 'warning' ? (
-      t`No viewers`
-    ) : (
-      t`Idle`
-    );
+    status.status === 'live'
+      ? plural(status.connections, { one: '# watching', other: '# watching' })
+      : status.status === 'warning'
+        ? t`No viewers`
+        : t`Idle`;
 
   const pill = <StatusPill status={status.status} label={label} />;
 
@@ -30,7 +29,7 @@ export const ChannelStatusPill = ({ status, onOpenSessions }: Props) => {
 
   return (
     <ButtonBase
-      aria-label={t`Show sessions`}
+      aria-label={t`${label}, show sessions`}
       onClick={(e) => {
         e.stopPropagation();
         onOpenSessions();
