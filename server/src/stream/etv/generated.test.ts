@@ -75,8 +75,8 @@ describe('vendored ErsatzTV next schemas', () => {
   });
 
   test('the checked-in generated output is what the generator produces', async () => {
-    for (const { file, out, root } of documents) {
-      const { source } = await renderDocument(file, root);
+    for (const { file, out, root, strict } of documents) {
+      const { source } = await renderDocument(file, root, strict);
       const checkedIn = await fs.readFile(
         path.join(generatedDir, out),
         'utf-8',

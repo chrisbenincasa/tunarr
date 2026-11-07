@@ -72,7 +72,7 @@ The modes above all run Tunarr's own FFmpeg pipeline. Tunarr can instead hand a 
 
 !!! warning "Experimental"
 
-    Tunarr pins ErsatzTV next release `v0.2.5` and refuses a bundled worker from any other release. A worker you point at with `TUNARR_ERSATZTV_NEXT_PATH` still runs, but Tunarr logs a warning and streams may fail in ways its schema checks cannot catch.
+    Tunarr pins ErsatzTV next release `v0.2.5` and refuses a bundled worker from any other release. A worker you point at with `TUNARR_ERSATZTV_NEXT_PATH` still runs from another release, with a warning in the log, unless its `describe` output shows it cannot read the schema versions Tunarr writes. Streams may still fail in ways the schema checks cannot catch.
 
 Turn it on for one channel with **Use ErsatzTV next Backend** on the channel's Streaming tab, or for every channel at once by setting `TUNARR_ERSATZTV_NEXT_ENABLED=true` (see [Environment Variables](../../getting-started/run.md#transcoding)). Start with a single channel; the global switch is there for when you are ready to move the rest. It replaces the pipeline for channels set to **HLS**, **HLS Direct v2** and **MPEG-TS**. HLS alt and HLS Direct keep using Tunarr's pipeline. Channel settings do not change, and the mode you pick in the UI still means what it did.
 
@@ -93,7 +93,7 @@ Tunarr synthesizes the multivariant playlist clients are handed and serves the w
 ### Things to consider
 
 - **The binary has to be findable.** The Docker images ship it. Elsewhere, put `ersatztv-channel` in `bin/` next to the Tunarr server or in the working directory, or point `TUNARR_ERSATZTV_NEXT_PATH` at the binary or the directory holding it. Tunarr does not search `PATH`.
-- **The binary has to match.** Each Tunarr release pins one ErsatzTV next version, and a channel on this backend refuses to start if the bundled binary reports a different one. A binary found through `TUNARR_ERSATZTV_NEXT_PATH` runs anyway, with a warning in the log.
+- **The binary has to match.** Each Tunarr release pins one ErsatzTV next version, and a channel on this backend refuses to start if the bundled binary reports a different one. A binary found through `TUNARR_ERSATZTV_NEXT_PATH` runs anyway, with a warning in the log. Either way, Tunarr asks the binary which schema versions and output files it uses (`ersatztv-channel describe`), and refuses one that cannot read what Tunarr writes. A channel that refuses to start names the mismatch in the log.
 - **Programming edits land within half an hour.** The schedule is materialized ahead of playback rather than chosen program by program, so an edit does not reach a running stream immediately. Tunarr rebuilds the unplayed part of the window on a timer and leaves the program currently airing alone, so an edit takes effect at the first program boundary after the next rebuild.
 - **Some settings do not survive the translation.** The worker's configuration does not cover everything a Tunarr transcode config can express. Some settings stop a channel from starting and others are simply dropped. See [ErsatzTV next backend](../ffmpeg/ersatztv-next.md) for which are which.
 - **A dead worker ends the session.** If the worker exits on its own, Tunarr tears the session down rather than serving a playlist that has stopped advancing. The next viewer starts a fresh worker.
