@@ -369,7 +369,6 @@ export const streamSelectionRouter: RouterPluginCallback = (
     },
   );
 
-  // Validate CEL expression
   // Evaluate unsaved rules against a program's real streams, without
   // cascading to other profiles
   fastify.post(
@@ -400,6 +399,7 @@ export const streamSelectionRouter: RouterPluginCallback = (
     },
   );
 
+  // Validate CEL expression
   fastify.post(
     '/stream-selection-profiles/validate-expression',
     {
