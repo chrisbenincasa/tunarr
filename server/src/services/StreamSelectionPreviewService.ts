@@ -7,6 +7,7 @@ import {
   evaluateStreamSelectionProfile,
   evaluateSubtitleSelection,
 } from '@/ffmpeg/StreamSelectionEvaluator.js';
+import type { StreamSelectionHints } from '@/ffmpeg/StreamSelectionEvaluator.js';
 import { ProgramStreamDetailsFetcher } from '@/stream/ProgramStreamDetailsFetcher.js';
 import type {
   AudioStreamDetails,
@@ -143,8 +144,11 @@ export class StreamSelectionPreviewService {
         streamDuration: program.duration,
       };
 
-      // Same hint as Troubleshoot, so the two tools report the same streams.
-      const hints = { preferTextBased: true };
+      // Report the source stream the rules pick, in the rules' own order, even
+      // an embedded text subtitle that has not been extracted yet. Troubleshoot
+      // traces a transcode session, so it reports such a subtitle only after
+      // extraction.
+      const hints: StreamSelectionHints = { allowUnextracted: true };
 
       if (isNonEmptyArray(audioStreams)) {
         const selection = await evaluateStreamSelectionProfile(

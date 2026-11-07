@@ -5283,6 +5283,10 @@ msgid "Troubleshoot on channel {channelName}"
 msgstr ""
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
+msgid "Troubleshoot shows an embedded text subtitle only after Tunarr has extracted it, so it can report no subtitle until then."
+msgstr ""
+
+#: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Try these rules against a program, including unsaved changes."
 msgstr ""
 

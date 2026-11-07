@@ -316,6 +316,18 @@ function PreviewResults({
               ? describeSubtitle(result.selectedSubtitleStream)
               : t`None`}
           </Typography>
+          {result.selectedSubtitleStream?.type === 'embedded' && (
+            <Typography
+              variant="caption"
+              color="text.secondary"
+              display="block"
+            >
+              <Trans>
+                Troubleshoot shows an embedded text subtitle only after Tunarr
+                has extracted it, so it can report no subtitle until then.
+              </Trans>
+            </Typography>
+          )}
         </Box>
       ) : (
         <Alert severity="info">

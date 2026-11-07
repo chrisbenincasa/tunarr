@@ -256,6 +256,36 @@ describe('StreamSelectionPreviewService', () => {
     expect(result.selectedSubtitleStream?.index).toBe(3);
   });
 
+  it('reports an unextracted embedded text subtitle in the rule order', async () => {
+    const pgsSubtitle: SubtitleStreamDetails = {
+      ...engSubtitle,
+      index: 3,
+      codec: 'hdmv_pgs_subtitle',
+    };
+    const srtSubtitle: SubtitleStreamDetails = { ...engSubtitle, index: 4 };
+    const subtitles = [pgsSubtitle, srtSubtitle];
+    const byLanguage = japaneseWithEnglishSubs.subtitleAction;
+    if (byLanguage.type !== 'by_language') {
+      throw new Error('Expected a by_language subtitle action');
+    }
+
+    const ruleOrder = await previewSuccess(createService({ subtitles }), [
+      japaneseWithEnglishSubs,
+    ]);
+    expect(ruleOrder.selectedSubtitleStream?.index).toBe(3);
+
+    const preferText = await previewSuccess(createService({ subtitles }), [
+      {
+        ...japaneseWithEnglishSubs,
+        subtitleAction: { ...byLanguage, preferTextBased: true },
+      },
+    ]);
+    expect(preferText.selectedSubtitleStream).toMatchObject({
+      index: 4,
+      type: 'embedded',
+    });
+  });
+
   it('returns not_found for an unknown program', async () => {
     const outcome = await createService({ programFound: false }).preview({
       rules: [rule('true')],

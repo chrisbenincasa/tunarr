@@ -145,6 +145,8 @@ The panel shows whether each rule's condition matched, highlights the rule that 
 
 The test checks only the profile you are editing. If no rule matches, it says so; during playback, Tunarr would move on to the next profile (see [Where profiles apply](#where-profiles-apply)). To see the whole chain for a program on a channel, use the panel's Troubleshoot link.
 
+The test reports the track your rules pick from the source file. Troubleshoot traces a real transcode, which can use an embedded text subtitle only after Tunarr has extracted it. Until then, Troubleshoot can report no subtitle where the test shows one.
+
 ## Debugging
 
 To see why a program played with the audio or subtitles it did, open **System > Troubleshoot**, pick the program and channel, and run it. The **Stream Selection** section lists each profile Tunarr checked, in order, with every rule's result. The rule that was applied is highlighted. See [Stream Troubleshooter](../misc/troubleshooting.md).

@@ -1608,6 +1608,82 @@ describe('evaluateStreamSelectionProfile', () => {
       );
     });
 
+    it('allowUnextracted returns embedded text subs unextracted', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 3,
+          languageCodeISO6392: 'eng',
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['eng'],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+          },
+        }),
+      ]);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        makeCelService(true),
+        celContext,
+        lineupItem,
+        { allowUnextracted: true },
+      );
+
+      expect(result.subtitleStream?.index).toBe(3);
+      expect(result.subtitleStream?.type).toBe('embedded');
+      expect(result.subtitleStream?.path).toBeUndefined();
+    });
+
+    it('allowUnextracted keeps the profile order instead of sorting text subs first', async () => {
+      const subs: SubtitleStreamDetails[] = [
+        makeSubtitleStream({
+          index: 2,
+          languageCodeISO6392: 'eng',
+          codec: 'hdmv_pgs_subtitle',
+          type: 'embedded',
+        }),
+        makeSubtitleStream({
+          index: 3,
+          languageCodeISO6392: 'eng',
+          codec: 'srt',
+          type: 'embedded',
+        }),
+      ];
+      const profile = makeProfile([
+        makeRule({
+          subtitleAction: {
+            type: 'by_language',
+            languages: ['eng'],
+            filterType: 'any',
+            allowImageBased: true,
+            allowExternal: true,
+          },
+        }),
+      ]);
+
+      const result = await evaluateStreamSelectionProfile(
+        profile,
+        audioStreams,
+        subs,
+        makeCelService(true),
+        celContext,
+        lineupItem,
+        { allowUnextracted: true },
+      );
+
+      expect(result.subtitleStream?.index).toBe(2);
+    });
+
     it('by_language with the runtime hint returns embedded text subs unextracted', async () => {
       // The hint means the caller can mux the embedded stream straight from the
       // container, so extraction is skipped and no path is set.
