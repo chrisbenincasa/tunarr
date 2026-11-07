@@ -6,7 +6,9 @@
     "channel_config.json": "f181ef18e2453608c39a2d2190bfc94567cd9c9e079ff1ab336e75fc9e915a47",
     "lineup_config.json": "05498875c1686d811eda5279482a7a7c4e615a8cc69f98a68a7612c41384822a",
     "playout.json": "4f23496840086c2d3d3c22296a203685a23e4a8af4c7723c82e851f2592bc45a",
-    "example-playout.json": "c646d028753f93c302f1fb25d02ce265c6537b5852ffb9a84634ef21c0c9d27f"
+    "example-playout.json": "c646d028753f93c302f1fb25d02ce265c6537b5852ffb9a84634ef21c0c9d27f",
+    "describe.json": "a2c72018c15294f5a6f329408007e631b6a99f64e0177a816ca9c0226cccd8c5",
+    "example-describe.json": "982a68714b1390925203b514218f3971fb729a368da1d9e42cb8a1b55b9cd368"
   },
-  "note": "example-playout.json is upstream examples/playout/playout.json, kept as a contract fixture."
+  "note": "example-playout.json is upstream examples/playout/playout.json, kept as a contract fixture. example-describe.json is the output of `ersatztv-channel describe` from the pinned release."
 }
