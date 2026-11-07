@@ -3,7 +3,7 @@
   "tool": "codebase-mapper",
   "version": "2.15.10",
   "mappedAt": "2026-11-07",
-  "gitCommit": "9d89fead80cef9b662c8804da1e240796f2e5a6b",
+  "gitCommit": "2431188aa634460ced9ee153634fe79336fab80f",
   "documents": [
     "architecture.md",
     "database.md",
@@ -17,9 +17,9 @@
     "INDEX.md": "8097e23cb999140a2e08bd21c8d0cac1ebfafe4b10b8a7a9d57b89613d64cc39",
     "architecture.md": "5fdc9cad903a6400c2b6d78d31cadfc10fde2b65d6aeeaafa7fc1010a5dcb18e",
     "database.md": "c9e51194ce6047f350dd217f367257b12c903fefb6e38a4c0fdc629484c96584",
-    "entry-points.md": "cae24797e14899038690d21e04d0de32eac6c1427429a299142baac2b59718bd",
+    "entry-points.md": "716517435d8ac7882496b5c829fbdb12f112b97ea2edea6cd290a99738b1ce4c",
     "media-sources.md": "0ad4fc758833e4790d7c8e5ddcc054fe391d1b7fb12a98eb076166d6c4646862",
-    "scheduling-and-lineups.md": "f273229b3f4ad5a0291a89a824b7e18f7117bc4caac9255f1c9d80d8c78353fa",
+    "scheduling-and-lineups.md": "2cd3538c2978e35c8d8d9f46f12eeb5e6d1d732a528469e415d37545cc3d9e2c",
     "streaming.md": "34ab617897261f304f53870a47148c9966543570ab22f109e02abadb0767aabd",
     "testing.md": "c9648ebefaddd02570ea10bfbfd3ec60100f1bb58d320e5e4c4f1b676edfd82e"
   }

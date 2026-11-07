@@ -19,6 +19,7 @@ export const FixtureIds = {
   showA: 'show-a',
   showB: 'show-b',
   customShow: '00000000-0000-4000-8000-0000000000c5',
+  movieShow: '00000000-0000-4000-8000-0000000000c6',
   fillerList: '00000000-0000-4000-8000-0000000000f1',
   rerunGroup: '00000000-0000-4000-8000-0000000000a1',
   continueGroup: '00000000-0000-4000-8000-0000000000a2',
@@ -99,14 +100,22 @@ export function fixtureSmartCollectionPrograms(
 }
 
 export function fixturePrograms(): SlotSchedulerProgram[] {
+  // Movies sit in a custom show, as the v7 lineup migration stores a movie
+  // slot. Air date and title both ascend with the index, so `next` covers
+  // the chronological and alphanumeric sorts.
   const movies = Array.from({ length: 15 }, (_, i) =>
-    slotProgram({
-      uuid: `movie-${i + 1}`,
-      title: `Movie ${String(i + 1).padStart(2, '0')}`,
-      type: 'movie',
-      duration: 80 * oneMin + i * 3 * oneMin,
-      originalAirDate: `20${String(10 + i).padStart(2, '0')}-01-01`,
-    }),
+    slotProgram(
+      {
+        uuid: `movie-${i + 1}`,
+        title: `Movie ${String(i + 1).padStart(2, '0')}`,
+        type: 'movie',
+        duration: 80 * oneMin + i * 3 * oneMin,
+        originalAirDate: `20${String(10 + i).padStart(2, '0')}-01-01`,
+      },
+      {
+        parentCustomShows: [{ customShowId: FixtureIds.movieShow, index: i }],
+      },
+    ),
   );
   const customShowPrograms = Array.from({ length: 10 }, (_, i) =>
     slotProgram(
@@ -173,8 +182,9 @@ export function fixtureTimeSlotSchedule(
     {
       id: fixtureSlotId(1),
       startTime: at(0),
-      type: 'movie',
-      order: 'chronological',
+      type: 'custom-show',
+      customShowId: FixtureIds.movieShow,
+      order: 'next',
       direction: 'asc',
     },
     {
@@ -225,7 +235,8 @@ export function fixtureTimeSlotSchedule(
     {
       id: fixtureSlotId(7),
       startTime: at(8),
-      type: 'movie',
+      type: 'custom-show',
+      customShowId: FixtureIds.movieShow,
       order: 'shuffle',
       direction: 'asc',
       filler: tailFiller,
@@ -316,8 +327,9 @@ export function fixtureTimeSlotSchedule(
     {
       id: fixtureSlotId(15),
       startTime: at(20),
-      type: 'movie',
-      order: 'alphanumeric',
+      type: 'custom-show',
+      customShowId: FixtureIds.movieShow,
+      order: 'next',
       direction: 'desc',
     },
   ];
@@ -380,7 +392,8 @@ export function fixtureRandomSlotSchedule(
     {
       ...base,
       id: fixtureSlotId(104),
-      type: 'movie',
+      type: 'custom-show',
+      customShowId: FixtureIds.movieShow,
       order: 'shuffle',
       direction: 'asc',
       weight: 2,

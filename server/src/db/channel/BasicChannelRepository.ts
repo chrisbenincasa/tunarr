@@ -207,7 +207,7 @@ export class BasicChannelRepository {
   // here, so the whole thing runs under the channel's lineup lock.
   updateChannel(
     id: string,
-    updateReq: SaveableChannel,
+    updateReq: UpdateChannelRequest,
   ): Promise<
     ChannelAndLineup<MarkRequired<ChannelOrmWithRelations, 'fillerShows'>>
   > {
