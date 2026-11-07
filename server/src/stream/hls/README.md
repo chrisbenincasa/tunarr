@@ -39,3 +39,18 @@ The offset never starts video before the previous video ended.
 `MeasureAudioEncoderLeadTask` measures the lead once per `hls` session with a
 short ffmpeg probe, started when the session starts. A failed probe, or copied
 audio, uses a lead of zero.
+
+## On-disk playlist compaction
+
+ffmpeg runs with `append_list` and `-hls_list_size 0`, so `stream.m3u8` would
+keep every segment for the whole session. Before each ffmpeg process after the
+first, `HlsSession.compactPlaylist` cuts the file back to the last window it
+served (`compactHlsPlaylist.ts`). It runs only between processes, because ffmpeg
+rewrites the whole file from memory after each segment.
+
+The rewritten header never contains `#EXT-X-DISCONTINUITY` or
+`#EXT-X-DISCONTINUITY-SEQUENCE`. ffmpeg's playlist parser treats any line that
+starts with `#EXT-X-DISCONTINUITY` as a discontinuity on the first segment, so
+either tag would add a boundary that was never in the stream. The session
+counts the body discontinuities it drops and passes that count to
+`HlsPlaylistMutator` as `baseDiscontinuitySequence`.
