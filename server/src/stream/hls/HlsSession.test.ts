@@ -10,6 +10,7 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import tmp from 'tmp';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { GetSegmentStreamEndsTask } from '@/ffmpeg/GetSegmentStreamEnds.js';
 import { MeasureAudioEncoderLeadTask } from '@/ffmpeg/MeasureAudioEncoderLeadTask.js';
 import { ProgramStream } from '../ProgramStream.ts';
 import type { HlsSessionOptions } from './HlsSession.js';
@@ -244,6 +245,7 @@ describe('HlsSession', () => {
     type PrefetchInternals = {
       startInternal(): Promise<void>;
       getAudioEncoderLead(): Promise<number>;
+      getPtsOffset(): Promise<number>;
     };
 
     beforeEach(() => {
@@ -327,6 +329,32 @@ describe('HlsSession', () => {
       await expect(internals.getAudioEncoderLead()).resolves.toBe(0);
       await expect(internals.getAudioEncoderLead()).resolves.toBe(0);
       expect(run).toHaveBeenCalledTimes(1);
+    });
+
+    test('offsets the next program from the newest segment and the encoder lead', async () => {
+      const segmentEnds = vi
+        .spyOn(GetSegmentStreamEndsTask.prototype, 'run')
+        .mockResolvedValue(
+          Result.success({ audioEnd: 1083361, nonAudioEnd: 1083001 }),
+        );
+      vi.spyOn(MeasureAudioEncoderLeadTask.prototype, 'run').mockResolvedValue(
+        Result.success(1920),
+      );
+      const session = makeSession(dir.name, { settingsDB, transcodeConfig });
+      await fs.mkdir(session.workingDirectory, { recursive: true });
+      for (const file of ['data000001.ts', 'data000002.ts']) {
+        await fs.writeFile(path.join(session.workingDirectory, file), '');
+      }
+
+      const offset = await (
+        session as unknown as PrefetchInternals
+      ).getPtsOffset();
+
+      expect(segmentEnds).toHaveBeenCalledWith(
+        path.join(session.workingDirectory, 'data000002.ts'),
+      );
+      // Audio end plus the lead, one tick past.
+      expect(offset).toBe(1085282);
     });
   });
 
