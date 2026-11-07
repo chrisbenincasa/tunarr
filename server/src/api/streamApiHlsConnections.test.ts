@@ -231,6 +231,7 @@ describe('streamApi HLS playlist window with a stalled viewer', () => {
 
   let dir: tmp.DirResult;
   let app: ReturnType<typeof Fastify>;
+  let workingDirectory: string;
 
   function request(file: string, remoteAddress: string) {
     return app.inject({
@@ -270,6 +271,7 @@ describe('streamApi HLS playlist window with a stalled viewer', () => {
     await (
       session as unknown as { startInternal(): Promise<void> }
     ).startInternal();
+    workingDirectory = session.workingDirectory;
 
     // 60 segments of 4s on disk, as ffmpeg leaves them about 4 minutes in.
     const lines = [
@@ -320,6 +322,20 @@ describe('streamApi HLS playlist window with a stalled viewer', () => {
 
     expect(res.statusCode).toBe(200);
     expect(listedNumbers(res.body)).toEqual(range(40, 60));
+  });
+
+  it('serves a subtitle window built from the cue files', async () => {
+    // Segment 41 covers 164s to 168s of the session timeline.
+    await fs.writeFile(
+      path.join(workingDirectory, 'sub000000.vtt'),
+      'WEBVTT\n\n02:45.000 --> 02:46.500\nwindow cue\n',
+    );
+
+    const res = await request('subs000041.vtt', LIVE);
+
+    expect(res.statusCode).toBe(200);
+    expect(res.headers['content-type']).toContain('text/vtt');
+    expect(res.body).toContain('window cue');
   });
 });
 
