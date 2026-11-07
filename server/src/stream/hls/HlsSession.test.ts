@@ -11,7 +11,6 @@ import path from 'node:path';
 import tmp from 'tmp';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { MeasureAudioEncoderLeadTask } from '@/ffmpeg/MeasureAudioEncoderLeadTask.js';
-import { Result } from '@/types/result.js';
 import { ProgramStream } from '../ProgramStream.ts';
 import type { HlsSessionOptions } from './HlsSession.js';
 import { HlsSession, nextProgramPtsOffset } from './HlsSession.js';
@@ -288,6 +287,46 @@ describe('HlsSession', () => {
       await (session as unknown as PrefetchInternals).startInternal();
 
       expect(run).not.toHaveBeenCalled();
+    });
+
+    test('uses no lead and skips the probe when audio is copied', async () => {
+      const run = vi.spyOn(MeasureAudioEncoderLeadTask.prototype, 'run');
+      const session = makeSession(dir.name, {
+        settingsDB,
+        transcodeConfig: { ...transcodeConfig, audioFormat: 'copy' },
+      });
+
+      await expect(
+        (session as unknown as PrefetchInternals).getAudioEncoderLead(),
+      ).resolves.toBe(0);
+      expect(run).not.toHaveBeenCalled();
+    });
+
+    test('uses no lead when the probe reports a failure', async () => {
+      vi.spyOn(MeasureAudioEncoderLeadTask.prototype, 'run').mockResolvedValue(
+        Result.failure('unknown encoder'),
+      );
+      const session = makeSession(dir.name, { settingsDB, transcodeConfig });
+
+      await expect(
+        (session as unknown as PrefetchInternals).getAudioEncoderLead(),
+      ).resolves.toBe(0);
+    });
+
+    // The session prefetches without awaiting, so a rejected cached promise
+    // would make every later program boundary throw.
+    test('uses no lead when the probe throws, and keeps serving the cached result', async () => {
+      const run = vi
+        .spyOn(MeasureAudioEncoderLeadTask.prototype, 'run')
+        .mockRejectedValue(new Error('spawn ffmpeg ENOENT'));
+      const session = makeSession(dir.name, { settingsDB, transcodeConfig });
+      const internals = session as unknown as PrefetchInternals;
+
+      await internals.startInternal();
+
+      await expect(internals.getAudioEncoderLead()).resolves.toBe(0);
+      await expect(internals.getAudioEncoderLead()).resolves.toBe(0);
+      expect(run).toHaveBeenCalledTimes(1);
     });
   });
 

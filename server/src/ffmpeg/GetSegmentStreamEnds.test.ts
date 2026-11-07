@@ -1,5 +1,13 @@
-import { describe, expect, test } from 'vitest';
-import { parseSegmentStreamEnds } from './GetSegmentStreamEnds.js';
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import { setTestGlobalOptions } from '@/testing/getFakeSettingsDb.js';
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import tmp from 'tmp';
+import { beforeAll, describe, expect, test } from 'vitest';
+import {
+  GetSegmentStreamEndsTask,
+  parseSegmentStreamEnds,
+} from './GetSegmentStreamEnds.js';
 
 describe('parseSegmentStreamEnds', () => {
   test('tracks audio and video ends separately when video is the last packet written', () => {
@@ -46,4 +54,48 @@ describe('parseSegmentStreamEnds', () => {
       /No packet with a PTS found/,
     );
   });
+});
+
+describe('GetSegmentStreamEndsTask', () => {
+  beforeAll(async () => {
+    await setTestGlobalOptions();
+  });
+
+  async function runWithFakeFfprobe(exitCode: number) {
+    const dir = tmp.dirSync({ unsafeCleanup: true });
+    try {
+      const ffprobePath = path.join(dir.name, 'ffprobe');
+      await fs.writeFile(
+        ffprobePath,
+        `#!/bin/sh\necho 'video|90000|3000'\nexit ${exitCode}\n`,
+        { mode: 0o755 },
+      );
+      const settingsDB = { ffprobePath } as unknown as ISettingsDB;
+      return await new GetSegmentStreamEndsTask(settingsDB).run(
+        '/test/segment.ts',
+      );
+    } finally {
+      dir.removeCallback();
+    }
+  }
+
+  test.skipIf(process.platform === 'win32')(
+    'parses the packets of a successful probe',
+    async () => {
+      const result = await runWithFakeFfprobe(0);
+
+      expect(result.get()).toEqual({ nonAudioEnd: 93000 });
+    },
+  );
+
+  // A failed probe can leave partial output, which must not pass as a
+  // measurement.
+  test.skipIf(process.platform === 'win32')(
+    'fails when ffprobe exits nonzero, even with parseable output',
+    async () => {
+      const result = await runWithFakeFfprobe(1);
+
+      expect(result.isFailure()).toBe(true);
+    },
+  );
 });
