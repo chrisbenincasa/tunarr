@@ -182,6 +182,11 @@ export const resetCurrentLineup = (programming: CondensedChannelProgramming) =>
     state.channelEditor.schedule = programming.schedule;
   });
 
+export const clearChannelSchedule = () =>
+  useStore.setState((state) => {
+    state.channelEditor.schedule = undefined;
+  });
+
 export const resetLineup = () =>
   useStore.setState((state) => {
     if (
