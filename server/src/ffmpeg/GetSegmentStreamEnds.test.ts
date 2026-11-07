@@ -98,4 +98,19 @@ describe('GetSegmentStreamEndsTask', () => {
       expect(result.isFailure()).toBe(true);
     },
   );
+
+  test('fails with a clear error when ffprobe does not exist', async () => {
+    const settingsDB = {
+      ffprobePath: '/nonexistent/ffprobe',
+    } as unknown as ISettingsDB;
+
+    const result = await new GetSegmentStreamEndsTask(settingsDB).run(
+      '/test/segment.ts',
+    );
+
+    expect(result.isFailure()).toBe(true);
+    if (result.isFailure()) {
+      expect(result.error.cause?.message).toContain('does not exist');
+    }
+  });
 });

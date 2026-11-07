@@ -58,7 +58,7 @@ export class MeasureAudioEncoderLeadTask {
       const stdout = await new ChildProcessHelper().getStdout(
         this.ffmpegPath,
         args,
-        { swallowError: false, timeout: ProbeTimeoutMs },
+        { swallowError: false, isPath: true, timeout: ProbeTimeoutMs },
       );
       return parseEncoderLeadFromFramecrc(stdout, ProbeOffsetSeconds);
     });

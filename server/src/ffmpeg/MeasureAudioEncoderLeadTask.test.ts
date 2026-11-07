@@ -1,5 +1,9 @@
-import { describe, expect, test } from 'vitest';
-import { parseEncoderLeadFromFramecrc } from './MeasureAudioEncoderLeadTask.js';
+import { setTestGlobalOptions } from '@/testing/getFakeSettingsDb.js';
+import { beforeAll, describe, expect, test } from 'vitest';
+import {
+  MeasureAudioEncoderLeadTask,
+  parseEncoderLeadFromFramecrc,
+} from './MeasureAudioEncoderLeadTask.js';
 
 const header = [
   '#tb 0: 1/48000',
@@ -54,5 +58,22 @@ describe('parseEncoderLeadFromFramecrc', () => {
     expect(() => parseEncoderLeadFromFramecrc(header.join('\n'), 10)).toThrow(
       /no audio packets/,
     );
+  });
+});
+
+describe('MeasureAudioEncoderLeadTask', () => {
+  beforeAll(async () => {
+    await setTestGlobalOptions();
+  });
+
+  test('fails with a clear error when ffmpeg does not exist', async () => {
+    const result = await new MeasureAudioEncoderLeadTask(
+      '/nonexistent/ffmpeg',
+    ).run({ encoder: 'aac', sampleRateKhz: 48, channels: 2 });
+
+    expect(result.isFailure()).toBe(true);
+    if (result.isFailure()) {
+      expect(result.error.cause?.message).toContain('does not exist');
+    }
   });
 });

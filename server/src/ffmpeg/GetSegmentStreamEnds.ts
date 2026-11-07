@@ -37,7 +37,7 @@ export class GetSegmentStreamEndsTask {
       const stdout = await new ChildProcessHelper().getStdout(
         this.settingsDB.ffprobePath,
         args,
-        { swallowError: false, timeout: ProbeTimeoutMs },
+        { swallowError: false, isPath: true, timeout: ProbeTimeoutMs },
       );
       return parseSegmentStreamEnds(
         stdout
