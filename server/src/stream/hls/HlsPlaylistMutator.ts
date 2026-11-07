@@ -22,6 +22,9 @@ type MutateOptions = {
   endWithDiscontinuity: boolean;
   targetDuration: number;
   previousDiscontinuitySequence?: number;
+
+  // Discontinuities already trimmed from the top of the playlist file.
+  baseDiscontinuitySequence?: number;
 };
 
 type FilterBeforeDate = {
@@ -61,6 +64,7 @@ export class HlsPlaylistMutator {
       opts.maxSegmentsToKeep,
       opts.targetDuration,
       opts.previousDiscontinuitySequence,
+      opts.baseDiscontinuitySequence,
     );
 
     return {
@@ -92,8 +96,6 @@ export class HlsPlaylistMutator {
       // all DISCs are in the body; counting both would double-count.
       // This is beacuse Tunarr has discrete ffmpeg processes continuouly write
       // to the same underlying playlist file.
-      // TODO: We could consider writing out the trimmed playlist periodically
-      // in the session manager to keep things cleaner
       i++;
     }
 
@@ -131,10 +133,11 @@ export class HlsPlaylistMutator {
     maxSegmentsToKeep: number,
     targetDuration: number,
     previousDiscontinuitySequence?: number,
+    baseDiscontinuitySequence = 0,
   ) {
     // Count and remove leading discontinuities
     let leadingDiscontinuities = 0;
-    let discontinuitySequence = 0;
+    let discontinuitySequence = baseDiscontinuitySequence;
     while (items[leadingDiscontinuities]?.type === 'discontinuity') {
       leadingDiscontinuities++;
     }
