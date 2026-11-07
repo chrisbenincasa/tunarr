@@ -422,6 +422,23 @@ describe('PlexApiClient', () => {
     });
   });
 
+  describe('getLibrariesRaw', () => {
+    it('reads a response without a Directory key as no libraries', async () => {
+      const { client } = makeMinimalPlexClient();
+
+      vi.spyOn(client, 'doRequest' as never).mockImplementation(() =>
+        Promise.resolve({
+          MediaContainer: { size: 0, allowSync: false, title1: 'Plex Library' },
+        }),
+      );
+
+      const result = await client.getLibrariesRaw();
+
+      expect(result.isSuccess()).toBe(true);
+      expect(result.get().MediaContainer.Directory).toEqual([]);
+    });
+  });
+
   describe('video stream selection', () => {
     // Broadcast MPEG-TS recordings list one stream per program. Plex reports
     // dimensions only on the program that carries picture, and none on Media.
