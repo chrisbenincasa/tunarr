@@ -121,13 +121,17 @@ for n in "${NUMBERS[@]}"; do
   sleep 1
 done
 
+# pending-release-label.sh adds this label when the PR merges.
+PENDING_LABEL="pending release"
+
 for n in "${CLOSE_NUMBERS[@]}"; do
-  if ! STATE="$(gh api "repos/${REPO}/issues/${n}" --jq 'if .pull_request then "pr" else .state end')"; then
+  if ! ISSUE="$(gh api "repos/${REPO}/issues/${n}")"; then
     echo "::warning::Could not read #${n}."
     FAILED=$((FAILED + 1))
     continue
   fi
 
+  STATE="$(jq -r 'if .pull_request then "pr" else .state end' <<< "${ISSUE}")"
   case "${STATE}" in
     pr)
       echo "#${n}: is a pull request, not closing"
@@ -135,23 +139,34 @@ for n in "${CLOSE_NUMBERS[@]}"; do
       ;;
     closed)
       echo "#${n}: already closed"
-      continue
+      ;;
+    *)
+      if [ "${DRY_RUN}" = "true" ]; then
+        echo "#${n}: would close"
+      elif gh api -X PATCH "repos/${REPO}/issues/${n}" -f state=closed -f state_reason=completed > /dev/null; then
+        echo "#${n}: closed"
+      else
+        echo "::warning::Could not close #${n}."
+        FAILED=$((FAILED + 1))
+        continue
+      fi
       ;;
   esac
 
-  if [ "${DRY_RUN}" = "true" ]; then
-    echo "#${n}: would close"
-    continue
+  if [ "$(jq --arg l "${PENDING_LABEL}" 'any(.labels[]; .name == $l)' <<< "${ISSUE}")" = "true" ]; then
+    if [ "${DRY_RUN}" = "true" ]; then
+      echo "#${n}: would remove ${PENDING_LABEL}"
+    elif gh api -X DELETE "repos/${REPO}/issues/${n}/labels/${PENDING_LABEL// /%20}" > /dev/null; then
+      echo "#${n}: removed ${PENDING_LABEL}"
+    else
+      echo "::warning::Could not remove ${PENDING_LABEL} from #${n}."
+      FAILED=$((FAILED + 1))
+    fi
   fi
 
-  if gh api -X PATCH "repos/${REPO}/issues/${n}" -f state=closed -f state_reason=completed > /dev/null; then
-    echo "#${n}: closed"
-  else
-    echo "::warning::Could not close #${n}."
-    FAILED=$((FAILED + 1))
+  if [ "${DRY_RUN}" != "true" ]; then
+    sleep 1
   fi
-
-  sleep 1
 done
 
 if [ "${FAILED}" -gt 0 ]; then
