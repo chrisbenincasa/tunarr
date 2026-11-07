@@ -1,5 +1,4 @@
 import { FilterOption } from '@/ffmpeg/builder/filter/FilterOption.js';
-import { ColorFormat } from '@/ffmpeg/builder/format/ColorFormat.js';
 import type { PixelFormat } from '@/ffmpeg/builder/format/PixelFormat.js';
 import type { FrameState } from '@/ffmpeg/builder/state/FrameState.js';
 
@@ -20,10 +19,7 @@ export class VaapiFormatFilter extends FilterOption {
   }
 
   nextState(currentState: FrameState): FrameState {
-    return currentState.update({
-      pixelFormat: this.hardarePixelFormat,
-      ...(this.normalizeSdrColor ? { colorFormat: ColorFormat.bt709 } : {}),
-    });
+    return currentState.update({ pixelFormat: this.hardarePixelFormat });
   }
 
   private get hardarePixelFormat() {
