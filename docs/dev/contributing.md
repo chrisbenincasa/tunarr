@@ -324,7 +324,7 @@ Closes-on-release: #1234
 ```
 
 - The line must start with `Closes-on-release:`. List several issues on one line: `Closes-on-release: #1234, #1240`.
-- When the PR merges into `main` or `dev`, a workflow labels each open issue `pending release`. The label shows the fix is merged and waiting on a release.
+- When the PR merges into `main` or `dev`, a workflow labels each open issue `pending release`. The label shows the fix is merged and waiting on a release. A manual run of the Pending Release Label workflow with no PR number labels the issues for every merged PR that no stable release has shipped yet.
 - When a stable release ships the PR, the release workflow comments on the issue, closes it, and removes the `pending release` label. Prereleases don't count.
 - When an issue needs several PRs, add the line only to the PR that finishes it.
 
