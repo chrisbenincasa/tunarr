@@ -23,12 +23,14 @@ type LimitMinutesFieldProps = {
   onBlur: () => void;
   label: string;
   helperText: string;
-  invalidText: string;
+  errorText?: string;
 };
 
 // Keeps the typed text so partial input like "1." survives. The text is
-// re-seeded only when it no longer matches the form value, such as after a
-// form reset.
+// re-seeded only when the form value changes from outside, such as after a
+// form reset. Comparing against the last value this field wrote, rather than
+// round-tripping the text, keeps fractional stored values from re-seeding on
+// every render.
 
 function LimitMinutesField({
   seconds,
@@ -36,25 +38,28 @@ function LimitMinutesField({
   onBlur,
   label,
   helperText,
-  invalidText,
+  errorText,
 }: LimitMinutesFieldProps) {
   const [text, setText] = useState(() => String(secondsToMinutes(seconds)));
-  if (minutesToSeconds(text) !== seconds) {
+  const [syncedSeconds, setSyncedSeconds] = useState(seconds);
+  if (!Object.is(seconds, syncedSeconds)) {
+    setSyncedSeconds(seconds);
     setText(String(secondsToMinutes(seconds)));
   }
-  const invalid = text.trim() !== '' && !(Number(text) >= 0);
 
   return (
     <TextField
       fullWidth
       label={label}
-      error={invalid}
-      helperText={invalid ? invalidText : helperText}
+      error={!!errorText}
+      helperText={errorText ?? helperText}
       value={text}
       slotProps={{ htmlInput: { inputMode: 'decimal' } }}
       onChange={(e) => {
+        const next = minutesToSeconds(e.target.value);
         setText(e.target.value);
-        onChange(minutesToSeconds(e.target.value));
+        setSyncedSeconds(next);
+        onChange(next);
       }}
       onBlur={onBlur}
     />
@@ -135,14 +140,19 @@ export function WatermarkTimingFields() {
         <Controller
           control={control}
           name="watermark.duration"
-          render={({ field }) => (
+          rules={{
+            validate: (value) =>
+              Number.isFinite(value) ||
+              t`Enter a number of minutes, 0 or more.`,
+          }}
+          render={({ field, fieldState }) => (
             <LimitMinutesField
               seconds={field.value ?? 0}
               onChange={field.onChange}
               onBlur={field.onBlur}
               label={t`Hide Watermark After (minutes)`}
-              helperText={t`Counted from the start of each program. Set to 0 for no limit.`}
-              invalidText={t`Enter a number of minutes, 0 or more.`}
+              helperText={t`Counted from the start of each program. If a stream starts partway through a program, it counts from that point. Set to 0 for no limit.`}
+              errorText={fieldState.error?.message}
             />
           )}
         />

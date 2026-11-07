@@ -14,7 +14,7 @@ There are many ways to customize watermarks for a channel. Here are some details
 
 ### Time limit
 
-**Hide Watermark After** hides the watermark for the rest of each program once this many minutes have passed since the program started. Decimals work, so 1.5 means 90 seconds. It overrides the fade settings but works alongside them. For example, a fade period of 5 minutes with a limit of 45 minutes on an hour-long show fades the watermark in and out for the first 45 minutes, then hides it for the final 15. Set it to 0 for no limit.
+**Hide Watermark After** hides the watermark for the rest of each program once this many minutes have passed. Decimals work, so 1.5 means 90 seconds. The count starts when the program starts playing on the stream. If a stream starts partway through a program, the count starts from that point. Channels on the [ErsatzTV next](../ffmpeg/ersatztv-next.md#watermarks) backend always count from the program's start. It overrides the fade settings but works alongside them. For example, a fade period of 5 minutes with a limit of 45 minutes on an hour-long show fades the watermark in and out for the first 45 minutes, then hides it for the final 15. Set it to 0 for no limit.
 
 ## Overrides
 

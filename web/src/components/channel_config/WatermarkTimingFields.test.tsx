@@ -3,7 +3,7 @@ import { Grid } from '@mui/material';
 import type { SaveableChannel } from '@tunarr/types';
 import type { ReactNode } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
-import { describe, expect, test } from 'vitest';
+import { describe, expect, test, vi } from 'vitest';
 import { minutesToSeconds, secondsToMinutes } from './watermarkTimeLimit.ts';
 import { WatermarkTimingFields } from './WatermarkTimingFields.tsx';
 
@@ -11,18 +11,30 @@ type WatermarkValues = Partial<NonNullable<SaveableChannel['watermark']>>;
 
 const Form = ({
   watermark,
+  onValid,
   children,
 }: {
   watermark: WatermarkValues;
+  onValid: () => void;
   children: ReactNode;
 }) => {
   const methods = useForm<SaveableChannel>({
+    mode: 'onChange',
     defaultValues: { watermark },
   });
   return (
     <FormProvider {...methods}>
       <Grid container>{children}</Grid>
       <StoredDuration />
+      <button type="button" onClick={methods.handleSubmit(onValid)}>
+        Save
+      </button>
+      <button
+        type="button"
+        onClick={() => methods.reset({ watermark: { duration: 600 } })}
+      >
+        Reset to 600
+      </button>
     </FormProvider>
   );
 };
@@ -39,11 +51,15 @@ const limitField = () =>
   screen.getByLabelText('Hide Watermark After (minutes)');
 
 function renderFields(watermark: WatermarkValues) {
-  return renderWithProviders(
-    <Form watermark={watermark}>
-      <WatermarkTimingFields />
-    </Form>,
-  );
+  const onValid = vi.fn();
+  return {
+    onValid,
+    ...renderWithProviders(
+      <Form watermark={watermark} onValid={onValid}>
+        <WatermarkTimingFields />
+      </Form>,
+    ),
+  };
 }
 
 function precedes(a: HTMLElement, b: HTMLElement) {
@@ -108,16 +124,65 @@ describe('WatermarkTimingFields', () => {
     expect(storedDuration()).toBe('0');
   });
 
-  test('flags a limit that is not a number', async () => {
+  test('keeps the typed text when it rounds to whole seconds', async () => {
     const { user } = renderFields({ duration: 0 });
 
     await user.clear(limitField());
-    await user.type(limitField(), 'abc');
+    await user.type(limitField(), '1.01');
+
+    expect(limitField()).toHaveValue('1.01');
+    expect(storedDuration()).toBe('61');
+  });
+
+  test('renders a stored limit that is not a whole number of seconds', () => {
+    renderFields({ duration: 90.5 });
+
+    expect(limitField()).toHaveValue('1.51');
+    expect(storedDuration()).toBe('90.5');
+  });
+
+  test('re-seeds the field when the form is reset', async () => {
+    const { user } = renderFields({ duration: 2700 });
+
+    await user.clear(limitField());
+    await user.type(limitField(), '3');
+    await user.click(screen.getByRole('button', { name: 'Reset to 600' }));
+
+    expect(limitField()).toHaveValue('10');
+  });
+
+  test('flags a limit that is not a number and blocks saving', async () => {
+    const { user, onValid } = renderFields({ duration: 2700 });
+
+    await user.clear(limitField());
+    await user.type(limitField(), '45m');
 
     expect(limitField()).toHaveAttribute('aria-invalid', 'true');
     expect(
       screen.getByText('Enter a number of minutes, 0 or more.'),
     ).toBeInTheDocument();
+    expect(storedDuration()).not.toBe('0');
+
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onValid).not.toHaveBeenCalled();
+  });
+
+  test('clears the error once the limit is a number again', async () => {
+    const { user, onValid } = renderFields({
+      duration: 0,
+      fadeConfig: [{ periodMins: 0 }],
+    });
+
+    await user.clear(limitField());
+    await user.type(limitField(), 'abc');
+    await user.clear(limitField());
+    await user.type(limitField(), '30');
+
+    expect(limitField()).toHaveAttribute('aria-invalid', 'false');
+    expect(storedDuration()).toBe('1800');
+
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onValid).toHaveBeenCalledOnce();
   });
 });
 
@@ -132,8 +197,13 @@ describe('limit unit conversion', () => {
     expect(minutesToSeconds('45')).toBe(2700);
     expect(minutesToSeconds('1.01')).toBe(61);
     expect(minutesToSeconds('')).toBe(0);
-    expect(minutesToSeconds('-5')).toBe(0);
-    expect(minutesToSeconds('abc')).toBe(0);
+    expect(minutesToSeconds('0')).toBe(0);
+  });
+
+  test('rejects text that is not a number of 0 or more', () => {
+    expect(minutesToSeconds('-5')).toBeNaN();
+    expect(minutesToSeconds('abc')).toBeNaN();
+    expect(minutesToSeconds('45m')).toBeNaN();
   });
 
   test('round-trips every whole-second value without drifting', () => {

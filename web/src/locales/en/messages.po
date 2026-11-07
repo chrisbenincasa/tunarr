@@ -1372,8 +1372,12 @@ msgid "Could not save setup progress. {message}"
 msgstr "Could not save setup progress. {message}"
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
-msgid "Counted from the start of each program. Set to 0 for no limit."
-msgstr "Counted from the start of each program. Set to 0 for no limit."
+msgid "Counted from the start of each program. If a stream starts partway through a program, it counts from that point. Set to 0 for no limit."
+msgstr "Counted from the start of each program. If a stream starts partway through a program, it counts from that point. Set to 0 for no limit."
+
+#: src/components/channel_config/WatermarkTimingFields.tsx
+#~ msgid "Counted from the start of each program. Set to 0 for no limit."
+#~ msgstr "Counted from the start of each program. Set to 0 for no limit."
 
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 msgid "Create"
