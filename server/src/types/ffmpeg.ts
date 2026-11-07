@@ -152,3 +152,5 @@ export const FfprobeMediaInfoSchema = z.object({
   format: FfprobeMediaFormatSchema,
   chapters: z.array(FfprobeChapter).optional(),
 });
+
+export type FfprobeMediaInfo = z.infer<typeof FfprobeMediaInfoSchema>;

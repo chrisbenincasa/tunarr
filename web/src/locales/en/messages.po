@@ -758,6 +758,10 @@ msgstr "Audio channel count"
 msgid "Audio Channels"
 msgstr "Audio Channels"
 
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Audio file path or URL. It loops for as long as the fallback plays."
+msgstr "Audio file path or URL. It loops for as long as the fallback plays."
+
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 msgid "Audio Format"

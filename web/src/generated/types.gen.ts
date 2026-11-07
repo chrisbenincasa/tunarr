@@ -15292,6 +15292,32 @@ export type PostApiUploadImageResponses = {
 
 export type PostApiUploadImageResponse = PostApiUploadImageResponses[keyof PostApiUploadImageResponses];
 
+export type PostApiUploadAudioData = {
+    body?: unknown;
+    path?: never;
+    query?: never;
+    url: '/api/upload/audio';
+};
+
+export type PostApiUploadAudioErrors = {
+    /**
+     * Default Response
+     */
+    400: unknown;
+};
+
+export type PostApiUploadAudioResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        name: string;
+        filePath: string;
+    };
+};
+
+export type PostApiUploadAudioResponse = PostApiUploadAudioResponses[keyof PostApiUploadAudioResponses];
+
 export type GetApiXmltvLastRefreshData = {
     body?: never;
     path?: never;

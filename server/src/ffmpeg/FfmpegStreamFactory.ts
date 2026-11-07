@@ -17,7 +17,12 @@ import type {
 } from '@/stream/types.js';
 import { FileStreamSource, HttpStreamSource } from '@/stream/types.js';
 import type { Maybe, Nullable } from '@/types/util.js';
-import { isDefined, isLinux, isNonEmptyString } from '@/util/index.js';
+import {
+  isDefined,
+  isHttpUrl,
+  isLinux,
+  isNonEmptyString,
+} from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
 import type {
@@ -29,13 +34,15 @@ import { ChannelStreamModes } from '@tunarr/types';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
 import { injectable } from 'inversify';
-import { isUndefined } from 'lodash-es';
+import { find, isUndefined } from 'lodash-es';
 import type { DeepReadonly } from 'ts-essentials';
 import { match, P } from 'ts-pattern';
 import type { ContentBackedStreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import { FeatureFlagService } from '../services/FeatureFlagService.ts';
 import { isImageBasedSubtitle } from '../stream/util.ts';
 import { KEYS } from '../types/inject.ts';
+import type { FfprobeAudioStream } from '../types/ffmpeg.ts';
+import { Result } from '../types/result.ts';
 import { assisted, injected } from '../util/assistedInject.ts';
 import { InjectLogger } from '../util/inject.ts';
 import { loggingDef } from '../util/logging/loggingDef.ts';
@@ -99,6 +106,8 @@ import type {
 } from './types.ts';
 import { ConcatStreamModeRemuxes } from './types.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
+
+const SoundtrackProbeTimeoutMs = 10_000;
 
 @injectable()
 @loggingDef({ category: 'streaming' })
@@ -924,7 +933,9 @@ export class FfmpegStreamFactory {
       duration.asMilliseconds(),
     );
 
-    const audioInput = this.createPlaceholderAudioInput(audioState);
+    const audioInput =
+      (await this.createOfflineSoundtrackInput(audioState)) ??
+      this.createPlaceholderAudioInput(audioState);
 
     const builder = await this.pipelineBuilderFactory(this.transcodeConfig)
       .setHardwareAccelerationMode(
@@ -1008,6 +1019,61 @@ export class FfmpegStreamFactory {
       audioDuration,
       loudnormConfig: loudnormConfig ?? null,
     });
+  }
+
+  /**
+   * Loops the channel's fallback soundtrack under the offline picture.
+   * Returns nothing when no soundtrack is set or no audio stream can be
+   * probed from it, so the caller falls back to placeholder audio.
+   */
+  private async createOfflineSoundtrackInput(
+    audioState: AudioState,
+  ): Promise<Maybe<AudioInputSource>> {
+    const soundtrack = this.channel.offline?.soundtrack;
+    if (!isNonEmptyString(soundtrack)) {
+      return;
+    }
+
+    const probeResult = await Result.attemptAsync(() =>
+      this.ffmpegInfo.probeFile(soundtrack, SoundtrackProbeTimeoutMs),
+    );
+    if (probeResult.isFailure()) {
+      this.logger.warn(
+        probeResult.error,
+        'Unable to probe fallback soundtrack %s for channel %s',
+        soundtrack,
+        this.channel.uuid,
+      );
+      return;
+    }
+
+    const audioStream = find(
+      probeResult.get()?.streams,
+      (stream): stream is FfprobeAudioStream => stream.codec_type === 'audio',
+    );
+    if (!audioStream) {
+      this.logger.warn(
+        'Fallback soundtrack %s for channel %s has no audio stream',
+        soundtrack,
+        this.channel.uuid,
+      );
+      return;
+    }
+
+    const source = isHttpUrl(soundtrack)
+      ? new HttpStreamSource(soundtrack)
+      : new FileStreamSource(soundtrack);
+    const input = AudioInputSource.withStream(
+      source,
+      AudioStream.create({
+        index: audioStream.index,
+        codec: audioStream.codec_name,
+        channels: audioStream.channels ?? -1,
+      }),
+      audioState,
+    );
+    input.addOption(new InfiniteLoopInputOption());
+    return input;
   }
 
   private createPlaceholderAudioInput(

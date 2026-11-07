@@ -1,3 +1,5 @@
+import dayjs from 'dayjs';
+import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import { FileStreamSource } from '../../../../stream/types.ts';
 import {
@@ -18,7 +20,12 @@ import {
 import { PixelFormatYuv420P } from '../../format/PixelFormat.ts';
 import { AudioInputSource } from '../../input/AudioInputSource.ts';
 import { VideoInputSource } from '../../input/VideoInputSource.ts';
-import { AudioStream, VideoStream } from '../../MediaStream.ts';
+import {
+  AudioStream,
+  StillImageStream,
+  VideoStream,
+} from '../../MediaStream.ts';
+import { InfiniteLoopInputOption } from '../../options/input/InfiniteLoopInputOption.ts';
 import { AudioState } from '../../state/AudioState.ts';
 import {
   DefaultPipelineOptions,
@@ -444,6 +451,96 @@ describe.skipIf(!binaries)('SoftwarePipelineBuilder integration', () => {
 
       const probe = probeFile(binaries!.ffprobe, outputPath);
       expect(probe.streams.some((s) => s.codec_type === 'video')).toBe(true);
+    },
+  );
+
+  ffmpegTest(
+    'loops a short soundtrack under a still image for the full duration',
+    async ({ binaryCapabilities, ffmpegVersion }) => {
+      const video = VideoInputSource.withStream(
+        new FileStreamSource(Fixtures.watermark),
+        StillImageStream.create({
+          frameSize: FrameSize.withDimensions(0, 0),
+          index: 0,
+        }),
+      );
+      video.addOption(new InfiniteLoopInputOption());
+
+      // The fixture's audio runs 2.9 s, so a 10 s output only fills if the
+      // input loops.
+      const durationMs = 10_000;
+      const audio = AudioInputSource.withStream(
+        new FileStreamSource(Fixtures.video720p),
+        AudioStream.create({ channels: 2, codec: 'aac', index: 1 }),
+        AudioState.create({
+          audioEncoder: AudioFormats.Aac,
+          audioChannels: 2,
+          audioBitrate: 192,
+          audioBufferSize: 384,
+          audioDuration: durationMs,
+        }),
+      );
+      audio.addOption(new InfiniteLoopInputOption());
+
+      const builder = new SoftwarePipelineBuilder(
+        video,
+        audio,
+        null,
+        null,
+        null,
+        binaryCapabilities,
+      );
+
+      const outputPath = path.join(workdir, 'output_soundtrack_loop.ts');
+      const pipeline = builder.build(
+        FfmpegState.create({
+          version: ffmpegVersion,
+          duration: dayjs.duration(durationMs),
+          outputLocation: FileOutputLocation(outputPath, true),
+        }),
+        new FrameState({
+          isAnamorphic: false,
+          scaledSize: FrameSize.withDimensions(1280, 720),
+          paddedSize: FrameSize.withDimensions(1280, 720),
+          realtime: false,
+        }),
+        DefaultPipelineOptions,
+      );
+
+      const args = pipeline.getCommandArgs();
+      const { exitCode, stderr } = runFfmpegWithPipeline(
+        binaries!.ffmpeg,
+        args,
+      );
+      expect(
+        exitCode,
+        `Pipeline command failed: ${args.join(' ')}\n${stderr}`,
+      ).toBe(0);
+
+      const probe = probeFile(binaries!.ffprobe, outputPath);
+      expect(probe.format.duration).toBeGreaterThan(9.5);
+
+      // Audio after the fixture's first pass ends must be sound, not padding.
+      const tail = spawnSync(
+        binaries!.ffmpeg,
+        [
+          '-ss',
+          '6',
+          '-t',
+          '3',
+          '-i',
+          outputPath,
+          '-af',
+          'volumedetect',
+          '-f',
+          'null',
+          '-',
+        ],
+        { encoding: 'utf-8' },
+      );
+      const meanVolume = /mean_volume: (-?[\d.]+) dB/.exec(tail.stderr)?.[1];
+      expect(meanVolume, tail.stderr).toBeDefined();
+      expect(Number(meanVolume)).toBeGreaterThan(-60);
     },
   );
 });
