@@ -75,12 +75,14 @@ export const AllProgramFields = [
 
 type ProgramUpsertFields = StrictExclude<
   Replace<ProgramField, 'program.', ''>,
-  'uuid' | 'createdAt'
+  'uuid' | 'createdAt' | 'streamSelectionProfileId'
 >;
 
 const ProgramUpsertIgnoreFields = [
   'program.uuid',
   'program.createdAt',
+  // Stream selection is a Tunarr setting, not metadata supplied by a scanner.
+  'program.streamSelectionProfileId',
   // 'program.tvShowUuid',
   // 'program.albumUuid',
   // 'program.artistUuid',
