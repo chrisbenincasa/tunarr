@@ -115,6 +115,8 @@ One seed per channel, with skip counts, keeps every cycle reproducible from the 
 
 - `RegenerateChannelLineupCommand` replays the airing cycle from its snapshot, then rebuilds every
   built-ahead cycle from the new end state. One write.
+- If every built cycle has already aired, regeneration catches up instead, as the task does after
+  downtime.
 - Slot lineups with a seed are already regenerated, not patched, by `ReconcileProgramDurationsTask`,
   so the reconciler's patch rules never touch these lineups.
 

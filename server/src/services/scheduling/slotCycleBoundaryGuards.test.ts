@@ -190,11 +190,20 @@ describe('SlotCycleBoundaryService guards', () => {
     expect(saves[0]?.cycles).toHaveLength(MaxCyclesPerPass);
   });
 
-  test('restarts at the current period when a regenerate finds everything aired', async () => {
+  test('catches up from the last end snapshot when a regenerate finds everything aired', async () => {
     const longAgo = now - 180 * 24 * oneHour;
+    const endSnapshot = {
+      discardCount: 9,
+      iteratorState: {
+        iterators: {
+          'slot:0': { type: 'ordered' as const, lastProgramId: 'a-ep3' },
+        },
+      },
+    };
     const { service, buildRequests } = setup(
       baseLineup({
         items: [{ type: 'content', id: 'old', durationMs: cycleMs }],
+        nextCycleSnapshot: endSnapshot,
         cycles: [
           {
             itemCount: 1,
@@ -212,6 +221,7 @@ describe('SlotCycleBoundaryService guards', () => {
     // Catch-up semantics: the first build starts at the current period, not
     // six months back, so no pass is run for the cycles in between.
     expect(buildRequests[0]?.startTime).toBeGreaterThanOrEqual(now - 60 * 1000);
+    expect(buildRequests[0]?.snapshot).toEqual(endSnapshot);
     expect(buildRequests.length).toBeLessThanOrEqual(programmingHours + 1);
   });
 
