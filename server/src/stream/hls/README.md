@@ -21,9 +21,21 @@ evidence rather than a reproduction of the reported TiviMate failure.
 
 ## Failed segment inspection
 
-`GetLastPtsDurationTask` rejects a nonzero or signal-terminated `ffprobe` exit
-even when stdout contains parseable packet lines. A failed probe can leave
+`GetSegmentStreamEndsTask` rejects a nonzero or signal-terminated `ffprobe`
+exit even when stdout contains parseable packet lines. A failed probe can leave
 partial output; that output must not be accepted as a successful end-time
-measurement. Successful parsing and the caller's existing logged zero-offset
-fallback are unchanged. This correction does not add audio-tail calculations
-or encoder-priming compensation.
+measurement. The caller logs the failure and falls back to a zero offset.
+
+## Program boundary offsets
+
+Each program's transcode starts at the PTS where the previous segment ended.
+`GetSegmentStreamEndsTask` reports audio and video ends separately, because
+audio often runs a few milliseconds past the last video frame.
+`nextProgramPtsOffset` sets the offset to the previous audio end plus the audio
+encoder's lead. The encoder writes its first samples that far before the
+offset, so the next program's audio starts where the previous audio ended.
+The offset never starts video before the previous video ended.
+
+`MeasureAudioEncoderLeadTask` measures the lead once per `hls` session with a
+short ffmpeg probe, started when the session starts. A failed probe, or copied
+audio, uses a lead of zero.
