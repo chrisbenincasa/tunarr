@@ -5026,7 +5026,7 @@ msgid "The type of media in the provided paths"
 msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
-msgid "The watermark fades in, stays for this many minutes, then fades out for the same length. Set to 0 to keep it on screen without fading."
+msgid "The watermark fades in, stays for this many minutes, then hides for the same length. Set to 0 to keep it on screen without fading."
 msgstr ""
 
 #: src/components/settings/general/WebSettings.tsx

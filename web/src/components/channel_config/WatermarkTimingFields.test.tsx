@@ -1,7 +1,7 @@
 import { renderWithProviders, screen } from '@/test/utils';
 import { Grid } from '@mui/material';
 import type { SaveableChannel } from '@tunarr/types';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { describe, expect, test, vi } from 'vitest';
 import { minutesToSeconds, secondsToMinutes } from './watermarkTimeLimit.ts';
@@ -22,9 +22,10 @@ const Form = ({
     mode: 'onChange',
     defaultValues: { watermark },
   });
+  const [showFields, setShowFields] = useState(true);
   return (
     <FormProvider {...methods}>
-      <Grid container>{children}</Grid>
+      <Grid container>{showFields && children}</Grid>
       <StoredDuration />
       <button type="button" onClick={methods.handleSubmit(onValid)}>
         Save
@@ -34,6 +35,9 @@ const Form = ({
         onClick={() => methods.reset({ watermark: { duration: 600 } })}
       >
         Reset to 600
+      </button>
+      <button type="button" onClick={() => setShowFields(false)}>
+        Hide fields
       </button>
     </FormProvider>
   );
@@ -179,6 +183,20 @@ describe('WatermarkTimingFields', () => {
     await user.type(limitField(), '30');
 
     expect(limitField()).toHaveAttribute('aria-invalid', 'false');
+    expect(storedDuration()).toBe('1800');
+
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onValid).toHaveBeenCalledOnce();
+  });
+
+  test('saves the last valid limit when the field is hidden with bad text', async () => {
+    const { user, onValid } = renderFields({ duration: 2700 });
+
+    await user.clear(limitField());
+    await user.type(limitField(), '30x');
+    expect(limitField()).toHaveAttribute('aria-invalid', 'true');
+
+    await user.click(screen.getByRole('button', { name: 'Hide fields' }));
     expect(storedDuration()).toBe('1800');
 
     await user.click(screen.getByRole('button', { name: 'Save' }));

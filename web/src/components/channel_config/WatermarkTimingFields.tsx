@@ -8,7 +8,7 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Controller } from 'react-hook-form';
 import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
 import {
@@ -70,8 +70,28 @@ function LimitMinutesField({
 // applies on top of the fade cycle, not to each fade.
 export function WatermarkTimingFields() {
   const { t } = useLingui();
-  const { control, watch } = useChannelFormContext();
+  const { control, watch, getValues, setValue } = useChannelFormContext();
   const fadePeriod = watch('watermark.fadeConfig.0.periodMins');
+  const duration = watch('watermark.duration');
+
+  // The form keeps field values after unmount but drops their validation
+  // rules. Restore the last valid limit on unmount so invalid text can't reach
+  // the save request once the field is hidden.
+
+  const lastValidDuration = useRef(duration);
+  useEffect(() => {
+    if (Number.isFinite(duration)) {
+      lastValidDuration.current = duration;
+    }
+  }, [duration]);
+  useEffect(
+    () => () => {
+      if (!Number.isFinite(getValues('watermark.duration'))) {
+        setValue('watermark.duration', lastValidDuration.current ?? 0);
+      }
+    },
+    [getValues, setValue],
+  );
 
   return (
     <>
@@ -96,7 +116,7 @@ export function WatermarkTimingFields() {
           TextFieldProps={{
             label: t`Fade Period (mins)`,
             fullWidth: true,
-            helperText: t`The watermark fades in, stays for this many minutes, then fades out for the same length. Set to 0 to keep it on screen without fading.`,
+            helperText: t`The watermark fades in, stays for this many minutes, then hides for the same length. Set to 0 to keep it on screen without fading.`,
           }}
         />
       </Grid>
