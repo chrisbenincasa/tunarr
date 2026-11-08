@@ -1,6 +1,6 @@
 # Network lookup
 
-> **Status (11/08/2026):** Draft design, not started. Fetchers ship in core (decided 11/08/2026). Waiting on the remaining open questions, chiefly TVDB's subscriber-key model.
+> **Status (11/08/2026):** Draft design, not started. Fetchers ship in core, TMDB is the v1 provider, and the preset's studio fallback is configurable (all decided 11/08/2026). TVDB is tracked as a follow-up pending its subscriber-key model.
 
 ## Goal
 
@@ -37,7 +37,7 @@
 | Cache limit | At most 6 months (Terms §1.C) | None, and heavy caching is encouraged |
 | Attribution | TMDB logo plus the Terms §3 notice in an About or Credits section | "Metadata provided by TheTVDB" with a link, wherever the data is shown |
 
-TMDB is free and its `networks` list is enough for filtering, so it ships first.
+TMDB is the preferred provider and the only one in v1. It's free, and its `networks` list is enough for filtering. TVDB is a tracked follow-up until TVDB support answers whether we can ship a subscriber-supported key (see "TVDB exception").
 
 ## Credentials
 
@@ -194,6 +194,7 @@ interface ShowNetworkProvider {
 - Show details: "Networks: Fox, Comedy Central", with the provider's attribution.
 - About page: TMDB logo and notice, and TVDB attribution.
 - Network Channel preset: facet on `network` instead of `studio`.
+- Preset option "Use studio when a show has no network data". It defaults to on, so the preset works before a credential is set. Shows matched through the fallback are labeled as studio matches in the preview.
 
 ## Core vs plugin
 
@@ -227,9 +228,8 @@ Decision (11/08/2026): core. The shared work and both fetchers ship in core behi
 
 ## Open questions
 
-1. Will TVDB let an open-source project ship a subscriber-supported key? Ask TVDB support.
-2. When no credential is set, should the preset fall back to `studio` or ask for a key?
-3. Should shows without IDs get a title-based lookup? Proposed answer: not in v1.
+1. Will TVDB let an open-source project ship a subscriber-supported key? Ask TVDB support. This gates rollout step 5.
+2. Should shows without IDs get a title-based lookup? Proposed answer: not in v1.
 
 ## Sources (read 11/08/2026)
 
