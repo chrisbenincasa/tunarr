@@ -6,12 +6,12 @@
 
 Tunarr keys every scanned item on an ID that its source can change. When the ID changes, the next scan treats the item as gone and creates a new program row. Everything that referenced the old row (channel lineups, custom shows, filler lists, slot schedules, play history) keeps pointing at a row marked `missing`.
 
-| Source | Item key Tunarr stores | Changes when |
-|---|---|---|
-| Plex | `ratingKey` | Reindex, re-match, delete and re-add, move between libraries |
-| Jellyfin | Item `Id` | Re-add, library rebuild; possibly a path move (unverified) |
-| Emby | Item `Id` | Re-add, library rebuild; possibly a path move (unverified) |
-| Local | Full file path | Any rename or move |
+| Source   | Item key Tunarr stores | Changes when                                                 |
+| -------- | ---------------------- | ------------------------------------------------------------ |
+| Plex     | `ratingKey`            | Reindex, re-match, delete and re-add, move between libraries |
+| Jellyfin | Item `Id`              | Re-add, library rebuild; possibly a path move (unverified)   |
+| Emby     | Item `Id`              | Re-add, library rebuild; possibly a path move (unverified)   |
+| Local    | Full file path         | Any rename or move                                           |
 
 Fixing one source is not enough. The fix is one reconciliation step that every scanner uses.
 
@@ -40,12 +40,12 @@ Fixing one source is not enough. The fix is one reconciliation step that every s
 
 Missing detection scope differs by scanner:
 
-| Scanner | Where missing is detected |
-|---|---|
-| Remote movie, music video, other video | End of library scan |
-| Remote TV | Shows at end of library scan; seasons and episodes per show |
-| Remote music | Artists at end of library scan; albums and tracks per artist |
-| Local scanners | Per scan, by path |
+| Scanner                                | Where missing is detected                                    |
+| -------------------------------------- | ------------------------------------------------------------ |
+| Remote movie, music video, other video | End of library scan                                          |
+| Remote TV                              | Shows at end of library scan; seasons and episodes per show  |
+| Remote music                           | Artists at end of library scan; albums and tracks per artist |
+| Local scanners                         | Per scan, by path                                            |
 
 Path-filtered (single-item) scans skip missing detection entirely.
 
@@ -60,12 +60,12 @@ Keeping the old UUID is cheaper and safer than merging rows, because many tables
 
 ### Stable IDs each source already provides
 
-| Source | Native stable ID | Provider IDs (IMDB, TMDB, TVDB) | Ingested via |
-|---|---|---|---|
-| Plex | `plex-guid` (unmatched items get a key-derived guid) | Yes | `Guid` array, `parsePlexGuid` |
-| Jellyfin | None known | Yes | `ProviderIds` |
-| Emby | None known | Yes | `ProviderIds` |
-| Local | None | Only with NFO `uniqueid` | `mapNfoUniqueIds` |
+| Source   | Native stable ID                                     | Provider IDs (IMDB, TMDB, TVDB) | Ingested via                  |
+| -------- | ---------------------------------------------------- | ------------------------------- | ----------------------------- |
+| Plex     | `plex-guid` (unmatched items get a key-derived guid) | Yes                             | `Guid` array, `parsePlexGuid` |
+| Jellyfin | None known                                           | Yes                             | `ProviderIds`                 |
+| Emby     | None known                                           | Yes                             | `ProviderIds`                 |
+| Local    | None                                                 | Only with NFO `uniqueid`        | `mapNfoUniqueIds`             |
 
 - Music has no provider ID type in `ProgramExternalIdType`. MusicBrainz IDs were declined in #575 (Plex guid space only).
 - `program_external_id` has no index on `(source_type, external_key)`. Pairing in memory avoids needing one (see below).
@@ -99,12 +99,12 @@ Deferring arrivals is what keeps UUIDs stable within one scan. Without deferral,
 
 ### Matchers (ranked)
 
-| Rank | Matcher | Sources | Guard |
-|---|---|---|---|
-| 1 | Native stable ID | Plex (`plex-guid`, skip key-derived guids) | Same media source |
-| 2 | Provider ID, same type | All | Same program type; episodes also match show identity and season/episode number |
-| 3 | Local file identity | Local | Same size and mtime, different path; same program type |
-| 4 | Title match | All | Off by default; see open decision 6 |
+| Rank | Matcher                | Sources                                    | Guard                                                                          |
+| ---- | ---------------------- | ------------------------------------------ | ------------------------------------------------------------------------------ |
+| 1    | Native stable ID       | Plex (`plex-guid`, skip key-derived guids) | Same media source                                                              |
+| 2    | Provider ID, same type | All                                        | Same program type; episodes also match show identity and season/episode number |
+| 3    | Local file identity    | Local                                      | Same size and mtime, different path; same program type                         |
+| 4    | Title match            | All                                        | Off by default; see open decision 6                                            |
 
 - Matchers are a pluggable list, so a new source or ID type is one new matcher.
 - A matcher returns candidate pairs. The reconciler, not the matcher, enforces one-to-one.
