@@ -17,7 +17,7 @@
 - Per-season networks.
 - Replacing studio data that comes from media servers.
 - Building a plugin system. See "Core vs plugin".
-- Looking up shows by title. v1 only uses external IDs we already have.
+- Looking up shows by title. v1 only uses external IDs we already have (decided 11/08/2026).
 
 ## Why not `studio`
 
@@ -229,7 +229,6 @@ Decision (11/08/2026): core. The shared work and both fetchers ship in core behi
 ## Open questions
 
 1. Will TVDB let an open-source project ship a subscriber-supported key? Ask TVDB support. This gates rollout step 5.
-2. Should shows without IDs get a title-based lookup? Proposed answer: not in v1.
 
 ## Sources (read 11/08/2026)
 
