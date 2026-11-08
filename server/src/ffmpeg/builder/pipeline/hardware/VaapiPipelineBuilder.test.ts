@@ -25,6 +25,7 @@ import { PadVaapiFilter } from '../../filter/vaapi/PadVaapiFilter.ts';
 import { ScaleVaapiFilter } from '../../filter/vaapi/ScaleVaapiFilter.ts';
 import { TonemapVaapiFilter } from '../../filter/vaapi/TonemapVaapiFilter.ts';
 import {
+  PixelFormatNv12,
   PixelFormatRgba,
   PixelFormatUnknown,
   PixelFormatYuv420P,
@@ -538,6 +539,8 @@ describe('VaapiPipelineBuilder pad', () => {
     binaryCapabilities?: FfmpegCapabilities;
     disableHardwareDecoding?: boolean;
     disableHardwareEncoding?: boolean;
+    disableHardwareFilters?: boolean;
+    desiredState?: Partial<FrameStateOpts>;
     watermarkStream?: StillImageStream;
   }) {
     const capabilities = new VaapiHardwareCapabilities([
@@ -549,13 +552,17 @@ describe('VaapiPipelineBuilder pad', () => {
         VaapiProfiles.H264Main,
         VaapiEntrypoint.Encode,
       ),
+      new VaapiProfileEntrypoint(
+        VaapiProfiles.HevcMain10,
+        VaapiEntrypoint.Encode,
+      ),
     ]);
 
     const binaryCapabilities =
       opts.binaryCapabilities ??
       new FfmpegCapabilities(
         new Set(),
-        new Map(),
+        new Map([['libx264', { ffmpegName: 'libx264', name: 'H.264' }]]),
         new Set([KnownFfmpegFilters.PadVaapi]),
         new Set(),
       );
@@ -603,15 +610,88 @@ describe('VaapiPipelineBuilder pad', () => {
         paddedSize: FrameSize.FHD,
         pixelFormat: new PixelFormatYuv420P(),
         videoFormat: 'h264',
+        ...opts.desiredState,
       }),
       {
         ...DefaultPipelineOptions,
         vaapiDevice: '/dev/dri/renderD128',
+        disableHardwareFilters: opts.disableHardwareFilters ?? false,
         disableHardwareDecoding: opts.disableHardwareDecoding ?? false,
         disableHardwareEncoding: opts.disableHardwareEncoding ?? false,
       },
     );
   }
+
+  test.each([
+    ['unspecified', ColorFormat.unknown],
+    ['BT.709', ColorFormat.bt709],
+    [
+      'matrix only',
+      new ColorFormat({
+        colorRange: 'tv',
+        colorSpace: 'bt709',
+        colorPrimaries: null,
+        colorTransfer: null,
+      }),
+    ],
+  ] as const)(
+    'stabilizes SDR color for %s clips after hardware decode or software upload',
+    (_name, colorFormat) => {
+      for (const disableHardwareDecoding of [false, true]) {
+        const pipeline = buildWithPad({
+          videoStream: VideoStream.create({
+            index: 0,
+            codec: 'h264',
+            profile: 'main',
+            pixelFormat: new PixelFormatNv12(new PixelFormatYuv420P()),
+            frameSize: FrameSize.FHD,
+            displayAspectRatio: '16:9',
+            providedSampleAspectRatio: '1:1',
+            colorFormat,
+          }),
+          disableHardwareDecoding,
+        });
+        const args = pipeline.getCommandArgs().join(' ');
+        expect(args).toContain(
+          'scale_vaapi=format=nv12:extra_hw_frames=64:out_color_matrix=bt709:out_color_primaries=bt709:out_color_transfer=bt709:out_range=tv',
+        );
+        if (disableHardwareDecoding) {
+          expect(args.indexOf('hwupload')).toBeLessThan(
+            args.indexOf('out_color_matrix'),
+          );
+        }
+      }
+    },
+  );
+
+  test.each([
+    [
+      'hardware filters disabled',
+      { disableHardwareFilters: true },
+      'h264_vaapi',
+    ],
+    ['software encoding', { disableHardwareEncoding: true }, 'libx264'],
+    [
+      '10-bit VAAPI output',
+      {
+        desiredState: {
+          videoFormat: VideoFormats.Hevc,
+          pixelFormat: new PixelFormatYuv420P10Le(),
+        },
+      },
+      'hevc_vaapi',
+    ],
+  ] as const)(
+    'skips SDR color conversion for %s',
+    (_name, options, encoder) => {
+      const args = buildWithPad({
+        videoStream: create169FhdVideoStream(),
+        ...options,
+      }).getCommandArgs();
+      expect(args).toContain(encoder);
+      expect(args.join(' ')).not.toContain('out_color_matrix=bt709');
+    },
+  );
 
   test('uses pad_vaapi when capability is available and content is SDR', () => {
     const pipeline = buildWithPad({ videoStream: create43VideoStream() });
@@ -657,6 +737,7 @@ describe('VaapiPipelineBuilder pad', () => {
     const pipeline = buildWithPad({ videoStream: hdrStream });
 
     const args = pipeline.getCommandArgs().join(' ');
+    expect(args).not.toContain('out_color_matrix=bt709');
     expect(args).not.toContain('pad_vaapi');
     expect(args).toContain('pad=1920:1080');
   });
@@ -1282,6 +1363,9 @@ describe('VaapiPipelineBuilder tonemap', () => {
     });
 
     const pipeline = buildWithTonemap({ videoStream: dvStream });
+    expect(pipeline.getCommandArgs().join(' ')).not.toContain(
+      'out_color_matrix=bt709',
+    );
 
     expect(hasOpenclTonemapFilter(pipeline)).to.eq(true);
     expect(hasVaapiTonemapFilter(pipeline)).to.eq(false);
