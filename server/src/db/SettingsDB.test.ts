@@ -53,3 +53,34 @@ describe('pendingOperations', () => {
     expect(parsed.pendingOperations).toEqual({ emptyTrashRequestedAt: null });
   });
 });
+
+describe('ffmpeg fileLogRetentionCount', () => {
+  const settingsWithFfmpeg = (ffmpeg: Record<string, unknown>) => {
+    const defaults = defaultSettings('/tmp/tunarr-test');
+    return {
+      ...defaults,
+      settings: { ...defaults.settings, ffmpeg },
+    };
+  };
+
+  test('a settings file predating the field parses with 50', () => {
+    const ffmpeg: Record<string, unknown> = {
+      ...defaultSettings('/tmp/tunarr-test').settings.ffmpeg,
+    };
+    delete ffmpeg.fileLogRetentionCount;
+
+    const parsed = SettingsFileSchema.parse(settingsWithFfmpeg(ffmpeg));
+    expect(parsed.settings.ffmpeg.fileLogRetentionCount).toBe(50);
+  });
+
+  test('rejects a value below 1', () => {
+    const ffmpeg = {
+      ...defaultSettings('/tmp/tunarr-test').settings.ffmpeg,
+      fileLogRetentionCount: 0,
+    };
+
+    expect(
+      SettingsFileSchema.safeParse(settingsWithFfmpeg(ffmpeg)).success,
+    ).toBe(false);
+  });
+});

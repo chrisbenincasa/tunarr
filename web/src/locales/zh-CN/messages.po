@@ -2058,8 +2058,12 @@ msgid "Enable embedded subtitle extraction"
 msgstr "启用内嵌字幕提取"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
-msgid "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. These files are automatically cleaned up by a background process."
-msgstr "启用 ffmpeg 日志输出到不同的目标。输出到文件时，Tunarr 会为每个启动的 ffmpeg 进程在日志目录中创建新日志文件，这些文件会由后台进程自动清理。"
+msgid "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. Old files are deleted automatically."
+msgstr ""
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+#~ msgid "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. These files are automatically cleaned up by a background process."
+#~ msgstr "启用 ffmpeg 日志输出到不同的目标。输出到文件时，Tunarr 会为每个启动的 ffmpeg 进程在日志目录中创建新日志文件，这些文件会由后台进程自动清理。"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Enable if the watermark is an animated GIF or PNG. The watermark will loop according to the image's configuration. If this option is enabled and the image is not animated, there will be playback errors."
@@ -2399,6 +2403,10 @@ msgstr "FFmpeg 可执行文件路径"
 #: src/pages/system/TroubleshootPage.tsx
 msgid "FFmpeg Log"
 msgstr "FFmpeg 日志"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "FFMPEG Log Files to Keep"
+msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -5625,6 +5633,10 @@ msgstr "Tunarr 后端地址："
 
 #: src/components/profiles/StreamSelectionProfileSelect.tsx
 msgid "Tunarr Default"
+msgstr ""
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour. Files written in the last 10 minutes are never deleted."
 msgstr ""
 
 #: src/components/ui/patterns/AppShell/PhoneNav.tsx

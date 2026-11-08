@@ -2058,8 +2058,12 @@ msgid "Enable embedded subtitle extraction"
 msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
-msgid "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. These files are automatically cleaned up by a background process."
+msgid "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. Old files are deleted automatically."
 msgstr ""
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+#~ msgid "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. These files are automatically cleaned up by a background process."
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Enable if the watermark is an animated GIF or PNG. The watermark will loop according to the image's configuration. If this option is enabled and the image is not animated, there will be playback errors."
@@ -2398,6 +2402,10 @@ msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "FFmpeg Log"
+msgstr ""
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "FFMPEG Log Files to Keep"
 msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -5623,6 +5631,10 @@ msgstr ""
 
 #: src/components/profiles/StreamSelectionProfileSelect.tsx
 msgid "Tunarr Default"
+msgstr ""
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour. Files written in the last 10 minutes are never deleted."
 msgstr ""
 
 #: src/components/ui/patterns/AppShell/PhoneNav.tsx

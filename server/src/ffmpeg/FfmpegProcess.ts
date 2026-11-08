@@ -1,6 +1,10 @@
 import type { ReadableFfmpegSettings } from '@/db/interfaces/ISettingsDB.js';
 import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isWindows } from '@/util/index.js';
+import {
+  FfmpegErrorLogFilePrefix,
+  FfmpegReportFilePrefix,
+} from '@/util/constants.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
@@ -92,7 +96,7 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
       const normalizedName = this.ffmpegName.toLowerCase().replaceAll(' ', '-');
       let logPath = path.join(
         this.logDirectory,
-        `ffmpeg-report-${normalizedName}-%t.log`,
+        `${FfmpegReportFilePrefix}${normalizedName}-%t.log`,
       );
       if (isWindows()) {
         logPath = logPath.replaceAll('\\', '/').replaceAll(':/', '\\:/');
@@ -168,7 +172,7 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
           .replaceAll(' ', '-');
         const outPath = path.join(
           this.logDirectory,
-          `ffmpeg-error-log-${normalizedName}-${+dayjs()}.log`,
+          `${FfmpegErrorLogFilePrefix}${normalizedName}-${+dayjs()}.log`,
         );
 
         this.#logger.info(
