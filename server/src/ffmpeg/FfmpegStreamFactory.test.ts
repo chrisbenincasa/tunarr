@@ -23,9 +23,14 @@ import type { StreamSelector } from '@/ffmpeg/StreamSelector.ts';
 import type { FeatureFlagService } from '@/services/FeatureFlagService.ts';
 import type { SessionConcatStreamMode } from '@tunarr/types/schemas';
 import type { StreamDetails, SubtitleStreamDetails } from '@/stream/types.ts';
-import { HttpStreamSource } from '@/stream/types.ts';
+import { FileStreamSource, HttpStreamSource } from '@/stream/types.ts';
 import type { SubtitlesInputSource } from '@/ffmpeg/builder/input/SubtitlesInputSource.ts';
 import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
+import {
+  AudioInputSource,
+  NullAudioInputSource,
+} from '@/ffmpeg/builder/input/AudioInputSource.ts';
+import type { FfprobeMediaInfo } from '@/types/ffmpeg.ts';
 import {
   StillImageStream,
   SubtitleMethods,
@@ -185,22 +190,25 @@ function createCapturingPipelineBuilderFactory(): {
   getCapturedHwAccel: () => string | undefined;
   getCapturedSubtitleInput: () => SubtitlesInputSource | null | undefined;
   getCapturedVideoInput: () => VideoInputSource | undefined;
+  getCapturedAudioInput: () => AudioInputSource | undefined;
 } {
   let capturedFrameState: FrameState | undefined;
   let capturedFfmpegState: FfmpegState | undefined;
   let capturedHwAccel: string | undefined;
   let capturedSubtitleInput: SubtitlesInputSource | null | undefined;
   let capturedVideoInput: VideoInputSource | undefined;
+  let capturedAudioInput: AudioInputSource | undefined;
 
   const factory: PipelineBuilderFactory = () => {
     const builderProxy: Record<string, unknown> = {};
-    for (const method of [
-      'setAudioInputSource',
-      'setWatermarkInputSource',
-      'setConcatInputSource',
-    ]) {
+    for (const method of ['setWatermarkInputSource', 'setConcatInputSource']) {
       builderProxy[method] = vi.fn().mockReturnValue(builderProxy);
     }
+
+    builderProxy.setAudioInputSource = vi.fn((input: AudioInputSource) => {
+      capturedAudioInput = input;
+      return builderProxy;
+    });
 
     builderProxy.setVideoInputSource = vi.fn((input: VideoInputSource) => {
       capturedVideoInput = input;
@@ -243,12 +251,16 @@ function createCapturingPipelineBuilderFactory(): {
     getCapturedHwAccel: () => capturedHwAccel,
     getCapturedSubtitleInput: () => capturedSubtitleInput,
     getCapturedVideoInput: () => capturedVideoInput,
+    getCapturedAudioInput: () => capturedAudioInput,
   };
 }
 
-function makeMockFfmpegInfo(): FfmpegInfo {
+function makeMockFfmpegInfo(
+  probeFile: FfmpegInfo['probeFile'] = vi.fn().mockResolvedValue(undefined),
+): FfmpegInfo {
   return {
     getVersion: vi.fn().mockResolvedValue(mockFfmpegVersion),
+    probeFile,
   } as unknown as FfmpegInfo;
 }
 
@@ -876,6 +888,121 @@ describe('FfmpegStreamFactory', () => {
         true,
         false,
       ]);
+    });
+  });
+
+  describe('offline fallback soundtrack', () => {
+    function makeProbe(streams: FfprobeMediaInfo['streams']): FfprobeMediaInfo {
+      return {
+        streams,
+        format: {
+          nb_streams: streams.length,
+          format_name: 'mp3',
+          duration: 180,
+          size: 1000,
+          bit_rate: 128000,
+        },
+      };
+    }
+
+    const coverArt = {
+      index: 0,
+      codec_type: 'video',
+      codec_name: 'mjpeg',
+      width: 500,
+      height: 500,
+      coded_width: 500,
+      coded_height: 500,
+    } as FfprobeMediaInfo['streams'][number];
+
+    const coverArtAndAudio = makeProbe([
+      coverArt,
+      {
+        index: 1,
+        codec_type: 'audio',
+        codec_name: 'mp3',
+        channels: 2,
+      } as FfprobeMediaInfo['streams'][number],
+    ]);
+
+    async function runOffline(
+      soundtrack: string | undefined,
+      probeFile: FfmpegInfo['probeFile'],
+    ) {
+      const { factory, getCapturedAudioInput, getCapturedFrameState } =
+        createCapturingPipelineBuilderFactory();
+      const sut = new FfmpegStreamFactory(
+        makeMockFfmpegInfo(probeFile),
+        makeMockSettingsDB(makeFfmpegSettings()),
+        factory,
+        makeMockFeatureFlagService(),
+        makeMockStreamSelector(),
+        makeTranscodeConfig(),
+        makeChannel({ offline: { mode: 'pic', soundtrack } }),
+      );
+
+      await sut.createPlaceholderSession({
+        kind: 'offline',
+        duration: dayjs.duration({ minutes: 30 }),
+        outputFormat: MpegTsOutputFormat,
+      });
+
+      return {
+        audioInput: getCapturedAudioInput(),
+        frameState: getCapturedFrameState(),
+      };
+    }
+
+    test('loops the soundtrack from its probed audio stream', async () => {
+      const url = 'http://localhost:8000/uploads/audio/theme.mp3';
+      const probeFile = vi.fn().mockResolvedValue(coverArtAndAudio);
+
+      const { audioInput, frameState } = await runOffline(url, probeFile);
+
+      expect(probeFile).toHaveBeenCalledWith(url, expect.any(Number));
+      expect(audioInput?.source).toBeInstanceOf(HttpStreamSource);
+      expect(audioInput?.path).toBe(`cache:${url}`);
+      expect(audioInput?.streams[0]?.index).toBe(1);
+      expect(frameState?.infiniteLoop).toBe(true);
+    });
+
+    test('reads a local path as a file source', async () => {
+      const { audioInput } = await runOffline(
+        '/media/theme.mp3',
+        vi.fn().mockResolvedValue(coverArtAndAudio),
+      );
+
+      expect(audioInput?.source).toBeInstanceOf(FileStreamSource);
+      expect(audioInput?.path).toBe('/media/theme.mp3');
+    });
+
+    test('uses placeholder audio when no soundtrack is set', async () => {
+      const probeFile = vi.fn();
+
+      const { audioInput } = await runOffline(undefined, probeFile);
+
+      expect(probeFile).not.toHaveBeenCalled();
+      expect(audioInput).toBeInstanceOf(NullAudioInputSource);
+    });
+
+    test('uses placeholder audio when the probe fails', async () => {
+      const { audioInput } = await runOffline(
+        '/media/missing.mp3',
+        vi.fn().mockRejectedValue(new Error('No such file')),
+      );
+
+      expect(audioInput).toBeInstanceOf(NullAudioInputSource);
+    });
+
+    test('uses placeholder audio when the file has no audio stream', async () => {
+      const videoOnly = makeProbe([coverArt]);
+
+      const { audioInput } = await runOffline(
+        '/media/cover.jpg',
+        vi.fn().mockResolvedValue(videoOnly),
+      );
+
+      expect(audioInput).toBeInstanceOf(NullAudioInputSource);
     });
   });
 

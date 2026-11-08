@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from 'node:child_process';
+import { execFileSync, spawn, spawnSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -56,6 +56,43 @@ export async function createTempWorkdir(): Promise<{
   return {
     dir,
     cleanup: () => fs.rm(dir, { recursive: true, force: true }),
+  };
+}
+
+/**
+ * Serves one file over HTTP and ignores Range requests, like simple static
+ * servers do. It runs in a child process so it keeps answering while a test
+ * blocks on `spawnSync`.
+ */
+export async function startRangelessFileServer(filePath: string): Promise<{
+  url: string;
+  close: () => void;
+}> {
+  const script = `
+    const fs = require('node:fs');
+    const http = require('node:http');
+    const file = process.argv[1];
+    const server = http.createServer((_req, res) => {
+      res.writeHead(200, { 'Content-Length': fs.statSync(file).size });
+      fs.createReadStream(file).pipe(res);
+    });
+    server.listen(0, '127.0.0.1', () => console.log(server.address().port));
+  `;
+  const child = spawn(process.execPath, ['-e', script, filePath], {
+    stdio: ['ignore', 'pipe', 'inherit'],
+  });
+  const port = await new Promise<string>((resolve, reject) => {
+    child.stdout.once('data', (data: Buffer) =>
+      resolve(data.toString().trim()),
+    );
+    child.once('error', reject);
+    child.once('exit', (code) =>
+      reject(new Error(`File server exited with code ${code}`)),
+    );
+  });
+  return {
+    url: `http://127.0.0.1:${port}/${path.basename(filePath)}`,
+    close: () => child.kill(),
   };
 }
 

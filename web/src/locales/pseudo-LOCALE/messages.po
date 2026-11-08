@@ -758,6 +758,10 @@ msgstr ""
 msgid "Audio Channels"
 msgstr ""
 
+#: src/components/channel_config/ChannelFlexConfig.tsx
+msgid "Audio file path or URL. It loops for as long as the fallback plays."
+msgstr ""
+
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 msgid "Audio Format"
