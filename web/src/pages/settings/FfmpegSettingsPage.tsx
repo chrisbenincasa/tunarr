@@ -277,20 +277,18 @@ export default function FfmpegSettingsPage() {
               </FormControl>
             )}
           </Stack>
-          {logSelectValue === 'file' && (
-            <Box sx={{ flexBasis: { xs: '100%', md: '50%' } }}>
-              <NumericFormControllerText
-                control={control}
-                name="fileLogRetentionCount"
-                rules={{ min: 1, required: true }}
-                TextFieldProps={{
-                  label: t`FFMPEG Log Files to Keep`,
-                  fullWidth: true,
-                  helperText: t`Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour. Files written in the last 10 minutes are never deleted.`,
-                }}
-              />
-            </Box>
-          )}
+          <Box sx={{ flexBasis: { xs: '100%', md: '50%' } }}>
+            <NumericFormControllerText
+              control={control}
+              name="fileLogRetentionCount"
+              rules={{ min: 1, required: true }}
+              TextFieldProps={{
+                label: t`FFMPEG Log Files to Keep`,
+                fullWidth: true,
+                helperText: t`Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour, whatever the log method. Error logs are written in every mode. Files still being written are never deleted.`,
+              }}
+            />
+          </Box>
         </Stack>
         <FormControl sx={{ flexBasis: { xs: '100%', md: '50%' } }}>
           <InputLabel id="hls-direct-output-format-label">

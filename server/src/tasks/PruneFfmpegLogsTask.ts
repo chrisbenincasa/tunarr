@@ -1,4 +1,5 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import { activeFfmpegReportFiles } from '@/ffmpeg/ffmpegReportFiles.js';
 import { KEYS } from '@/types/inject.js';
 import {
   FfmpegErrorLogFilePrefix,
@@ -18,8 +19,8 @@ import { simpleTaskDef } from './TaskRegistry.ts';
 /**
  * Files younger than this are never pruned.
  *
- * A running ffmpeg keeps writing its report, so a recent mtime means the file
- * may still be in use.
+ * A safety margin on top of `activeFfmpegReportFiles`, which names the reports
+ * of running processes.
  */
 export const FfmpegLogMinAgeMs = 10 * 60 * 1000;
 
@@ -36,15 +37,21 @@ export function isFfmpegLogFile(name: string): boolean {
   );
 }
 
+export type PruneFfmpegLogsOptions = {
+  now?: Date;
+  /** File names to keep regardless of age, such as reports still being written. */
+  skip?: ReadonlySet<string>;
+};
+
 /**
  * Deletes all but the newest `keep` ffmpeg report and error log files in
- * `directory`, ordered by mtime. Files modified within `FfmpegLogMinAgeMs` of
- * `now` are kept even when they fall past the cap.
+ * `directory`, ordered by mtime. Files named in `skip`, or modified within
+ * `FfmpegLogMinAgeMs` of `now`, are kept even when they fall past the cap.
  */
 export async function pruneFfmpegLogs(
   directory: string,
   keep: number,
-  now: Date = new Date(),
+  { now = new Date(), skip = new Set() }: PruneFfmpegLogsOptions = {},
 ): Promise<PruneFfmpegLogsResult> {
   const result: PruneFfmpegLogsResult = { deleted: [], failed: [] };
 
@@ -76,7 +83,11 @@ export async function pruneFfmpegLogs(
     .filter((file) => file !== null)
     .sort((a, b) => b.mtimeMs - a.mtimeMs)
     .slice(keep)
-    .filter((file) => now.getTime() - file.mtimeMs >= FfmpegLogMinAgeMs);
+    .filter(
+      (file) =>
+        !skip.has(file.name) &&
+        now.getTime() - file.mtimeMs >= FfmpegLogMinAgeMs,
+    );
 
   await Promise.all(
     candidates.map(async ({ name }) => {
@@ -111,7 +122,9 @@ export class PruneFfmpegLogsTask extends SimpleTask {
     const directory = this.settingsDB.systemSettings().logging.logsDirectory;
     const keep = this.settingsDB.ffmpegSettings().fileLogRetentionCount;
 
-    const { deleted, failed } = await pruneFfmpegLogs(directory, keep);
+    const { deleted, failed } = await pruneFfmpegLogs(directory, keep, {
+      skip: activeFfmpegReportFiles,
+    });
 
     if (deleted.length > 0) {
       this.logger.debug(
