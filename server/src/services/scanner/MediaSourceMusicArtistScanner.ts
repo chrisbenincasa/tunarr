@@ -133,7 +133,7 @@ export abstract class MediaSourceMusicArtistScanner<
       return incomingArtist.recast();
     }
 
-    const existingShow = await this.programDB.getProgramGroupingByExternalId({
+    const existingArtist = await this.programDB.getProgramGroupingByExternalId({
       sourceType: this.mediaSourceType,
       externalSourceId: mediaSource.uuid,
       externalKey: externalId,
@@ -141,14 +141,14 @@ export abstract class MediaSourceMusicArtistScanner<
 
     let lookupResult: Maybe<ProgramGroupingCanonicalIdLookupResult>;
     if (
-      existingShow?.type === 'show' &&
-      isNonEmptyString(existingShow.libraryId)
+      existingArtist?.type === 'artist' &&
+      isNonEmptyString(existingArtist.libraryId)
     ) {
       lookupResult = {
-        canonicalId: existingShow.canonicalId,
+        canonicalId: existingArtist.canonicalId,
         externalKey: externalId,
-        libraryId: existingShow.libraryId,
-        uuid: existingShow.uuid,
+        libraryId: existingArtist.libraryId,
+        uuid: existingArtist.uuid,
       };
     }
 

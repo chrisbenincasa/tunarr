@@ -40,6 +40,7 @@ import {
   ProgramGrouping,
   ProgramGroupingType,
 } from '../../db/schema/ProgramGrouping.ts';
+import { ProgramGroupingExternalId } from '../../db/schema/ProgramGroupingExternalId.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
 import { globalOptions, setGlobalOptions } from '../../globals.ts';
 import { FileSystemService } from '../FileSystemService.ts';
@@ -666,5 +667,45 @@ describe('MediaSourceMusicArtistScanner grouping trash state', () => {
     expect(await groupingStates(drizzle, [seeded.artistUuid])).toEqual({
       [seeded.artistUuid]: 'missing',
     });
+  });
+});
+
+describe('MediaSourceMusicArtistScanner single-artist rescan', () => {
+  test('skips the deep scan for an unchanged artist', async ({
+    drizzle,
+    programDb,
+  }) => {
+    const seeded = await seedArtistWithOneTrack(drizzle, 'ok', 'ok');
+
+    // A real scan writes this row, and the single-artist lookup reads it.
+    await drizzle.insert(ProgramGroupingExternalId).values({
+      uuid: v4(),
+      externalKey: artistKey,
+      sourceType: 'plex',
+      mediaSourceId: seeded.mediaSource.uuid,
+      libraryId: seeded.library.uuid,
+      groupUuid: seeded.artistUuid,
+    });
+
+    const { searchService } = makeMusicSearchService();
+    const minter = new ProgramGroupingMinter();
+    const mintArtist = vi.spyOn(minter, 'mintForMediaSourceArtist');
+
+    const scanner = new EmptyAlbumScanner(
+      programDb,
+      searchService,
+      seeded.mediaSource,
+      minter,
+    );
+
+    const result = await scanner.scanSingle({
+      library: seeded.library,
+      force: false,
+      externalId: artistKey,
+    });
+
+    expect(result.isSuccess()).toBe(true);
+    expect(mintArtist).not.toHaveBeenCalled();
+    expect(searchService.indexMusicArtist).not.toHaveBeenCalled();
   });
 });
