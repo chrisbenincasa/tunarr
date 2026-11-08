@@ -1,6 +1,6 @@
 # Scheduling and Lineups
 
-*Last Updated: 2026-10-09*
+*Last Updated: 2026-11-08*
 
 Domain terms (slot, lineup, filler, flex) are defined in `CONTEXT.md` at the repo root.
 
@@ -46,6 +46,22 @@ separately from SQL migrations.
 Program iterators decide the order within a slot: `ProgramOrdereredIterator.ts` (sic),
 `ShuffleProgramIterator.ts`, `ProgramChunkedShuffle.ts`, `StaticProgramIterator.ts`,
 `FlexProgramIterator.ts`.
+
+## Strict saves, lenient rebuilds
+
+- Slot schedules reference filler lists, custom shows, shows, smart collections, and redirect
+  channels by ID. Deleting any of them never rewrites schedules, so a saved schedule can hold an ID
+  that no longer resolves.
+- User saves (`channelsApi.ts` and `LineupRepository`'s lineup update) set `strictValidation: true`.
+  `SlotSchedulerHelper.assertSlotReferences` then rejects the whole save with
+  `ScheduleValidationError` (HTTP 400) for a deleted reference or an empty custom show. An empty filler
+  list passes.
+- Background rebuilds (`RegenerateChannelLineupCommand`) leave the flag off. A slot that resolves to
+  nothing is skipped and plays flex. Redirect slots are the exception, because they still emit
+  redirect items to a deleted channel (#2486).
+- The web slot editors mirror the strict check so the user fixes a dangling reference before saving.
+  The helpers live in `web/src/helpers/slotSchedulerUtil.ts` (`customShowAvailability()`,
+  `unavailableCustomShowSlotIndexes()`).
 
 ## Related
 
