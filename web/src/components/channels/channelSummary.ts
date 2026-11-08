@@ -204,12 +204,17 @@ export const matchesStatusFilter = (
   }
 };
 
-// Limits the playlist at `m3uUrl` to the given channel numbers.
-export const channelsM3uUrl = (m3uUrl: string, numbers: readonly number[]) => {
+// Asks the server to send the playlist at `m3uUrl` as an attachment, since
+// browsers ignore the `download` attribute on cross-origin links. With
+// `numbers`, limits the playlist to those channels.
+export const channelsM3uUrl = (m3uUrl: string, numbers?: readonly number[]) => {
   const url = new URL(m3uUrl, window.location.origin);
-  url.searchParams.set(
-    'channels',
-    [...numbers].sort((a, b) => a - b).join(','),
-  );
+  if (numbers) {
+    url.searchParams.set(
+      'channels',
+      [...numbers].sort((a, b) => a - b).join(','),
+    );
+  }
+  url.searchParams.set('download', 'true');
   return url.toString();
 };

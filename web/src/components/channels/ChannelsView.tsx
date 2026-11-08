@@ -375,7 +375,7 @@ export const ChannelsView = ({
             <Button
               variant="outlined"
               startIcon={<Download />}
-              href={m3uUrl}
+              href={channelsM3uUrl(m3uUrl)}
               download="channels.m3u"
             >
               <Trans>Export M3U</Trans>

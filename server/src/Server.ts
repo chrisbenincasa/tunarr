@@ -42,7 +42,10 @@ import { HdhrApiRouter } from './api/hdhrApi.js';
 import { apiRouter } from './api/index.js';
 import { streamApi } from './api/streamApi.js';
 import { videoApiRouter } from './api/videoApi.js';
-import { createTunarrBasicAuthHook } from './util/basicAuth.js';
+import {
+  basicAuthConfigFromEnv,
+  createTunarrBasicAuthHook,
+} from './util/basicAuth.js';
 import { defaultHlsOptions } from './ffmpeg/builder/constants.ts';
 import { type ServerOptions, serverOptions } from './globals.js';
 import type { IWorkerPool } from './interfaces/IWorkerPool.ts';
@@ -114,19 +117,9 @@ export class Server {
       .setSerializerCompiler(serializerCompiler)
       .withTypeProvider<ZodTypeProvider>();
 
-    const basicAuthUser = getEnvVar(TUNARR_ENV_VARS.BASIC_AUTH_USER_ENV_VAR);
-    const basicAuthPassword = getEnvVar(
-      TUNARR_ENV_VARS.BASIC_AUTH_PASSWORD_ENV_VAR,
-    );
-
-    if (basicAuthUser && basicAuthPassword) {
-      this.app.addHook(
-        'onRequest',
-        createTunarrBasicAuthHook({
-          username: basicAuthUser,
-          password: basicAuthPassword,
-        }),
-      );
+    const basicAuth = basicAuthConfigFromEnv();
+    if (basicAuth) {
+      this.app.addHook('onRequest', createTunarrBasicAuthHook(basicAuth));
     }
 
     if (serverOptions().printRoutes) {

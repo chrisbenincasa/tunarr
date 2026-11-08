@@ -2,6 +2,7 @@ import type { FastifyReply, FastifyRequest } from 'fastify';
 import { describe, expect, test, vi } from 'vitest';
 import {
   createTunarrBasicAuthHook,
+  isAuthorized,
   safeEqual,
   validateBasicAuth,
 } from './basicAuth.ts';
@@ -143,5 +144,22 @@ describe('basicAuth', () => {
       expect(reply.status).not.toHaveBeenCalled();
       expect(reply.send).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('isAuthorized', () => {
+  const config = { username: 'admin', password: 'secret' };
+
+  test('allows any request when basic auth is off', () => {
+    expect(isAuthorized(undefined, undefined)).toBe(true);
+  });
+
+  test('allows a request with valid credentials', () => {
+    expect(isAuthorized(basicAuthHeader('admin', 'secret'), config)).toBe(true);
+  });
+
+  test('rejects a request with missing or wrong credentials', () => {
+    expect(isAuthorized(undefined, config)).toBe(false);
+    expect(isAuthorized(basicAuthHeader('admin', 'wrong'), config)).toBe(false);
   });
 });

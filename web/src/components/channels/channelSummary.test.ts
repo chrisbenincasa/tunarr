@@ -226,12 +226,20 @@ describe('channelsM3uUrl', () => {
   test('adds the sorted channel numbers to an absolute URL', () => {
     expect(
       channelsM3uUrl('http://tunarr.test/api/channels.m3u', [12, 3, 7]),
-    ).toBe('http://tunarr.test/api/channels.m3u?channels=3%2C7%2C12');
+    ).toBe(
+      'http://tunarr.test/api/channels.m3u?channels=3%2C7%2C12&download=true',
+    );
   });
 
   test('resolves a relative URL against the page', () => {
     expect(channelsM3uUrl('/api/channels.m3u', [1])).toBe(
-      `${window.location.origin}/api/channels.m3u?channels=1`,
+      `${window.location.origin}/api/channels.m3u?channels=1&download=true`,
+    );
+  });
+
+  test('asks for the full playlist as a download without numbers', () => {
+    expect(channelsM3uUrl('http://tunarr.test/api/channels.m3u')).toBe(
+      'http://tunarr.test/api/channels.m3u?download=true',
     );
   });
 });

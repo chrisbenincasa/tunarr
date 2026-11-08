@@ -15395,9 +15395,13 @@ export type GetApiChannelsM3uData = {
         forceHttps?: boolean | 'true' | 'false' | number;
         hostOverride?: string;
         /**
-         * Comma-separated channel numbers. Limits the playlist to those channels.
+         * Comma-separated channel numbers. Limits the playlist to those channels. Stealth channels are included only for authorized requests.
          */
         channels?: string;
+        /**
+         * Sends the playlist as a file attachment.
+         */
+        download?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels.m3u';
 };
@@ -15416,9 +15420,13 @@ export type HeadApiChannelsM3uData = {
         forceHttps?: boolean | 'true' | 'false' | number;
         hostOverride?: string;
         /**
-         * Comma-separated channel numbers. Limits the playlist to those channels.
+         * Comma-separated channel numbers. Limits the playlist to those channels. Stealth channels are included only for authorized requests.
          */
         channels?: string;
+        /**
+         * Sends the playlist as a file attachment.
+         */
+        download?: boolean | 'true' | 'false' | number;
     };
     url: '/api/channels.m3u';
 };

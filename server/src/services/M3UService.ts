@@ -37,10 +37,14 @@ export class M3uService {
 
   /**
    * Builds the playlist for the given channel numbers only. Skips the cache,
-   * because each subset is a one-off export. Stealth channels are kept,
-   * because the caller picked them by number.
+   * because each subset is a one-off export. Stealth channels are kept only
+   * with `includeStealth`, because the route is public.
    */
-  async getChannelsM3UFor(host: string, numbers: number[]): Promise<string> {
+  async getChannelsM3UFor(
+    host: string,
+    numbers: number[],
+    includeStealth: boolean,
+  ): Promise<string> {
     const wanted = new Set(numbers);
     const channels = (await this.channelDB.getAllChannels()).filter((c) =>
       wanted.has(c.number),
@@ -49,7 +53,7 @@ export class M3uService {
       host,
       buildChannelsM3U(channels, {
         placeholderWhenEmpty: false,
-        includeStealth: true,
+        includeStealth,
       }),
     );
   }

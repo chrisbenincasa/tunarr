@@ -83,7 +83,7 @@ describe('M3uService.getChannelsM3UFor', () => {
       channel(1, 'One'),
       channel(4, 'Four'),
       channel(7, 'Seven', true),
-    ]).getChannelsM3UFor('http://tunarr.test', [7, 1]);
+    ]).getChannelsM3UFor('http://tunarr.test', [7, 1], true);
 
     expect(
       m3u.split('\n').filter((line) => line.startsWith('http://')),
@@ -94,10 +94,21 @@ describe('M3uService.getChannelsM3UFor', () => {
     expect(m3u).not.toContain('{{host}}');
   });
 
+  test('drops a requested stealth channel without includeStealth', async () => {
+    const m3u = await service([
+      channel(1, 'One'),
+      channel(7, 'Seven', true),
+    ]).getChannelsM3UFor('http://tunarr.test', [7, 1], false);
+
+    expect(m3u).toContain('uuid-1');
+    expect(m3u).not.toContain('uuid-7');
+  });
+
   test('returns only the header when no number matches', async () => {
     const m3u = await service([channel(1, 'One')]).getChannelsM3UFor(
       'http://tunarr.test',
       [99],
+      true,
     );
     expect(m3u.trim().split('\n')).toHaveLength(1);
   });
