@@ -8021,7 +8021,7 @@ export type PostApiProgramsSearchData = {
             restrictSearchTo?: Array<string>;
             filter?: SearchFilterInput | null;
             sort?: Array<{
-                field: 'title' | 'sortTitle' | 'duration' | 'originalReleaseDate' | 'originalReleaseYear' | 'addedAt' | 'index';
+                field: 'title' | 'sortTitle' | 'duration' | 'originalReleaseDate' | 'originalReleaseYear' | 'addedAt' | 'index' | 'audienceRating' | 'criticRating';
                 direction: 'asc' | 'desc';
             }> | null;
         };
