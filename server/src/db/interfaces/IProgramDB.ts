@@ -283,6 +283,7 @@ export type ProgramCanonicalIdLookupResult = {
   // Pre-alpha programs will not have this on first run
   libraryId: Nullable<string>;
   externalKey: string;
+  state: ProgramState;
 };
 
 export type ProgramGroupingCanonicalIdLookupResult = {

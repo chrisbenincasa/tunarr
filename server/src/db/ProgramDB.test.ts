@@ -2645,6 +2645,51 @@ describe('ProgramDB', () => {
       expect(saved?.streamSelectionProfileId).toBe(profileId);
     });
 
+    test('restores a trashed program when a scan upserts it unchanged', async ({
+      programDb,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle, {
+        type: 'jellyfin',
+      });
+      const program = createBaseProgram('movie', library.uuid, 'jellyfin', {
+        mediaSourceId: library.mediaSourceId,
+      });
+      const request: NewProgramWithRelations = {
+        program,
+        externalIds: [],
+        versions: [],
+        artwork: [],
+        subtitles: [],
+        credits: [],
+        genres: [],
+        studios: [],
+        tags: [],
+      };
+      const inserted = await programDb.upsertPrograms(request);
+      await programDb.updateProgramsState([inserted.uuid], 'missing');
+
+      // Scanners mint each program with a fresh uuid and state 'ok'.
+      await programDb.upsertPrograms({
+        ...request,
+        program: { ...program, uuid: v4(), state: 'ok' },
+      });
+
+      const saved = await drizzle.query.program.findFirst({
+        where: eq(Program.uuid, inserted.uuid),
+      });
+      expect(saved?.state).toBe('ok');
+
+      const lookup = await programDb.getProgramInfoForMediaSourceLibrary(
+        library.uuid,
+        'movie',
+      );
+      expect(lookup[program.externalKey]).toMatchObject({
+        uuid: inserted.uuid,
+        state: 'ok',
+      });
+    });
+
     describe('program tags', () => {
       test('should save tags for a program', async ({ programDb, drizzle }) => {
         const library = await createTestMediaSourceLibrary(drizzle);
