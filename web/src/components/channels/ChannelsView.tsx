@@ -7,6 +7,7 @@ import {
   Delete,
   Download,
   Edit,
+  PlaylistAdd,
   SettingsRemote,
 } from '@mui/icons-material';
 import {
@@ -70,6 +71,7 @@ export type ChannelsViewProps = {
   // The full playlist's URL. Bulk export adds the selected channel numbers.
   m3uUrl: string;
   onDuplicateChannels: (channels: Channel[]) => void;
+  onAssignFillers: (channels: Channel[]) => void;
 
   // Called after the user confirms.
   onDeleteChannels: (channels: Channel[]) => void;
@@ -90,6 +92,7 @@ export const ChannelsView = ({
   renderMenu,
   m3uUrl,
   onDuplicateChannels,
+  onAssignFillers,
   onDeleteChannels,
   layout,
 }: ChannelsViewProps) => {
@@ -318,6 +321,14 @@ export const ChannelsView = ({
         onClick={() => onDuplicateChannels(selected)}
       >
         <Trans>Duplicate</Trans>
+      </Button>
+      <Button
+        size="small"
+        variant="outlined"
+        startIcon={<PlaylistAdd />}
+        onClick={() => onAssignFillers(selected)}
+      >
+        <Trans>Assign fillers</Trans>
       </Button>
       <Button
         size="small"

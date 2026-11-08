@@ -1,10 +1,11 @@
-import { renderWithProviders, screen } from '@/test/utils';
+import { renderWithProviders, screen, userEvent } from '@/test/utils';
 import {
   createMemoryHistory,
   createRootRoute,
   createRouter,
   RouterProvider,
 } from '@tanstack/react-router';
+import type { Channel } from '@tunarr/types';
 import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { CollectionLayout } from '../ui/patterns/CollectionView/index.ts';
 import { ChannelsView } from './ChannelsView.tsx';
@@ -18,6 +19,7 @@ import {
 const renderView = async (
   layout: CollectionLayout,
   channels = storyChannels,
+  onAssignFillers: (channels: Channel[]) => void = () => {},
 ) => {
   const rootRoute = createRootRoute({
     component: () => (
@@ -31,6 +33,7 @@ const renderView = async (
         layout={layout}
         m3uUrl="http://tunarr.test/api/channels.m3u"
         onDuplicateChannels={() => {}}
+        onAssignFillers={onAssignFillers}
         onDeleteChannels={() => {}}
       />
     ),
@@ -82,5 +85,27 @@ describe('ChannelsView', () => {
         (_, el) => el?.textContent === '1 channel · 0 streaming',
       ),
     ).toBeInTheDocument();
+  });
+
+  test('Assign fillers passes the selected channels', async () => {
+    const onAssignFillers = vi.fn();
+    await renderView('table', storyChannels, onAssignFillers);
+
+    await userEvent.click(
+      screen.getByRole('checkbox', {
+        name: 'Select Saturday Morning Cartoons',
+      }),
+    );
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Select Classic Sitcoms' }),
+    );
+    await userEvent.click(
+      screen.getByRole('button', { name: 'Assign fillers' }),
+    );
+
+    expect(onAssignFillers).toHaveBeenCalledWith([
+      expect.objectContaining({ name: 'Saturday Morning Cartoons' }),
+      expect.objectContaining({ name: 'Classic Sitcoms' }),
+    ]);
   });
 });

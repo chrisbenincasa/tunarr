@@ -49,9 +49,11 @@ msgstr ""
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr "{0, plural, other {# 项}}"
 
+#. placeholder {0}: filler.contentCount
 #. placeholder {0}: programList.length
 #. placeholder {0}: value?.programCount ?? 0
 #: src/components/channel_config/ChannelLineupList.tsx
+#: src/components/channels/BulkAssignFillersDialog.tsx
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx
 msgid "{0, plural, one {# program} other {# programs}}"
 msgstr "{0, plural, other {# 个节目}}"
@@ -554,6 +556,13 @@ msgstr "向垫片添加剧集或电影"
 msgid "Add TV Shows or Movies to programming list."
 msgstr "向节目列表添加剧集或电影。"
 
+#. placeholder {0}: data.added
+#. placeholder {1}: data.added
+#. placeholder {2}: data.updated
+#: src/hooks/useBulkAssignFillers.tsx
+msgid "Added {0} {1, plural, one {assignment} other {assignments}}, updated {2}."
+msgstr ""
+
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Adds a channel redirect. During this period of time, the channel will redirect to another channel."
 msgstr "添加频道跳转。在该时段内，频道将跳转到另一个频道。"
@@ -731,6 +740,13 @@ msgstr ""
 msgid "Applied"
 msgstr ""
 
+#. placeholder {0}: selectedChannelIds.length
+#. placeholder {0}: selectedChannelIds.size
+#: src/components/channels/BulkAssignFillersDialog.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Apply to {0, plural, one {# channel} other {# channels}}"
+msgstr ""
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Apply to Program Types (empty = all)"
 msgstr "应用于节目类型（留空表示全部）"
@@ -756,6 +772,24 @@ msgstr "升序"
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Ascending"
 msgstr "升序"
+
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Assign \"{fillerName}\" to Channels"
+msgstr ""
+
+#: src/components/channels/ChannelsView.tsx
+msgid "Assign fillers"
+msgstr ""
+
+#. placeholder {0}: selectedChannelIds.length
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "Assign Fillers to {0, plural, one {# Channel} other {# Channels}}"
+msgstr ""
+
+#: src/pages/library/FillerListsPage.tsx
+#: src/pages/library/FillerListsPage.tsx
+msgid "Assign to Channels"
+msgstr ""
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
@@ -1012,9 +1046,12 @@ msgstr "计算一种所有节目同时结束的排期，从而形成完美循环
 msgid "Calculating Slots..."
 msgstr "正在计算时段…"
 
+#: src/components/channels/BulkAssignFillersDialog.tsx
+#: src/components/channels/BulkAssignFillersDialog.tsx
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/components/channels/ChannelsDeleteDialog.tsx
 #: src/components/DeleteConfirmationDialog.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
 #: src/components/programming_controls/AddFlexModal.tsx
@@ -1147,6 +1184,7 @@ msgstr "频道转码配置"
 #: src/components/channels/ChannelsView.tsx
 #: src/components/channels/ChannelsView.tsx
 #: src/components/channels/ChannelsView.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
@@ -1354,6 +1392,8 @@ msgid "Cooldown"
 msgstr "冷却时间"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
+#: src/components/channels/BulkAssignFillersDialog.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
 msgid "Cooldown (s)"
 msgstr "冷却时间（秒）"
 
@@ -1722,6 +1762,10 @@ msgstr "降序"
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Description"
 msgstr "描述"
+
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Deselect All"
+msgstr ""
 
 #: src/components/channels/ChannelNowPlayingCard.tsx
 msgid "Details"
@@ -2121,6 +2165,10 @@ msgstr ""
 msgid "Episodes"
 msgstr "剧集"
 
+#: src/hooks/useBulkAssignFillers.tsx
+msgid "Error assigning fillers: {message}"
+msgstr ""
+
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
 msgid "Error Audio"
 msgstr "错误提示音"
@@ -2266,9 +2314,17 @@ msgstr ""
 msgid "Fade Period (mins)"
 msgstr ""
 
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Failed to load channels."
+msgstr ""
+
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Failed to load feature flags."
 msgstr "加载功能开关失败。"
+
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "Failed to load filler lists."
+msgstr ""
 
 #: src/components/programs/ProgramDetailsDialog.tsx
 msgid "Failed to load item details! Check logs for details"
@@ -3473,12 +3529,20 @@ msgstr ""
 #~ msgid "No active sessions"
 #~ msgstr "暂无活动会话"
 
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "No channels found. Create a channel first."
+msgstr ""
+
 #: src/components/channels/ChannelsView.tsx
 msgid "No channels match this filter."
 msgstr ""
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "No condition"
+msgstr ""
+
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "No filler lists found. Create a filler list first."
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
@@ -4143,6 +4207,11 @@ msgstr "刷新预览"
 msgid "Refresh Timer (Hours)"
 msgstr "刷新周期（小时）"
 
+#: src/components/channels/BulkAssignFillersDialog.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Relative weight"
+msgstr ""
+
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
@@ -4257,6 +4326,18 @@ msgstr ""
 msgid "Repeats"
 msgstr "重播"
 
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "Replace"
+msgstr ""
+
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "Replace all existing fillers"
+msgstr ""
+
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "Replace filler lists?"
+msgstr ""
+
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Replicate Programs"
 msgstr "复制节目"
@@ -4338,6 +4419,11 @@ msgstr "限定搜索字段"
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
 msgid "Results"
+msgstr ""
+
+#: src/components/channels/BulkAssignFillersDialog.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Retry"
 msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
@@ -4563,6 +4649,7 @@ msgid "Select a slot to link to"
 msgstr "选择要关联的时段"
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/search/SearchFieldRestrictMenu.tsx
 msgid "Select All"
 msgstr "全选"
@@ -5316,6 +5403,11 @@ msgstr "此选项已禁用，因为它会计算出过长的排期。"
 msgid "This profile is built into Tunarr and cannot be changed. Duplicate it to make a version you can edit."
 msgstr ""
 
+#. placeholder {0}: selectedChannelIds.length
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "This removes every filler list currently assigned to {0, plural, one {# channel} other {# channels}} and assigns only the selected lists."
+msgstr ""
+
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "This show is marked as missing in the database."
@@ -5835,6 +5927,14 @@ msgstr "权重"
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 msgid "Weight %"
 msgstr "权重 %"
+
+#: src/components/channels/BulkAssignFillersDialog.tsx
+msgid "Weight is relative to the channel's other filler lists. Channels that already have a selected list get the new weight and cooldown."
+msgstr ""
+
+#: src/components/fillers/AssignFillerToChannelsDialog.tsx
+msgid "Weight is relative to the channel's other filler lists. Channels that already have this list get the new weight and cooldown."
+msgstr ""
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx

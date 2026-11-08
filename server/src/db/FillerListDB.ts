@@ -1,11 +1,14 @@
+import { GenericBadRequestError } from '@/types/errors.js';
 import { KEYS } from '@/types/inject.js';
 import { seq } from '@tunarr/shared/util';
 import type {
+  BulkAssignFillersRequest,
+  BulkAssignFillersResponse,
   CreateFillerListRequest,
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
 import dayjs from 'dayjs';
-import { and, eq, inArray, sql } from 'drizzle-orm';
+import { and, count, eq, inArray, sql } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
 import type { Kysely } from 'kysely';
 import { jsonArrayFrom } from 'kysely/helpers/sqlite';
@@ -35,6 +38,7 @@ import type {
   IFillerListDB,
 } from './interfaces/IFillerListDB.ts';
 import { createPendingProgramIndexMap } from './programHelpers.ts';
+import { Channel } from './schema/Channel.ts';
 import { ChannelFillerShow } from './schema/ChannelFillerShow.ts';
 import type { NewFillerShow } from './schema/FillerShow.ts';
 import { FillerShow } from './schema/FillerShow.ts';
@@ -408,6 +412,112 @@ export class FillerDB implements IFillerListDB {
         fillerShowUuid: result.fillerShowUuid,
         weight: result.weight,
       } satisfies ChannelFillerShowWithContent;
+    });
+  }
+
+  // ID lists go to SQLite in chunks of `idChunkSize`, so no query binds an
+  // unbounded number of parameters.
+  bulkAssignFillers(
+    request: BulkAssignFillersRequest,
+    idChunkSize = 500,
+  ): BulkAssignFillersResponse {
+    const fillerIds = request.fillers.map((f) => f.fillerShowId);
+    const channelIdChunks = chunk(request.channelIds, idChunkSize);
+    const fillerIdChunks = chunk(fillerIds, idChunkSize);
+
+    return this.drizzle.transaction((tx) => {
+      const foundChannelIds = new Set(
+        channelIdChunks.flatMap((ids) =>
+          tx
+            .select({ uuid: Channel.uuid })
+            .from(Channel)
+            .where(inArray(Channel.uuid, ids))
+            .all()
+            .map((row) => row.uuid),
+        ),
+      );
+      const foundFillerIds = new Set(
+        fillerIdChunks.flatMap((ids) =>
+          tx
+            .select({ uuid: FillerShow.uuid })
+            .from(FillerShow)
+            .where(inArray(FillerShow.uuid, ids))
+            .all()
+            .map((row) => row.uuid),
+        ),
+      );
+      const missingChannelIds = request.channelIds.filter(
+        (id) => !foundChannelIds.has(id),
+      );
+      const missingFillerIds = fillerIds.filter(
+        (id) => !foundFillerIds.has(id),
+      );
+      if (missingChannelIds.length > 0 || missingFillerIds.length > 0) {
+        const problems = [
+          missingChannelIds.length > 0
+            ? `unknown channel IDs: ${missingChannelIds.join(', ')}`
+            : null,
+          missingFillerIds.length > 0
+            ? `unknown filler list IDs: ${missingFillerIds.join(', ')}`
+            : null,
+        ].filter((p) => p !== null);
+        throw new GenericBadRequestError(problems.join('; '));
+      }
+
+      let updated = 0;
+      if (request.mode === 'replace') {
+        for (const ids of channelIdChunks) {
+          tx.delete(ChannelFillerShow)
+            .where(inArray(ChannelFillerShow.channelUuid, ids))
+            .run();
+        }
+      } else {
+        // IDs are unique, so no row falls in two chunk pairs.
+        for (const channelChunk of channelIdChunks) {
+          for (const fillerChunk of fillerIdChunks) {
+            updated +=
+              tx
+                .select({ count: count() })
+                .from(ChannelFillerShow)
+                .where(
+                  and(
+                    inArray(ChannelFillerShow.channelUuid, channelChunk),
+                    inArray(ChannelFillerShow.fillerShowUuid, fillerChunk),
+                  ),
+                )
+                .get()?.count ?? 0;
+          }
+        }
+      }
+
+      const rows = request.channelIds.flatMap((channelId) =>
+        request.fillers.map((filler) => ({
+          channelUuid: channelId,
+          fillerShowUuid: filler.fillerShowId,
+          weight: filler.weight,
+          cooldown: filler.cooldownSeconds,
+        })),
+      );
+
+      // Add mode overwrites weight and cooldown on pairs the channel already has.
+
+      for (const batch of chunk(rows, 1_000)) {
+        tx.insert(ChannelFillerShow)
+          .values(batch)
+          .onConflictDoUpdate({
+            target: [
+              ChannelFillerShow.channelUuid,
+              ChannelFillerShow.fillerShowUuid,
+            ],
+            set: {
+              weight: sql`excluded.weight`,
+              cooldown: sql`excluded.cooldown`,
+            },
+          })
+          .run();
+      }
+
+      return { added: rows.length - updated, updated };
     });
   }
 }

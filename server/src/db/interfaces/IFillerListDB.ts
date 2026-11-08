@@ -1,4 +1,6 @@
 import type {
+  BulkAssignFillersRequest,
+  BulkAssignFillersResponse,
   CreateFillerListRequest,
   UpdateFillerListRequest,
 } from '@tunarr/types/api';
@@ -45,6 +47,11 @@ export interface IFillerListDB {
   getFillersFromChannel(
     channelId: string,
   ): Promise<ChannelFillerShowWithContent[]>;
+
+  bulkAssignFillers(
+    request: BulkAssignFillersRequest,
+    idChunkSize?: number,
+  ): BulkAssignFillersResponse;
 }
 
 export type FillerShowWithContent = FillerShowOrm & {
