@@ -27,15 +27,15 @@
 
 ## Providers
 
-| | TMDB | TVDB v4 |
-|---|---|---|
-| Credential | API key or read access token, from any TMDB account | API key, plus an optional subscriber PIN (`POST /login` takes `apikey`, `pin`) |
-| User cost | Free for non-commercial use | $11.99/year subscription for the PIN model |
-| Network data | `networks[]`, kept apart from `production_companies[]` | `companies.network[]`, plus `originalNetwork` and `latestNetwork` on `SeriesExtendedRecord` |
-| Lookup with our IDs | `GET /3/tv/{tmdbId}`, or `GET /3/find/{id}` with `external_source=tvdb_id` or `imdb_id` | `GET /series/{tvdbId}/extended`, or `GET /search/remoteid/{imdbId}` |
-| Rate limit | Roughly 40 req/s, honor `429` | None stated, and "excessive calls" are banned |
-| Cache limit | At most 6 months (Terms §1.C) | None, and heavy caching is encouraged |
-| Attribution | TMDB logo plus the Terms §3 notice in an About or Credits section | "Metadata provided by TheTVDB" with a link, wherever the data is shown |
+|                     | TMDB                                                                                    | TVDB v4                                                                                     |
+| ------------------- | --------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Credential          | API key or read access token, from any TMDB account                                     | API key, plus an optional subscriber PIN (`POST /login` takes `apikey`, `pin`)              |
+| User cost           | Free for non-commercial use                                                             | $11.99/year subscription for the PIN model                                                  |
+| Network data        | `networks[]`, kept apart from `production_companies[]`                                  | `companies.network[]`, plus `originalNetwork` and `latestNetwork` on `SeriesExtendedRecord` |
+| Lookup with our IDs | `GET /3/tv/{tmdbId}`, or `GET /3/find/{id}` with `external_source=tvdb_id` or `imdb_id` | `GET /series/{tvdbId}/extended`, or `GET /search/remoteid/{imdbId}`                         |
+| Rate limit          | Roughly 40 req/s, honor `429`                                                           | None stated, and "excessive calls" are banned                                               |
+| Cache limit         | At most 6 months (Terms §1.C)                                                           | None, and heavy caching is encouraged                                                       |
+| Attribution         | TMDB logo plus the Terms §3 notice in an About or Credits section                       | "Metadata provided by TheTVDB" with a link, wherever the data is shown                      |
 
 TMDB is the preferred provider and the only one in v1. It's free, and its `networks` list is enough for filtering. TVDB is a tracked follow-up until TVDB support answers whether we can ship a subscriber-supported key (see "TVDB exception").
 
@@ -69,19 +69,19 @@ New Drizzle tables. Generate the migration with `pnpm drizzle-kit generate`.
 
 ### `network`
 
-| Column | Type | Notes |
-|---|---|---|
-| `uuid` | text PK | |
-| `name` | text | e.g. `HBO` |
-| `originCountry` | text, nullable | |
+| Column          | Type           | Notes      |
+| --------------- | -------------- | ---------- |
+| `uuid`          | text PK        |            |
+| `name`          | text           | e.g. `HBO` |
+| `originCountry` | text, nullable |            |
 
 ### `network_external_id`
 
-| Column | Type | Notes |
-|---|---|---|
-| `networkId` | text FK → `network` | Cascade delete |
-| `sourceType` | text | `tmdb` or `tvdb` |
-| `externalKey` | text | The provider's network or company ID |
+| Column        | Type                | Notes                                |
+| ------------- | ------------------- | ------------------------------------ |
+| `networkId`   | text FK → `network` | Cascade delete                       |
+| `sourceType`  | text                | `tmdb` or `tvdb`                     |
+| `externalKey` | text                | The provider's network or company ID |
 
 - Unique on (`sourceType`, `externalKey`).
 - One `network` row can carry IDs from both providers.
@@ -89,11 +89,11 @@ New Drizzle tables. Generate the migration with `pnpm drizzle-kit generate`.
 
 ### `network_grouping`
 
-| Column | Type | Notes |
-|---|---|---|
-| `networkId` | text FK → `network` | Cascade delete |
-| `groupId` | text FK → `program_grouping` | Show groupings only, cascade delete |
-| `sourceType` | text | The provider that reported this link |
+| Column       | Type                         | Notes                                |
+| ------------ | ---------------------------- | ------------------------------------ |
+| `networkId`  | text FK → `network`          | Cascade delete                       |
+| `groupId`    | text FK → `program_grouping` | Show groupings only, cascade delete  |
+| `sourceType` | text                         | The provider that reported this link |
 
 - Primary key on (`networkId`, `groupId`, `sourceType`).
 - `sourceType` lets a lookup replace only its own provider's links, and lets credential removal delete one provider's data.
@@ -102,12 +102,12 @@ New Drizzle tables. Generate the migration with `pnpm drizzle-kit generate`.
 
 One row per show and provider. It drives refresh and records why a show has no networks.
 
-| Column | Type | Notes |
-|---|---|---|
-| `groupId` | text FK → `program_grouping` | |
-| `provider` | text | |
-| `status` | text | `found`, `not_found`, `no_ids`, or `error` |
-| `lookedUpAt` | integer | Epoch ms |
+| Column       | Type                         | Notes                                      |
+| ------------ | ---------------------------- | ------------------------------------------ |
+| `groupId`    | text FK → `program_grouping` |                                            |
+| `provider`   | text                         |                                            |
+| `status`     | text                         | `found`, `not_found`, `no_ids`, or `error` |
+| `lookedUpAt` | integer                      | Epoch ms                                   |
 
 ## Studio provenance
 
@@ -122,12 +122,12 @@ Studios get external IDs too, so each studio records which sources reported it.
 
 ### `studio_external_id`
 
-| Column | Type | Notes |
-|---|---|---|
-| `studioId` | text FK → `studio` | Cascade delete |
-| `sourceType` | text | `jellyfin`, `emby`, `plex`, `local`, `tmdb`, or `tvdb` |
+| Column          | Type                               | Notes                                                                                      |
+| --------------- | ---------------------------------- | ------------------------------------------------------------------------------------------ |
+| `studioId`      | text FK → `studio`                 | Cascade delete                                                                             |
+| `sourceType`    | text                               | `jellyfin`, `emby`, `plex`, `local`, `tmdb`, or `tvdb`                                     |
 | `mediaSourceId` | text FK → `media_source`, nullable | Set for Jellyfin, Emby, Plex, and local. Jellyfin and Emby IDs are only unique per server. |
-| `externalKey` | text, nullable | Jellyfin GUID or Emby ID. Null for name-only sources. |
+| `externalKey`   | text, nullable                     | Jellyfin GUID or Emby ID. Null for name-only sources.                                      |
 
 - Unique on (`sourceType`, `mediaSourceId`, `externalKey`), with nulls treated as values.
 - Name matching stays as it is. A Plex "HBO" and a Jellyfin "HBO" share one `studio` row with two external ID rows.
@@ -137,12 +137,12 @@ Studios get external IDs too, so each studio records which sources reported it.
 
 ## External IDs we already have
 
-| Source | Show IDs | Where |
-|---|---|---|
-| Jellyfin | `ProviderIds` → `tmdb`, `tvdb`, `imdb` | `server/src/external/jellyfin/JellyfinApiClient.ts:2004-2021` |
-| Emby | Same | `server/src/external/emby/EmbyApiClient.ts:2031` |
-| Plex | `Guid` → parsed by `parsePlexGuid` | `server/src/util/externalIds.ts:7` |
-| Local | None. `tvShowNfoToShow` sets `identifiers: []` | `server/src/services/scanner/LocalTvShowScanner.ts:738-746` |
+| Source   | Show IDs                                       | Where                                                         |
+| -------- | ---------------------------------------------- | ------------------------------------------------------------- |
+| Jellyfin | `ProviderIds` → `tmdb`, `tvdb`, `imdb`         | `server/src/external/jellyfin/JellyfinApiClient.ts:2004-2021` |
+| Emby     | Same                                           | `server/src/external/emby/EmbyApiClient.ts:2031`              |
+| Plex     | `Guid` → parsed by `parsePlexGuid`             | `server/src/util/externalIds.ts:7`                            |
+| Local    | None. `tvShowNfoToShow` sets `identifiers: []` | `server/src/services/scanner/LocalTvShowScanner.ts:738-746`   |
 
 - The `TvShowNfo` schema already parses `uniqueid` (`server/src/nfo/NfoSchemas.ts:115`), but the scanner drops it. Mapping it to `identifiers` is a prerequisite and a standalone fix.
 - Shows with no IDs get `status = no_ids` and no lookup.
@@ -198,12 +198,12 @@ interface ShowNetworkProvider {
 
 ## Core vs plugin
 
-| | Core | Opt-in plugin |
-|---|---|---|
-| Fetcher lives in | `server/src/external/` | A plugin package |
-| Prerequisite | None | A plugin system, not yet designed |
-| Shared work | Schema, settings, task, search, UI | Same |
-| Cost | Smaller, ships sooner | Plugin host, loading, and an enrichment API come first |
+|                  | Core                               | Opt-in plugin                                          |
+| ---------------- | ---------------------------------- | ------------------------------------------------------ |
+| Fetcher lives in | `server/src/external/`             | A plugin package                                       |
+| Prerequisite     | None                               | A plugin system, not yet designed                      |
+| Shared work      | Schema, settings, task, search, UI | Same                                                   |
+| Cost             | Smaller, ships sooner              | Plugin host, loading, and an enrichment API come first |
 
 Decision (11/08/2026): core. The shared work and both fetchers ship in core behind `ShowNetworkProvider`. The fetchers can move to plugins once a plugin system exists.
 
