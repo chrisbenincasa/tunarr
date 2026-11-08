@@ -197,6 +197,8 @@ export class ApiProgramConverters {
             originalTitle: null,
             plot: movie.plot,
             rating: movie.rating,
+            audienceRating: movie.audienceRating,
+            criticRating: movie.criticRating,
             summary: movie.summary,
             tagline: movie.tagline,
           }) satisfies Movie,

@@ -156,6 +156,8 @@ export const SearchSortFields = [
   'originalReleaseYear',
   'addedAt',
   'index',
+  'audienceRating',
+  'criticRating',
 ] as const;
 
 export type SearchSortField = TupleToUnion<typeof SearchSortFields>;

@@ -86,6 +86,24 @@ export type TerminalProgramInput = {
     plot: string | null;
     tagline: string | null;
     rating: string | null;
+    countries?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    collections?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    audienceRating?: number | null;
+    criticRating?: number | null;
     mediaSourceId: string;
     libraryId: string;
     canonicalId: string;
@@ -488,6 +506,24 @@ export type ShowInput = {
     releaseDate: number | null;
     releaseDateString: string | null;
     year: number | null;
+    countries?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    collections?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    audienceRating?: number | null;
+    criticRating?: number | null;
     seasons?: Array<{
         uuid: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
@@ -1498,6 +1534,24 @@ export type TerminalProgram = {
     plot: string | null;
     tagline: string | null;
     rating: string | null;
+    countries?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    collections?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    audienceRating?: number | null;
+    criticRating?: number | null;
     mediaSourceId: string;
     libraryId: string;
     canonicalId: string;
@@ -1900,6 +1954,24 @@ export type Show = {
     releaseDate: number | null;
     releaseDateString: string | null;
     year: number | null;
+    countries?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    collections?: Array<{
+        uuid?: string;
+        name: string;
+        externalInfo?: {
+            source: 'plex' | 'jellyfin' | 'emby' | 'local';
+            id: string;
+        } | null;
+    }>;
+    audienceRating?: number | null;
+    criticRating?: number | null;
     seasons?: Array<{
         uuid: string;
         sourceType: 'plex' | 'jellyfin' | 'emby' | 'local';
@@ -7949,7 +8021,7 @@ export type PostApiProgramsSearchData = {
             restrictSearchTo?: Array<string>;
             filter?: SearchFilterInput | null;
             sort?: Array<{
-                field: 'title' | 'sortTitle' | 'duration' | 'originalReleaseDate' | 'originalReleaseYear' | 'addedAt' | 'index';
+                field: 'title' | 'sortTitle' | 'duration' | 'originalReleaseDate' | 'originalReleaseYear' | 'addedAt' | 'index' | 'audienceRating' | 'criticRating';
                 direction: 'asc' | 'desc';
             }> | null;
         };
@@ -11151,6 +11223,24 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
             plot: string | null;
             tagline: string | null;
             rating: string | null;
+            countries?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            collections?: Array<{
+                uuid?: string;
+                name: string;
+                externalInfo?: {
+                    source: 'plex' | 'jellyfin' | 'emby' | 'local';
+                    id: string;
+                } | null;
+            }>;
+            audienceRating?: number | null;
+            criticRating?: number | null;
             mediaSourceId: string;
             libraryId: string;
             canonicalId: string;
