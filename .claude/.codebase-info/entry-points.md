@@ -1,6 +1,6 @@
 # Entry Points
 
-*Last Updated: 2026-10-19*
+*Last Updated: 2026-11-08*
 
 ## Process start
 
@@ -37,6 +37,9 @@ force scan). They are called from services and APIs, not from the CLI.
 - Notable tasks: `ScanLibrariesTask`, `UpdateXmlTvTask`, `RefreshMediaSourceLibraryTask`,
   `ReconcileProgramDurationsTask`, `SubtitleExtractorTask`, `OnDemandChannelStateTask`.
 - `tasks/fixers/` holds one-shot data repair jobs.
+- Recurring jobs are scheduled in `server/src/services/startup/ScheduleJobsStartupTask.ts`.
+  `PruneFfmpegLogsTask` runs there hourly and keeps the newest `fileLogRetentionCount` ffmpeg
+  report and error log files in the logs directory.
 
 ## Web
 
