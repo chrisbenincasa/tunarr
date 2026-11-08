@@ -7,6 +7,7 @@ import type {
 } from '@tunarr/types';
 import { isNull, last, orderBy } from 'lodash-es';
 import { basename, extname } from 'node:path';
+import type { NonEmptyArray } from 'ts-essentials';
 import { v4 } from 'uuid';
 import type {
   NfoActor,
@@ -21,9 +22,21 @@ import { parseReleaseDate, titleToSortTitle } from '../../util/programs.ts';
 // Match things like S01, season 01, Season1, S1
 // but not things like S01E03 or "blah blah blah 02"
 const SeasonNameRegex = /s(?:eason)?\s?(\d+)(?![e\d])/i;
+
+// Match S01E02, S01 E02, S01.E02, s2016.e100761, S01E02E03, S01E02-03, S01x02.
+// The season takes its whole digit run. Only "e" may follow a dot, underscore,
+// or dash, so release tags like "S01.x264" stay unmatched.
 const SeasonAndEpisodeNameRegex1 =
-  /s(?:eason)?\s?(\d+)\s?((?:([e|x]?\d+)+(e?\d+-?))+)/i;
+  /s(?:eason)?\s?(\d+)(?!\d)((?:\s?x|[\s._-]?e)\d+(?:-?e?\d+)*)/i;
 const SeasonAndEpisodeNameRegex2 = /(\d+)\s?x(\d+)/i;
+
+// Match a bare episode with no season, like ".E259."
+const EpisodeOnlyNameRegex = /(?:^|[\s._-])e(\d+)(?=[\s._-]|$)/i;
+
+type FileNameEpisodeInfo = {
+  season: number | null;
+  episodes: NonEmptyArray<number>;
+};
 
 export function extractSeasonNumberFromFolder(folderName: string) {
   folderName = basename(folderName);
@@ -53,7 +66,13 @@ export function extractSeasonNumberFromFolder(folderName: string) {
   return null;
 }
 
-export function extractSeasonAndEpisodeNumber(fileName: string) {
+/**
+ * Season and episode numbers from a video filename. `season` is null when the
+ * name only carries an episode, so the caller must supply the season.
+ */
+export function extractSeasonAndEpisodeNumber(
+  fileName: string,
+): FileNameEpisodeInfo | undefined {
   fileName = basename(fileName, extname(fileName));
   const matches = fileName.match(SeasonAndEpisodeNameRegex1);
   if (matches && matches.length > 2) {
@@ -88,7 +107,45 @@ export function extractSeasonAndEpisodeNumber(fileName: string) {
     }
   }
 
+  const episodeOnly = fileName.match(EpisodeOnlyNameRegex)?.[1];
+  const episode = isNonEmptyString(episodeOnly)
+    ? parseIntOrNull(episodeOnly)
+    : null;
+  if (!isNull(episode)) {
+    return {
+      season: null,
+      episodes: [episode],
+    };
+  }
+
   return;
+}
+
+/**
+ * Groups the episode files of a flat show folder by the season in each
+ * filename. Files whose names carry no season are skipped.
+ */
+export function groupEpisodeFilesBySeason<T extends { name: string }>(
+  files: T[],
+) {
+  const bySeason = new Map<
+    number,
+    Array<readonly [T, FileNameEpisodeInfo & { season: number }]>
+  >();
+
+  for (const file of files) {
+    const info = extractSeasonAndEpisodeNumber(file.name);
+    if (!info || info.season === null) {
+      continue;
+    }
+
+    const season = info.season;
+    const seasonFiles = bySeason.get(season) ?? [];
+    seasonFiles.push([file, { ...info, season }]);
+    bySeason.set(season, seasonFiles);
+  }
+
+  return bySeason;
 }
 
 export function mapNfoToNamedEntity(
