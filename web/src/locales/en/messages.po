@@ -4646,6 +4646,10 @@ msgstr "Smart Collections are self-updating content lists. You set the query and
 msgid "Software (No GPU)"
 msgstr "Software (No GPU)"
 
+#: src/hooks/useQueryErrorSnackbar.tsx
+msgid "Something went wrong loading data. Check the logs for details."
+msgstr "Something went wrong loading data. Check the logs for details."
+
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Sort"
 msgstr "Sort"
@@ -5569,6 +5573,10 @@ msgstr "View in {0}"
 #: src/components/MediaSourceLibraryTable.tsx
 #~ msgid "View Library"
 #~ msgstr "View Library"
+
+#: src/hooks/useQueryErrorSnackbar.tsx
+msgid "View logs"
+msgstr "View logs"
 
 #: src/components/profiles/StreamSelectionProfileSelect.tsx
 msgid "View profile"
