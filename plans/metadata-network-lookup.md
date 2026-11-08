@@ -1,6 +1,6 @@
 # Network lookup
 
-> **Status (11/08/2026):** Draft design, not started. Waiting on the open questions at the end, chiefly core vs plugin and TVDB's subscriber-key model.
+> **Status (11/08/2026):** Draft design, not started. Fetchers ship in core (decided 11/08/2026). Waiting on the remaining open questions, chiefly TVDB's subscriber-key model.
 
 ## Goal
 
@@ -204,7 +204,7 @@ interface ShowNetworkProvider {
 | Shared work | Schema, settings, task, search, UI | Same |
 | Cost | Smaller, ships sooner | Plugin host, loading, and an enrichment API come first |
 
-Recommendation: build the shared work in core now and ship both fetchers in core behind `ShowNetworkProvider`. They move to plugins once a plugin system exists.
+Decision (11/08/2026): core. The shared work and both fetchers ship in core behind `ShowNetworkProvider`. The fetchers can move to plugins once a plugin system exists.
 
 ## Rollout
 
@@ -227,10 +227,9 @@ Recommendation: build the shared work in core now and ship both fetchers in core
 
 ## Open questions
 
-1. Should the fetchers ship in core or as plugins?
-2. Will TVDB let an open-source project ship a subscriber-supported key? Ask TVDB support.
-3. When no credential is set, should the preset fall back to `studio` or ask for a key?
-4. Should shows without IDs get a title-based lookup? Proposed answer: not in v1.
+1. Will TVDB let an open-source project ship a subscriber-supported key? Ask TVDB support.
+2. When no credential is set, should the preset fall back to `studio` or ask for a key?
+3. Should shows without IDs get a title-based lookup? Proposed answer: not in v1.
 
 ## Sources (read 11/08/2026)
 
