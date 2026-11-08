@@ -698,7 +698,7 @@ describe('offline modes', () => {
   test('pic mode loops the soundtrack instead of silence', () => {
     const { item } = map(offlineItem(), undefined, {
       offlinePicture: '/media/offline.png',
-      offlineSoundtrack: 'http://localhost:8000/media/theme.mp3',
+      offlineSoundtrack: '/media/theme.mp3',
     });
 
     expect(item.tracks).toEqual({
@@ -706,9 +706,20 @@ describe('offline modes', () => {
       audio: {
         source: {
           source_type: 'lavfi',
-          params: String.raw`amovie=filename=http\\://localhost\\:8000/media/theme.mp3:loop=0,asetpts=N/SR/TB`,
+          params: 'amovie=filename=/media/theme.mp3:loop=0,asetpts=N/SR/TB',
         },
       },
+    });
+  });
+
+  test('a soundtrack URL loops through the cache protocol', () => {
+    const { item } = map(offlineItem(), undefined, {
+      offlineSoundtrack: 'http://localhost:8000/media/theme.mp3',
+    });
+
+    expect(item.tracks?.audio?.source).toEqual({
+      source_type: 'lavfi',
+      params: String.raw`amovie=filename=cache\\:http\\://localhost\\:8000/media/theme.mp3:loop=0,asetpts=N/SR/TB`,
     });
   });
 

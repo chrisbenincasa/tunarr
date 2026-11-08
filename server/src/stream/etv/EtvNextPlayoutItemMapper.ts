@@ -5,7 +5,11 @@ import type {
 } from '@/db/schema/TranscodeConfig.js';
 import type { ChannelOfflineSettings } from '@/db/schema/base.js';
 import { titleTextFilter } from '@/ffmpeg/builder/filter/TitleTextFilter.js';
-import { isHttpUrl, isNonEmptyString } from '@/util/index.js';
+import {
+  isHttpUrl,
+  isNonEmptyString,
+  loopableInputLocation,
+} from '@/util/index.js';
 import type { Resolution, Watermark } from '@tunarr/types';
 import dayjs from 'dayjs';
 import type { Maybe } from '../../types/util.ts';
@@ -109,7 +113,7 @@ export function escapeFilterGraphValue(value: string): string {
  */
 export const loopedSoundtrack = (location: string): PlayoutItemSource =>
   lavfi(
-    `amovie=filename=${escapeFilterGraphValue(location)}:loop=0,asetpts=N/SR/TB`,
+    `amovie=filename=${escapeFilterGraphValue(loopableInputLocation(location))}:loop=0,asetpts=N/SR/TB`,
   );
 
 /**

@@ -929,7 +929,7 @@ describe('FfmpegStreamFactory', () => {
       soundtrack: string | undefined,
       probeFile: FfmpegInfo['probeFile'],
     ) {
-      const { factory, getCapturedAudioInput } =
+      const { factory, getCapturedAudioInput, getCapturedFrameState } =
         createCapturingPipelineBuilderFactory();
       const sut = new FfmpegStreamFactory(
         makeMockFfmpegInfo(probeFile),
@@ -947,24 +947,27 @@ describe('FfmpegStreamFactory', () => {
         outputFormat: MpegTsOutputFormat,
       });
 
-      return getCapturedAudioInput();
+      return {
+        audioInput: getCapturedAudioInput(),
+        frameState: getCapturedFrameState(),
+      };
     }
 
     test('loops the soundtrack from its probed audio stream', async () => {
       const url = 'http://localhost:8000/uploads/audio/theme.mp3';
       const probeFile = vi.fn().mockResolvedValue(coverArtAndAudio);
 
-      const audioInput = await runOffline(url, probeFile);
+      const { audioInput, frameState } = await runOffline(url, probeFile);
 
       expect(probeFile).toHaveBeenCalledWith(url, expect.any(Number));
       expect(audioInput?.source).toBeInstanceOf(HttpStreamSource);
-      expect(audioInput?.path).toBe(url);
+      expect(audioInput?.path).toBe(`cache:${url}`);
       expect(audioInput?.streams[0]?.index).toBe(1);
-      expect(audioInput?.hasInputOption(InfiniteLoopInputOption)).toBe(true);
+      expect(frameState?.infiniteLoop).toBe(true);
     });
 
     test('reads a local path as a file source', async () => {
-      const audioInput = await runOffline(
+      const { audioInput } = await runOffline(
         '/media/theme.mp3',
         vi.fn().mockResolvedValue(coverArtAndAudio),
       );
@@ -976,14 +979,14 @@ describe('FfmpegStreamFactory', () => {
     test('uses placeholder audio when no soundtrack is set', async () => {
       const probeFile = vi.fn();
 
-      const audioInput = await runOffline(undefined, probeFile);
+      const { audioInput } = await runOffline(undefined, probeFile);
 
       expect(probeFile).not.toHaveBeenCalled();
       expect(audioInput).toBeInstanceOf(NullAudioInputSource);
     });
 
     test('uses placeholder audio when the probe fails', async () => {
-      const audioInput = await runOffline(
+      const { audioInput } = await runOffline(
         '/media/missing.mp3',
         vi.fn().mockRejectedValue(new Error('No such file')),
       );
@@ -994,7 +997,7 @@ describe('FfmpegStreamFactory', () => {
     test('uses placeholder audio when the file has no audio stream', async () => {
       const videoOnly = makeProbe([coverArt]);
 
-      const audioInput = await runOffline(
+      const { audioInput } = await runOffline(
         '/media/cover.jpg',
         vi.fn().mockResolvedValue(videoOnly),
       );

@@ -3,7 +3,10 @@ import { existsSync } from 'node:fs';
 import { copyFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.js';
-import { createTempWorkdir } from '../../testing/ffmpeg/FfmpegIntegrationHelper.ts';
+import {
+  createTempWorkdir,
+  startRangelessFileServer,
+} from '../../testing/ffmpeg/FfmpegIntegrationHelper.ts';
 import { binaries, Fixtures } from '../../testing/ffmpeg/FfmpegTestFixtures.ts';
 import { ETV_NEXT_BINARY_NAME } from './EtvNextBinaryResolver.ts';
 import { toChannelConfig } from './EtvNextChannelConfigMapper.ts';
@@ -57,8 +60,8 @@ describe.skipIf(!binaries || !existsSync(etvBinary))(
 
     afterAll(() => cleanup());
 
-    test('loops a soundtrack shorter than the offline item', async () => {
-      const workspace = new EtvNextWorkspace(workdir, 'soundtrack');
+    async function runOfflineItem(name: string, soundtrack: string) {
+      const workspace = new EtvNextWorkspace(workdir, name);
       await workspace.initialize();
 
       const { config } = toChannelConfig({
@@ -77,10 +80,6 @@ describe.skipIf(!binaries || !existsSync(etvBinary))(
       });
       await workspace.writeChannelConfig(config);
 
-      // The fixture's audio runs 2.9 s, so it has to loop to fill 10 s. The
-      // name holds every character the filter graph treats as syntax.
-      const soundtrack = path.join(workdir, "it's: a, [looped] theme.ts");
-      await copyFile(Fixtures.video720p, soundtrack);
       const durationMs = 10_000;
       const startMs = Date.now();
       const { item } = toPlayoutItem({
@@ -110,7 +109,7 @@ describe.skipIf(!binaries || !existsSync(etvBinary))(
           '1',
           '--troubleshoot',
         ],
-        { encoding: 'utf-8', timeout: 60_000 },
+        { encoding: 'utf-8', timeout: 60_000, killSignal: 'SIGKILL' },
       );
 
       expect(run.status, run.stderr).toBe(0);
@@ -118,7 +117,7 @@ describe.skipIf(!binaries || !existsSync(etvBinary))(
       const pipeline = /optimized pipeline:\s*(.+)$/m.exec(run.stderr)?.[1];
       expect(pipeline, run.stderr).toContain(':loop=0');
 
-      // Audio after the fixture's first pass ends must be sound, not padding.
+      // Audio after the soundtrack's first pass ends must be sound, not padding.
       const tail = spawnSync(
         binaries!.ffmpeg,
         [
@@ -139,6 +138,38 @@ describe.skipIf(!binaries || !existsSync(etvBinary))(
       const meanVolume = /mean_volume: (-?[\d.]+) dB/.exec(tail.stderr)?.[1];
       expect(meanVolume, tail.stderr).toBeDefined();
       expect(Number(meanVolume)).toBeGreaterThan(-60);
+    }
+
+    test('loops a soundtrack shorter than the offline item', async () => {
+      // The fixture's audio runs 2.9 s, so it has to loop to fill 10 s. The
+      // name holds every character the filter graph treats as syntax.
+      const soundtrack = path.join(workdir, "it's: a, [looped] theme.ts");
+      await copyFile(Fixtures.video720p, soundtrack);
+
+      await runOfflineItem('local', soundtrack);
+    });
+
+    test('loops a soundtrack URL from a server that ignores Range requests', async () => {
+      // Rewinding a WAV lands past its header, which needs a Range request.
+      const wavPath = path.join(workdir, 'soundtrack.wav');
+      const wav = spawnSync(binaries!.ffmpeg, [
+        '-f',
+        'lavfi',
+        '-i',
+        'sine=frequency=440:duration=2',
+        '-ac',
+        '2',
+        '-y',
+        wavPath,
+      ]);
+      expect(wav.status).toBe(0);
+
+      const server = await startRangelessFileServer(wavPath);
+      try {
+        await runOfflineItem('url', server.url);
+      } finally {
+        server.close();
+      }
     });
   },
 );

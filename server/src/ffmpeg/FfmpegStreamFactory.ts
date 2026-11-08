@@ -22,6 +22,7 @@ import {
   isHttpUrl,
   isLinux,
   isNonEmptyString,
+  loopableInputLocation,
 } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
@@ -1060,10 +1061,12 @@ export class FfmpegStreamFactory {
       return;
     }
 
+    // The session's infinite loop flag makes the pipeline loop this input.
+    const location = loopableInputLocation(soundtrack);
     const source = isHttpUrl(soundtrack)
-      ? new HttpStreamSource(soundtrack)
-      : new FileStreamSource(soundtrack);
-    const input = AudioInputSource.withStream(
+      ? new HttpStreamSource(location)
+      : new FileStreamSource(location);
+    return AudioInputSource.withStream(
       source,
       AudioStream.create({
         index: audioStream.index,
@@ -1072,8 +1075,6 @@ export class FfmpegStreamFactory {
       }),
       audioState,
     );
-    input.addOption(new InfiniteLoopInputOption());
-    return input;
   }
 
   private createPlaceholderAudioInput(
