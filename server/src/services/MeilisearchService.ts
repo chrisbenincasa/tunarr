@@ -418,6 +418,28 @@ type RatingAndOriginSource = {
   collections?: StringName[];
 };
 
+type RatingAndOriginFields = {
+  audienceRating: number | null;
+  criticRating: number | null;
+  countries: StringName[];
+  collections: StringName[];
+};
+
+/**
+ * Ratings, countries, and collections for an index document, defaulting
+ * missing values to null or empty.
+ */
+export function ratingAndOriginFields(
+  source: Maybe<RatingAndOriginSource>,
+): RatingAndOriginFields {
+  return {
+    audienceRating: source?.audienceRating ?? null,
+    criticRating: source?.criticRating ?? null,
+    countries: source?.countries ?? [],
+    collections: source?.collections ?? [],
+  };
+}
+
 /**
  * Ratings, countries, and collections for a program's index document.
  * Episodes inherit all four from their show.
@@ -427,38 +449,16 @@ export function programRatingAndOriginFields(
     | ({ type: 'movie' } & RatingAndOriginSource)
     | { type: 'episode'; season?: { show?: RatingAndOriginSource } }
     | { type: 'track' | 'other_video' | 'music_video' },
-): {
-  audienceRating: number | null;
-  criticRating: number | null;
-  countries: StringName[];
-  collections: StringName[];
-} {
+): RatingAndOriginFields {
   switch (program.type) {
     case 'movie':
-      return {
-        audienceRating: program.audienceRating ?? null,
-        criticRating: program.criticRating ?? null,
-        countries: program.countries ?? [],
-        collections: program.collections ?? [],
-      };
-    case 'episode': {
-      const show = program.season?.show;
-      return {
-        audienceRating: show?.audienceRating ?? null,
-        criticRating: show?.criticRating ?? null,
-        countries: show?.countries ?? [],
-        collections: show?.collections ?? [],
-      };
-    }
+      return ratingAndOriginFields(program);
+    case 'episode':
+      return ratingAndOriginFields(program.season?.show);
     case 'track':
     case 'other_video':
     case 'music_video':
-      return {
-        audienceRating: null,
-        criticRating: null,
-        countries: [],
-        collections: [],
-      };
+      return ratingAndOriginFields(undefined);
   }
 }
 
@@ -1062,10 +1062,7 @@ export class MeilisearchService implements ISearchService {
       ),
       tags: show.tags,
       studio: show.studios,
-      countries: show.countries ?? [],
-      collections: show.collections ?? [],
-      audienceRating: show.audienceRating ?? null,
-      criticRating: show.criticRating ?? null,
+      ...ratingAndOriginFields(show),
       state: 'ok',
       addedAt: show.createdAt ?? null,
     };
