@@ -1,11 +1,12 @@
 import { tag } from '@tunarr/types';
+import axios from 'axios';
 import type { FastifyReply } from 'fastify';
 import { existsSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { anything, instance, mock, when } from 'ts-mockito';
 import { v4 } from 'uuid';
-import { describe, expect, test, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import type { Artwork } from '../db/schema/Artwork.ts';
@@ -405,6 +406,16 @@ describe('ArtworkService credential handling', () => {
 });
 
 describe('ArtworkService serveArtwork', () => {
+  // Proxied requests would otherwise hit the network and can outlast the
+  // test timeout on CI.
+  beforeEach(() => {
+    vi.spyOn(axios, 'request').mockRejectedValue(new Error('no network'));
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
   test('never redirects a credentialed URL, even with proxyArtwork disabled', async () => {
     const redirect = vi.fn();
     const reply = {

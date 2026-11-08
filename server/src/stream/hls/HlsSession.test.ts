@@ -210,12 +210,15 @@ describe('HlsSession', () => {
 
       expect((await session.trimPlaylist()).get()?.sequence).toBe(40);
 
-      // Let the prune finish removing everything below 40.
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      const onDisk = (await fs.readdir(workingDir))
-        .filter((f) => f.startsWith('data'))
-        .sort();
-      expect(onDisk[0]).toBe('data000040.ts');
+      // The prune runs in the background, so wait for it to remove everything
+      // below 40.
+      const onDisk = await vi.waitFor(async () => {
+        const files = (await fs.readdir(workingDir))
+          .filter((f) => f.startsWith('data'))
+          .sort();
+        expect(files[0]).toBe('data000040.ts');
+        return files;
+      });
 
       const playlist = (await session.trimPlaylist()).get()?.playlist ?? '';
       const listed = [...playlist.matchAll(/data\d{6}\.ts/g)]
