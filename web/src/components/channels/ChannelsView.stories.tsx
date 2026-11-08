@@ -1,9 +1,10 @@
 import { MoreVert } from '@mui/icons-material';
 import { IconButton } from '@mui/material';
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { expect, fn, within } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 import { StoryRouter } from '../ui/patterns/AppShell/storyComponents.tsx';
 import { ChannelsView } from './ChannelsView.tsx';
+import { channelsM3uUrl } from './channelSummary.ts';
 import {
   longTextChannel,
   storyChannels,
@@ -28,6 +29,9 @@ const meta = {
     transcodeConfigs: storyTranscodeConfigs,
     onOpenChannel: fn(),
     onOpenSessions: fn(),
+    m3uUrl: 'http://tunarr.test/api/channels.m3u',
+    onDuplicateChannels: fn(),
+    onDeleteChannels: fn(),
     renderMenu: (channel) => (
       <IconButton aria-label={`More actions for ${channel.name}`}>
         <MoreVert />
@@ -78,3 +82,81 @@ export const Empty: Story = { args: { channels: [] } };
 export const EmptyTable: Story = { args: { channels: [], layout: 'table' } };
 
 export const NowPlayingLoading: Story = { args: { nowPlaying: new Map() } };
+
+const rowNames = (canvasElement: HTMLElement) =>
+  within(canvasElement)
+    .getAllByRole('row')
+    .slice(1)
+    .map((row) => within(row).getAllByRole('cell')[2].textContent);
+
+export const TableBulkActions: Story = {
+  args: { layout: 'table' },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole('checkbox', {
+        name: 'Select Saturday Morning Cartoons',
+      }),
+    );
+    await userEvent.click(
+      canvas.getByRole('checkbox', { name: 'Select Classic Sitcoms' }),
+    );
+    const bar = within(canvas.getByRole('region', { name: 'Selection' }));
+    await expect(bar.getByText(/selected/)).toHaveTextContent('2 selected');
+
+    await expect(bar.getByRole('link', { name: 'Export M3U' })).toHaveAttribute(
+      'href',
+      channelsM3uUrl('http://tunarr.test/api/channels.m3u', [1, 2]),
+    );
+
+    await userEvent.click(bar.getByRole('button', { name: 'Duplicate' }));
+    await expect(args.onDuplicateChannels).toHaveBeenCalledWith([
+      expect.objectContaining({ number: 1 }),
+      expect.objectContaining({ number: 2 }),
+    ]);
+    await expect(args.onOpenChannel).not.toHaveBeenCalled();
+
+    await userEvent.click(bar.getByRole('button', { name: 'Delete' }));
+    const dialog = within(
+      within(canvasElement.ownerDocument.body).getByRole('dialog'),
+    );
+    await userEvent.click(dialog.getByRole('button', { name: 'Delete' }));
+    await expect(args.onDeleteChannels).toHaveBeenCalledWith([
+      expect.objectContaining({ number: 1 }),
+      expect.objectContaining({ number: 2 }),
+    ]);
+    await expect(
+      canvas.getByText('Select rows to act on several at once.'),
+    ).toBeInTheDocument();
+  },
+};
+
+export const TableKeyboard: Story = {
+  args: { layout: 'table' },
+  play: async ({ canvasElement, args }) => {
+    const canvas = within(canvasElement);
+    await userEvent.keyboard('jjx');
+    await expect(
+      canvas.getByRole('checkbox', { name: 'Select Classic Sitcoms' }),
+    ).toBeChecked();
+    await userEvent.keyboard('k{Enter}');
+    await expect(args.onOpenChannel).toHaveBeenCalledWith(
+      expect.objectContaining({ number: 1 }),
+    );
+  },
+};
+
+export const StatusFilter: Story = {
+  args: { layout: 'table' },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(canvas.getByRole('button', { name: 'Stealth' }));
+    await expect(rowNames(canvasElement)).toEqual(['Music Videos']);
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Streaming' }));
+    await expect(rowNames(canvasElement)).toEqual([
+      'Saturday Morning Cartoons',
+      'Sci-Fi Marathon',
+    ]);
+  },
+};

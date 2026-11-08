@@ -185,3 +185,36 @@ export const channelStatus = (
 
 export const streamModeLabel = (mode: Channel['streamMode']) =>
   mode.replaceAll('_', ' ').toUpperCase();
+
+export type ChannelStatusFilter = 'all' | 'streaming' | 'stealth';
+
+// "Streaming" means someone is watching, the same rule as the page's
+// streaming count.
+export const matchesStatusFilter = (
+  channel: Pick<Channel, 'sessions' | 'stealth'>,
+  filter: ChannelStatusFilter,
+) => {
+  switch (filter) {
+    case 'all':
+      return true;
+    case 'streaming':
+      return channelStatus(channel.sessions).status === 'live';
+    case 'stealth':
+      return channel.stealth;
+  }
+};
+
+// Asks the server to send the playlist at `m3uUrl` as an attachment, since
+// browsers ignore the `download` attribute on cross-origin links. With
+// `numbers`, limits the playlist to those channels.
+export const channelsM3uUrl = (m3uUrl: string, numbers?: readonly number[]) => {
+  const url = new URL(m3uUrl, window.location.origin);
+  if (numbers) {
+    url.searchParams.set(
+      'channels',
+      [...numbers].sort((a, b) => a - b).join(','),
+    );
+  }
+  url.searchParams.set('download', 'true');
+  return url.toString();
+};

@@ -1,5 +1,6 @@
 import { invalidateTaggedQueries } from '@/helpers/queryUtil.ts';
 import { useTranscodeConfigs } from '@/hooks/settingsHooks.ts';
+import { useM3ULink } from '@/hooks/useM3ULink.ts';
 import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { Channel } from '@tunarr/types';
@@ -7,6 +8,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ChannelMenuButton } from '../../components/channels/ChannelMenuButton.tsx';
 import { ChannelSessionsDialog } from '../../components/channels/ChannelSessionsDialog.tsx';
 import { ChannelsView } from '../../components/channels/ChannelsView.tsx';
+import { useChannelBulkActions } from '../../components/channels/useChannelBulkActions.ts';
 import { useChannelsNowPlaying } from '../../components/channels/useChannelsNowPlaying.ts';
 import type { CollectionLayout } from '../../components/ui/patterns/CollectionView/index.ts';
 import { useChannelsSuspense } from '../../hooks/useChannels.ts';
@@ -22,6 +24,8 @@ export default function ChannelsPage() {
   const queryClient = useQueryClient();
   const [sessionsChannel, setSessionsChannel] = useState<Channel | null>(null);
   const { addListener, removeListener } = useServerEvents();
+  const m3uUrl = useM3ULink();
+  const { duplicateChannels, deleteChannels } = useChannelBulkActions();
 
   useEffect(() => {
     const key = addListener((ev) => {
@@ -68,6 +72,13 @@ export default function ChannelsPage() {
         onOpenChannel={openChannel}
         onOpenSessions={setSessionsChannel}
         renderMenu={renderMenu}
+        m3uUrl={m3uUrl}
+        onDuplicateChannels={(selected) => {
+          duplicateChannels(selected).catch(console.error);
+        }}
+        onDeleteChannels={(selected) => {
+          deleteChannels(selected).catch(console.error);
+        }}
       />
       <ChannelSessionsDialog
         open={sessionsChannel !== null}

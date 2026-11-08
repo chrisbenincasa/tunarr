@@ -5,10 +5,20 @@ import type {
   HookHandlerDoneFunction,
   onRequestHookHandler,
 } from 'fastify';
+import { getEnvVar, TUNARR_ENV_VARS } from './env.ts';
 
-interface BasicAuthConfig {
+export interface BasicAuthConfig {
   username: string;
   password: string;
+}
+
+export function basicAuthConfigFromEnv(): BasicAuthConfig | undefined {
+  const username = getEnvVar(TUNARR_ENV_VARS.BASIC_AUTH_USER_ENV_VAR);
+  const password = getEnvVar(TUNARR_ENV_VARS.BASIC_AUTH_PASSWORD_ENV_VAR);
+  if (!username || !password) {
+    return;
+  }
+  return { username, password };
 }
 
 function unauthorized(reply: FastifyReply) {
@@ -52,6 +62,17 @@ export function validateBasicAuth(
   } catch {
     return false;
   }
+}
+
+// True when basic auth is off or the header carries valid credentials. Routes
+// marked `authRequired: false` use it to hold back private data.
+export function isAuthorized(
+  authHeader: string | undefined,
+  config: BasicAuthConfig | undefined,
+) {
+  return (
+    !config || validateBasicAuth(authHeader, config.username, config.password)
+  );
 }
 
 export function createTunarrBasicAuthHook(

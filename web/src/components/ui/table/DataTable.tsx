@@ -28,15 +28,16 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import type { Row, RowData } from '@tanstack/react-table';
+import type { Row, RowData, RowSelectionState } from '@tanstack/react-table';
 import { clamp } from 'lodash-es';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import { SortButton } from './SortButton.tsx';
 import { TablePager } from './TablePager.tsx';
 import { ColumnFilter } from './filters/ColumnFilter.tsx';
 import { sxList } from './sx.ts';
 import {
   ActionsColumnId,
+  SelectColumnId,
   type TunarrColumn,
   type TunarrFeatures,
   type TunarrTable,
@@ -57,7 +58,26 @@ export type DataTableProps<TData extends RowData> = {
   loading?: boolean;
   defaultShowFilters?: boolean;
   'aria-label'?: string;
+
+  // Turns on J/K to move between rows, X to select the current row, and Enter
+  // to open it. The keys work while focus is on the page body or inside the
+  // table, and never while typing in a field.
+  keyboardNavigation?: {
+    onOpen: (row: Row<TunarrFeatures, TData>) => void;
+  };
 };
+
+const isTextEntry = (el: Element) =>
+  (el instanceof HTMLInputElement &&
+    el.type !== 'checkbox' &&
+    el.type !== 'radio') ||
+  el instanceof HTMLTextAreaElement ||
+  el instanceof HTMLSelectElement ||
+  (el instanceof HTMLElement && el.isContentEditable);
+
+// Columns that hold their own controls. Their clicks never reach the row.
+const isControlColumn = (id: string) =>
+  id === ActionsColumnId || id === SelectColumnId;
 
 // Moves a saved page index that falls outside the page range back into it.
 // autoResetPageIndex skips the first render, so it never repairs one on load.
@@ -81,10 +101,51 @@ const PageIndexRepair = <TData extends RowData>({
   return null;
 };
 
+// Drops selected rows that the search or a column filter hides, so a bulk
+// action never reaches a row the user can no longer see.
+const SelectionPrune = <TData extends RowData>({
+  table,
+  selection,
+  globalFilter,
+  columnFilters,
+}: {
+  table: TunarrTable<TData>;
+  selection: RowSelectionState;
+  globalFilter: string;
+  columnFilters: unknown;
+}) => {
+  // Reads the selection from a ref, so selecting a row never re-runs the prune.
+  const selectionRef = useRef(selection);
+  selectionRef.current = selection;
+
+  useEffect(() => {
+    const selection = selectionRef.current;
+    const selectedIds = Object.keys(selection).filter((id) => selection[id]);
+    if (selectedIds.length === 0) {
+      return;
+    }
+    const shown = new Set(
+      table.getFilteredRowModel().rows.map((row) => row.id),
+    );
+    if (selectedIds.every((id) => shown.has(id))) {
+      return;
+    }
+    table.setRowSelection(
+      Object.fromEntries(
+        selectedIds.filter((id) => shown.has(id)).map((id) => [id, true]),
+      ),
+    );
+  }, [table, globalFilter, columnFilters]);
+  return null;
+};
+
 const cellAlign = <TData extends RowData>(
   column: TunarrColumn<TData>,
   isFirst: boolean,
 ): TableCellProps['align'] => {
+  if (column.id === SelectColumnId) {
+    return 'left';
+  }
   if (column.id === ActionsColumnId) {
     return isFirst ? 'left' : 'right';
   }
@@ -99,12 +160,86 @@ export const DataTable = <TData extends RowData>({
   loading = false,
   defaultShowFilters = false,
   'aria-label': ariaLabel,
+  keyboardNavigation,
 }: DataTableProps<TData>) => {
   const { t } = useLingui();
   const [showFilters, setShowFilters] = useState(defaultShowFilters);
   const [showSearch, setShowSearch] = useState(false);
   const [columnsMenuAnchor, setColumnsMenuAnchor] =
     useState<HTMLElement | null>(null);
+  const [activeRowId, setActiveRowId] = useState<string>();
+
+  // Keys can arrive faster than renders, so the handler reads the ref.
+  const activeRowRef = useRef<string | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rowElements = useRef(new Map<string, HTMLTableRowElement>());
+  const onOpen = keyboardNavigation?.onOpen;
+
+  useEffect(() => {
+    if (!onOpen) {
+      return;
+    }
+    const onKeyDown = (e: KeyboardEvent) => {
+      const container = containerRef.current;
+      const target = e.target;
+      if (
+        e.defaultPrevented ||
+        e.metaKey ||
+        e.ctrlKey ||
+        e.altKey ||
+        !container ||
+        !(target instanceof Element) ||
+        (target !== document.body && !container.contains(target)) ||
+        isTextEntry(target)
+      ) {
+        return;
+      }
+
+      const rows = table.getRowModel().rows;
+      const index = rows.findIndex((row) => row.id === activeRowRef.current);
+      const active = index >= 0 ? rows[index] : undefined;
+      const moveTo = (next: number) => {
+        const row = rows[Math.max(0, Math.min(next, rows.length - 1))];
+        if (row) {
+          e.preventDefault();
+          activeRowRef.current = row.id;
+          setActiveRowId(row.id);
+          rowElements.current.get(row.id)?.focus();
+        }
+      };
+
+      switch (e.key) {
+        case 'j':
+        case 'J':
+          moveTo(index + 1);
+          break;
+        case 'k':
+        case 'K':
+          moveTo(index < 0 ? 0 : index - 1);
+          break;
+        case 'x':
+        case 'X':
+          if (active?.getCanSelect()) {
+            e.preventDefault();
+            active.toggleSelected();
+          }
+          break;
+        case 'Enter':
+          // Enter on a button or link inside the row belongs to that control.
+          if (
+            active &&
+            (target === document.body ||
+              target === rowElements.current.get(active.id))
+          ) {
+            e.preventDefault();
+            onOpen(active);
+          }
+          break;
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [onOpen, table]);
 
   return (
     <table.Subscribe selector={(state) => state}>
@@ -125,6 +260,7 @@ export const DataTable = <TData extends RowData>({
 
         return (
           <Box
+            ref={containerRef}
             sx={(theme) => ({
               border: `1px solid ${theme.palette.tokens.border}`,
               borderRadius: `${theme.sizes.radiusCard}px`,
@@ -358,13 +494,30 @@ export const DataTable = <TData extends RowData>({
                     rows.map((row) => {
                       const rowProps = getRowProps?.(row);
                       const clickable = rowProps?.onClick !== undefined;
+                      const isActive =
+                        keyboardNavigation !== undefined &&
+                        row.id === activeRowId;
                       return (
                         <TableRow
                           key={row.id}
                           hover={clickable}
+                          selected={row.getIsSelected()}
+                          tabIndex={keyboardNavigation ? -1 : undefined}
+                          ref={(el: HTMLTableRowElement | null) => {
+                            if (el) {
+                              rowElements.current.set(row.id, el);
+                            } else {
+                              rowElements.current.delete(row.id);
+                            }
+                          }}
                           {...rowProps}
                           sx={[
                             clickable && { cursor: 'pointer' },
+                            { outline: 'none' },
+                            isActive &&
+                              ((theme) => ({
+                                boxShadow: `inset 3px 0 0 ${theme.palette.primary.main}`,
+                              })),
                             ...sxList(rowProps?.sx),
                           ]}
                         >
@@ -372,6 +525,7 @@ export const DataTable = <TData extends RowData>({
                             const column = cell.column;
                             const meta = column.columnDef.meta;
                             const isActions = column.id === ActionsColumnId;
+                            const isControl = isControlColumn(column.id);
                             return (
                               <TableCell
                                 key={cell.id}
@@ -402,7 +556,7 @@ export const DataTable = <TData extends RowData>({
                                   ...sxList(meta?.cellProps?.sx),
                                 ]}
                                 onClick={
-                                  isActions
+                                  isControl
                                     ? (e) => e.stopPropagation()
                                     : meta?.cellProps?.onClick
                                 }
@@ -424,6 +578,14 @@ export const DataTable = <TData extends RowData>({
               pageIndex={pageIndex}
               lastPage={lastPage}
               ready={hasData && !loading}
+            />
+            <SelectionPrune
+              table={table}
+              selection={state.rowSelection}
+              globalFilter={
+                typeof state.globalFilter === 'string' ? state.globalFilter : ''
+              }
+              columnFilters={state.columnFilters}
             />
             <TablePager
               count={rowCount}

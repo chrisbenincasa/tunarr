@@ -148,6 +148,16 @@ Built on `feat/collection-view` (11/01/2026):
 - The mock's phone frame for collections was never drawn. Phones use the Comfortable card grid in one column.
 - The table parity spec runs Channels at dense density, because Comfortable shows cards.
 
+Built on `feat/channels-bulk`, stacked on `feat/collection-view` (11/02/2026):
+
+- `DataTable` registers row selection. `selectColumn()` adds row checkboxes and a page checkbox. Its clicks never reach the row.
+- `DataTable`'s `keyboardNavigation` prop turns on J/K to move, X to select and Enter to open. The keys work from the page body or inside the table, never while typing in a field.
+- `SelectionBar` in `CollectionView/` shows the count, the bulk actions, Clear and the key hints. It always shows in the table layout, so the hints stay visible.
+- The All/Streaming/Stealth filter applies to cards and table. "Streaming" means someone is watching, the same rule as the header count. Changing the filter clears the selection.
+- Selection and keyboard navigation exist only in the table. The card mock has no checkboxes.
+- Bulk Export M3U links to `/api/channels.m3u?channels=1,4,7`. That param builds an uncached playlist of just those channels. Selected stealth channels are included when basic auth is off or the request carries valid credentials, because the route itself is public. The `download` flag makes the server send the playlist as an attachment.
+- Bulk duplicate and delete run one channel at a time and report failures in one toast.
+
 ### Phase 4. Forms and settings
 
 - `FormSection`, field rows and a sticky `SaveBar`, built for React Hook Form.

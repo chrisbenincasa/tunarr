@@ -1,4 +1,5 @@
 import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
+import type { ChannelOrm } from '@/db/schema/Channel.js';
 import { KEYS } from '@/types/inject.js';
 import { getChannelId } from '@/util/channels.js';
 import { devAssert } from '@/util/debug.js';
@@ -35,6 +36,29 @@ export class M3uService {
   }
 
   /**
+   * Builds the playlist for the given channel numbers only. Skips the cache,
+   * because each subset is a one-off export. Stealth channels are kept only
+   * with `includeStealth`, because the route is public.
+   */
+  async getChannelsM3UFor(
+    host: string,
+    numbers: number[],
+    includeStealth: boolean,
+  ): Promise<string> {
+    const wanted = new Set(numbers);
+    const channels = (await this.channelDB.getAllChannels()).filter((c) =>
+      wanted.has(c.number),
+    );
+    return this.replaceHostOnM3u(
+      host,
+      buildChannelsM3U(channels, {
+        placeholderWhenEmpty: false,
+        includeStealth,
+      }),
+    );
+  }
+
+  /**
    * Get the channel list in HLS or M3U
    */
   private async getChannelsM3UInternal(): Promise<string> {
@@ -48,31 +72,10 @@ export class M3uService {
       return cachedM3U;
     }
 
-    const channels = sortBy(await this.channelDB.getAllChannels(), 'number');
-
-    const tvg = `{{host}}/api/xmltv.xml`;
-
-    let data = `#EXTM3U url-tvg="${tvg}" x-tvg-url="${tvg}"\n`;
-
-    for (const channel of channels) {
-      if (channel.stealth) {
-        continue;
-      }
-      const channelId = getChannelId(channel.number);
-      const logoUrl = resolveIconUrl(
-        channel.icon,
-        '{{host}}/images/tunarr.png',
-      );
-      const logoAttr = logoUrl != null ? ` tvg-logo="${logoUrl}"` : '';
-      data += `#EXTINF:-1 tvg-id="${channelId}" channel-id="${channelId}" CUID="${channelId}" tvg-chno="${channel.number}" tvg-name="${channel.name}"${logoAttr} group-title="${channel.groupTitle}",${channel.name}\n`;
-
-      data += `{{host}}/stream/channels/${channel.uuid}?streamMode=${channel.streamMode}\n`;
-    }
-
-    if (channels.length === 0) {
-      data += `#EXTINF:0 tvg-id="1" tvg-chno="1" tvg-name="tunarr" tvg-logo="{{host}}/images/tunarr.png" group-title="tunarr",tunarr\n`;
-      data += `{{host}}/setup\n`;
-    }
+    const data = buildChannelsM3U(await this.channelDB.getAllChannels(), {
+      placeholderWhenEmpty: true,
+      includeStealth: false,
+    });
 
     try {
       await this.fileCacheService.setCache(M3uService.cacheKey, data);
@@ -108,4 +111,54 @@ export class M3uService {
       await this.getChannelsM3UInternal();
     });
   }
+}
+
+/**
+ * Matches the `channels` query param of `/api/channels.m3u`, such as `1,4,7`.
+ */
+export const ChannelNumbersParamPattern = /^\d+(,\d+)*$/;
+
+export function parseChannelNumbersParam(param: string): number[] {
+  return param.split(',').map(Number);
+}
+
+type M3UChannel = Pick<
+  ChannelOrm,
+  'uuid' | 'number' | 'name' | 'icon' | 'groupTitle' | 'stealth' | 'streamMode'
+>;
+
+/**
+ * Builds the playlist text with `{{host}}` placeholders. Stealth channels are
+ * left out unless `includeStealth` is set. With `placeholderWhenEmpty`, an
+ * empty channel list yields one entry that points at the setup page.
+ */
+export function buildChannelsM3U(
+  channels: readonly M3UChannel[],
+  {
+    placeholderWhenEmpty,
+    includeStealth,
+  }: { placeholderWhenEmpty: boolean; includeStealth: boolean },
+): string {
+  const tvg = `{{host}}/api/xmltv.xml`;
+
+  let data = `#EXTM3U url-tvg="${tvg}" x-tvg-url="${tvg}"\n`;
+
+  for (const channel of sortBy(channels, 'number')) {
+    if (channel.stealth && !includeStealth) {
+      continue;
+    }
+    const channelId = getChannelId(channel.number);
+    const logoUrl = resolveIconUrl(channel.icon, '{{host}}/images/tunarr.png');
+    const logoAttr = logoUrl != null ? ` tvg-logo="${logoUrl}"` : '';
+    data += `#EXTINF:-1 tvg-id="${channelId}" channel-id="${channelId}" CUID="${channelId}" tvg-chno="${channel.number}" tvg-name="${channel.name}"${logoAttr} group-title="${channel.groupTitle}",${channel.name}\n`;
+
+    data += `{{host}}/stream/channels/${channel.uuid}?streamMode=${channel.streamMode}\n`;
+  }
+
+  if (placeholderWhenEmpty && channels.length === 0) {
+    data += `#EXTINF:0 tvg-id="1" tvg-chno="1" tvg-name="tunarr" tvg-logo="{{host}}/images/tunarr.png" group-title="tunarr",tunarr\n`;
+    data += `{{host}}/setup\n`;
+  }
+
+  return data;
 }

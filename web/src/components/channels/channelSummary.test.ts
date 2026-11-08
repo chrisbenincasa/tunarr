@@ -9,9 +9,11 @@ import {
 } from '../../test/programFixtures.ts';
 import {
   channelStatus,
+  channelsM3uUrl,
   currentPrograms,
   failedGuideRetryMs,
   guideRefreshDelay,
+  matchesStatusFilter,
   summarizeNowPlaying,
 } from './channelSummary.ts';
 
@@ -194,5 +196,50 @@ describe('guideRefreshDelay', () => {
 
   test('schedules nothing when no channel has a program', () => {
     expect(guideRefreshDelay([], start, false)).toBeUndefined();
+  });
+});
+
+describe('matchesStatusFilter', () => {
+  const watched = { sessions: [session(1)], stealth: false };
+  const openButEmpty = { sessions: [session(0)], stealth: false };
+  const hidden = { sessions: [], stealth: true };
+
+  test('keeps every channel for all', () => {
+    for (const channel of [watched, openButEmpty, hidden]) {
+      expect(matchesStatusFilter(channel, 'all')).toBe(true);
+    }
+  });
+
+  test('keeps only watched channels for streaming', () => {
+    expect(matchesStatusFilter(watched, 'streaming')).toBe(true);
+    expect(matchesStatusFilter(openButEmpty, 'streaming')).toBe(false);
+    expect(matchesStatusFilter(hidden, 'streaming')).toBe(false);
+  });
+
+  test('keeps only stealth channels for stealth', () => {
+    expect(matchesStatusFilter(hidden, 'stealth')).toBe(true);
+    expect(matchesStatusFilter(watched, 'stealth')).toBe(false);
+  });
+});
+
+describe('channelsM3uUrl', () => {
+  test('adds the sorted channel numbers to an absolute URL', () => {
+    expect(
+      channelsM3uUrl('http://tunarr.test/api/channels.m3u', [12, 3, 7]),
+    ).toBe(
+      'http://tunarr.test/api/channels.m3u?channels=3%2C7%2C12&download=true',
+    );
+  });
+
+  test('resolves a relative URL against the page', () => {
+    expect(channelsM3uUrl('/api/channels.m3u', [1])).toBe(
+      `${window.location.origin}/api/channels.m3u?channels=1&download=true`,
+    );
+  });
+
+  test('asks for the full playlist as a download without numbers', () => {
+    expect(channelsM3uUrl('http://tunarr.test/api/channels.m3u')).toBe(
+      'http://tunarr.test/api/channels.m3u?download=true',
+    );
   });
 });
