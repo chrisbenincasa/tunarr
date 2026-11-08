@@ -1385,6 +1385,14 @@ msgstr ""
 msgid "Could not save setup progress. {message}"
 msgstr ""
 
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Counted from the start of each program. If a stream starts partway through a program, it counts from that point. Set to 0 for no limit."
+msgstr ""
+
+#: src/components/channel_config/WatermarkTimingFields.tsx
+#~ msgid "Counted from the start of each program. Set to 0 for no limit."
+#~ msgstr ""
+
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 msgid "Create"
 msgstr ""
@@ -1701,7 +1709,7 @@ msgstr ""
 msgid "Dismiss"
 msgstr ""
 
-#: src/components/channel_config/ChannelTranscodingConfig.tsx
+#: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Display Watermark on Leading Edge"
 msgstr ""
 
@@ -2020,6 +2028,10 @@ msgstr ""
 msgid "Enter a name for your Local Media Source"
 msgstr ""
 
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Enter a number of minutes, 0 or more."
+msgstr ""
+
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter your Emby password to generate a new access token."
 msgstr ""
@@ -2181,6 +2193,14 @@ msgstr ""
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "external"
+msgstr ""
+
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Fade In and Out"
+msgstr ""
+
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Fade Period (mins)"
 msgstr ""
 
 #: src/pages/settings/FeaturesSettingsPage.tsx
@@ -2590,8 +2610,16 @@ msgstr ""
 msgid "Hide Advanced"
 msgstr ""
 
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Hide Watermark After (minutes)"
+msgstr ""
+
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Hide watermark during filler"
+msgstr ""
+
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Hides the watermark for the rest of each program once the limit is reached. This overrides the fade settings above."
 msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -4150,6 +4178,10 @@ msgstr ""
 msgid "Renders a channel icon (also known as bug or Digital On-screen Graphic) on top of the channel's stream."
 msgstr ""
 
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Repeatedly fades the watermark in and out while a program plays."
+msgstr ""
+
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "Repeats"
 msgstr ""
@@ -5068,6 +5100,10 @@ msgstr ""
 msgid "The type of media in the provided paths"
 msgstr ""
 
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "The watermark fades in, stays for this many minutes, then hides for the same length. Set to 0 to keep it on screen without fading."
+msgstr ""
+
 #: src/components/settings/general/WebSettings.tsx
 msgid "Theme Settings"
 msgstr ""
@@ -5228,6 +5264,10 @@ msgstr ""
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Time Format"
+msgstr ""
+
+#: src/components/channel_config/WatermarkTimingFields.tsx
+msgid "Time Limit"
 msgstr ""
 
 #: src/hooks/useRouteName.ts
@@ -5704,7 +5744,7 @@ msgstr ""
 msgid "What the ErsatzTV next worker recorded the last few times this channel failed to play an item. Attach it to a bug report."
 msgstr ""
 
-#: src/components/channel_config/ChannelTranscodingConfig.tsx
+#: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "When enabled, intermittent watermarks fade in immediately when a stream is initialized. When disabled, the first watermark fade-in occurs after a full period."
 msgstr ""
 
