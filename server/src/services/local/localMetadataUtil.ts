@@ -1,10 +1,22 @@
-import { seq } from '@tunarr/shared/util';
-import type { Actor, NamedEntity } from '@tunarr/types';
+import { isNonEmptyString, seq } from '@tunarr/shared/util';
+import type {
+  Actor,
+  Identifier,
+  NamedEntity,
+  ShowMetadata,
+} from '@tunarr/types';
 import { isNull, last, orderBy } from 'lodash-es';
 import { basename, extname } from 'node:path';
-import type { NfoActor, NfoFieldWithAttrs } from '../../nfo/NfoSchemas.ts';
+import { v4 } from 'uuid';
+import type {
+  NfoActor,
+  NfoFieldWithAttrs,
+  NfoUniqueId,
+  TvShowNfo,
+} from '../../nfo/NfoSchemas.ts';
 import type { Nilable } from '../../types/util.ts';
 import { isNonEmptyArray, parseIntOrNull } from '../../util/index.ts';
+import { parseReleaseDate, titleToSortTitle } from '../../util/programs.ts';
 
 // Match things like S01, season 01, Season1, S1
 // but not things like S01E03 or "blah blah blah 02"
@@ -104,4 +116,49 @@ export function mapNfoActors(actors: Nilable<NfoActor[]>) {
     (a) => a.order,
     'asc',
   );
+}
+
+export function mapNfoUniqueIds(uniqueIds: Nilable<NfoUniqueId[]>) {
+  return seq.collect(uniqueIds, (uniqueId) => {
+    const type = uniqueId['@_type'].toLowerCase().trim();
+    const id = uniqueId['#text'].trim();
+    if (!isNonEmptyString(id)) {
+      return;
+    }
+
+    switch (type) {
+      case 'imdb':
+      case 'tmdb':
+      case 'tvdb':
+        return { id, type } satisfies Identifier;
+      default:
+        return;
+    }
+  });
+}
+
+export function tvShowNfoToShowMetadata(tvShowNfo: TvShowNfo): ShowMetadata {
+  const releaseDate = parseReleaseDate(tvShowNfo.premiered);
+  return {
+    uuid: v4(),
+    summary: null,
+    plot: tvShowNfo.plot ?? null,
+    tagline: tvShowNfo.tagline ?? null,
+    sourceType: 'local',
+    identifiers: mapNfoUniqueIds(tvShowNfo.uniqueid),
+    title: tvShowNfo.title ?? '',
+    sortTitle: titleToSortTitle(tvShowNfo.title),
+    tags: [],
+    type: 'show',
+    genres: tvShowNfo.genre ? tvShowNfo.genre.map((name) => ({ name })) : [],
+    actors: mapNfoActors(tvShowNfo.actor),
+    studios: tvShowNfo.studio ? tvShowNfo.studio.map((name) => ({ name })) : [],
+    rating: tvShowNfo.mpaa ?? null,
+    releaseDate: releaseDate ? +releaseDate : null,
+    releaseDateString: releaseDate?.format() ?? null,
+    year: releaseDate?.year() ?? null,
+    childCount: undefined,
+    grandchildCount: undefined,
+    artwork: [], // Added later
+  };
 }
