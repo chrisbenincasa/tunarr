@@ -25,6 +25,7 @@ This is a monorepo with four main packages:
 - **Nullability checks**: Use truthiness for objects and arrays (`if (fade && fade.periodMins > 0)`, `if (!channel)`). For strings, use `isNonEmptyString` (it narrows the type and treats `''` as missing). Compare explicitly (`=== undefined`, `=== null`) only when a falsy value is valid data, such as a number that can be `0`.
 - **Returning nothing**: Write `return;`, not `return undefined;`.
 - **No unguarded non-null assertions (`!`)**: Never use `!` to assert a value is non-null/non-undefined without first narrowing its type via a conditional check, early return, or explicit throw. If a value is optional, either guard it with an `if` check that narrows the type, or throw an explicit error explaining the invariant. The `!` operator silently crashes at runtime when the assumption is wrong.
+- **Switching over a union**: List every member as its own `case` and leave out `default`. The `typescript/switch-exhaustiveness-check` rule treats any `default` as exhaustive, so a `default` hides the missing case when the union grows. A `never` assertion inside a `default` does not fix that.
 
 ## Development Setup
 
