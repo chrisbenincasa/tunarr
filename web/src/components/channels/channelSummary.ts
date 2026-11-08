@@ -38,7 +38,12 @@ export const programArtworkUrl = (
     ])
     .otherwise(([other, _]) => [other.uuid, 'fanart', ['poster']]);
 
-  return `${backendUri}/api/programs/${id}/artwork/${artworkType}?fallbackArtworkTypes=${fallbackTypes.join(',')}`;
+  const url = `${backendUri}/api/programs/${id}/artwork/${artworkType}`;
+
+  // The server rejects an empty fallback list with a 400.
+  return fallbackTypes.length > 0
+    ? `${url}?fallbackArtworkTypes=${fallbackTypes.join(',')}`
+    : url;
 };
 
 export type NowPlayingSummary = {
