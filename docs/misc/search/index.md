@@ -95,6 +95,11 @@ Fields available for search:
 | `title` | `string` | Program title | 30 Rock | 
 | `type` | `string` | Program type | `show`, `movie`, `episode` |
 | `rating` | `string` | Program content rating | PG-13 |
+| `summary` | `string` | Program description. Matches both the summary and the plot, since sources store descriptions in either one | `heist` |
+| `audience_rating` | `number` | Audience rating as reported by the media source. Scales vary by source. Episodes use their show's rating | `7.5` |
+| `critic_rating` | `number` | Critic rating as reported by the media source. Scales vary by source. Episodes use their show's rating | `80` |
+| `country` | `string` | Production country (Plex and Jellyfin). Episodes use their show's countries | `Japan` |
+| `collection` | `string` | Collection the program belongs to (Plex only). Episodes use their show's collections | `Marvel` |
 | `duration` | `number` | Program duration in milliseconds | - |
 | `minutes` | `number` | Program duration in minutes | - |
 | `seconds` | `number` | Program duration in seconds | - |
@@ -124,3 +129,6 @@ Fields available for search:
 
 !!! note
     The `season` field is only populated for content indexed after this change. Force-rescan existing TV libraries to populate it for previously indexed episodes and season groupings.
+
+!!! note
+    `audience_rating`, `critic_rating`, `country`, and `collection` are only populated for content scanned after they were added. Unchanged items are skipped during a normal scan, so force-rescan existing movie and TV libraries to populate them. The same applies to `summary` matching a movie's plot. Emby libraries do not provide ratings, countries, or collections yet.
