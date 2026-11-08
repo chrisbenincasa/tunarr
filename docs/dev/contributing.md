@@ -407,6 +407,45 @@ Any other arguments are passed to `docker compose`. The build includes uncommitt
 
 Add `docker/test/pipelines/<name>.compose.yaml` containing only the settings that pipeline needs. `TUNARR_TEST_PIPELINE=<name>` then selects it.
 
+## Release Announcements
+
+Feature releases get a post on the docs site under **Releases**. Bug-fix releases don't need one, because GitHub Releases already lists every change.
+
+Each post lives in its own folder, with its screenshots beside it:
+
+```
+docs/blog/posts/2026.11.2/
+├── index.md
+└── profile-editor.png
+```
+
+Start `index.md` with this front matter:
+
+```yaml
+---
+date: 2026-11-08
+slug: "2026.11.2"
+categories:
+  - Releases
+---
+```
+
+- `slug` is the release version, so the post is published at `https://tunarr.com/blog/2026.11.2/`.
+- The release workflow picks the version when it runs, so write the post as `draft: true` until the release exists, then set the slug to the real version.
+- Everything above `<!-- more -->` is the excerpt on the Releases page.
+- Link to the full guide pages rather than repeating them. Paths are relative to the post, such as `../../../configure/stream-selection.md`.
+- Preview the site, drafts included, with `pip install mkdocs-material mkdocs-glightbox`, then `mkdocs serve` from the repo root. `mkdocs build` leaves drafts out.
+
+The docs site deploys when the post reaches `main`. Then put the link at the top of the GitHub release notes:
+
+```bash
+{
+  printf 'Read the announcement: https://tunarr.com/blog/2026.11.2/\n\n'
+  gh release view v2026.11.2 --json body -q .body
+} > notes.md
+gh release edit v2026.11.2 --notes-file notes.md
+```
+
 ## Architecture Overview
 
 ### Server

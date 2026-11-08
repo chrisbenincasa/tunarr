@@ -37,6 +37,7 @@ This is a monorepo with four main packages:
 ### Version Control
 
 - Releases use CalVer (`YYYY.M.PATCH`), so the version says when a release shipped, not what changed.
+- Feature releases get an announcement post in `docs/blog/posts/<version>/`. See "Release Announcements" in `docs/dev/contributing.md`.
 - The `main` branch creates "stable" releases. It receives fixes, chores, build/CI changes, docs, refactors, and small to medium features, including those with database migrations.
 - The `dev` branch creates prereleases. It is reserved for large features that need many prerelease iterations before they reach stable, such as infinite schedules or remote streaming sources.
 
