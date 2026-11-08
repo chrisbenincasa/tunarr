@@ -402,6 +402,66 @@ export type ProgramIndexPartialUpdate =
       'id'
     >;
 
+/**
+ * ANDs a scope clause onto a filter. The filter is parenthesized because
+ * Meilisearch binds AND tighter than OR, so an unwrapped top-level OR would
+ * leak results from outside the scope.
+ */
+export function scopeFilter(filter: Maybe<string>, clause: string): string {
+  return isNonEmptyString(filter) ? `(${filter}) AND ${clause}` : clause;
+}
+
+type RatingAndOriginSource = {
+  audienceRating?: number | null;
+  criticRating?: number | null;
+  countries?: StringName[];
+  collections?: StringName[];
+};
+
+/**
+ * Ratings, countries, and collections for a program's index document.
+ * Episodes inherit all four from their show.
+ */
+export function programRatingAndOriginFields(
+  program:
+    | ({ type: 'movie' } & RatingAndOriginSource)
+    | { type: 'episode'; season?: { show?: RatingAndOriginSource } }
+    | { type: 'track' | 'other_video' | 'music_video' },
+): {
+  audienceRating: number | null;
+  criticRating: number | null;
+  countries: StringName[];
+  collections: StringName[];
+} {
+  switch (program.type) {
+    case 'movie':
+      return {
+        audienceRating: program.audienceRating ?? null,
+        criticRating: program.criticRating ?? null,
+        countries: program.countries ?? [],
+        collections: program.collections ?? [],
+      };
+    case 'episode': {
+      const show = program.season?.show;
+      return {
+        audienceRating: show?.audienceRating ?? null,
+        criticRating: show?.criticRating ?? null,
+        countries: show?.countries ?? [],
+        collections: show?.collections ?? [],
+      };
+    }
+    case 'track':
+    case 'other_video':
+    case 'music_video':
+      return {
+        audienceRating: null,
+        criticRating: null,
+        countries: [],
+        collections: [],
+      };
+  }
+}
+
 @injectable()
 export class MeilisearchService implements ISearchService {
   private mutex = new Mutex();
@@ -1511,11 +1571,7 @@ export class MeilisearchService implements ISearchService {
       index.filterable.includes('libraryId')
     ) {
       const encodedLibraryId = encodeCaseSensitiveId(request.libraryId);
-      if (isNonEmptyString(filter)) {
-        filter = `(${filter}) AND libraryId = "${encodedLibraryId}"`;
-      } else {
-        filter = `libraryId = "${encodedLibraryId}"`;
-      }
+      filter = scopeFilter(filter, `libraryId = "${encodedLibraryId}"`);
     }
 
     if (
@@ -1523,11 +1579,7 @@ export class MeilisearchService implements ISearchService {
       index.filterable.includes('mediaSourceId')
     ) {
       const encodedMediaSourceId = encodeCaseSensitiveId(request.mediaSourceId);
-      if (isNonEmptyString(filter)) {
-        filter = `(${filter}) AND mediaSourceId = "${encodedMediaSourceId}"`;
-      } else {
-        filter = `mediaSourceId = "${encodedMediaSourceId}"`;
-      }
+      filter = scopeFilter(filter, `mediaSourceId = "${encodedMediaSourceId}"`);
     }
 
     if (isNonEmptyString(request.query)) {
@@ -1609,11 +1661,7 @@ export class MeilisearchService implements ISearchService {
       index.filterable.includes('libraryId')
     ) {
       const encodedLibraryId = encodeCaseSensitiveId(request.libraryId);
-      if (isNonEmptyString(filter)) {
-        filter = `(${filter}) AND libraryId = "${encodedLibraryId}"`;
-      } else {
-        filter = `libraryId = "${encodedLibraryId}"`;
-      }
+      filter = scopeFilter(filter, `libraryId = "${encodedLibraryId}"`);
     }
 
     if (
@@ -1621,11 +1669,7 @@ export class MeilisearchService implements ISearchService {
       index.filterable.includes('mediaSourceId')
     ) {
       const encodedMediaSourceId = encodeCaseSensitiveId(request.mediaSourceId);
-      if (isNonEmptyString(filter)) {
-        filter = `(${filter}) AND mediaSourceId = "${encodedMediaSourceId}"`;
-      } else {
-        filter = `mediaSourceId = "${encodedMediaSourceId}"`;
-      }
+      filter = scopeFilter(filter, `mediaSourceId = "${encodedMediaSourceId}"`);
     }
 
     this.logger.debug(
@@ -1961,32 +2005,8 @@ export class MeilisearchService implements ISearchService {
         break;
     }
 
-    let audienceRating: number | null;
-    let criticRating: number | null;
-    let countries: StringName[];
-    let collections: StringName[];
-    switch (program.type) {
-      case 'movie':
-        audienceRating = program.audienceRating ?? null;
-        criticRating = program.criticRating ?? null;
-        countries = program.countries ?? [];
-        collections = program.collections ?? [];
-        break;
-      case 'episode':
-        audienceRating = program.season?.show?.audienceRating ?? null;
-        criticRating = program.season?.show?.criticRating ?? null;
-        countries = program.season?.show?.countries ?? [];
-        collections = [];
-        break;
-      case 'track':
-      case 'other_video':
-      case 'music_video':
-        audienceRating = null;
-        criticRating = null;
-        countries = [];
-        collections = [];
-        break;
-    }
+    const { audienceRating, criticRating, countries, collections } =
+      programRatingAndOriginFields(program);
 
     return {
       id: program.uuid,
