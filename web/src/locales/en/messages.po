@@ -2062,6 +2062,10 @@ msgstr "Error Options"
 msgid "Error querying Plex. Check console log and consider reporting a bug!"
 msgstr "Error querying Plex. Check console log and consider reporting a bug!"
 
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "Error removing schedule. {message}"
+msgstr "Error removing schedule. {message}"
+
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Error saving new Emby server. See browser console and server logs for details"
 msgstr "Error saving new Emby server. See browser console and server logs for details"
@@ -4055,6 +4059,14 @@ msgstr "Remove Programming"
 msgid "Remove rule"
 msgstr "Remove rule"
 
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "Remove schedule"
+msgstr "Remove schedule"
+
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "Remove schedule?"
+msgstr "Remove schedule?"
+
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Remove..."
 msgstr "Remove..."
@@ -4319,6 +4331,10 @@ msgstr "Schedule programming in blocks that are either count or duration based. 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Schedule programming using slots assigned a start time and duration."
 msgstr "Schedule programming using slots assigned a start time and duration."
+
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "Schedule removed"
+msgstr "Schedule removed"
 
 #: src/components/ui/table/DataTable.tsx
 #: src/components/ui/table/DataTable.tsx
@@ -5041,6 +5057,10 @@ msgstr "This channel has an existing time slot schedule. A channel can only use 
 #: src/pages/channels/ChannelProgrammingPage.tsx
 msgid "This channel is set up to use <0>{0}Slots</0> for programming. Any manual changes on this page will likely make this channel stop adhering to that schedule."
 msgstr "This channel is set up to use <0>{0}Slots</0> for programming. Any manual changes on this page will likely make this channel stop adhering to that schedule."
+
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "This channel keeps its current programs but will no longer use its slot schedule. You can then edit the programs by hand on this page."
+msgstr "This channel keeps its current programs but will no longer use its slot schedule. You can then edit the programs by hand on this page."
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "This channel number has already been used"

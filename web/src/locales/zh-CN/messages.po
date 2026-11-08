@@ -2062,6 +2062,10 @@ msgstr "错误处理选项"
 msgid "Error querying Plex. Check console log and consider reporting a bug!"
 msgstr "查询 Plex 时出错。请查看控制台日志并考虑提交 Bug 报告！"
 
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "Error removing schedule. {message}"
+msgstr ""
+
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Error saving new Emby server. See browser console and server logs for details"
 msgstr "保存新的 Emby 服务器时出错，详情请查看浏览器控制台和服务器日志"
@@ -4055,6 +4059,14 @@ msgstr "移除节目"
 msgid "Remove rule"
 msgstr ""
 
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "Remove schedule"
+msgstr ""
+
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "Remove schedule?"
+msgstr ""
+
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Remove..."
 msgstr "移除…"
@@ -4319,6 +4331,10 @@ msgstr "按数量或时长分块编排节目，可用于生成随机排期。"
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Schedule programming using slots assigned a start time and duration."
 msgstr "使用指定了开始时间和时长的时段来编排节目。"
+
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "Schedule removed"
+msgstr ""
 
 #: src/components/ui/table/DataTable.tsx
 #: src/components/ui/table/DataTable.tsx
@@ -5041,6 +5057,10 @@ msgstr "此频道已有时段排期。一个频道同一时间只能使用一种
 #: src/pages/channels/ChannelProgrammingPage.tsx
 msgid "This channel is set up to use <0>{0}Slots</0> for programming. Any manual changes on this page will likely make this channel stop adhering to that schedule."
 msgstr "此频道已配置为使用<0>{0}时段</0>编排节目。在此页面进行的任何手动修改都可能导致该频道不再遵循原排期。"
+
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "This channel keeps its current programs but will no longer use its slot schedule. You can then edit the programs by hand on this page."
+msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "This channel number has already been used"

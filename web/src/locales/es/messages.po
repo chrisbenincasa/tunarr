@@ -2062,6 +2062,10 @@ msgstr ""
 msgid "Error querying Plex. Check console log and consider reporting a bug!"
 msgstr ""
 
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "Error removing schedule. {message}"
+msgstr ""
+
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Error saving new Emby server. See browser console and server logs for details"
 msgstr ""
@@ -4053,6 +4057,14 @@ msgstr ""
 msgid "Remove rule"
 msgstr ""
 
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "Remove schedule"
+msgstr ""
+
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "Remove schedule?"
+msgstr ""
+
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Remove..."
 msgstr ""
@@ -4316,6 +4328,10 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Schedule programming using slots assigned a start time and duration."
+msgstr ""
+
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "Schedule removed"
 msgstr ""
 
 #: src/components/ui/table/DataTable.tsx
@@ -5038,6 +5054,10 @@ msgstr ""
 #. placeholder {0}: schedule.type === 'time' ? 'Time ' : ' '
 #: src/pages/channels/ChannelProgrammingPage.tsx
 msgid "This channel is set up to use <0>{0}Slots</0> for programming. Any manual changes on this page will likely make this channel stop adhering to that schedule."
+msgstr ""
+
+#: src/pages/channels/ChannelProgrammingPage.tsx
+msgid "This channel keeps its current programs but will no longer use its slot schedule. You can then edit the programs by hand on this page."
 msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
