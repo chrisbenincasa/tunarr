@@ -2,6 +2,7 @@ import type { MediaSourceLibrary } from '@/db/schema/MediaSourceLibrary.js';
 import { InjectLogger } from '@/util/inject.js';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import dayjs from 'dayjs';
+import type { ProgramCanonicalIdLookupResult } from '../../db/interfaces/IProgramDB.ts';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type {
   MediaSourceWithRelations,
@@ -16,6 +17,7 @@ import type { QueryResult } from '../../external/BaseApiClient.ts';
 import type { ExternalSubtitleDownloader } from '../../stream/ExternalSubtitleDownloader.ts';
 import { PathCalculator } from '../../stream/PathCalculator.ts';
 import { Result } from '../../types/result.ts';
+import type { Maybe, Nullable } from '../../types/util.ts';
 import { devAssert } from '../../util/debug.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 
@@ -68,6 +70,27 @@ export type GetSubtitlesRequest = {
   externalMediaItemId?: string;
   streamIndex: number; // Only relevant for Jellyfin
 };
+
+/**
+ * Returns true when a scan can skip saving an incoming program because the
+ * stored row has the same canonical ID. A trashed row is never skipped,
+ * because only the upsert sets its state back to 'ok'.
+ */
+export function canSkipUnchangedProgram<
+  T extends Pick<ProgramCanonicalIdLookupResult, 'canonicalId' | 'state'>,
+>(
+  existing: Maybe<T>,
+  incomingCanonicalId: Maybe<Nullable<string>>,
+  force: boolean,
+): existing is T {
+  if (force || !existing || !isNonEmptyString(existing.canonicalId)) {
+    return false;
+  }
+
+  return (
+    existing.canonicalId === incomingCanonicalId && existing.state === 'ok'
+  );
+}
 
 export abstract class BaseMediaSourceScanner<ApiClientTypeT, ScanRequestT> {
   abstract scan(req: ScanRequestT): Promise<void>;

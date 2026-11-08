@@ -1,6 +1,6 @@
 # Trash
 
-The Trash holds items that Tunarr scanned previously but did not find in a recent scan — a deleted file, a renamed folder, or a media server that stopped returning the item from its API. Trashed items stay in the database so you can review them before they are removed for good. They are unplayable in channels while they sit in the Trash.
+The Trash holds items that Tunarr scanned previously but did not find in a recent scan — a deleted file, a renamed folder, or a media server that stopped returning the item from its API. Trashed items stay in the database so you can review them before they are removed for good. They are unplayable in channels while they sit in the Trash. A trashed item from a Plex, Jellyfin, or Emby library comes back out when a later scan finds it again, even if nothing about it changed.
 
 In local libraries, a season or show goes to the Trash once every one of its episodes is trashed, and an album or artist does the same once every one of its tracks is. A folder that holds no playable files at all goes to the Trash too. It comes back out when a later scan finds one of its items again.
 

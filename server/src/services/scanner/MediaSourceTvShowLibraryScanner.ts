@@ -28,7 +28,10 @@ import { devAssert } from '../../util/debug.ts';
 import type { MeilisearchService } from '../MeilisearchService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { ScanContext, ScanSingleRequest } from './MediaSourceScanner.ts';
-import { MediaSourceScanner } from './MediaSourceScanner.ts';
+import {
+  canSkipUnchangedProgram,
+  MediaSourceScanner,
+} from './MediaSourceScanner.ts';
 
 export type GenericMediaSourceTvShowLibraryScanner<
   ShowT extends MediaSourceShow = MediaSourceShow,
@@ -557,8 +560,11 @@ export abstract class MediaSourceTvShowLibraryScanner<
         const fullEpisode = fullMetadataResult.get();
 
         if (
-          !force &&
-          existing[externalKey]?.canonicalId === fullEpisode.canonicalId
+          canSkipUnchangedProgram(
+            existing[externalKey],
+            fullEpisode.canonicalId,
+            force,
+          )
         ) {
           this.logger.debug(
             "Skipping episode key = %s because it hasn't changed",

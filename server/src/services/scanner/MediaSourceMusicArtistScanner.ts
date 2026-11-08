@@ -44,7 +44,10 @@ import { devAssert } from '../../util/debug.ts';
 import type { MeilisearchService } from '../MeilisearchService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { ScanContext, ScanSingleRequest } from './MediaSourceScanner.ts';
-import { MediaSourceScanner } from './MediaSourceScanner.ts';
+import {
+  canSkipUnchangedProgram,
+  MediaSourceScanner,
+} from './MediaSourceScanner.ts';
 
 export type GenericMediaSourceMusicLibraryScanner<
   ArtistT extends MediaSourceMusicArtist = MediaSourceMusicArtist,
@@ -562,8 +565,11 @@ export abstract class MediaSourceMusicArtistScanner<
         track.releaseDateString ??= album.releaseDateString;
 
         if (
-          !force &&
-          existing[externalKey]?.canonicalId === fullMetadata.canonicalId
+          canSkipUnchangedProgram(
+            existing[externalKey],
+            fullMetadata.canonicalId,
+            force,
+          )
         ) {
           this.logger.debug(
             "Skipping track key = %s because it hasn't changed",
