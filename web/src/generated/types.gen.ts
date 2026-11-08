@@ -9232,7 +9232,6 @@ export type PostApiMediaSourcesByIdScanData = {
     body?: never;
     path: {
         id: string;
-        libraryId: string;
     };
     query?: {
         forceScan?: boolean | 'true' | 'false' | number;
