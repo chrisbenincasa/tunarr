@@ -152,9 +152,13 @@ export abstract class MediaSourceMusicArtistScanner<
       };
     }
 
-    return (await this.scanArtist(incomingArtist.get(), lookupResult, ctx)).map(
-      () => void 0,
+    const result = await this.scanArtist(
+      incomingArtist.get(),
+      lookupResult,
+      ctx,
     );
+    await this.syncGroupingStates(library.uuid);
+    return result.map(() => void 0);
   }
 
   protected async scanInternal(
@@ -264,7 +268,27 @@ export abstract class MediaSourceMusicArtistScanner<
       );
     }
 
+    await this.syncGroupingStates(library.uuid);
+
     this.mediaSourceProgressService.scanEnded(library.uuid);
+  }
+
+  /**
+   * Trashes each album and artist with no live track left under it, and
+   * restores each trashed one that has one again. Runs after the scan, because
+   * upserting a grouping resets its state to 'ok'.
+   */
+  protected async syncGroupingStates(libraryId: string): Promise<void> {
+    const { missingIds, restoredIds } =
+      await this.programDB.syncGroupingStatesForLibrary(libraryId, [
+        ProgramGroupingType.Album,
+        ProgramGroupingType.Artist,
+      ]);
+
+    await this.searchService.updatePrograms([
+      ...missingIds.map((id) => ({ id, state: 'missing' as const })),
+      ...restoredIds.map((id) => ({ id, state: 'ok' as const })),
+    ]);
   }
 
   protected async scanArtist(
@@ -536,7 +560,8 @@ export abstract class MediaSourceMusicArtistScanner<
       const { mediaSource, library, force } = scanContext;
       const existing = await this.programDB.getProgramInfoForMediaSourceLibrary(
         library.uuid,
-        ProgramType.Episode,
+        ProgramType.Track,
+        [ProgramGroupingType.Album, album.uuid],
       );
 
       const seenTracks = new Set<string>();
