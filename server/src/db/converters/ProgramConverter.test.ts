@@ -18,6 +18,10 @@ import { Program } from '../schema/Program.ts';
 import { ProgramConverter } from './ProgramConverter.ts';
 import { ProgramDaoMinter } from './ProgramMinter.ts';
 
+type MovieOverrides = Partial<
+  Pick<MediaSourceMovie, 'audienceRating' | 'criticRating' | 'plot' | 'summary'>
+>;
+
 type Fixture = {
   db: string;
   drizzle: DrizzleDBAccess;
@@ -87,7 +91,7 @@ async function createLibrary(drizzle: DrizzleDBAccess) {
 function makeMovie(
   mediaSourceId: string,
   libraryId: string,
-  ratings: Pick<MediaSourceMovie, 'audienceRating' | 'criticRating'>,
+  overrides: MovieOverrides,
 ): MediaSourceMovie {
   return {
     uuid: v4(),
@@ -106,25 +110,22 @@ function makeMovie(
     releaseDate: null,
     releaseDateString: null,
     summary: null,
-    plot: faker.lorem.sentence(),
+    plot: null,
     tagline: null,
     rating: 'PG',
     artwork: [],
     state: 'ok',
     duration: 60_000,
-    ...ratings,
+    ...overrides,
   };
 }
 
-async function roundTrip(
-  drizzle: DrizzleDBAccess,
-  ratings: Pick<MediaSourceMovie, 'audienceRating' | 'criticRating'>,
-) {
+async function roundTrip(drizzle: DrizzleDBAccess, overrides: MovieOverrides) {
   const { mediaSource, library } = await createLibrary(drizzle);
   const minted = new ProgramDaoMinter().mintMovie(
     mediaSource,
     library,
-    makeMovie(mediaSource.uuid, library.uuid, ratings),
+    makeMovie(mediaSource.uuid, library.uuid, overrides),
   );
   await drizzle.insert(Program).values(minted.program);
 
@@ -169,5 +170,36 @@ describe('movie ratings round trip', () => {
     }
     expect(program.audienceRating).toBeNull();
     expect(program.criticRating).toBeNull();
+  });
+});
+
+describe('movie description round trip', () => {
+  test('keeps a plot stored without a summary', async ({ drizzle }) => {
+    const program = await roundTrip(drizzle, {
+      plot: 'A plot from Jellyfin',
+      summary: null,
+    });
+
+    expect(program?.type).toBe('movie');
+    if (program?.type !== 'movie') {
+      return;
+    }
+    expect(program.plot).toBe('A plot from Jellyfin');
+  });
+
+  test('falls back to the summary when no plot is stored', async ({
+    drizzle,
+  }) => {
+    const program = await roundTrip(drizzle, {
+      plot: null,
+      summary: 'A summary from Plex',
+    });
+
+    expect(program?.type).toBe('movie');
+    if (program?.type !== 'movie') {
+      return;
+    }
+    expect(program.plot).toBe('A summary from Plex');
+    expect(program.summary).toBe('A summary from Plex');
   });
 });
