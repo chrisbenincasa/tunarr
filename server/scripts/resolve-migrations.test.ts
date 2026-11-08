@@ -76,6 +76,24 @@ describe('entryRegex', () => {
     expect(ours.replace(entryRegex('0041_ours'), '')).toBe(base);
   });
 
+  test('strips an entry under a named key', () => {
+    for (const helper of [
+      'makeMigrationFromSqlFile',
+      'makeKyselyMigrationFromSqlFile',
+    ]) {
+      const ours = registry([
+        '        migration1769361518: makeMigrationFromSqlFile(',
+        "          './sql/0040_daffy_bishop.sql',",
+        '          true,',
+        '        ),',
+        '        migration1764710105_AddGenreAndStudios:',
+        `          ${helper}('./sql/0041_ours.sql'),`,
+      ]);
+
+      expect(ours.replace(entryRegex('0041_ours'), '')).toBe(base);
+    }
+  });
+
   test('does not match a different tag', () => {
     expect(entryRegex('0041_ours').test(base)).toBe(false);
   });

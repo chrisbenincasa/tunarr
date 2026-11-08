@@ -69,10 +69,10 @@ function escapeRegex(s: string): string {
 }
 
 // Matches one registry entry for a SQL tag, including comment lines directly above it.
-// Branches older than the helper rename register with makeKyselyMigrationFromSqlFile.
+// Older branches may use makeKyselyMigrationFromSqlFile or a named key like migration123_AddFoo.
 export function entryRegex(tag: string): RegExp {
   return new RegExp(
-    String.raw`\n[ \t]*(?:\/\/[^\n]*\n[ \t]*)*migration\d+:\s*make(?:Kysely)?MigrationFromSqlFile\(\s*'\.\/sql\/${escapeRegex(tag)}\.sql'\s*(?:,\s*(true|false)\s*)?,?\s*\),`,
+    String.raw`\n[ \t]*(?:\/\/[^\n]*\n[ \t]*)*migration\d+(?:_\w+)?:\s*make(?:Kysely)?MigrationFromSqlFile\(\s*'\.\/sql\/${escapeRegex(tag)}\.sql'\s*(?:,\s*(true|false)\s*)?,?\s*\),`,
   );
 }
 
