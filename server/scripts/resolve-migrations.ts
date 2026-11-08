@@ -69,9 +69,10 @@ function escapeRegex(s: string): string {
 }
 
 // Matches one registry entry for a SQL tag, including comment lines directly above it.
-function entryRegex(tag: string): RegExp {
+// Branches older than the helper rename register with makeKyselyMigrationFromSqlFile.
+export function entryRegex(tag: string): RegExp {
   return new RegExp(
-    String.raw`\n[ \t]*(?:\/\/[^\n]*\n[ \t]*)*migration\d+:\s*makeMigrationFromSqlFile\(\s*'\.\/sql\/${escapeRegex(tag)}\.sql'\s*(?:,\s*(true|false)\s*)?,?\s*\),`,
+    String.raw`\n[ \t]*(?:\/\/[^\n]*\n[ \t]*)*migration\d+:\s*make(?:Kysely)?MigrationFromSqlFile\(\s*'\.\/sql\/${escapeRegex(tag)}\.sql'\s*(?:,\s*(true|false)\s*)?,?\s*\),`,
   );
 }
 
@@ -314,4 +315,9 @@ function main() {
   console.log(`  3. Run git ${refs.kind} --continue.`);
 }
 
-main();
+if (
+  process.argv[1] !== undefined &&
+  import.meta.filename === path.resolve(process.argv[1])
+) {
+  main();
+}
