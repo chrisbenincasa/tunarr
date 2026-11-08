@@ -65,6 +65,16 @@ describe('summarizeNowPlaying', () => {
     );
   });
 
+  test('requests the episode thumbnail with no fallback param when the show is missing', () => {
+    const episode = makeEpisode({ uuid: 'ep-2', title: 'Orphaned' });
+
+    const summary = summarizeNowPlaying(content(episode), start, backend);
+
+    expect(summary.artworkUrl).toBe(
+      `${backend}/api/programs/ep-2/artwork/thumbnail`,
+    );
+  });
+
   test('uses the program title for a movie', () => {
     const movie = makeMovie({ uuid: 'movie-1', title: 'Back to the Future' });
 
