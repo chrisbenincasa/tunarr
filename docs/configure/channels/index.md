@@ -48,9 +48,9 @@ Click the **NEW** button to create your first channel, which will take you to th
 
 ## Bulk Actions
 
-The Channels page supports selecting multiple channels at once using row checkboxes. When channels are selected, a toolbar appears at the bottom of the page with bulk actions:
+In table view, the Channels page lets you select several channels with the row checkboxes. The selection bar above the table then shows bulk actions, including:
 
-- **Assign Fillers**: Add or replace [filler lists](/configure/library/filler#bulk-filler-assignment) across all selected channels in one operation.
+- **Assign fillers**: Add or replace [filler lists](/configure/library/filler#bulk-filler-assignment) across all selected channels in one operation.
 
 ## Getting Started
 

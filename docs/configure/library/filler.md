@@ -68,7 +68,7 @@ Weight is relative. Tunarr picks each of a channel's filler lists in proportion 
 
 ### Assign Filler Lists to Selected Channels
 
-From the **Channels** page, use the row checkboxes to select one or more channels. A toolbar appears at the bottom of the page with an **Assign Fillers** button. Clicking it opens a dialog where you can:
+On the **Channels** page in table view, use the row checkboxes to select one or more channels. The selection bar above the table shows an **Assign fillers** button. Clicking it opens a dialog where you can:
 
 1. Toggle **Replace all existing fillers** to choose between:
       - **Add mode** (default): keeps existing filler assignments and adds the selected ones. Channels that already have a selected list get its new weight and cooldown.

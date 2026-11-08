@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { Channel } from '@tunarr/types';
 import { useCallback, useEffect, useState } from 'react';
+import { BulkAssignFillersDialog } from '../../components/channels/BulkAssignFillersDialog.tsx';
 import { ChannelMenuButton } from '../../components/channels/ChannelMenuButton.tsx';
 import { ChannelSessionsDialog } from '../../components/channels/ChannelSessionsDialog.tsx';
 import { ChannelsView } from '../../components/channels/ChannelsView.tsx';
@@ -23,6 +24,7 @@ export default function ChannelsPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [sessionsChannel, setSessionsChannel] = useState<Channel | null>(null);
+  const [fillerChannels, setFillerChannels] = useState<Channel[] | null>(null);
   const { addListener, removeListener } = useServerEvents();
   const m3uUrl = useM3ULink();
   const { duplicateChannels, deleteChannels } = useChannelBulkActions();
@@ -76,6 +78,7 @@ export default function ChannelsPage() {
         onDuplicateChannels={(selected) => {
           duplicateChannels(selected).catch(console.error);
         }}
+        onAssignFillers={setFillerChannels}
         onDeleteChannels={(selected) => {
           deleteChannels(selected).catch(console.error);
         }}
@@ -85,6 +88,13 @@ export default function ChannelsPage() {
         onClose={() => setSessionsChannel(null)}
         channel={sessionsChannel}
       />
+      {fillerChannels && (
+        <BulkAssignFillersDialog
+          open
+          onClose={() => setFillerChannels(null)}
+          selectedChannelIds={fillerChannels.map((c) => c.id)}
+        />
+      )}
     </>
   );
 }

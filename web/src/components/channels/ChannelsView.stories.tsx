@@ -31,6 +31,7 @@ const meta = {
     onOpenSessions: fn(),
     m3uUrl: 'http://tunarr.test/api/channels.m3u',
     onDuplicateChannels: fn(),
+    onAssignFillers: fn(),
     onDeleteChannels: fn(),
     renderMenu: (channel) => (
       <IconButton aria-label={`More actions for ${channel.name}`}>
