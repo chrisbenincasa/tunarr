@@ -11,7 +11,9 @@ vi.mock('../../../generated/sdk.gen.ts', async (importOriginal) => ({
   postApiProgramsFacetsByFacetName: mocks.facets,
 }));
 
-const { renderWithProviders, screen } = await import('../../../test/utils.tsx');
+const { renderWithProviders, screen, waitFor } = await import(
+  '../../../test/utils.tsx'
+);
 const { GenreAutocomplete } = await import('./GenreAutocomplete.tsx');
 
 function Harness({ onChange }: { onChange: (value: string) => void }) {
@@ -59,5 +61,13 @@ describe('GenreAutocomplete', () => {
 
     expect(onChange).toHaveBeenLastCalledWith('Noir');
     expect(screen.getByRole('combobox', { name: 'Genre' })).toHaveValue('Noir');
+
+    // usehooks-ts 2.14 does not cancel the debounce timer on unmount, so let
+    // it fire here rather than after the environment is torn down.
+    await waitFor(() =>
+      expect(mocks.facets).toHaveBeenCalledWith(
+        expect.objectContaining({ query: { facetQuery: 'Noir' } }),
+      ),
+    );
   });
 });
