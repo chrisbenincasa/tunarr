@@ -2,11 +2,18 @@ import { renderWithProviders, screen } from '@/test/utils';
 import { QueryClient } from '@tanstack/react-query';
 import type { FillerList } from '@tunarr/types';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
+import type * as Sdk from '../../generated/sdk.gen.ts';
 import type * as BulkAssignHooks from '../../hooks/useBulkAssignFillers.tsx';
 import { fillerListsQuery } from '../../hooks/useFillerLists.ts';
 import { BulkAssignFillersDialog } from './BulkAssignFillersDialog.tsx';
 
 const mutate = vi.hoisted(() => vi.fn());
+const getApiFillerLists = vi.hoisted(() => vi.fn());
+
+vi.mock('../../generated/sdk.gen.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof Sdk>()),
+  getApiFillerLists,
+}));
 
 vi.mock('../../hooks/useBulkAssignFillers.tsx', async (importOriginal) => ({
   ...(await importOriginal<typeof BulkAssignHooks>()),
@@ -36,6 +43,7 @@ const renderDialog = () => {
 
 beforeEach(() => {
   mutate.mockReset();
+  getApiFillerLists.mockReset();
 });
 
 describe('BulkAssignFillersDialog', () => {
@@ -78,5 +86,27 @@ describe('BulkAssignFillersDialog', () => {
 
     await user.click(screen.getByText('Bumpers'));
     expect(apply).toBeDisabled();
+  });
+
+  test('shows a retryable error when the filler lists fail to load', async () => {
+    getApiFillerLists
+      .mockRejectedValueOnce(new Error('network down'))
+      .mockResolvedValueOnce({ data: fillerLists });
+    const { user } = renderWithProviders(
+      <BulkAssignFillersDialog
+        open
+        onClose={() => {}}
+        selectedChannelIds={['channel-1']}
+      />,
+    );
+
+    expect(
+      await screen.findByText('Failed to load filler lists.'),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/No filler lists found/)).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Retry' }));
+
+    expect(await screen.findByText('Bumpers')).toBeInTheDocument();
   });
 });

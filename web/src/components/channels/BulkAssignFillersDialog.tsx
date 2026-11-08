@@ -1,5 +1,6 @@
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import {
+  Alert,
   Box,
   Button,
   Checkbox,
@@ -49,7 +50,12 @@ export function BulkAssignFillersDialog({
   selectedChannelIds,
 }: Props) {
   const { t } = useLingui();
-  const { data: fillerLists, isPending } = useQuery(fillerListsQuery());
+  const {
+    data: fillerLists,
+    isPending,
+    isError,
+    refetch,
+  } = useQuery(fillerListsQuery());
   const [selectedFillers, fillerActions] = useMap<string, FillerSelection>();
   const [replaceMode, setReplaceMode] = useState(false);
   const [confirmingReplace, setConfirmingReplace] = useState(false);
@@ -106,6 +112,27 @@ export function BulkAssignFillersDialog({
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
           <CircularProgress size={24} />
         </Box>
+      );
+    }
+
+    if (isError) {
+      return (
+        <Alert
+          severity="error"
+          action={
+            <Button
+              color="inherit"
+              size="small"
+              onClick={() => {
+                refetch().catch(console.error);
+              }}
+            >
+              <Trans>Retry</Trans>
+            </Button>
+          }
+        >
+          <Trans>Failed to load filler lists.</Trans>
+        </Alert>
       );
     }
 

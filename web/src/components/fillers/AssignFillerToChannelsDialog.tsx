@@ -1,5 +1,6 @@
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import {
+  Alert,
   Box,
   Button,
   Checkbox,
@@ -41,7 +42,7 @@ export function AssignFillerToChannelsDialog({
   fillerName,
 }: Props) {
   const { t } = useLingui();
-  const { data, isPending } = useQuery(getChannelsOptions());
+  const { data, isPending, isError, refetch } = useQuery(getChannelsOptions());
   const channels = data ?? [];
   const [selectedChannelIds, setSelectedChannelIds] = useState<Set<string>>(
     new Set(),
@@ -92,6 +93,23 @@ export function AssignFillerToChannelsDialog({
           <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
             <CircularProgress size={24} />
           </Box>
+        ) : isError ? (
+          <Alert
+            severity="error"
+            action={
+              <Button
+                color="inherit"
+                size="small"
+                onClick={() => {
+                  refetch().catch(console.error);
+                }}
+              >
+                <Trans>Retry</Trans>
+              </Button>
+            }
+          >
+            <Trans>Failed to load channels.</Trans>
+          </Alert>
         ) : isEmpty(channels) ? (
           <Typography color="text.secondary" sx={{ py: 2 }}>
             <Trans>No channels found. Create a channel first.</Trans>
