@@ -155,7 +155,7 @@ Built on `feat/channels-bulk`, stacked on `feat/collection-view` (11/02/2026):
 - `SelectionBar` in `CollectionView/` shows the count, the bulk actions, Clear and the key hints. It always shows in the table layout, so the hints stay visible.
 - The All/Streaming/Stealth filter applies to cards and table. "Streaming" means someone is watching, the same rule as the header count. Changing the filter clears the selection.
 - Selection and keyboard navigation exist only in the table. The card mock has no checkboxes.
-- Bulk Export M3U links to `/api/channels.m3u?channels=1,4,7`. That param builds an uncached playlist of just those channels. Selected stealth channels are included, because the user picked them.
+- Bulk Export M3U links to `/api/channels.m3u?channels=1,4,7`. That param builds an uncached playlist of just those channels. Selected stealth channels are included when basic auth is off or the request carries valid credentials, because the route itself is public. The `download` flag makes the server send the playlist as an attachment.
 - Bulk duplicate and delete run one channel at a time and report failures in one toast.
 
 ### Phase 4. Forms and settings

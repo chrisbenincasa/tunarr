@@ -4,6 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { expect, fn, userEvent, within } from 'storybook/test';
 import { StoryRouter } from '../ui/patterns/AppShell/storyComponents.tsx';
 import { ChannelsView } from './ChannelsView.tsx';
+import { channelsM3uUrl } from './channelSummary.ts';
 import {
   longTextChannel,
   storyChannels,
@@ -105,7 +106,7 @@ export const TableBulkActions: Story = {
 
     await expect(bar.getByRole('link', { name: 'Export M3U' })).toHaveAttribute(
       'href',
-      'http://tunarr.test/api/channels.m3u?channels=1%2C2',
+      channelsM3uUrl('http://tunarr.test/api/channels.m3u', [1, 2]),
     );
 
     await userEvent.click(bar.getByRole('button', { name: 'Duplicate' }));
