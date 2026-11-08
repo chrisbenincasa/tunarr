@@ -1,6 +1,10 @@
 import { SearchFilter } from '@tunarr/types/api';
 import { describe, expect, test } from 'vitest';
-import { MeilisearchService } from './MeilisearchService.js';
+import {
+  MeilisearchService,
+  programRatingAndOriginFields,
+  scopeFilter,
+} from './MeilisearchService.js';
 
 // Mock index configuration for testing
 const mockIndex = {
@@ -1052,4 +1056,83 @@ describe('MeilisearchService.buildFilterExpression', () => {
       );
     });
   });
+});
+
+describe('scopeFilter', () => {
+  test('returns the clause alone when there is no filter', () => {
+    expect(scopeFilter(undefined, 'libraryId = "abc"')).toBe(
+      'libraryId = "abc"',
+    );
+    expect(scopeFilter('', 'libraryId = "abc"')).toBe('libraryId = "abc"');
+  });
+
+  test('parenthesizes the filter so a top-level OR stays in scope', () => {
+    expect(
+      scopeFilter(
+        'summary CONTAINS "x" OR plot CONTAINS "x"',
+        'libraryId = "abc"',
+      ),
+    ).toBe('(summary CONTAINS "x" OR plot CONTAINS "x") AND libraryId = "abc"');
+  });
+
+  test('nests when library and media source scopes both apply', () => {
+    const library = scopeFilter('a = 1 OR b = 2', 'libraryId = "lib"');
+    expect(scopeFilter(library, 'mediaSourceId = "ms"')).toBe(
+      '((a = 1 OR b = 2) AND libraryId = "lib") AND mediaSourceId = "ms"',
+    );
+  });
+});
+
+describe('programRatingAndOriginFields', () => {
+  const origin = {
+    audienceRating: 8.1,
+    criticRating: 92,
+    countries: [{ name: 'Japan' }],
+    collections: [{ name: 'Ghibli' }],
+  };
+
+  test('reads a movie its own values', () => {
+    expect(programRatingAndOriginFields({ type: 'movie', ...origin })).toEqual(
+      origin,
+    );
+  });
+
+  test('defaults a movie with no values to null and empty', () => {
+    expect(programRatingAndOriginFields({ type: 'movie' })).toEqual({
+      audienceRating: null,
+      criticRating: null,
+      countries: [],
+      collections: [],
+    });
+  });
+
+  test('gives an episode all four values from its show, collections included', () => {
+    expect(
+      programRatingAndOriginFields({
+        type: 'episode',
+        season: { show: origin },
+      }),
+    ).toEqual(origin);
+  });
+
+  test('defaults an episode without a loaded show', () => {
+    expect(programRatingAndOriginFields({ type: 'episode' })).toEqual({
+      audienceRating: null,
+      criticRating: null,
+      countries: [],
+      collections: [],
+    });
+  });
+
+  test.each(['track', 'other_video', 'music_video'] as const)(
+    'leaves a %s empty',
+    (type) => {
+      expect(programRatingAndOriginFields({ type })).toEqual({
+        audienceRating: null,
+        criticRating: null,
+        countries: [],
+        collections: [],
+      });
+    },
+  );
 });
