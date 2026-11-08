@@ -32,7 +32,11 @@ msgid "\"{0}\" Sessions"
 msgstr ""
 
 #: src/components/channel_config/ChannelEpgConfig.tsx
-msgid "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, m3u playlist, etc. The channel can still be streamed directly or be used as a redirect target."
+#~ msgid "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, m3u playlist, etc. The channel can still be streamed directly or be used as a redirect target."
+#~ msgstr ""
+
+#: src/components/channel_config/ChannelEpgConfig.tsx
+msgid "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, the m3u playlist, etc. The channel can still be streamed directly, used as a redirect target, or exported from the Channels page."
 msgstr ""
 
 #. placeholder {0}: badge.count
@@ -86,6 +90,21 @@ msgstr ""
 #: src/components/settings/general/BackupForm.tsx
 #: src/components/settings/general/LogRollForm.tsx
 msgid "{0, plural, one {Day} other {Days}}"
+msgstr ""
+
+#. placeholder {0}: channels.length
+#: src/components/channels/ChannelsDeleteDialog.tsx
+msgid "{0, plural, one {Delete # channel?} other {Delete # channels?}}"
+msgstr ""
+
+#. placeholder {0}: result.succeeded
+#: src/components/channels/useChannelBulkActions.ts
+msgid "{0, plural, one {Deleted # channel} other {Deleted # channels}}"
+msgstr ""
+
+#. placeholder {0}: result.succeeded
+#: src/components/channels/useChannelBulkActions.ts
+msgid "{0, plural, one {Duplicated # channel} other {Duplicated # channels}}"
 msgstr ""
 
 #. placeholder {0}: currentBackupSchedule!.increment
@@ -155,6 +174,18 @@ msgstr ""
 #~ msgid "{0} of {1} {2} exceed the length of this slot ({3}). Average program length: {4}"
 #~ msgstr ""
 
+#. placeholder {0}: result.failed
+#. placeholder {1}: channels.length
+#: src/components/channels/useChannelBulkActions.ts
+msgid "{0} of {1} channels failed to delete"
+msgstr ""
+
+#. placeholder {0}: result.failed
+#. placeholder {1}: channels.length
+#: src/components/channels/useChannelBulkActions.ts
+msgid "{0} of {1} channels failed to duplicate"
+msgstr ""
+
 #. placeholder {0}: program.title
 #: src/components/programs/MediaDetailCard.tsx
 msgid "{0} Poster"
@@ -162,6 +193,12 @@ msgstr ""
 
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "{block} Hours"
+msgstr ""
+
+#. placeholder {0}: <> <MonoText>{count}</MonoText> selected </>
+#. placeholder {1}: <> <MonoText>{count}</MonoText> selected </>
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
+msgid "{count, plural, one {{0}} other {{1}}}"
 msgstr ""
 
 #: src/components/library/extractSubtitle.tsx
@@ -254,6 +291,10 @@ msgstr ""
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{minutes, plural, one {# minute} other {# minutes}}"
+msgstr ""
+
+#: src/components/channels/ChannelsDeleteDialog.tsx
+msgid "{more, plural, one {and # more} other {and # more}}"
 msgstr ""
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -579,6 +620,10 @@ msgstr ""
 
 #: src/components/programs/Albums.tsx
 msgid "Albums"
+msgstr ""
+
+#: src/components/channels/ChannelsView.tsx
+msgid "All"
 msgstr ""
 
 #: src/components/profiles/condition/ConditionGroupEditor.tsx
@@ -968,6 +1013,7 @@ msgid "Calculating Slots..."
 msgstr ""
 
 #: src/components/channels/ChannelDeleteDialog.tsx
+#: src/components/channels/ChannelsDeleteDialog.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
@@ -1148,6 +1194,7 @@ msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 #: src/components/search/SearchFieldRestrictMenu.tsx
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
 msgid "Clear"
 msgstr ""
 
@@ -1553,6 +1600,8 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 #: src/components/channels/ChannelDeleteDialog.tsx
+#: src/components/channels/ChannelsDeleteDialog.tsx
+#: src/components/channels/ChannelsView.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -1623,6 +1672,10 @@ msgstr ""
 
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
 msgid "Deleted custom show"
+msgstr ""
+
+#: src/components/channels/ChannelsDeleteDialog.tsx
+msgid "Deleting a channel removes all of its programming. This cannot be undone."
 msgstr ""
 
 #: src/components/channels/ChannelDeleteDialog.tsx
@@ -1774,6 +1827,7 @@ msgstr ""
 msgid "Download last {0} {1, plural, one {# row} other {# rows}}"
 msgstr ""
 
+#: src/components/channels/ChannelsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
@@ -2193,6 +2247,11 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Experimental: Make perfect schedule loop"
+msgstr ""
+
+#: src/components/channels/ChannelsView.tsx
+#: src/components/channels/ChannelsView.tsx
+msgid "Export M3U"
 msgstr ""
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
@@ -3235,6 +3294,7 @@ msgid "Most channels (e.g. 7.1 surround)"
 msgstr ""
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
 msgid "move"
 msgstr ""
 
@@ -3412,6 +3472,10 @@ msgstr ""
 #: src/pages/channels/ChannelsPage.tsx
 #~ msgid "No active sessions"
 #~ msgstr ""
+
+#: src/components/channels/ChannelsView.tsx
+msgid "No channels match this filter."
+msgstr ""
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "No condition"
@@ -3593,6 +3657,7 @@ msgid "Opacity"
 msgstr ""
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
 msgid "open"
 msgstr ""
 
@@ -4479,6 +4544,14 @@ msgstr ""
 msgid "Seasons"
 msgstr ""
 
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
+msgid "select"
+msgstr ""
+
+#: src/components/ui/table/SelectCheckboxes.tsx
+msgid "Select {label}"
+msgstr ""
+
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Select a program and channel to test playback. The troubleshooter will analyze stream selection, build the FFmpeg pipeline, and run a short test transcode."
 msgstr ""
@@ -4492,8 +4565,16 @@ msgstr ""
 msgid "Select All"
 msgstr ""
 
+#: src/components/ui/table/SelectCheckboxes.tsx
+msgid "Select all on this page"
+msgstr ""
+
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Select Artists to Remove"
+msgstr ""
+
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
+msgid "Select rows to act on several at once."
 msgstr ""
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
@@ -4514,6 +4595,10 @@ msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Selected Subtitle"
+msgstr ""
+
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
+msgid "Selection"
 msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
@@ -4583,6 +4668,10 @@ msgstr ""
 
 #: src/pages/profiles/TranscodeConfigPage.tsx
 msgid "Show Advanced"
+msgstr ""
+
+#: src/components/channels/ChannelsView.tsx
+msgid "Show all channels"
 msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx
@@ -4834,7 +4923,12 @@ msgstr ""
 msgid "Status"
 msgstr ""
 
+#: src/components/channels/ChannelsView.tsx
+msgid "Status filter"
+msgstr ""
+
 #: src/components/channels/ChannelCard.tsx
+#: src/components/channels/ChannelsView.tsx
 #: src/components/channels/ChannelsView.tsx
 msgid "Stealth"
 msgstr ""
@@ -4895,6 +4989,7 @@ msgid "Stream this channel through the experimental ErsatzTV next backend instea
 msgstr ""
 
 #: src/components/channel_config/EditChannelForm.tsx
+#: src/components/channels/ChannelsView.tsx
 msgid "Streaming"
 msgstr ""
 

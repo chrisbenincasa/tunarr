@@ -32,8 +32,12 @@ msgid "\"{0}\" Sessions"
 msgstr "\"{0}\" Sessions"
 
 #: src/components/channel_config/ChannelEpgConfig.tsx
-msgid "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, m3u playlist, etc. The channel can still be streamed directly or be used as a redirect target."
-msgstr "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, m3u playlist, etc. The channel can still be streamed directly or be used as a redirect target."
+#~ msgid "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, m3u playlist, etc. The channel can still be streamed directly or be used as a redirect target."
+#~ msgstr "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, m3u playlist, etc. The channel can still be streamed directly or be used as a redirect target."
+
+#: src/components/channel_config/ChannelEpgConfig.tsx
+msgid "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, the m3u playlist, etc. The channel can still be streamed directly, used as a redirect target, or exported from the Channels page."
+msgstr "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, the m3u playlist, etc. The channel can still be streamed directly, used as a redirect target, or exported from the Channels page."
 
 #. placeholder {0}: badge.count
 #: src/components/ui/patterns/AppShell/NavBadge.tsx
@@ -87,6 +91,21 @@ msgstr "{0, plural, one {# watching} other {# watching}}"
 #: src/components/settings/general/LogRollForm.tsx
 msgid "{0, plural, one {Day} other {Days}}"
 msgstr "{0, plural, one {Day} other {Days}}"
+
+#. placeholder {0}: channels.length
+#: src/components/channels/ChannelsDeleteDialog.tsx
+msgid "{0, plural, one {Delete # channel?} other {Delete # channels?}}"
+msgstr "{0, plural, one {Delete # channel?} other {Delete # channels?}}"
+
+#. placeholder {0}: result.succeeded
+#: src/components/channels/useChannelBulkActions.ts
+msgid "{0, plural, one {Deleted # channel} other {Deleted # channels}}"
+msgstr "{0, plural, one {Deleted # channel} other {Deleted # channels}}"
+
+#. placeholder {0}: result.succeeded
+#: src/components/channels/useChannelBulkActions.ts
+msgid "{0, plural, one {Duplicated # channel} other {Duplicated # channels}}"
+msgstr "{0, plural, one {Duplicated # channel} other {Duplicated # channels}}"
 
 #. placeholder {0}: currentBackupSchedule!.increment
 #: src/components/settings/general/BackupForm.tsx
@@ -155,6 +174,18 @@ msgstr "{0} of {1} {2} exceed the length of this slot ({3})."
 #~ msgid "{0} of {1} {2} exceed the length of this slot ({3}). Average program length: {4}"
 #~ msgstr "{0} of {1} {2} exceed the length of this slot ({3}). Average program length: {4}"
 
+#. placeholder {0}: result.failed
+#. placeholder {1}: channels.length
+#: src/components/channels/useChannelBulkActions.ts
+msgid "{0} of {1} channels failed to delete"
+msgstr "{0} of {1} channels failed to delete"
+
+#. placeholder {0}: result.failed
+#. placeholder {1}: channels.length
+#: src/components/channels/useChannelBulkActions.ts
+msgid "{0} of {1} channels failed to duplicate"
+msgstr "{0} of {1} channels failed to duplicate"
+
 #. placeholder {0}: program.title
 #: src/components/programs/MediaDetailCard.tsx
 msgid "{0} Poster"
@@ -163,6 +194,12 @@ msgstr "{0} Poster"
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "{block} Hours"
 msgstr "{block} Hours"
+
+#. placeholder {0}: <> <MonoText>{count}</MonoText> selected </>
+#. placeholder {1}: <> <MonoText>{count}</MonoText> selected </>
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
+msgid "{count, plural, one {{0}} other {{1}}}"
+msgstr "{count, plural, one {{0}} other {{1}}}"
 
 #: src/components/library/extractSubtitle.tsx
 #: src/components/programs/ProgramInfoBar.tsx
@@ -255,6 +292,10 @@ msgstr "{len, plural, one {There is # warning. Click for details.} other {There 
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{minutes, plural, one {# minute} other {# minutes}}"
 msgstr "{minutes, plural, one {# minute} other {# minutes}}"
+
+#: src/components/channels/ChannelsDeleteDialog.tsx
+msgid "{more, plural, one {and # more} other {and # more}}"
+msgstr "{more, plural, one {and # more} other {and # more}}"
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -580,6 +621,10 @@ msgstr "after every program"
 #: src/components/programs/Albums.tsx
 msgid "Albums"
 msgstr "Albums"
+
+#: src/components/channels/ChannelsView.tsx
+msgid "All"
+msgstr "All"
 
 #: src/components/profiles/condition/ConditionGroupEditor.tsx
 msgid "ALL"
@@ -968,6 +1013,7 @@ msgid "Calculating Slots..."
 msgstr "Calculating Slots..."
 
 #: src/components/channels/ChannelDeleteDialog.tsx
+#: src/components/channels/ChannelsDeleteDialog.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
@@ -1148,6 +1194,7 @@ msgstr "Chooses audio and subtitle streams when programs from this list play as 
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 #: src/components/search/SearchFieldRestrictMenu.tsx
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
 msgid "Clear"
 msgstr "Clear"
 
@@ -1553,6 +1600,8 @@ msgstr "Default profile"
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 #: src/components/channels/ChannelDeleteDialog.tsx
+#: src/components/channels/ChannelsDeleteDialog.tsx
+#: src/components/channels/ChannelsView.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -1624,6 +1673,10 @@ msgstr "Delete Transcoding Config \"{0}\"?"
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
 msgid "Deleted custom show"
 msgstr "Deleted custom show"
+
+#: src/components/channels/ChannelsDeleteDialog.tsx
+msgid "Deleting a channel removes all of its programming. This cannot be undone."
+msgstr "Deleting a channel removes all of its programming. This cannot be undone."
 
 #: src/components/channels/ChannelDeleteDialog.tsx
 msgid "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
@@ -1774,6 +1827,7 @@ msgstr "Download JSON"
 msgid "Download last {0} {1, plural, one {# row} other {# rows}}"
 msgstr "Download last {0} {1, plural, one {# row} other {# rows}}"
 
+#: src/components/channels/ChannelsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
@@ -2194,6 +2248,11 @@ msgstr "Experimental Features"
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Experimental: Make perfect schedule loop"
 msgstr "Experimental: Make perfect schedule loop"
+
+#: src/components/channels/ChannelsView.tsx
+#: src/components/channels/ChannelsView.tsx
+msgid "Export M3U"
+msgstr "Export M3U"
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "external"
@@ -3235,6 +3294,7 @@ msgid "Most channels (e.g. 7.1 surround)"
 msgstr "Most channels (e.g. 7.1 surround)"
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
 msgid "move"
 msgstr "move"
 
@@ -3412,6 +3472,10 @@ msgstr "No"
 #: src/pages/channels/ChannelsPage.tsx
 #~ msgid "No active sessions"
 #~ msgstr "No active sessions"
+
+#: src/components/channels/ChannelsView.tsx
+msgid "No channels match this filter."
+msgstr "No channels match this filter."
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "No condition"
@@ -3593,6 +3657,7 @@ msgid "Opacity"
 msgstr "Opacity"
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
 msgid "open"
 msgstr "open"
 
@@ -4481,6 +4546,14 @@ msgstr "Search Server URL:"
 msgid "Seasons"
 msgstr "Seasons"
 
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
+msgid "select"
+msgstr "select"
+
+#: src/components/ui/table/SelectCheckboxes.tsx
+msgid "Select {label}"
+msgstr "Select {label}"
+
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Select a program and channel to test playback. The troubleshooter will analyze stream selection, build the FFmpeg pipeline, and run a short test transcode."
 msgstr "Select a program and channel to test playback. The troubleshooter will analyze stream selection, build the FFmpeg pipeline, and run a short test transcode."
@@ -4494,9 +4567,17 @@ msgstr "Select a slot to link to"
 msgid "Select All"
 msgstr "Select All"
 
+#: src/components/ui/table/SelectCheckboxes.tsx
+msgid "Select all on this page"
+msgstr "Select all on this page"
+
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Select Artists to Remove"
 msgstr "Select Artists to Remove"
+
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
+msgid "Select rows to act on several at once."
+msgstr "Select rows to act on several at once."
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Select Shows to Remove"
@@ -4517,6 +4598,10 @@ msgstr "Selected streams"
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Selected Subtitle"
 msgstr "Selected Subtitle"
+
+#: src/components/ui/patterns/CollectionView/SelectionBar.tsx
+msgid "Selection"
+msgstr "Selection"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -4586,6 +4671,10 @@ msgstr "Show"
 #: src/pages/profiles/TranscodeConfigPage.tsx
 msgid "Show Advanced"
 msgstr "Show Advanced"
+
+#: src/components/channels/ChannelsView.tsx
+msgid "Show all channels"
+msgstr "Show all channels"
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Show disabled libraries"
@@ -4836,7 +4925,12 @@ msgstr "Starting Episode"
 msgid "Status"
 msgstr "Status"
 
+#: src/components/channels/ChannelsView.tsx
+msgid "Status filter"
+msgstr "Status filter"
+
 #: src/components/channels/ChannelCard.tsx
+#: src/components/channels/ChannelsView.tsx
 #: src/components/channels/ChannelsView.tsx
 msgid "Stealth"
 msgstr "Stealth"
@@ -4897,6 +4991,7 @@ msgid "Stream this channel through the experimental ErsatzTV next backend instea
 msgstr "Stream this channel through the experimental ErsatzTV next backend instead of Tunarr's own pipeline. Use this to move channels over one at a time. Turning on the global ErsatzTV next feature flag enrolls every channel and replaces this setting."
 
 #: src/components/channel_config/EditChannelForm.tsx
+#: src/components/channels/ChannelsView.tsx
 msgid "Streaming"
 msgstr "Streaming"
 
