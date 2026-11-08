@@ -181,7 +181,7 @@ Any of these means redoing the spike on v8.21.3, which costs one table. Unfamili
 
 ### Phase 2. Large list tables
 
-- `ChannelsPage` adds the `checkbox` filter.
+- `ChannelsPage` adds the `checkbox` filter. Done early, in `plans/web-redesign.md` Phase 3's `/channels` pilot. The variant is named `boolean`. It renders an Any/Yes/No select and needs `filterFn: 'equals'`.
 - `MediaSourceLibraryTable`
 
 ### Phase 3. Reorder and editing

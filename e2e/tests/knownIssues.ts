@@ -23,7 +23,6 @@ export const KNOWN_ISSUES: KnownIssue[] = [
     match:
       /Cannot update a component \(`%s`\) while rendering a different component/,
     routes: [
-      '/channels',
       '/channels/$channelId/programming/slot-editor',
       '/library',
       '/media_sources',
@@ -40,16 +39,6 @@ export const KNOWN_ISSUES: KnownIssue[] = [
       '/library/fillers/$fillerId/edit',
     ],
     note: 'Missing list keys in the lineup and programming editors.',
-  },
-  {
-    match: /Invalid prop `children` supplied to `ForwardRef\(Tooltip2?\)`/,
-    routes: ['/channels'],
-    note: 'Tooltip wraps a component that cannot hold a ref.',
-  },
-  {
-    match: /Function components cannot be given refs/,
-    routes: ['/channels'],
-    note: 'Same Tooltip child as above.',
   },
 ];
 

@@ -22,7 +22,6 @@ import {
   type TableCellProps,
   TableContainer,
   TableHead,
-  TablePagination,
   TableRow,
   type TableRowProps,
   TextField,
@@ -33,6 +32,7 @@ import type { Row, RowData } from '@tanstack/react-table';
 import { clamp } from 'lodash-es';
 import { type ReactNode, useEffect, useState } from 'react';
 import { SortButton } from './SortButton.tsx';
+import { TablePager } from './TablePager.tsx';
 import { ColumnFilter } from './filters/ColumnFilter.tsx';
 import { sxList } from './sx.ts';
 import {
@@ -41,7 +41,7 @@ import {
   type TunarrFeatures,
   type TunarrTable,
   columnLabel,
-  pageSizeOptions,
+  lastPageIndex,
 } from './tunarrTable.ts';
 
 export type DataTableProps<TData extends RowData> = {
@@ -121,10 +121,7 @@ export const DataTable = <TData extends RowData>({
         const rows = table.getRowModel().rows;
         const rowCount = table.getFilteredRowModel().rows.length;
         const { pageIndex, pageSize } = state.pagination;
-        const lastPage = Math.max(0, Math.ceil(rowCount / pageSize) - 1);
-        const rowsPerPageOptions = pageSizeOptions.includes(pageSize)
-          ? pageSizeOptions
-          : [...pageSizeOptions, pageSize].sort((a, b) => a - b);
+        const lastPage = lastPageIndex(rowCount, pageSize);
 
         return (
           <Box
@@ -428,34 +425,12 @@ export const DataTable = <TData extends RowData>({
               lastPage={lastPage}
               ready={hasData && !loading}
             />
-            {/* The clamp covers the one render before PageIndexRepair runs. MUI
-                logs an error for an out-of-range page. */}
-            <TablePagination
-              component="div"
+            <TablePager
               count={rowCount}
-              page={clamp(pageIndex, 0, lastPage)}
-              rowsPerPage={pageSize}
-              rowsPerPageOptions={rowsPerPageOptions}
-              onPageChange={(_, page) => table.setPageIndex(page)}
-              onRowsPerPageChange={(e) =>
-                table.setPageSize(Number(e.target.value))
-              }
-              labelRowsPerPage={t`Rows per page`}
-              labelDisplayedRows={({ from, to, count }) =>
-                t`${from}–${to} of ${count}`
-              }
-              getItemAriaLabel={(type) => {
-                switch (type) {
-                  case 'first':
-                    return t`Go to first page`;
-                  case 'last':
-                    return t`Go to last page`;
-                  case 'next':
-                    return t`Go to next page`;
-                  case 'previous':
-                    return t`Go to previous page`;
-                }
-              }}
+              pageIndex={pageIndex}
+              pageSize={pageSize}
+              onPageChange={(page) => table.setPageIndex(page)}
+              onPageSizeChange={(size) => table.setPageSize(size)}
               sx={(theme) => ({
                 borderTop: `1px solid ${theme.palette.tokens.border}`,
               })}
