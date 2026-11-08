@@ -45,12 +45,10 @@ msgstr ""
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr "{0, plural, other {# 项}}"
 
-#. placeholder {0}: channel.programCount
 #. placeholder {0}: programList.length
 #. placeholder {0}: value?.programCount ?? 0
 #: src/components/channel_config/ChannelLineupList.tsx
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx
-#: src/pages/channels/ChannelsPage.tsx
 msgid "{0, plural, one {# program} other {# programs}}"
 msgstr "{0, plural, other {# 个节目}}"
 
@@ -70,15 +68,19 @@ msgstr "{0, plural, other {# 季}}，{1, plural, other {共 # 集}}"
 msgid "{0, plural, one {# Selected Item} other {# Selected Items}}"
 msgstr "{0, plural, other {# 个已选项}}"
 
-#. placeholder {0}: sessions.length
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/channels/ChannelsPage.tsx
-msgid "{0, plural, one {# session} other {# sessions}}"
-msgstr "{0, plural, other {# 个会话}}"
+#~ msgid "{0, plural, one {# session} other {# sessions}}"
+#~ msgstr "{0, plural, other {# 个会话}}"
 
 #: src/pages/welcome/WelcomePage.tsx
 #~ msgid "{0, plural, one {# source connected.} other {# sources connected.}}"
 #~ msgstr "{0, plural, other {# 个媒体源已连接}}"
+
+#. placeholder {0}: status.connections
+#: src/components/channels/ChannelStatusPill.tsx
+msgid "{0, plural, one {# watching} other {# watching}}"
+msgstr ""
 
 #. placeholder {0}: currentBackupSchedule!.increment
 #: src/components/settings/general/BackupForm.tsx
@@ -97,7 +99,9 @@ msgstr "{0, plural, other {小时}}"
 msgid "{0, plural, one {Path} other {Paths}}"
 msgstr "{0, plural, other {条路径}}"
 
+#. placeholder {0}: channel.programCount
 #. placeholder {0}: slot.programCount
+#: src/components/channels/ChannelCard.tsx
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "{0, plural, one {program} other {programs}}"
 msgstr "{0, plural, other {个节目}}"
@@ -231,13 +235,17 @@ msgstr "{days, plural, other {# 天}}"
 msgid "{enabled} of {total} enabled"
 msgstr ""
 
-#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/TablePager.tsx
 msgid "{from}–{to} of {count}"
 msgstr ""
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr "{hours, plural, other {# 小时}}"
+
+#: src/components/channels/ChannelStatusPill.tsx
+msgid "{label}, show sessions"
+msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
@@ -259,13 +267,13 @@ msgstr "剩余 {remainingTime}"
 
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/channels/ChannelsPage.tsx
-msgid "{totalConnections, plural, one {# connection} other {# connections}}"
-msgstr "{totalConnections, plural, other {# 个连接}}"
+#~ msgid "{totalConnections, plural, one {# connection} other {# connections}}"
+#~ msgstr "{totalConnections, plural, other {# 个连接}}"
 
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/channels/ChannelsPage.tsx
-msgid "{totalConnections} total"
-msgstr "共 {totalConnections}"
+#~ msgid "{totalConnections} total"
+#~ msgstr "共 {totalConnections}"
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
@@ -284,11 +292,15 @@ msgstr "* 需要重启"
 msgid "# of Programs"
 msgstr "节目数量"
 
-#: src/pages/channels/ChannelsPage.tsx
+#: src/components/channels/ChannelsView.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 msgid "# Programs"
 msgstr "节目数"
+
+#: src/components/channels/ChannelsView.tsx
+msgid "<0>{channelCount}</0> {channelCount, plural, one {channel} other {channels}} · <1>{streaming}</1> streaming"
+msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "<0>Configure the directory where Tunarr writes HLS segment files when transcoding. Tunarr will create the target directory (but not intermediate directories) if it doesn't exist.<1/>Changing this field will only affect new sessions. Existing sessions will continue writing to the previous setting, but will clean out segments when the segment ends.<2/>When unset, Tunarr will write segments to its current working directory.</0>"
@@ -662,6 +674,7 @@ msgid "An error occurred: {0}"
 msgstr "发生错误：{0}"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/ui/table/filters/BooleanFilter.tsx
 msgid "Any"
 msgstr ""
 
@@ -976,7 +989,6 @@ msgstr "正在计算时段…"
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
-#: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/TrashPage.tsx
@@ -1082,11 +1094,13 @@ msgid "Channel Transcode Config"
 msgstr "频道转码配置"
 
 #: src/App.tsx
+#: src/components/channels/ChannelsView.tsx
+#: src/components/channels/ChannelsView.tsx
+#: src/components/channels/ChannelsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
-#: src/pages/channels/ChannelsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Channels"
 msgstr "频道"
@@ -1380,6 +1394,7 @@ msgid "Create a channel"
 msgstr ""
 
 #: src/components/channel_config/NoChannelsCreated.tsx
+#: src/components/channels/ChannelsView.tsx
 msgid "Create a Channel"
 msgstr "创建频道"
 
@@ -1534,7 +1549,6 @@ msgstr ""
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
@@ -1551,7 +1565,6 @@ msgid "Delete \"{0}\""
 msgstr "删除「{0}」"
 
 #: src/components/channels/ChannelOptionsMenu.tsx
-#: src/pages/channels/ChannelsPage.tsx
 msgid "Delete Channel"
 msgstr "删除频道"
 
@@ -1601,7 +1614,6 @@ msgid "Deleted custom show"
 msgstr ""
 
 #: src/components/channels/ChannelDeleteDialog.tsx
-#: src/pages/channels/ChannelsPage.tsx
 msgid "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
 msgstr "删除频道将移除该频道的所有节目编排，此操作无法撤销。"
 
@@ -1766,10 +1778,10 @@ msgstr "复制频道"
 msgid "Duplicates"
 msgstr "重复项"
 
+#: src/components/channels/ChannelsView.tsx
 #: src/components/programming_controls/BalanceProgrammingModal.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
-#: src/pages/channels/ChannelsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Duration"
 msgstr "时长"
@@ -1824,7 +1836,8 @@ msgstr "编辑频道"
 msgid "Edit Channel Redirect"
 msgstr "编辑频道跳转"
 
-#: src/pages/channels/ChannelsPage.tsx
+#: src/components/channels/ChannelsView.tsx
+#: src/components/channels/ChannelsView.tsx
 msgid "Edit Channel Settings"
 msgstr "编辑频道设置"
 
@@ -2386,6 +2399,7 @@ msgstr "垫片选项"
 msgid "Filter"
 msgstr "筛选"
 
+#: src/components/ui/table/filters/BooleanFilter.tsx
 #: src/components/ui/table/filters/MultiSelectFilter.tsx
 #: src/components/ui/table/filters/TextFilter.tsx
 #: src/components/ui/table/filters/TextFilter.tsx
@@ -2502,19 +2516,19 @@ msgstr "全局选项"
 msgid "Go Home"
 msgstr "返回首页"
 
-#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/TablePager.tsx
 msgid "Go to first page"
 msgstr ""
 
-#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/TablePager.tsx
 msgid "Go to last page"
 msgstr ""
 
-#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/TablePager.tsx
 msgid "Go to next page"
 msgstr ""
 
-#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/TablePager.tsx
 msgid "Go to previous page"
 msgstr ""
 
@@ -2618,8 +2632,12 @@ msgid "HW Acceleration"
 msgstr "硬件加速"
 
 #: src/pages/channels/ChannelsPage.tsx
-msgid "Icon"
-msgstr "图标"
+#~ msgid "Icon"
+#~ msgstr "图标"
+
+#: src/components/channels/ChannelStatusPill.tsx
+msgid "Idle"
+msgstr ""
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "If a previous slot ran long, should this slot still play? Controls how late a slot can start."
@@ -3175,6 +3193,11 @@ msgstr "月"
 msgid "More"
 msgstr ""
 
+#. placeholder {0}: channel.name
+#: src/components/channels/ChannelMenuButton.tsx
+msgid "More actions for {0}"
+msgstr ""
+
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Most channels (e.g. 7.1 surround)"
 msgstr ""
@@ -3243,6 +3266,7 @@ msgstr "音乐视频"
 msgid "Must use a valid URL, or empty."
 msgstr "必须填写有效的 URL，或留空。"
 
+#: src/components/channels/ChannelsView.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
 #: src/components/MediaSourceLibraryTable.tsx
@@ -3257,7 +3281,6 @@ msgstr "必须填写有效的 URL，或留空。"
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/settings/MediaSourceSettingsPage.tsx
@@ -3287,12 +3310,12 @@ msgstr "从未"
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
-#: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 msgid "New"
 msgstr "新建"
 
+#: src/components/channels/ChannelsView.tsx
 #: src/pages/channels/NewChannelPage.tsx
 #: src/pages/welcome/WelcomePage.tsx
 msgid "New Channel"
@@ -3347,10 +3370,16 @@ msgstr "下次运行"
 msgid "Next Scheduled Execution"
 msgstr "下次计划执行"
 
+#: src/components/channels/ChannelsView.tsx
+#: src/components/channels/ChannelsView.tsx
+#: src/components/ui/table/filters/BooleanFilter.tsx
+msgid "No"
+msgstr ""
+
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/channels/ChannelsPage.tsx
-msgid "No active sessions"
-msgstr "暂无活动会话"
+#~ msgid "No active sessions"
+#~ msgstr "暂无活动会话"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "No condition"
@@ -3417,6 +3446,10 @@ msgstr ""
 msgid "No rule matched. On a real stream, Tunarr would move on to the next profile: the source, then the channel, then the default profile, then the built-in profile."
 msgstr ""
 
+#: src/components/channels/ChannelStatusPill.tsx
+msgid "No viewers"
+msgstr ""
+
 #: src/components/VersionFooter.tsx
 #~ msgid "NodeJS: {0}"
 #~ msgstr "Node.js：{0}"
@@ -3475,11 +3508,16 @@ msgstr "未找到！"
 msgid "Not synced"
 msgstr ""
 
+#: src/components/channels/ChannelCard.tsx
+#: src/components/channels/ChannelsView.tsx
+msgid "Now playing"
+msgstr ""
+
 #: src/components/channels/ChannelNowPlayingCard.tsx
 msgid "Now Playing:"
 msgstr "正在播放："
 
-#: src/pages/channels/ChannelsPage.tsx
+#: src/components/channels/ChannelsView.tsx
 msgid "Number"
 msgstr "编号"
 
@@ -3501,6 +3539,8 @@ msgid "of the following"
 msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
+#: src/components/channels/ChannelCard.tsx
+#: src/components/channels/ChannelsView.tsx
 msgid "On-Demand"
 msgstr "点播"
 
@@ -3509,8 +3549,8 @@ msgid "On-Demand channels resume from where you left off. Programming is paused 
 msgstr "点播频道会从你上次观看的位置继续播放。频道停止播放时，节目进度会暂停。<0/><1>注意：</1>频道处于非活动状态时，其节目单将为空。"
 
 #: src/pages/channels/ChannelsPage.tsx
-msgid "On-Demand?"
-msgstr "点播模式？"
+#~ msgid "On-Demand?"
+#~ msgstr "点播模式？"
 
 #: src/pages/ErrorPage.tsx
 msgid "Oops!"
@@ -3836,6 +3876,11 @@ msgstr "节目 JSON"
 msgid "Program Playback Troubleshooter"
 msgstr "节目播放排查工具"
 
+#: src/components/channels/ChannelCard.tsx
+#: src/components/channels/ChannelsView.tsx
+msgid "Program progress"
+msgstr ""
+
 #: src/components/profiles/condition/types.ts
 msgid "Program title"
 msgstr ""
@@ -3844,6 +3889,7 @@ msgstr ""
 msgid "Program type"
 msgstr ""
 
+#: src/components/channels/ChannelCard.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
@@ -3960,6 +4006,13 @@ msgstr "跳转时长"
 #: src/hooks/useProgramTitleFormatter.ts
 msgid "Redirect to \"{0}\""
 msgstr "跳转到「{0}」"
+
+#. placeholder {0}: now.redirectChannel
+#. placeholder {0}: nowPlaying.redirectChannel
+#: src/components/channels/ChannelCard.tsx
+#: src/components/channels/ChannelsView.tsx
+msgid "Redirect to channel {0}"
+msgstr ""
 
 #. placeholder {0}: p.channel
 #: src/components/guide/TvGuide.tsx
@@ -4214,7 +4267,7 @@ msgstr ""
 msgid "Root"
 msgstr "根"
 
-#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/TablePager.tsx
 msgid "Rows per page"
 msgstr ""
 
@@ -4738,17 +4791,23 @@ msgstr "已于 {startedAgo} 开始 - 剩余 {remainingTime}"
 msgid "Starting Episode"
 msgstr ""
 
+#: src/components/channels/ChannelsView.tsx
 #: src/components/shell/useShellNav.tsx
 msgid "Status"
 msgstr "状态"
+
+#: src/components/channels/ChannelCard.tsx
+#: src/components/channels/ChannelsView.tsx
+msgid "Stealth"
+msgstr ""
 
 #: src/components/channel_config/ChannelEpgConfig.tsx
 msgid "Stealth Mode"
 msgstr "隐身模式"
 
 #: src/pages/channels/ChannelsPage.tsx
-msgid "Stealth?"
-msgstr "隐身？"
+#~ msgid "Stealth?"
+#~ msgstr "隐身？"
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Stop syncing this library"
@@ -5261,7 +5320,7 @@ msgstr ""
 msgid "Tracks"
 msgstr "音轨"
 
-#: src/pages/channels/ChannelsPage.tsx
+#: src/components/channels/ChannelsView.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Transcode Config"
 msgstr "转码配置"
@@ -5582,6 +5641,7 @@ msgstr ""
 msgid "Waiting for the first scan to finish..."
 msgstr ""
 
+#: src/components/channels/ChannelCard.tsx
 #: src/hooks/useRouteName.ts
 msgid "Watch"
 msgstr "观看"
@@ -5690,6 +5750,12 @@ msgstr ""
 msgid "XMLTV Link:"
 msgstr "XMLTV 链接："
 
+#: src/components/channels/ChannelsView.tsx
+#: src/components/channels/ChannelsView.tsx
+#: src/components/ui/table/filters/BooleanFilter.tsx
+msgid "Yes"
+msgstr ""
+
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "You can change any setting below before shuffling."
 msgstr ""
@@ -5707,6 +5773,7 @@ msgid "You have unsaved changes!"
 msgstr "有未保存的更改！"
 
 #: src/components/channel_config/NoChannelsCreated.tsx
+#: src/components/channels/ChannelsView.tsx
 msgid "You haven't created any channels yet."
 msgstr "你还没有创建任何频道。"
 

@@ -45,12 +45,10 @@ msgstr "{0, plural, one {(# health check issue)} other {(# health check issues)}
 msgid "{0, plural, one {# item} other {# items}}"
 msgstr "{0, plural, one {# item} other {# items}}"
 
-#. placeholder {0}: channel.programCount
 #. placeholder {0}: programList.length
 #. placeholder {0}: value?.programCount ?? 0
 #: src/components/channel_config/ChannelLineupList.tsx
 #: src/components/slot_scheduler/FillerListSlotProgrammingForm.tsx
-#: src/pages/channels/ChannelsPage.tsx
 msgid "{0, plural, one {# program} other {# programs}}"
 msgstr "{0, plural, one {# program} other {# programs}}"
 
@@ -70,15 +68,19 @@ msgstr "{0, plural, one {# season} other {# seasons}}, {1, plural, one {# total 
 msgid "{0, plural, one {# Selected Item} other {# Selected Items}}"
 msgstr "{0, plural, one {# Selected Item} other {# Selected Items}}"
 
-#. placeholder {0}: sessions.length
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/channels/ChannelsPage.tsx
-msgid "{0, plural, one {# session} other {# sessions}}"
-msgstr "{0, plural, one {# session} other {# sessions}}"
+#~ msgid "{0, plural, one {# session} other {# sessions}}"
+#~ msgstr "{0, plural, one {# session} other {# sessions}}"
 
 #: src/pages/welcome/WelcomePage.tsx
 #~ msgid "{0, plural, one {# source connected.} other {# sources connected.}}"
 #~ msgstr "{0, plural, one {# source connected.} other {# sources connected.}}"
+
+#. placeholder {0}: status.connections
+#: src/components/channels/ChannelStatusPill.tsx
+msgid "{0, plural, one {# watching} other {# watching}}"
+msgstr "{0, plural, one {# watching} other {# watching}}"
 
 #. placeholder {0}: currentBackupSchedule!.increment
 #: src/components/settings/general/BackupForm.tsx
@@ -97,7 +99,9 @@ msgstr "{0, plural, one {Hour} other {Hours}}"
 msgid "{0, plural, one {Path} other {Paths}}"
 msgstr "{0, plural, one {Path} other {Paths}}"
 
+#. placeholder {0}: channel.programCount
 #. placeholder {0}: slot.programCount
+#: src/components/channels/ChannelCard.tsx
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "{0, plural, one {program} other {programs}}"
 msgstr "{0, plural, one {program} other {programs}}"
@@ -231,13 +235,17 @@ msgstr "{days, plural, one {# day} other {# days}}"
 msgid "{enabled} of {total} enabled"
 msgstr "{enabled} of {total} enabled"
 
-#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/TablePager.tsx
 msgid "{from}–{to} of {count}"
 msgstr "{from}–{to} of {count}"
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr "{hours, plural, one {# hour} other {# hours}}"
+
+#: src/components/channels/ChannelStatusPill.tsx
+msgid "{label}, show sessions"
+msgstr "{label}, show sessions"
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
@@ -259,13 +267,13 @@ msgstr "{remainingTime} left"
 
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/channels/ChannelsPage.tsx
-msgid "{totalConnections, plural, one {# connection} other {# connections}}"
-msgstr "{totalConnections, plural, one {# connection} other {# connections}}"
+#~ msgid "{totalConnections, plural, one {# connection} other {# connections}}"
+#~ msgstr "{totalConnections, plural, one {# connection} other {# connections}}"
 
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/channels/ChannelsPage.tsx
-msgid "{totalConnections} total"
-msgstr "{totalConnections} total"
+#~ msgid "{totalConnections} total"
+#~ msgstr "{totalConnections} total"
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
@@ -284,11 +292,15 @@ msgstr "* Restart required"
 msgid "# of Programs"
 msgstr "# of Programs"
 
-#: src/pages/channels/ChannelsPage.tsx
+#: src/components/channels/ChannelsView.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 msgid "# Programs"
 msgstr "# Programs"
+
+#: src/components/channels/ChannelsView.tsx
+msgid "<0>{channelCount}</0> {channelCount, plural, one {channel} other {channels}} · <1>{streaming}</1> streaming"
+msgstr "<0>{channelCount}</0> {channelCount, plural, one {channel} other {channels}} · <1>{streaming}</1> streaming"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "<0>Configure the directory where Tunarr writes HLS segment files when transcoding. Tunarr will create the target directory (but not intermediate directories) if it doesn't exist.<1/>Changing this field will only affect new sessions. Existing sessions will continue writing to the previous setting, but will clean out segments when the segment ends.<2/>When unset, Tunarr will write segments to its current working directory.</0>"
@@ -662,6 +674,7 @@ msgid "An error occurred: {0}"
 msgstr "An error occurred: {0}"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/ui/table/filters/BooleanFilter.tsx
 msgid "Any"
 msgstr "Any"
 
@@ -976,7 +989,6 @@ msgstr "Calculating Slots..."
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
-#: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/TrashPage.tsx
@@ -1082,11 +1094,13 @@ msgid "Channel Transcode Config"
 msgstr "Channel Transcode Config"
 
 #: src/App.tsx
+#: src/components/channels/ChannelsView.tsx
+#: src/components/channels/ChannelsView.tsx
+#: src/components/channels/ChannelsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
-#: src/pages/channels/ChannelsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Channels"
 msgstr "Channels"
@@ -1380,6 +1394,7 @@ msgid "Create a channel"
 msgstr "Create a channel"
 
 #: src/components/channel_config/NoChannelsCreated.tsx
+#: src/components/channels/ChannelsView.tsx
 msgid "Create a Channel"
 msgstr "Create a Channel"
 
@@ -1534,7 +1549,6 @@ msgstr "Default profile"
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
@@ -1551,7 +1565,6 @@ msgid "Delete \"{0}\""
 msgstr "Delete \"{0}\""
 
 #: src/components/channels/ChannelOptionsMenu.tsx
-#: src/pages/channels/ChannelsPage.tsx
 msgid "Delete Channel"
 msgstr "Delete Channel"
 
@@ -1601,7 +1614,6 @@ msgid "Deleted custom show"
 msgstr "Deleted custom show"
 
 #: src/components/channels/ChannelDeleteDialog.tsx
-#: src/pages/channels/ChannelsPage.tsx
 msgid "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
 msgstr "Deleting a Channel will remove all programming from the channel. This action cannot be undone."
 
@@ -1766,10 +1778,10 @@ msgstr "Duplicate Channel"
 msgid "Duplicates"
 msgstr "Duplicates"
 
+#: src/components/channels/ChannelsView.tsx
 #: src/components/programming_controls/BalanceProgrammingModal.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
-#: src/pages/channels/ChannelsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Duration"
 msgstr "Duration"
@@ -1824,7 +1836,8 @@ msgstr "Edit Channel"
 msgid "Edit Channel Redirect"
 msgstr "Edit Channel Redirect"
 
-#: src/pages/channels/ChannelsPage.tsx
+#: src/components/channels/ChannelsView.tsx
+#: src/components/channels/ChannelsView.tsx
 msgid "Edit Channel Settings"
 msgstr "Edit Channel Settings"
 
@@ -2386,6 +2399,7 @@ msgstr "Filler Options"
 msgid "Filter"
 msgstr "Filter"
 
+#: src/components/ui/table/filters/BooleanFilter.tsx
 #: src/components/ui/table/filters/MultiSelectFilter.tsx
 #: src/components/ui/table/filters/TextFilter.tsx
 #: src/components/ui/table/filters/TextFilter.tsx
@@ -2502,19 +2516,19 @@ msgstr "Global Options"
 msgid "Go Home"
 msgstr "Go Home"
 
-#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/TablePager.tsx
 msgid "Go to first page"
 msgstr "Go to first page"
 
-#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/TablePager.tsx
 msgid "Go to last page"
 msgstr "Go to last page"
 
-#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/TablePager.tsx
 msgid "Go to next page"
 msgstr "Go to next page"
 
-#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/TablePager.tsx
 msgid "Go to previous page"
 msgstr "Go to previous page"
 
@@ -2618,8 +2632,12 @@ msgid "HW Acceleration"
 msgstr "HW Acceleration"
 
 #: src/pages/channels/ChannelsPage.tsx
-msgid "Icon"
-msgstr "Icon"
+#~ msgid "Icon"
+#~ msgstr "Icon"
+
+#: src/components/channels/ChannelStatusPill.tsx
+msgid "Idle"
+msgstr "Idle"
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "If a previous slot ran long, should this slot still play? Controls how late a slot can start."
@@ -3175,6 +3193,11 @@ msgstr "Month"
 msgid "More"
 msgstr "More"
 
+#. placeholder {0}: channel.name
+#: src/components/channels/ChannelMenuButton.tsx
+msgid "More actions for {0}"
+msgstr "More actions for {0}"
+
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Most channels (e.g. 7.1 surround)"
 msgstr "Most channels (e.g. 7.1 surround)"
@@ -3243,6 +3266,7 @@ msgstr "Music Videos"
 msgid "Must use a valid URL, or empty."
 msgstr "Must use a valid URL, or empty."
 
+#: src/components/channels/ChannelsView.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
 #: src/components/MediaSourceLibraryTable.tsx
@@ -3257,7 +3281,6 @@ msgstr "Must use a valid URL, or empty."
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
 #: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 #: src/pages/settings/MediaSourceSettingsPage.tsx
@@ -3287,12 +3310,12 @@ msgstr "never"
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
-#: src/pages/channels/ChannelsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/FillerListsPage.tsx
 msgid "New"
 msgstr "New"
 
+#: src/components/channels/ChannelsView.tsx
 #: src/pages/channels/NewChannelPage.tsx
 #: src/pages/welcome/WelcomePage.tsx
 msgid "New Channel"
@@ -3347,10 +3370,16 @@ msgstr "Next run"
 msgid "Next Scheduled Execution"
 msgstr "Next Scheduled Execution"
 
+#: src/components/channels/ChannelsView.tsx
+#: src/components/channels/ChannelsView.tsx
+#: src/components/ui/table/filters/BooleanFilter.tsx
+msgid "No"
+msgstr "No"
+
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/channels/ChannelsPage.tsx
-msgid "No active sessions"
-msgstr "No active sessions"
+#~ msgid "No active sessions"
+#~ msgstr "No active sessions"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "No condition"
@@ -3417,6 +3446,10 @@ msgstr "No rule matched, continuing"
 msgid "No rule matched. On a real stream, Tunarr would move on to the next profile: the source, then the channel, then the default profile, then the built-in profile."
 msgstr "No rule matched. On a real stream, Tunarr would move on to the next profile: the source, then the channel, then the default profile, then the built-in profile."
 
+#: src/components/channels/ChannelStatusPill.tsx
+msgid "No viewers"
+msgstr "No viewers"
+
 #: src/components/VersionFooter.tsx
 #~ msgid "NodeJS: {0}"
 #~ msgstr "NodeJS: {0}"
@@ -3475,11 +3508,16 @@ msgstr "Not found!"
 msgid "Not synced"
 msgstr "Not synced"
 
+#: src/components/channels/ChannelCard.tsx
+#: src/components/channels/ChannelsView.tsx
+msgid "Now playing"
+msgstr "Now playing"
+
 #: src/components/channels/ChannelNowPlayingCard.tsx
 msgid "Now Playing:"
 msgstr "Now Playing:"
 
-#: src/pages/channels/ChannelsPage.tsx
+#: src/components/channels/ChannelsView.tsx
 msgid "Number"
 msgstr "Number"
 
@@ -3501,6 +3539,8 @@ msgid "of the following"
 msgstr "of the following"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
+#: src/components/channels/ChannelCard.tsx
+#: src/components/channels/ChannelsView.tsx
 msgid "On-Demand"
 msgstr "On-Demand"
 
@@ -3509,8 +3549,8 @@ msgid "On-Demand channels resume from where you left off. Programming is paused 
 msgstr "On-Demand channels resume from where you left off. Programming is paused when the channel is not streaming.<0/><1>NOTE:</1> While the channel is inactive, the TV Guide for the channel will be empty."
 
 #: src/pages/channels/ChannelsPage.tsx
-msgid "On-Demand?"
-msgstr "On-Demand?"
+#~ msgid "On-Demand?"
+#~ msgstr "On-Demand?"
 
 #: src/pages/ErrorPage.tsx
 msgid "Oops!"
@@ -3836,6 +3876,11 @@ msgstr "Program JSON"
 msgid "Program Playback Troubleshooter"
 msgstr "Program Playback Troubleshooter"
 
+#: src/components/channels/ChannelCard.tsx
+#: src/components/channels/ChannelsView.tsx
+msgid "Program progress"
+msgstr "Program progress"
+
 #: src/components/profiles/condition/types.ts
 msgid "Program title"
 msgstr "Program title"
@@ -3844,6 +3889,7 @@ msgstr "Program title"
 msgid "Program type"
 msgstr "Program type"
 
+#: src/components/channels/ChannelCard.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
@@ -3960,6 +4006,13 @@ msgstr "Redirect duration"
 #: src/hooks/useProgramTitleFormatter.ts
 msgid "Redirect to \"{0}\""
 msgstr "Redirect to \"{0}\""
+
+#. placeholder {0}: now.redirectChannel
+#. placeholder {0}: nowPlaying.redirectChannel
+#: src/components/channels/ChannelCard.tsx
+#: src/components/channels/ChannelsView.tsx
+msgid "Redirect to channel {0}"
+msgstr "Redirect to channel {0}"
 
 #. placeholder {0}: p.channel
 #: src/components/guide/TvGuide.tsx
@@ -4214,7 +4267,7 @@ msgstr "Roll the log file when it grows past the maximum size."
 msgid "Root"
 msgstr "Root"
 
-#: src/components/ui/table/DataTable.tsx
+#: src/components/ui/table/TablePager.tsx
 msgid "Rows per page"
 msgstr "Rows per page"
 
@@ -4738,17 +4791,23 @@ msgstr "Started {startedAgo} - {remainingTime}remaining"
 msgid "Starting Episode"
 msgstr "Starting Episode"
 
+#: src/components/channels/ChannelsView.tsx
 #: src/components/shell/useShellNav.tsx
 msgid "Status"
 msgstr "Status"
+
+#: src/components/channels/ChannelCard.tsx
+#: src/components/channels/ChannelsView.tsx
+msgid "Stealth"
+msgstr "Stealth"
 
 #: src/components/channel_config/ChannelEpgConfig.tsx
 msgid "Stealth Mode"
 msgstr "Stealth Mode"
 
 #: src/pages/channels/ChannelsPage.tsx
-msgid "Stealth?"
-msgstr "Stealth?"
+#~ msgid "Stealth?"
+#~ msgstr "Stealth?"
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Stop syncing this library"
@@ -5261,7 +5320,7 @@ msgstr "Track"
 msgid "Tracks"
 msgstr "Tracks"
 
-#: src/pages/channels/ChannelsPage.tsx
+#: src/components/channels/ChannelsView.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Transcode Config"
 msgstr "Transcode Config"
@@ -5582,6 +5641,7 @@ msgstr "View Stream Selection Profile"
 msgid "Waiting for the first scan to finish..."
 msgstr "Waiting for the first scan to finish..."
 
+#: src/components/channels/ChannelCard.tsx
 #: src/hooks/useRouteName.ts
 msgid "Watch"
 msgstr "Watch"
@@ -5690,6 +5750,12 @@ msgstr "XMLTV guide"
 msgid "XMLTV Link:"
 msgstr "XMLTV Link:"
 
+#: src/components/channels/ChannelsView.tsx
+#: src/components/channels/ChannelsView.tsx
+#: src/components/ui/table/filters/BooleanFilter.tsx
+msgid "Yes"
+msgstr "Yes"
+
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "You can change any setting below before shuffling."
 msgstr "You can change any setting below before shuffling."
@@ -5707,6 +5773,7 @@ msgid "You have unsaved changes!"
 msgstr "You have unsaved changes!"
 
 #: src/components/channel_config/NoChannelsCreated.tsx
+#: src/components/channels/ChannelsView.tsx
 msgid "You haven't created any channels yet."
 msgstr "You haven't created any channels yet."
 
