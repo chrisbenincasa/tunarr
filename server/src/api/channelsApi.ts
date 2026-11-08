@@ -694,6 +694,35 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
+  fastify.delete(
+    '/channels/:id/schedule',
+    {
+      schema: {
+        params: BasicIdParamSchema,
+        operationId: 'DeleteChannelSchedule',
+        description:
+          "Removes a channel's time or random slot schedule. The current lineup is kept and the channel becomes manually programmed.",
+        tags: ['Channels'],
+        response: {
+          204: z.void(),
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      if (!(await req.serverCtx.channelDB.channelExists(req.params.id))) {
+        return res.status(404).send();
+      }
+
+      await req.serverCtx.channelDB.saveLineup(req.params.id, {
+        schedule: null,
+        scheduleSeed: null,
+      });
+
+      return res.status(204).send();
+    },
+  );
+
   fastify.get(
     '/channels/:id/fallbacks',
     {

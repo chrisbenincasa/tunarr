@@ -24,6 +24,10 @@
 
     A filler list that has no programs in it is ignored when the schedule is generated: the slot simply gets no filler from that list (and the empty list is noted in the server log). The slot editor marks such lists so they can be spotted before saving.
 
+## Removing a Slot Schedule
+
+A channel saved from the Slot Editor or Time Slots editor keeps its schedule. The channel's programming page then shows a notice that manual edits will make the channel drift from that schedule. To return the channel to manual programming, click **Remove schedule** on that notice. The channel keeps its current programs, and the notice goes away.
+
 ## Scheduling Movies
 
 Slot editors have no movie slot type. To schedule movies in a slot:
