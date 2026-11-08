@@ -1,10 +1,7 @@
 import type { ReadableFfmpegSettings } from '@/db/interfaces/ISettingsDB.js';
 import type { Maybe, Nullable } from '@/types/util.js';
 import { isDefined, isWindows } from '@/util/index.js';
-import {
-  FfmpegErrorLogFilePrefix,
-  FfmpegReportFilePrefix,
-} from '@/util/constants.js';
+import { FfmpegErrorLogFilePrefix } from '@/util/constants.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { FfmpegNumericLogLevels } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
@@ -16,6 +13,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import type stream from 'node:stream';
 import { LastNBytesStream } from '../util/LastNBytesStream.ts';
+import {
+  activeFfmpegReportFiles,
+  makeFfmpegReportFileName,
+} from './ffmpegReportFiles.ts';
 
 export type FfmpegEvents = {
   // Emitted when the process ended with a code === 0, i.e. it exited
@@ -92,12 +93,12 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
       ...this.environmentVariables,
     };
 
-    if (this.ffmpegSettings.enableFileLogging) {
-      const normalizedName = this.ffmpegName.toLowerCase().replaceAll(' ', '-');
-      let logPath = path.join(
-        this.logDirectory,
-        `${FfmpegReportFilePrefix}${normalizedName}-%t.log`,
-      );
+    const reportFileName = this.ffmpegSettings.enableFileLogging
+      ? makeFfmpegReportFileName(this.ffmpegName)
+      : undefined;
+
+    if (reportFileName) {
+      let logPath = path.join(this.logDirectory, reportFileName);
       if (isWindows()) {
         logPath = logPath.replaceAll('\\', '/').replaceAll(':/', '\\:/');
       }
@@ -117,6 +118,13 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
       handle.once('exit', () => resolve());
       handle.once('close', () => resolve());
     });
+
+    if (reportFileName) {
+      activeFfmpegReportFiles.add(reportFileName);
+      void this.#exited.then(() =>
+        activeFfmpegReportFiles.delete(reportFileName),
+      );
+    }
 
     this.#running = true;
 

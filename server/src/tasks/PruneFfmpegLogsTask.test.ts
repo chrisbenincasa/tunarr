@@ -58,7 +58,7 @@ describe('pruneFfmpegLogs', () => {
       await writeLog(dir, `ffmpeg-report-x-${i}.log`, old - i * 1000);
     }
 
-    const result = await pruneFfmpegLogs(dir, 50, now);
+    const result = await pruneFfmpegLogs(dir, 50, { now });
 
     expect(result.deleted).toHaveLength(10);
     expect(result.failed).toEqual([]);
@@ -74,7 +74,7 @@ describe('pruneFfmpegLogs', () => {
     await writeLog(dir, 'ffmpeg-report-a.log', old - 2000);
     await writeLog(dir, 'ffmpeg-report-z.log', old);
 
-    await pruneFfmpegLogs(dir, 1, now);
+    await pruneFfmpegLogs(dir, 1, { now });
 
     expect(await listNames(dir)).toEqual(['ffmpeg-report-z.log']);
   });
@@ -86,7 +86,7 @@ describe('pruneFfmpegLogs', () => {
     await writeLog(dir, 'ffmpeg-report-c.log', old - 2000);
     await writeLog(dir, 'ffmpeg-error-log-d-2.log', old - 3000);
 
-    await pruneFfmpegLogs(dir, 2, now);
+    await pruneFfmpegLogs(dir, 2, { now });
 
     expect(await listNames(dir)).toEqual([
       'ffmpeg-error-log-b-1.log',
@@ -102,13 +102,31 @@ describe('pruneFfmpegLogs', () => {
     await writeLog(dir, 'ffmpeg-report-3.log', recent - 2000);
     await writeLog(dir, 'ffmpeg-report-4.log', old);
 
-    const result = await pruneFfmpegLogs(dir, 1, now);
+    const result = await pruneFfmpegLogs(dir, 1, { now });
 
     expect(result.deleted).toEqual(['ffmpeg-report-4.log']);
     expect(await listNames(dir)).toEqual([
       'ffmpeg-report-1.log',
       'ffmpeg-report-2.log',
       'ffmpeg-report-3.log',
+    ]);
+  });
+
+  test('never deletes skipped files past the cap', async () => {
+    const dir = await makeDir();
+    await writeLog(dir, 'ffmpeg-report-new.log', old);
+    await writeLog(dir, 'ffmpeg-report-live.log', old - 60 * 60 * 1000);
+    await writeLog(dir, 'ffmpeg-report-dead.log', old - 2 * 60 * 60 * 1000);
+
+    const result = await pruneFfmpegLogs(dir, 1, {
+      now,
+      skip: new Set(['ffmpeg-report-live.log']),
+    });
+
+    expect(result.deleted).toEqual(['ffmpeg-report-dead.log']);
+    expect(await listNames(dir)).toEqual([
+      'ffmpeg-report-live.log',
+      'ffmpeg-report-new.log',
     ]);
   });
 
@@ -120,7 +138,7 @@ describe('pruneFfmpegLogs', () => {
     await writeLog(dir, 'ffmpeg-report-a.log', old);
     await writeLog(dir, 'ffmpeg-report-b.log', old - 1000);
 
-    await pruneFfmpegLogs(dir, 1, now);
+    await pruneFfmpegLogs(dir, 1, { now });
 
     expect(await listNames(dir)).toEqual([
       'ffmpeg-report-a.log',
@@ -144,7 +162,7 @@ describe('pruneFfmpegLogs', () => {
       return realRm(target, opts);
     });
 
-    const result = await pruneFfmpegLogs(dir, 1, now);
+    const result = await pruneFfmpegLogs(dir, 1, { now });
 
     expect(result.deleted).toEqual(['ffmpeg-report-gone.log']);
     expect(result.failed.map((f) => f.name)).toEqual([
@@ -159,7 +177,7 @@ describe('pruneFfmpegLogs', () => {
   test('is a no-op when the directory does not exist', async () => {
     const dir = await makeDir();
 
-    const result = await pruneFfmpegLogs(path.join(dir, 'missing'), 1, now);
+    const result = await pruneFfmpegLogs(path.join(dir, 'missing'), 1, { now });
 
     expect(result).toEqual({ deleted: [], failed: [] });
   });

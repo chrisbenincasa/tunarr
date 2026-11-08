@@ -5636,8 +5636,12 @@ msgid "Tunarr Default"
 msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
-msgid "Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour. Files written in the last 10 minutes are never deleted."
+msgid "Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour, whatever the log method. Error logs are written in every mode. Files still being written are never deleted."
 msgstr ""
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+#~ msgid "Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour. Files written in the last 10 minutes are never deleted."
+#~ msgstr ""
 
 #: src/components/ui/patterns/AppShell/PhoneNav.tsx
 #: src/components/ui/patterns/AppShell/ShellTopBar.tsx
