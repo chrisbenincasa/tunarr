@@ -18,6 +18,12 @@ Configure FFmpeg and FFprobe executable paths. Generally, both executables resid
 
 Printing or persisting FFmpeg logs to disk is useful when debugging streaming issues. This setting allows for FFmpeg logging to be outputted to Tunarr's stdout stream or to a separate file with a configurable log level. 
 
+#### Log Files to Keep
+
+Tunarr writes FFmpeg report files (`ffmpeg-report-*.log`) and error logs (`ffmpeg-error-log-*.log`) to its log directory. Once an hour, and at startup, Tunarr deletes the oldest of these files beyond this count. Both kinds share one count. The default is 50.
+
+Files written in the last 10 minutes are never deleted, because a running FFmpeg process may still be writing them. Cleanup runs even when file logging is off, since error logs are written either way. Other files in the log directory, such as `tunarr.log`, are not affected.
+
 ### HLS Direct Output Format
 
 When using the HLS Direct stream mode in a channel (see [channel stream modes](../channels/transcoding/#hls-direct)), use this setting to change the output container format for the stream.
