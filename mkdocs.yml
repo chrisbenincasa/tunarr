@@ -43,6 +43,8 @@ theme:
 
 nav:
   - Home: index.md
+  - Releases:
+      - blog/index.md
   - API Docs: api-docs.html
   - Getting Started:
       - Install: getting-started/installation.md
@@ -148,6 +150,10 @@ extra:
       name: Sponsor Tunarr on GitHub
 
 plugins:
+  - blog:
+      post_url_format: "{slug}"
+      categories_allowed:
+        - Releases
   - glightbox
   - search
 
