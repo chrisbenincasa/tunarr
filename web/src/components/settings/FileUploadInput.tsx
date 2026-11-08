@@ -64,10 +64,7 @@ export function FileUploadInput({
         .then((location) => {
           onChange(location);
         })
-        .catch((err) => {
-          console.error(err);
-          onUploadError(err);
-        });
+        .catch(onUploadError);
     },
     [upload, onChange, onUploadError],
   );
