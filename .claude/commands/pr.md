@@ -35,7 +35,7 @@ Tunarr uses CalVer, so a release number says when it shipped, not what changed. 
 3. Push the current branch to origin if not already pushed
 4. Draft a PR title and body based on the commits and diff:
    - Title: concise, follows conventional commit style
-   - Body: summary of what changed and why, plus a test plan checklist
+   - Body: read `.github/pull_request_template.md` and fill in every section, as `AGENTS.md` requires. Put what changed and why under "What this changes", link the approved design issue or write "Not needed" under "Design issue", name yourself and say what you did under "AI use", and put a test plan checklist under "Testing".
    - If the PR fully fixes an issue, add a line `Closes-on-release: #N`. The release workflow closes the issue when a stable release ships the PR. Don't use `Fixes #N` or `Closes #N`, because those close the issue at merge, before the fix ships. If the PR is only part of the fix, write `Refs #N` instead.
 5. Create the PR with `gh pr create` targeting the correct branch
 6. Return the PR URL
