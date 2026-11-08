@@ -124,6 +124,22 @@ describe('POST /channels/bulk/fillers', () => {
     });
 
     expect(res.statusCode, res.body).toBe(400);
+    expect(res.json<{ message: string }>().message).toMatch(
+      /^body\/fillers .*<=100 items/,
+    );
+  });
+
+  test('rejects more than 1,000 channels with a 400', async () => {
+    const res = await bulkAssign({
+      channelIds: Array.from({ length: 1_001 }, () => v4()),
+      fillers: [{ fillerShowId: fillerIds[0], weight: 1, cooldownSeconds: 0 }],
+      mode: 'add',
+    });
+
+    expect(res.statusCode, res.body).toBe(400);
+    expect(res.json<{ message: string }>().message).toMatch(
+      /^body\/channelIds .*<=1000 items/,
+    );
   });
 
   test('rejects an unknown channel ID with a 400 and writes nothing', async () => {
