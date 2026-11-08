@@ -5,6 +5,7 @@
 ## Goal
 
 - Record the networks each TV show aired on, separately from its studios.
+- Record which sources reported each studio and network, with their external IDs.
 - Expose them as a search and filter field so users can build their own network channels.
 - Feed the Network Channel preset (draft PR #1805, `channels-auto-channel-presets.md` §2.5) and issue #850.
 - Users supply their own provider credentials.
@@ -72,12 +73,19 @@ New Drizzle tables. Generate the migration with `pnpm drizzle-kit generate`.
 |---|---|---|
 | `uuid` | text PK | |
 | `name` | text | e.g. `HBO` |
-| `provider` | text | `tmdb` or `tvdb` |
-| `providerId` | text | The provider's network or company ID |
 | `originCountry` | text, nullable | |
 
-- Unique on (`provider`, `providerId`).
-- No dedupe across providers. Search facets group by name, so "HBO" from both providers merges there.
+### `network_external_id`
+
+| Column | Type | Notes |
+|---|---|---|
+| `networkId` | text FK → `network` | Cascade delete |
+| `sourceType` | text | `tmdb` or `tvdb` |
+| `externalKey` | text | The provider's network or company ID |
+
+- Unique on (`sourceType`, `externalKey`).
+- One `network` row can carry IDs from both providers.
+- Matching an incoming network: first by external ID, then by exact `name` and `originCountry`, else create a row. Country keeps ABC (US) apart from ABC (Australia).
 
 ### `network_grouping`
 
@@ -85,8 +93,10 @@ New Drizzle tables. Generate the migration with `pnpm drizzle-kit generate`.
 |---|---|---|
 | `networkId` | text FK → `network` | Cascade delete |
 | `groupId` | text FK → `program_grouping` | Show groupings only, cascade delete |
+| `sourceType` | text | The provider that reported this link |
 
-- Primary key on (`networkId`, `groupId`).
+- Primary key on (`networkId`, `groupId`, `sourceType`).
+- `sourceType` lets a lookup replace only its own provider's links, and lets credential removal delete one provider's data.
 
 ### `network_lookup`
 
@@ -98,6 +108,32 @@ One row per show and provider. It drives refresh and records why a show has no n
 | `provider` | text | |
 | `status` | text | `found`, `not_found`, `no_ids`, or `error` |
 | `lookedUpAt` | integer | Epoch ms |
+
+## Studio provenance
+
+Studios get external IDs too, so each studio records which sources reported it.
+
+### Today
+
+- `upsertProgramStudiosInternal` (`server/src/db/program/ProgramMetadataRepository.ts:155`) matches studios by name. One `studio` row is shared across all sources.
+- `studio_entity` links have no source column. Each scan deletes and rewrites an entity's links.
+- Jellyfin sends `Studios` as `{ Name, Id }` with a GUID `Id` (`types/src/jellyfin/index.ts:446`). Emby sends a numeric `Id` (`types/src/emby/index.ts:447`). Both canonicalizers keep only `Name` (`JellyfinApiClient.ts:1402`, `EmbyApiClient.ts:1221`).
+- Plex (`studio`, `parentStudio`) and NFO (`<studio>`) send names only.
+
+### `studio_external_id`
+
+| Column | Type | Notes |
+|---|---|---|
+| `studioId` | text FK → `studio` | Cascade delete |
+| `sourceType` | text | `jellyfin`, `emby`, `plex`, `local`, `tmdb`, or `tvdb` |
+| `mediaSourceId` | text FK → `media_source`, nullable | Set for Jellyfin, Emby, Plex, and local. Jellyfin and Emby IDs are only unique per server. |
+| `externalKey` | text, nullable | Jellyfin GUID or Emby ID. Null for name-only sources. |
+
+- Unique on (`sourceType`, `mediaSourceId`, `externalKey`), with nulls treated as values.
+- Name matching stays as it is. A Plex "HBO" and a Jellyfin "HBO" share one `studio` row with two external ID rows.
+- A name-only row still records which media source reported the studio.
+- Canonicalizers keep the Jellyfin and Emby `Id`, and `NewStudio` gains an optional `externalKey`.
+- Studios stay out of the network lookup. TMDB `production_companies` and TVDB `companies.studio` could feed this table later.
 
 ## External IDs we already have
 
@@ -173,10 +209,11 @@ Recommendation: build the shared work in core now and ship both fetchers in core
 ## Rollout
 
 1. Map `tvshow.nfo` `uniqueid` to show identifiers. This is a standalone fix.
-2. Add the schema, settings section, provider interface, TMDB provider, and lookup task.
-3. Add the search fields, DSL field, and show details UI.
-4. Add the TVDB provider, after its key model is confirmed.
-5. Switch the Network Channel preset to `network`, with or after PR #1805.
+2. Add `studio_external_id` and keep Jellyfin and Emby studio IDs. This is independent of the lookup.
+3. Add the schema, settings section, provider interface, TMDB provider, and lookup task.
+4. Add the search fields, DSL field, and show details UI.
+5. Add the TVDB provider, after its key model is confirmed.
+6. Switch the Network Channel preset to `network`, with or after PR #1805.
 
 ## Testing
 
@@ -184,6 +221,8 @@ Recommendation: build the shared work in core now and ship both fetchers in core
 - Task tests for stale-row selection, `429` backoff, the multi-provider union, and `no_ids` handling.
 - A local scanner test showing that `tvshow.nfo` `uniqueid` reaches show identifiers.
 - A search document mapping test for `network` and `grandparent.network`.
+- Studio upsert tests: a Jellyfin and a Plex "HBO" share one `studio` row with two external ID rows, and a rescan doesn't duplicate them.
+- Network matching tests: external ID match, name-and-country match, and ABC (US) vs ABC (Australia) staying apart.
 - Docs: a metadata providers page under `docs/configure/`.
 
 ## Open questions
