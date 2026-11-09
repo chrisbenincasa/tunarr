@@ -81,6 +81,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
   #cueFiles = new Map<number, Cue[]>();
   #isFirstTranscode = true;
+  #runLoopRunning = false;
   #lastDiscontinuitySequence: number | undefined;
   #currentSubtitleRendition: SubtitleRenditionInfo | undefined;
   #currentAudioRenditions: AudioRenditionInfo[] = [];
@@ -329,6 +330,25 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   private async run() {
+    this.#runLoopRunning = true;
+    try {
+      await this.runLoop();
+    } finally {
+      this.#runLoopRunning = false;
+    }
+
+    this.logger.debug('HLS worker ended main loop with state = %s', this.state);
+
+    // Only schedule cleanup if the session wasn't already explicitly stopped
+    // (e.g. via endSession). If the session is already stopped, its cleanup
+    // has been handled and scheduling another timer would risk deleting a
+    // replacement session that now occupies the same map key.
+    if (!this.stoppingOrStopped) {
+      this.scheduleCleanup();
+    }
+  }
+
+  private async runLoop() {
     while (this.state === 'started') {
       const transcodeBuffer = dayjs
         .duration(dayjs(this.transcodedUntil).diff())
@@ -348,16 +368,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         // await this.trimPlaylistAndDeleteSegments();
         await wait(dayjs.duration({ seconds: 5 }));
       }
-    }
-
-    this.logger.debug('HLS worker ended main loop with state = %s', this.state);
-
-    // Only schedule cleanup if the session wasn't already explicitly stopped
-    // (e.g. via endSession). If the session is already stopped, its cleanup
-    // has been handled and scheduling another timer would risk deleting a
-    // replacement session that now occupies the same map key.
-    if (!this.stoppingOrStopped) {
-      this.scheduleCleanup();
     }
   }
 
@@ -487,10 +497,9 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   }
 
   // The run loop spawns one ffmpeg per program, so no process runs between
-  // programs. The loop itself must stay alive, and it stops once the state
-  // leaves 'started'.
+  // programs. The loop is what must stay alive.
   protected override isTranscodeRunning(): boolean {
-    return this.state === 'started';
+    return this.#runLoopRunning;
   }
 
   protected override getAdditionalRequiredFiles(): string[] {
