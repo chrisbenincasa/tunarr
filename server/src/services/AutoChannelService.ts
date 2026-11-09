@@ -113,7 +113,7 @@ export class AutoChannelService {
           label: role,
           defaultQuery: {},
           required: true,
-          minPrograms: 0,
+          minPrograms: 1,
         }))
       : preset.contentRequirements;
 
@@ -232,7 +232,7 @@ export class AutoChannelService {
       const savedResult = await this.channelDB.saveChannel(channelData);
       createdChannelId = savedResult.channel.uuid;
 
-      const seed = request.seed ? [request.seed] : undefined;
+      const seed = request.seed === undefined ? undefined : [request.seed];
       const lineupRequest: UpdateChannelProgrammingRequest =
         scheduleConfig.type === 'time'
           ? {
@@ -278,8 +278,9 @@ export class AutoChannelService {
 
   /**
    * Rejects requests that would schedule a role over the whole library: a
-   * required preset role with no assignment, or a dynamic role whose query
-   * selects nothing.
+   * required preset role with no assignment, or a picker or dynamic role
+   * whose query selects nothing. A role without a picker, such as 24/7
+   * Shuffle's, may span the whole library on purpose.
    */
   private validateAssignments(
     request: AutoChannelCreateRequest,
@@ -317,7 +318,9 @@ export class AutoChannelService {
           `Missing content assignment for "${requirement.label}"`,
         );
       }
-      if (isDynamic && assignment && !selectsContent(assignment.query)) {
+      const query = assignment?.query ?? requirement.defaultQuery;
+      const needsFilter = isDynamic || !!requirement.pickerHint;
+      if (needsFilter && !selectsContent(query)) {
         throw new GenericBadRequestError(
           `"${requirement.label}" needs a content filter`,
         );

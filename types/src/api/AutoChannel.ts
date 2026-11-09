@@ -236,6 +236,8 @@ export const AutoChannelCreateRequestSchema = z.object({
     .describe('Override the auto-generated name'),
   channelNumber: z
     .number()
+    .int()
+    .positive()
     .optional()
     .describe('Override the auto-assigned channel number'),
   seed: z.number().optional().describe('For reproducible generation'),
