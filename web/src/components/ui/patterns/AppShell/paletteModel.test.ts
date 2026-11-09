@@ -14,7 +14,7 @@ const items = [
   item('Channels', 'Classic Sci-Fi', '12'),
   item('Channels', 'Sci-Fi Marathon', '4'),
   item('Channels', 'Comedy Central'),
-  item('Custom Shows', 'Sci-Fi Shorts'),
+  item('Playlists', 'Sci-Fi Shorts'),
 ];
 
 const labels = (query: string) =>
@@ -24,7 +24,7 @@ describe('filterPalette', () => {
   test('matches case-insensitively and keeps group order', () => {
     expect(labels('SCI')).toEqual([
       ['Channels', ['Sci-Fi Marathon', 'Classic Sci-Fi']],
-      ['Custom Shows', ['Sci-Fi Shorts']],
+      ['Playlists', ['Sci-Fi Shorts']],
     ]);
   });
 

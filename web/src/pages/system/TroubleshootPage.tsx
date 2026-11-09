@@ -136,7 +136,7 @@ function streamSelectionLevelName(level: StreamSelectionLevel): string {
     case 'program':
       return t`Program`;
     case 'custom_show':
-      return t`Custom show`;
+      return t`Playlist`;
     case 'filler':
       return t`Filler list`;
     case 'channel':

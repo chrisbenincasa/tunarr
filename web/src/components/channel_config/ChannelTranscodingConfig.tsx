@@ -261,7 +261,7 @@ export default function ChannelTranscodingConfig() {
           <Typography variant="subtitle1">
             <Trans>
               A stream selection profile chooses the audio and subtitle streams
-              for programs on this channel. Filler lists and custom shows can
+              for programs on this channel. Filler lists and playlists can
               assign their own profile, which takes precedence.
             </Trans>
           </Typography>

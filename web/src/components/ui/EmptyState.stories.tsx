@@ -55,7 +55,7 @@ export const LongText: Story = {
       <EmptyState
         {...args}
         title="No programs in Saturday Morning Cartoons Marathon Weekend Edition"
-        description="Add movies, episodes or music from any connected media source. Programs you add here appear in this custom show's lineup in the order you choose."
+        description="Add movies, episodes or music from any connected media source. Programs you add here appear in this playlist's lineup in the order you choose."
         actions={<Button variant="contained">Add Media</Button>}
       />
     </Box>

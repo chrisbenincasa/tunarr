@@ -105,12 +105,12 @@ export const EditSlotProgrammingForm = <
           )}
           {onlyEmptyCustomShows && (
             <MenuItem value="custom-show" disabled>
-              {t`Custom Show (add programs to a custom show first)`}
+              {t`Playlist (add programs to a playlist first)`}
             </MenuItem>
           )}
         </Select>
         <FormHelperText>
-          {t`To schedule movies, add them to a custom show and choose Custom Show.`}
+          {t`To schedule movies, add them to a playlist and choose Playlist.`}
         </FormHelperText>
       </FormControl>
       {type === 'custom-show' && <CustomShowSlotProgrammingForm />}

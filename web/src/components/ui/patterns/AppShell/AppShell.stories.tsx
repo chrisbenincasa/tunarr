@@ -35,9 +35,9 @@ const paletteItems = [
   },
   {
     id: 'cs1',
-    group: 'Custom Shows',
+    group: 'Playlists',
     label: 'Sci-Fi Shorts',
-    kind: 'Custom show',
+    kind: 'Playlist',
   },
   {
     id: 'sc1',

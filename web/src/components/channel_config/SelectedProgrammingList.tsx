@@ -190,7 +190,7 @@ export default function SelectedProgrammingList({
               style={props.style}
             >
               <ListItemText
-                primary={t`Custom Show - ${customShow.name}`}
+                primary={t`Playlist - ${customShow.name}`}
                 secondary={
                   <Plural
                     value={customShow.contentCount}
