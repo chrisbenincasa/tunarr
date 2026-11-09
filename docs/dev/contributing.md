@@ -419,32 +419,35 @@ docs/blog/posts/2026.11.2/
 └── profile-editor.png
 ```
 
-Start `index.md` with this front matter:
+Write the post as a draft. Start `index.md` with this front matter:
 
 ```yaml
 ---
-date: 2026-11-08
-slug: "2026.11.2"
+draft: true
 categories:
   - Releases
 ---
 ```
 
-- `slug` is the release version, so the post is published at `https://tunarr.com/blog/2026.11.2/`.
-- The release workflow picks the version when it runs, so write the post as `draft: true` until the release exists, then set the slug to the real version.
+- Name the folder anything, such as `next`. The release fills in the rest.
+- Keep only one draft post at a time. The release workflow skips promotion when it finds more than one.
 - Everything above `<!-- more -->` is the excerpt on the Releases page.
 - Link to the full guide pages rather than repeating them. Paths are relative to the post, such as `../../../configure/stream-selection.md`.
 - Preview the site, drafts included, with `pip install mkdocs-material mkdocs-glightbox`, then `mkdocs serve` from the repo root. `mkdocs build` leaves drafts out.
 
-The docs site deploys when the post reaches `main`. Then put the link at the top of the GitHub release notes:
+### Publishing
 
-```bash
-{
-  printf 'Read the announcement: https://tunarr.com/blog/2026.11.2/\n\n'
-  gh release view v2026.11.2 --json body -q .body
-} > notes.md
-gh release edit v2026.11.2 --notes-file notes.md
-```
+Each stable release opens a PR titled `docs(blog): publish the <version> release post` from the `release-post/promote` branch. The PR:
+
+- renames the folder to the version, such as `docs/blog/posts/2026.11.2/`
+- sets `date` to the release date and `slug` to the version, so the post is published at `https://tunarr.com/blog/2026.11.2/`
+- removes `draft: true`
+
+Merge the PR if the post describes that release. Close it if the post belongs to a later release. The next release force-pushes the same branch and opens a new PR, so only one promotion PR is ever open.
+
+CI does not run on this PR, because GitHub starts no workflows for PRs opened by `GITHUB_TOKEN`. Preview the post locally if it changed since review.
+
+The docs site deploys when the PR merges. The docs workflow then puts `Read the announcement: <link>` at the top of the GitHub release notes. It skips releases that already contain the link, so a post published by hand gets linked on the next docs deploy too.
 
 ## Architecture Overview
 
