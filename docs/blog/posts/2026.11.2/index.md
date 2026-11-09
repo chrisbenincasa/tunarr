@@ -1,6 +1,5 @@
 ---
-date: 2026-11-08
-draft: true
+date: 2026-11-09
 slug: "2026.11.2"
 categories:
   - Releases
