@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (11/09/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` is in progress on `feat/custom-shows-collection`. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next are the remaining collection routes. The forms/settings mock is still due and gates Phase 4.
+> **Status (11/09/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` is in review in PR #2507, and `/library/fillers` is stacked on it in `feat/fillers-collection`. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next are the remaining collection routes. The forms/settings mock is still due and gates Phase 4.
 
 ## Why
 
@@ -167,6 +167,12 @@ Built on `feat/custom-shows-collection` (11/09/2026):
 - No bulk selection yet. Bulk delete is the only candidate action, so whether it earns a follow-up PR is still open.
 - The page header drops the explainer paragraph. The empty state carries it instead.
 - User-facing text says "Playlists", matching the rename on `rename-custom-shows-to-playlists`. Code names stay `CustomShow*`. Links keep `/library/custom-shows` until that rename moves the routes to `/library/playlists`.
+
+Built on `feat/fillers-collection`, stacked on `feat/custom-shows-collection` (11/09/2026):
+
+- `/library/fillers` splits the same way, into `FillerListsView` and `FillerListCard` in `web/src/components/fillers/` and `FillerListsPage` (data).
+- A filler list has only a name and a program count, so its card shows those plus Edit, Assign and Delete.
+- `AssignFillerToChannelsDialog` fetches channels itself, so it stays in the page. The view reports which list to assign.
 
 ### Phase 4. Forms and settings
 
