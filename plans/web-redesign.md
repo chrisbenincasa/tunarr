@@ -166,6 +166,7 @@ Built on `feat/custom-shows-collection` (11/09/2026):
 - The view owns the delete confirmation. The page only runs the mutation.
 - No bulk selection yet. Bulk delete is the only candidate action, so whether it earns a follow-up PR is still open.
 - The page header drops the explainer paragraph. The empty state carries it instead.
+- User-facing text says "Playlists", matching the rename on `rename-custom-shows-to-playlists`. Code names stay `CustomShow*`. Links keep `/library/custom-shows` until that rename moves the routes to `/library/playlists`.
 
 ### Phase 4. Forms and settings
 

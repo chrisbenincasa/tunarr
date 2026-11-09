@@ -91,7 +91,7 @@ describe('CustomShowsView table', () => {
 
     const dialog = screen.getByRole('dialog');
     expect(
-      within(dialog).getByText(/Delete Custom Show "Marathon"/),
+      within(dialog).getByText(/Delete Playlist "Marathon"/),
     ).toBeVisible();
     expect(onDeleteShow).not.toHaveBeenCalled();
 
@@ -120,7 +120,7 @@ describe('CustomShowsView cards', () => {
     expect(
       card.getByText((_, el) => el?.textContent === '40 programs · 1d 16h'),
     ).toBeInTheDocument();
-    expect(card.getByText('Synced playlist')).toBeInTheDocument();
+    expect(card.getByText('Synced')).toBeInTheDocument();
     expect(screen.getAllByRole('article')).toHaveLength(2);
   });
 
@@ -149,14 +149,14 @@ describe('CustomShowsView cards', () => {
   test('counts shows in the header', () => {
     renderView('cards');
     expect(
-      screen.getByText((_, el) => el?.textContent === '2 custom shows'),
+      screen.getByText((_, el) => el?.textContent === '2 playlists'),
     ).toBeInTheDocument();
   });
 
   test('offers to create the first show when there are none', () => {
     renderView('cards', []);
     expect(
-      screen.getByRole('link', { name: 'Create a Custom Show' }),
+      screen.getByRole('link', { name: 'Create a Playlist' }),
     ).toHaveAttribute('href', '/library/custom-shows/new');
   });
 });

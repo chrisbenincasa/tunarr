@@ -25,7 +25,7 @@ export default function CustomShowsPage() {
         message: (
           <Trans>
             <span>
-              Error deleting custom show: {e.message}
+              Error deleting playlist: {e.message}
               <br />
               Please consider opening a bug with details!
             </span>

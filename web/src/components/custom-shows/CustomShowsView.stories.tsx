@@ -56,7 +56,7 @@ const longTextShow = makeShow({
 
 // Layout follows the toolbar's density unless a story forces one.
 const meta = {
-  title: 'Custom Shows/CustomShowsView',
+  title: 'Playlists/CustomShowsView',
   component: CustomShowsView,
   decorators: [
     (Story) => (
