@@ -464,16 +464,32 @@ describe('HlsSession', () => {
         const refFfmpeg = new FakeFfmpeg(reference);
         const ffmpeg = new FakeFfmpeg(session);
 
-        // Short programs get folded out of the window whole, which exercises
-        // the discontinuity sequence cap.
-        const programLengths = [30, 1, 2, 25, 1, 1, 40, 3, 22, 2, 1, 35];
+        // Long programs outrun the 20-segment window, so compaction drops whole
+        // programs. Polling every other segment lets two short programs'
+        // discontinuities leave the window between polls, which exercises the
+        // discontinuity sequence cap. The reference file never shrinks, so the
+        // cost grows with the square of the total segment count.
+        const programLengths = [24, 1, 2, 22, 1, 1, 26, 3, 21, 2, 1, 23];
         let segmentNumber = 0;
+        let servedFrom = 0;
         let maxFileSegments = 0;
+
+        // Appending never moves an earlier segment's window. Only compaction
+        // can, so windows are compared on both sides of each compaction.
+        const expectSameWindows = async () => {
+          for (let n = servedFrom; n < segmentNumber; n++) {
+            expect(await internals(session).segmentWindow(n)).toEqual(
+              await internals(reference).segmentWindow(n),
+            );
+          }
+        };
 
         for (const [program, length] of programLengths.entries()) {
           const isFirst = program === 0;
           if (!isFirst) {
+            await expectSameWindows();
             await internals(session).compactPlaylist();
+            await expectSameWindows();
             await ffmpeg.loadFromDisk();
           }
           refFfmpeg.startProcess(isFirst);
@@ -488,6 +504,9 @@ describe('HlsSession', () => {
             segmentNumber++;
             maxFileSegments = Math.max(maxFileSegments, ffmpeg.segmentCount);
 
+            if (segmentNumber % 2 !== 0) {
+              continue;
+            }
             const expected = (await reference.trimPlaylist()).get();
             const actual = (await session.trimPlaylist()).get();
             expect(actual?.playlist).toEqual(expected?.playlist);
@@ -495,18 +514,18 @@ describe('HlsSession', () => {
             expect(actual?.discontinuitySequence).toEqual(
               expected?.discontinuitySequence,
             );
-
-            for (let n = actual?.sequence ?? 0; n < segmentNumber; n++) {
-              expect(await internals(session).segmentWindow(n)).toEqual(
-                await internals(reference).segmentWindow(n),
-              );
-            }
+            servedFrom = actual?.sequence ?? 0;
           }
         }
 
+        await expectSameWindows();
+
         expect(refFfmpeg.segmentCount).toBe(segmentNumber);
-        // Bounded by the served window plus the longest program.
-        expect(maxFileSegments).toBeLessThanOrEqual(20 + 40);
+        // Bounded by the served window, the one segment it can lag between
+        // polls, and the longest program.
+        expect(maxFileSegments).toBeLessThanOrEqual(
+          20 + 1 + Math.max(...programLengths),
+        );
       },
     );
 
