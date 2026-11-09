@@ -190,7 +190,7 @@ Built on `feat/media-sources-collection`, stacked on `feat/smart-collections-col
 - Local sources have no URL, so both layouts show the first folder and a "+N more" count. The table's URL column becomes Location.
 - `AddMediaSourceButton` owns its own dialogs and Plex login, so the view takes it as an `addButton` slot. It shows in the header and the empty state.
 - The page sits inside `SettingsLayout`, which keeps its Settings heading and `Paper` until Phase 4. `PageHeader` takes the place of the old in-paper heading.
-- Rows don't open anything on click. A source has a browse page at `/media_sources/$mediaSourceId`, but no link reached it from this page before either.
+- Rows open the source's browse page at `/media_sources/$mediaSourceId`, and the card title links there. Nothing on this page opened it before (decided 11/09/2026).
 - The e2e table spec runs MediaSourceSettings at dense density too.
 - `/library/trash` is skipped. It renders `LibraryProgramGrid`, a grid of programs rather than a list of entities, so it moves to Phase 5 with `MediaGrid`.
 

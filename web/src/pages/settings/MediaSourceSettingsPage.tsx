@@ -6,6 +6,7 @@ import {
   useQueries,
   useQueryClient,
 } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import type { MediaSourceSettings } from '@tunarr/types';
 import { useCallback, useState } from 'react';
 import { EditMediaSourceLibrariesDialog } from '../../components/settings/media_source/EditMediaSourceLibrariesDialog.tsx';
@@ -55,6 +56,17 @@ const useMediaSourcesHealth = (sources: MediaSourceSettings[]) => {
 export default function MediaSourceSettingsPage() {
   const { data: servers } = useMediaSources();
   const health = useMediaSourcesHealth(servers);
+  const navigate = useNavigate();
+
+  const openSource = useCallback(
+    (source: MediaSourceSettings) => {
+      navigate({
+        to: '/media_sources/$mediaSourceId',
+        params: { mediaSourceId: source.id },
+      }).catch(console.error);
+    },
+    [navigate],
+  );
 
   const [editingMediaSource, setEditingMediaSource] =
     useState<Nullable<MediaSourceSettings>>(null);
@@ -87,6 +99,7 @@ export default function MediaSourceSettingsPage() {
         mediaSources={servers}
         health={health}
         addButton={<AddMediaSourceButton />}
+        onOpenSource={openSource}
         onEditSource={setEditingMediaSource}
         onRefreshLibraries={(source) =>
           refreshLibraries({ path: { id: source.id } })

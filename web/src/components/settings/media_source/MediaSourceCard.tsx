@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import type { MediaSourceSettings } from '@tunarr/types';
 import { capitalize } from 'lodash-es';
+import { RouterLink } from '../../base/RouterLink.tsx';
 import { NetworkIcon } from '../../util/NetworkIcon.tsx';
 import {
   type MediaSourceHealth,
@@ -78,7 +79,14 @@ export const MediaSourceCard = ({
             overflowWrap: 'anywhere',
           }}
         >
-          {source.name}
+          <RouterLink
+            to="/media_sources/$mediaSourceId"
+            params={{ mediaSourceId: source.id }}
+            color="inherit"
+            underline="hover"
+          >
+            {source.name}
+          </RouterLink>
         </Typography>
       </Stack>
 

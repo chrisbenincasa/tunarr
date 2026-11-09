@@ -6,6 +6,8 @@ import type { CollectionLayout } from '../../ui/patterns/CollectionView/index.ts
 import type { MediaSourceHealth } from './MediaSourceHealthPill.tsx';
 import { MediaSourcesView } from './MediaSourcesView.tsx';
 
+vi.mock('@tanstack/react-router', () => import('@/test/routerMock.tsx'));
+
 const plexSource: MediaSourceSettings = {
   id: 'plex-1',
   name: 'My Plex',
@@ -61,6 +63,7 @@ const renderView = (
   },
 ) => {
   const callbacks = {
+    onOpenSource: vi.fn(),
     onEditSource: vi.fn(),
     onRefreshLibraries: vi.fn(),
     onEditLibraries: vi.fn(),
@@ -98,6 +101,23 @@ describe('MediaSourcesView table', () => {
     expect(local.getByText('/media/movies')).toBeInTheDocument();
     expect(local.getByText('+1 more')).toBeInTheDocument();
     expect(local.queryByRole('link')).not.toBeInTheDocument();
+  });
+
+  test('opens a source when its row is clicked', async () => {
+    const { user, onOpenSource } = renderView('table');
+    await user.click(screen.getByText('My Disk'));
+    expect(onOpenSource).toHaveBeenCalledWith(localSource);
+  });
+
+  test('keeps row controls from opening the source', async () => {
+    const { user, onOpenSource } = renderView('table');
+    const plex = withinRow('My Plex');
+    await user.click(plex.getByRole('button', { name: 'Edit Media Source' }));
+    await user.click(plex.getByText('1 of 2 enabled'));
+    await user.click(
+      plex.getByRole('link', { name: 'http://plex.local:32400' }),
+    );
+    expect(onOpenSource).not.toHaveBeenCalled();
   });
 
   test('shows health and enabled libraries', () => {
@@ -173,6 +193,15 @@ describe('MediaSourcesView cards', () => {
     const local = within(screen.getByRole('article', { name: 'My Disk' }));
     expect(local.getByText('Unreachable')).toBeInTheDocument();
     expect(local.getByText('/media/movies')).toBeInTheDocument();
+  });
+
+  test('links the card title to the browse page', () => {
+    renderView('cards');
+    const plex = within(screen.getByRole('article', { name: 'My Plex' }));
+    expect(plex.getByRole('link', { name: 'My Plex' })).toHaveAttribute(
+      'href',
+      '/media_sources/plex-1',
+    );
   });
 
   test('runs each card action for its source', async () => {
