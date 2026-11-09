@@ -1,7 +1,67 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import type { Maybe } from '../../types/util.ts';
-import { KnownImageFileExtensions } from './constants.ts';
+import {
+  KnownImageFileExtensions,
+  KnownVideoFileExtensions,
+} from './constants.ts';
+
+/**
+ * True for a file the movie scanner scans as a movie: a known video extension,
+ * and not a macOS sidecar. The scanner uses this too, so the artwork gate below
+ * and the library cannot disagree about what counts as a movie.
+ */
+export function isMovieVideoFile(name: string): boolean {
+  return (
+    KnownVideoFileExtensions.has(path.extname(name)) &&
+    !path.basename(name).startsWith('._')
+  );
+}
+
+/**
+ * True when the folder a movie sits in is a movie folder, which is what makes
+ * the short artwork names unambiguous:
+ *
+ * - it holds exactly one movie, or
+ * - it is named after the movie, which keeps short names working where the
+ *   folder holds more than one video file: two quality versions of the same
+ *   film, or the feature plus its extras.
+ *
+ * A flat library folder satisfies neither -- its name is the library's and it
+ * holds many movies -- so a single `poster.jpg` there would otherwise become
+ * the poster of every movie in it (#2171).
+ */
+export function isMovieFolder(params: {
+  moviePath: string;
+  videoFileNames: readonly string[];
+}): boolean {
+  const { moviePath, videoFileNames } = params;
+  return (
+    videoFileNames.filter(isMovieVideoFile).length === 1 ||
+    folderNameMatchesMovie(path.dirname(moviePath), moviePath)
+  );
+}
+
+/**
+ * Kodi's gate is "movies are in separate folders that match the movie title".
+ * The movie-specific names carry the quality tag, so a version suffix on the
+ * file (`Movie (2020) Bluray-1080p.mkv`) still belongs to the folder.
+ */
+export function folderNameMatchesMovie(
+  folder: string,
+  movieFilePath: string,
+): boolean {
+  const stem = normalizeFolderName(
+    path.basename(movieFilePath, path.extname(movieFilePath)),
+  );
+  const folderName = normalizeFolderName(path.basename(folder));
+  return folderName.length > 0 && stem.startsWith(folderName);
+}
+
+/** Case and spacing carry no meaning in a folder-to-movie name comparison. */
+function normalizeFolderName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').toLowerCase();
+}
 
 /**
  * Finds image files by extension-less path, matching the extension
@@ -47,18 +107,26 @@ export async function locateImageFile(
  * Finds a movie's artwork in Kodi order. `<movie>-<name>` wins in any
  * extension, then `<name>`, then `folder` for posters only. Each name gets its
  * own lookup because `locateImageFile` tries extensions before stems.
+ *
+ * The short names are folder conventions, not movie ones, so a caller that
+ * knows the folder is not a movie folder passes `allowShortNames: false` and
+ * only the movie-specific name is looked up (#2171).
  */
 export async function locateMovieArtwork(
   moviePath: string,
   name: string,
+  opts?: { allowShortNames?: boolean },
 ): Promise<Maybe<string>> {
+  const allowShortNames = opts?.allowShortNames ?? true;
   const folder = path.dirname(moviePath);
   const stem = path.basename(moviePath, path.extname(moviePath));
 
   const found =
     (await locateImageFile([path.join(folder, `${stem}-${name}`)])) ??
-    (await locateImageFile([path.join(folder, name)]));
-  if (found || name !== 'poster') {
+    (allowShortNames
+      ? await locateImageFile([path.join(folder, name)])
+      : undefined);
+  if (found || !allowShortNames || name !== 'poster') {
     return found;
   }
 
