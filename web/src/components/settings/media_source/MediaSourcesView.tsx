@@ -35,6 +35,7 @@ export type MediaSourcesViewProps = {
 
   // Opens the add menu. It shows in the header and in the empty state.
   addButton: ReactNode;
+  onOpenSource: (source: MediaSourceSettings) => void;
   onEditSource: (source: MediaSourceSettings) => void;
   onRefreshLibraries: (source: MediaSourceSettings) => void;
   onEditLibraries: (source: MediaSourceSettings) => void;
@@ -50,6 +51,7 @@ export const MediaSourcesView = ({
   mediaSources,
   health,
   addButton,
+  onOpenSource,
   onEditSource,
   onRefreshLibraries,
   onEditLibraries,
@@ -218,6 +220,9 @@ export const MediaSourcesView = ({
             table={table}
             aria-label={t`Media Sources`}
             emptyFallback={empty}
+            getRowProps={(row) => ({
+              onClick: () => onOpenSource(row.original),
+            })}
           />
         }
       />

@@ -3,6 +3,7 @@ import { Button } from '@mui/material';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import type { MediaSourceSettings } from '@tunarr/types';
 import { expect, fn, userEvent, within } from 'storybook/test';
+import { StoryRouter } from '../../ui/patterns/AppShell/storyComponents.tsx';
 import { MediaSourcesView } from './MediaSourcesView.tsx';
 
 const library = (
@@ -90,6 +91,13 @@ const addButton = (
 const meta = {
   title: 'Settings/MediaSourcesView',
   component: MediaSourcesView,
+  decorators: [
+    (Story) => (
+      <StoryRouter path="/settings/sources">
+        <Story />
+      </StoryRouter>
+    ),
+  ],
   args: {
     mediaSources: storySources,
     health: {
@@ -100,6 +108,7 @@ const meta = {
       long: 'healthy',
     },
     addButton,
+    onOpenSource: fn(),
     onEditSource: fn(),
     onRefreshLibraries: fn(),
     onEditLibraries: fn(),
@@ -181,5 +190,6 @@ export const CardActions: Story = {
     await expect(args.onDeleteSource).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'local' }),
     );
+    await expect(args.onOpenSource).not.toHaveBeenCalled();
   },
 };

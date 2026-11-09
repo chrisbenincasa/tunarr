@@ -12,10 +12,22 @@ import {
   within,
 } from '@/test/utils';
 import type { MediaSourceSettings } from '@tunarr/types';
+import { navigateMock } from '@/test/routerMock.tsx';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import MediaSourceSettingsPage from './MediaSourceSettingsPage.tsx';
 
-const mocks = vi.hoisted(() => ({ refresh: vi.fn(), remove: vi.fn() }));
+const mocks = vi.hoisted(() => ({
+  refresh: vi.fn(),
+  remove: vi.fn(),
+  layout: { current: 'cards' as 'cards' | 'table' },
+}));
+
+// The test theme is always Comfortable, so the table needs a forced layout.
+vi.mock('@/components/ui/patterns/CollectionView/collectionLayout.ts', () => ({
+  collectionLayout: () => mocks.layout.current,
+}));
+
+vi.mock('@tanstack/react-router', () => import('@/test/routerMock.tsx'));
 
 vi.mock('@/generated/@tanstack/react-query.gen.ts', async (importOriginal) => ({
   ...(await importOriginal<typeof Gen>()),
@@ -107,6 +119,7 @@ const card = (name: string) => within(screen.getByRole('article', { name }));
 describe('MediaSourceSettingsPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mocks.layout.current = 'cards';
     useStore.setState(({ settings }) => {
       settings.ui.tableSettings = {};
     });
@@ -116,6 +129,16 @@ describe('MediaSourceSettingsPage', () => {
     renderPage();
     expect(card('My Plex').getByText('Healthy')).toBeInTheDocument();
     expect(card('My Disk').getByText('Unreachable')).toBeInTheDocument();
+  });
+
+  test('opens the browse page of a source from a table row', async () => {
+    mocks.layout.current = 'table';
+    const { user } = renderPage();
+    await user.click(screen.getByText('My Disk'));
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/media_sources/$mediaSourceId',
+      params: { mediaSourceId: 'local-1' },
+    });
   });
 
   test('refreshes the libraries of the clicked source', async () => {
