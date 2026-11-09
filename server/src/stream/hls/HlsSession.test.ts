@@ -361,6 +361,194 @@ describe('HlsSession', () => {
     });
   });
 
+  describe('compactPlaylist (private)', () => {
+    type Internals = {
+      startInternal(): Promise<void>;
+      compactPlaylist(): Promise<void>;
+      segmentWindow(n: number): Promise<[number, number] | undefined>;
+      lock: { runExclusive<T>(fn: () => Promise<T>): Promise<T> };
+    };
+
+    const internals = (session: HlsSession) => session as unknown as Internals;
+
+    let refDir: tmp.DirResult;
+    let dir: tmp.DirResult;
+
+    beforeEach(() => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(new Date('2026-01-01T00:00:00.000Z'));
+      refDir = tmp.dirSync({ unsafeCleanup: true });
+      dir = tmp.dirSync({ unsafeCleanup: true });
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+      refDir.removeCallback();
+      dir.removeCallback();
+    });
+
+    async function startSession(
+      transcodeDirectory: string,
+      streamMode: HlsSessionOptions['streamMode'] = 'hls',
+    ) {
+      const session = makeSession(transcodeDirectory, { streamMode });
+      await internals(session).startInternal();
+      await fs.mkdir(session.workingDirectory, { recursive: true });
+      return session;
+    }
+
+    function playlistPath(session: HlsSession) {
+      return path.join(session.workingDirectory, 'stream.m3u8');
+    }
+
+    // Writes the playlist the way ffmpeg does with append_list and
+    // discont_start: a header DISCONTINUITY while the list starts at
+    // sequence 0, and a body DISCONTINUITY before each later process's
+    // first segment.
+    class FakeFfmpeg {
+      #body: string[] = [];
+      #mediaSequence = 0;
+      #headerDiscontinuity = false;
+
+      constructor(private session: HlsSession) {}
+
+      async loadFromDisk() {
+        const lines = (await fs.readFile(playlistPath(this.session), 'utf-8'))
+          .split('\n')
+          .filter((line) => line.length > 0);
+        const bodyStart = lines.findIndex((l) => l.startsWith('#EXTINF:'));
+        const sequence = lines
+          .find((l) => l.startsWith('#EXT-X-MEDIA-SEQUENCE:'))
+          ?.split(':')[1];
+        this.#mediaSequence = parseInt(sequence ?? '0');
+        this.#body = lines.slice(bodyStart);
+      }
+
+      startProcess(isFirst: boolean) {
+        if (!isFirst) {
+          this.#body.push('#EXT-X-DISCONTINUITY');
+          this.#headerDiscontinuity = this.#mediaSequence === 0;
+        }
+      }
+
+      async writeSegment(n: number, duration: number) {
+        this.#body.push(
+          `#EXTINF:${duration.toFixed(6)},`,
+          '#EXT-X-PROGRAM-DATE-TIME:2026-01-01T00:00:00.000+0000',
+          `/stream/channels/${channelUuid}/hls/data${String(n).padStart(6, '0')}.ts`,
+        );
+        const header = [
+          '#EXTM3U',
+          '#EXT-X-VERSION:6',
+          '#EXT-X-TARGETDURATION:4',
+          `#EXT-X-MEDIA-SEQUENCE:${this.#mediaSequence}`,
+          ...(this.#headerDiscontinuity ? ['#EXT-X-DISCONTINUITY'] : []),
+          '#EXT-X-INDEPENDENT-SEGMENTS',
+        ];
+        await fs.writeFile(
+          playlistPath(this.session),
+          [...header, ...this.#body, ''].join('\n'),
+        );
+      }
+
+      get segmentCount() {
+        return this.#body.filter((l) => l.startsWith('#EXTINF:')).length;
+      }
+    }
+
+    test.each(['hls', 'hls_direct_v2'] as const)(
+      'serves the same playlists as a session that never compacts (%s)',
+      async (streamMode) => {
+        const reference = await startSession(refDir.name, streamMode);
+        const session = await startSession(dir.name, streamMode);
+        const refFfmpeg = new FakeFfmpeg(reference);
+        const ffmpeg = new FakeFfmpeg(session);
+
+        // Long programs outrun the 20-segment window, so compaction drops whole
+        // programs. Polling every other segment lets two short programs'
+        // discontinuities leave the window between polls, which exercises the
+        // discontinuity sequence cap. The reference file never shrinks, so the
+        // cost grows with the square of the total segment count.
+        const programLengths = [24, 1, 2, 22, 1, 1, 26, 3, 21, 2, 1, 23];
+        let segmentNumber = 0;
+        let servedFrom = 0;
+        let maxFileSegments = 0;
+
+        // Appending never moves an earlier segment's window. Only compaction
+        // can, so windows are compared on both sides of each compaction.
+        const expectSameWindows = async () => {
+          for (let n = servedFrom; n < segmentNumber; n++) {
+            expect(await internals(session).segmentWindow(n)).toEqual(
+              await internals(reference).segmentWindow(n),
+            );
+          }
+        };
+
+        for (const [program, length] of programLengths.entries()) {
+          const isFirst = program === 0;
+          if (!isFirst) {
+            await expectSameWindows();
+            await internals(session).compactPlaylist();
+            await expectSameWindows();
+            await ffmpeg.loadFromDisk();
+          }
+          refFfmpeg.startProcess(isFirst);
+          ffmpeg.startProcess(isFirst);
+
+          for (let i = 0; i < length; i++) {
+            // ffmpeg ends each program with a short segment.
+            const duration =
+              i === length - 1 ? 1.5 + (program % 3) * 0.7 : 4.004;
+            await refFfmpeg.writeSegment(segmentNumber, duration);
+            await ffmpeg.writeSegment(segmentNumber, duration);
+            segmentNumber++;
+            maxFileSegments = Math.max(maxFileSegments, ffmpeg.segmentCount);
+
+            if (segmentNumber % 2 !== 0) {
+              continue;
+            }
+            const expected = (await reference.trimPlaylist()).get();
+            const actual = (await session.trimPlaylist()).get();
+            expect(actual?.playlist).toEqual(expected?.playlist);
+            expect(actual?.sequence).toEqual(expected?.sequence);
+            expect(actual?.discontinuitySequence).toEqual(
+              expected?.discontinuitySequence,
+            );
+            servedFrom = actual?.sequence ?? 0;
+          }
+        }
+
+        await expectSameWindows();
+
+        expect(refFfmpeg.segmentCount).toBe(segmentNumber);
+        // Bounded by the served window, the one segment it can lag between
+        // polls, and the longest program.
+        expect(maxFileSegments).toBeLessThanOrEqual(
+          20 + 1 + Math.max(...programLengths),
+        );
+      },
+    );
+
+    test('skips compaction while the session lock is held', async () => {
+      const session = await startSession(dir.name);
+      const ffmpeg = new FakeFfmpeg(session);
+      ffmpeg.startProcess(true);
+      for (let n = 0; n < 40; n++) {
+        await ffmpeg.writeSegment(n, 4);
+      }
+      await session.trimPlaylist();
+      const before = await fs.readFile(playlistPath(session), 'utf-8');
+
+      // Session.start() holds the lock while the first programs transcode.
+      // Waiting on it here would deadlock.
+      await internals(session).lock.runExclusive(() =>
+        internals(session).compactPlaylist(),
+      );
+
+      expect(await fs.readFile(playlistPath(session), 'utf-8')).toBe(before);
+    });
+  });
+
   describe('getLastSubtitleSegmentNumber (private)', () => {
     let dir: tmp.DirResult;
 

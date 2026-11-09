@@ -908,6 +908,78 @@ describe('HlsPlaylistMutator', () => {
       expect(discSeq(result.playlist)).toBe(1);
       expect(hasTrailingDisc(result.playlist)).toBe(false);
     });
+
+    describe('baseDiscontinuitySequence', () => {
+      // The three-program file after compaction removed everything before
+      // segment `keepFrom`, including a DISC right before it. The start time
+      // moves past the removed segments.
+      function compactedThreeProgramPlaylist(keepFrom: number) {
+        const lines = createThreeProgramPlaylist();
+        const pathLine = lines.findIndex((l) =>
+          l.endsWith(`data${String(keepFrom).padStart(6, '0')}.ts`),
+        );
+        const cut = pathLine - 2;
+        let compactedStart = start;
+        for (let i = 0; i < keepFrom; i++) {
+          compactedStart = compactedStart.add(4.004, 'seconds');
+        }
+        return {
+          start: compactedStart,
+          lines: [
+            ...lines.slice(0, 3),
+            `#EXT-X-MEDIA-SEQUENCE:${keepFrom}`,
+            ...lines.slice(cut),
+          ],
+        };
+      }
+
+      function trimLast20(
+        playlistStart: dayjs.Dayjs,
+        lines: string[],
+        baseDiscontinuitySequence?: number,
+        previousDiscontinuitySequence?: number,
+      ) {
+        return mutator.trimPlaylist(playlistStart, undefined, lines, {
+          ...defaultOpts,
+          maxSegmentsToKeep: 20,
+          baseDiscontinuitySequence,
+          previousDiscontinuitySequence,
+        });
+      }
+
+      it('counts discontinuities removed from the file', () => {
+        const full = trimLast20(start, createThreeProgramPlaylist());
+        const compacted = compactedThreeProgramPlaylist(25);
+
+        const result = trimLast20(compacted.start, compacted.lines, 2);
+
+        expect(discSeq(result.playlist)).toBe(2);
+        expect(result.discontinuitySequence).toBe(2);
+        expect(result.playlist).toEqual(full.playlist);
+      });
+
+      it('adds discontinuities still in the file to the base', () => {
+        const full = trimLast20(start, createThreeProgramPlaylist());
+        // Removes program B's DISC and keeps program C's.
+        const compacted = compactedThreeProgramPlaylist(15);
+
+        const result = trimLast20(compacted.start, compacted.lines, 1);
+
+        expect(discSeq(result.playlist)).toBe(2);
+        expect(result.playlist).toEqual(full.playlist);
+      });
+
+      it('applies the cap on top of the base', () => {
+        const full = trimLast20(start, createThreeProgramPlaylist(), 0, 0);
+        const compacted = compactedThreeProgramPlaylist(25);
+
+        const result = trimLast20(compacted.start, compacted.lines, 2, 0);
+
+        expect(discSeq(result.playlist)).toBe(1);
+        expect(hasTrailingDisc(result.playlist)).toBe(true);
+        expect(result.playlist).toEqual(full.playlist);
+      });
+    });
   });
 
   // describe('high-water mark floor protection', () => {
