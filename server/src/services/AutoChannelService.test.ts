@@ -134,6 +134,15 @@ describe('AutoChannelCreateRequestSchema', () => {
     },
   );
 
+  test.each([0, -3, 2.5])('rejects a channel number of %s', (channelNumber) => {
+    expect(
+      AutoChannelCreateRequestSchema.safeParse({
+        ...shuffleRequest,
+        channelNumber,
+      }).success,
+    ).toBe(false);
+  });
+
   test('accepts a start time within the day', () => {
     const request = classicTvDayRequest([23 * Hour + 59 * 60 * 1000]);
     expect(AutoChannelCreateRequestSchema.safeParse(request).success).toBe(
@@ -255,6 +264,68 @@ describe('AutoChannelService.createChannel', () => {
     ).rejects.toThrow('needs a content filter');
 
     expect(smartCollectionsDB.insert).not.toHaveBeenCalled();
+  });
+
+  test.each(
+    BuiltInPresets.filter((p) =>
+      p.contentRequirements.some((req) => req.pickerHint),
+    ).map((p) => [p.id]),
+  )(
+    'rejects an empty query for the %s picker role before writing anything',
+    async (presetId) => {
+      const { service, smartCollectionsDB } = makeService();
+      const preset = BuiltInPresets.find((p) => p.id === presetId);
+      const roles = preset?.contentRequirements ?? [];
+
+      await expect(
+        service.createChannel({
+          presetId,
+          contentAssignments: Object.fromEntries(
+            roles.map((req) => [req.role, { query: {} }]),
+          ),
+        }),
+      ).rejects.toThrow('needs a content filter');
+
+      expect(smartCollectionsDB.insert).not.toHaveBeenCalled();
+    },
+  );
+
+  test('lets the 24/7 Shuffle role span the whole library', async () => {
+    const { service, smartCollectionsDB } = makeService();
+
+    await service.createChannel(shuffleRequest);
+
+    expect(smartCollectionsDB.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ filter: undefined }),
+    );
+  });
+
+  test('rejects a dynamic role that matches no programs', async () => {
+    const { service, smartCollectionsDB, channelDB } = makeService({
+      programs: [],
+    });
+
+    await expect(
+      service.createChannel(
+        weightedMixRequest({
+          group_1: { query: { filterString: 'genre = "Comedy"' } },
+        }),
+      ),
+    ).rejects.toThrow('needs at least 1');
+
+    expect(smartCollectionsDB.delete).toHaveBeenCalledWith(collectionId(1));
+    expect(channelDB.saveChannel).not.toHaveBeenCalled();
+  });
+
+  test('passes a zero seed to the lineup', async () => {
+    const { service, channelDB } = makeService();
+
+    await service.createChannel({ ...shuffleRequest, seed: 0 });
+
+    expect(channelDB.updateLineup).toHaveBeenCalledWith(
+      ChannelId,
+      expect.objectContaining({ seed: [0] }),
+    );
   });
 
   test('accepts dynamic roles that each select content', async () => {
