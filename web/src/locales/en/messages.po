@@ -1513,6 +1513,14 @@ msgstr "Create Rerun Block"
 msgid "Creates a new collection"
 msgstr "Creates a new collection"
 
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Custom"
+msgstr "Custom"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Custom (loudnorm)"
+msgstr "Custom (loudnorm)"
+
 #: src/components/guide/TvGuide.tsx
 msgid "Custom Program"
 msgstr "Custom Program"
@@ -1610,6 +1618,8 @@ msgstr "Debug"
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -1637,6 +1647,14 @@ msgstr "Default only"
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "Default profile"
 msgstr "Default profile"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Default uses the Audio Loudness Normalization setting above."
+msgstr "Default uses the Audio Loudness Normalization setting above."
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Default uses the Audio Volume and Audio Loudness Normalization settings above. Custom sets separate levels for filler and channel fallback content."
+msgstr "Default uses the Audio Volume and Audio Loudness Normalization settings above. Custom sets separate levels for filler and channel fallback content."
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 #: src/components/channels/ChannelDeleteDialog.tsx
@@ -2476,6 +2494,19 @@ msgstr "Filler"
 msgid "Filler - {0}"
 msgstr "Filler - {0}"
 
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Audio"
+msgstr "Filler Audio"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Audio Levels"
+msgstr "Filler Audio Levels"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Audio Volume"
+msgstr "Filler Audio Volume"
+
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Filler Content"
 msgstr "Filler Content"
@@ -2525,6 +2556,23 @@ msgstr "Filler Lists"
 #: src/pages/library/FillerListsPage.tsx
 msgid "Filler lists are collections of videos that you may want to play during 'flex' time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding)."
 msgstr "Filler lists are collections of videos that you may want to play during 'flex' time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding)."
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Loudness Normalization"
+msgstr "Filler Loudness Normalization"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Loudness Range Target"
+msgstr "Filler Loudness Range Target"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Loudness Target"
+msgstr "Filler Loudness Target"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Max True Peak"
+msgstr "Filler Max True Peak"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Filler Options"
@@ -2699,6 +2747,10 @@ msgstr "Hardware Accel."
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Hardware Acceleration"
 msgstr "Hardware Acceleration"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Has no effect while loudness normalization applies to filler. Set a lower filler loudness target instead."
+msgstr "Has no effect while loudness normalization applies to filler. Set a lower filler loudness target instead."
 
 #: src/pages/welcome/WelcomePage.tsx
 #~ msgid "HDHomeRun Settings"

@@ -48,6 +48,7 @@ These translate to nothing on the worker. The channel streams; it streams withou
 | Thread count | The worker chooses its own. |
 | Video preset and profile | The worker exposes neither yet. |
 | Audio volume | The worker has no volume filter. |
+| Filler audio levels | The worker sets audio per channel, not per item. |
 | Normalize frame rate | The worker does not normalize frame rate. |
 | VAAPI driver `nouveau` | It has no counterpart. `i965`, `ihd` and `radeonsi` translate. |
 

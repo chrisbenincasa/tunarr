@@ -59,6 +59,8 @@ const baseConfig: TranscodeConfig = {
   disableHardwareEncoding: false,
   disableHardwareFilters: false,
   audioLoudnormConfig: null,
+  fillerAudioVolumePercent: null,
+  fillerAudioLoudnormConfig: null,
 };
 
 const configs: TranscodeConfig[] = [

@@ -1513,6 +1513,14 @@ msgstr "创建重播块"
 msgid "Creates a new collection"
 msgstr "创建新合集"
 
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Custom"
+msgstr ""
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Custom (loudnorm)"
+msgstr ""
+
 #: src/components/guide/TvGuide.tsx
 msgid "Custom Program"
 msgstr "自定义节目"
@@ -1610,6 +1618,8 @@ msgstr "调试"
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -1636,6 +1646,14 @@ msgstr ""
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "Default profile"
+msgstr ""
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Default uses the Audio Loudness Normalization setting above."
+msgstr ""
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Default uses the Audio Volume and Audio Loudness Normalization settings above. Custom sets separate levels for filler and channel fallback content."
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
@@ -2476,6 +2494,19 @@ msgstr "垫片"
 msgid "Filler - {0}"
 msgstr "垫片 - {0}"
 
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Audio"
+msgstr ""
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Audio Levels"
+msgstr ""
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Audio Volume"
+msgstr ""
+
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Filler Content"
 msgstr "垫片内容"
@@ -2525,6 +2556,23 @@ msgstr "垫片列表"
 #: src/pages/library/FillerListsPage.tsx
 msgid "Filler lists are collections of videos that you may want to play during 'flex' time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding)."
 msgstr "垫片列表是你希望在「弹性时间」内播放的视频集合。弹性时间指频道中没有安排正式节目的时段，通常用于填充时长。"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Loudness Normalization"
+msgstr ""
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Loudness Range Target"
+msgstr ""
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Loudness Target"
+msgstr ""
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Filler Max True Peak"
+msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Filler Options"
@@ -2699,6 +2747,10 @@ msgstr "硬件加速"
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Hardware Acceleration"
 msgstr "硬件加速"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Has no effect while loudness normalization applies to filler. Set a lower filler loudness target instead."
+msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
 #~ msgid "HDHomeRun Settings"

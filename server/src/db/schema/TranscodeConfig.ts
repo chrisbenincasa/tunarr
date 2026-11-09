@@ -179,6 +179,10 @@ export const TranscodeConfig = sqliteTable(
     audioVolumePercent: integer().notNull().default(100), // Default 100
     audioLoudnormConfig: text({ mode: 'json' }).$type<LoudnormConfig>(),
 
+    // Filler and fallback items use these. Null means use the channel level.
+    fillerAudioVolumePercent: integer(),
+    fillerAudioLoudnormConfig: text({ mode: 'json' }).$type<LoudnormConfig>(),
+
     normalizeFrameRate: integer({ mode: 'boolean' }).default(false),
     deinterlaceVideo: integer({ mode: 'boolean' }).default(true),
     disableChannelOverlay: integer({ mode: 'boolean' }).default(false),

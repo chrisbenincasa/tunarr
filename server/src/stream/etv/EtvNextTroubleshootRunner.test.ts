@@ -23,6 +23,8 @@ const transcodeConfig = {
   audioSampleRate: 48,
   audioVolumePercent: 100,
   audioLoudnormConfig: null,
+  fillerAudioVolumePercent: null,
+  fillerAudioLoudnormConfig: null,
   threadCount: 0,
   hardwareAccelerationMode: 'none',
   vaapiDriver: 'system',

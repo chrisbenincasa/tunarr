@@ -26,11 +26,7 @@ import {
 } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
-import type {
-  ChannelStreamMode,
-  LoudnormConfig,
-  Watermark,
-} from '@tunarr/types';
+import type { ChannelStreamMode, Watermark } from '@tunarr/types';
 import { ChannelStreamModes } from '@tunarr/types';
 import dayjs from 'dayjs';
 import type { Duration } from 'dayjs/plugin/duration.js';
@@ -47,6 +43,8 @@ import { Result } from '../types/result.ts';
 import { assisted, injected } from '../util/assistedInject.ts';
 import { InjectLogger } from '../util/inject.ts';
 import { loggingDef } from '../util/logging/loggingDef.ts';
+import type { AudioLevels } from './AudioLevels.ts';
+import { resolveAudioLevels } from './AudioLevels.ts';
 import type { FfmpegPlaybackParams } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegPlaybackParamsCalculator } from './FfmpegPlaybackParamsCalculator.ts';
 import { FfmpegProcess } from './FfmpegProcess.ts';
@@ -518,7 +516,7 @@ export class FfmpegStreamFactory {
       streamMode === ChannelStreamModes.HlsDirect
         ? null
         : duration.asMilliseconds(),
-      this.transcodeConfig.audioLoudnormConfig,
+      resolveAudioLevels(this.transcodeConfig, lineupItem.type),
     );
 
     let audioInput: Nullable<AudioInputSource> = null;
@@ -1008,7 +1006,10 @@ export class FfmpegStreamFactory {
   private createAudioState(
     playbackParams: FfmpegPlaybackParams,
     audioDuration: number | null,
-    loudnormConfig?: LoudnormConfig | null,
+    levels: AudioLevels = {
+      volumePercent: this.transcodeConfig.audioVolumePercent,
+      loudnormConfig: null,
+    },
   ): AudioState {
     return AudioState.create({
       audioEncoder: playbackParams.audioFormat,
@@ -1016,9 +1017,9 @@ export class FfmpegStreamFactory {
       audioBitrate: playbackParams.audioBitrate,
       audioBufferSize: playbackParams.audioBufferSize,
       audioSampleRate: playbackParams.audioSampleRate,
-      audioVolume: this.transcodeConfig.audioVolumePercent,
+      audioVolume: levels.volumePercent,
       audioDuration,
-      loudnormConfig: loudnormConfig ?? null,
+      loudnormConfig: levels.loudnormConfig,
     });
   }
 

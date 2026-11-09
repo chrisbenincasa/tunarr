@@ -79,6 +79,8 @@ function makeTranscodeConfig(
     audioSampleRate: 48,
     audioVolumePercent: 100,
     audioLoudnormConfig: null,
+    fillerAudioVolumePercent: null,
+    fillerAudioLoudnormConfig: null,
     normalizeFrameRate: false,
     deinterlaceVideo: true,
     disableChannelOverlay: false,
@@ -164,9 +166,11 @@ function makeStreamDetails(): StreamDetails {
   };
 }
 
-function makeLineupItem(): ContentBackedStreamLineupItem {
+function makeLineupItem(
+  type: ContentBackedStreamLineupItem['type'] = 'program',
+): ContentBackedStreamLineupItem {
   return {
-    type: 'program',
+    type,
     streamDuration: 30000,
     programBeginMs: 0,
     duration: 30000,
@@ -190,14 +194,14 @@ function createCapturingPipelineBuilderFactory(): {
   getCapturedHwAccel: () => string | undefined;
   getCapturedSubtitleInput: () => SubtitlesInputSource | null | undefined;
   getCapturedVideoInput: () => VideoInputSource | undefined;
-  getCapturedAudioInput: () => AudioInputSource | undefined;
+  getCapturedAudioInput: () => AudioInputSource | null | undefined;
 } {
   let capturedFrameState: FrameState | undefined;
   let capturedFfmpegState: FfmpegState | undefined;
   let capturedHwAccel: string | undefined;
   let capturedSubtitleInput: SubtitlesInputSource | null | undefined;
   let capturedVideoInput: VideoInputSource | undefined;
-  let capturedAudioInput: AudioInputSource | undefined;
+  let capturedAudioInput: AudioInputSource | null | undefined;
 
   const factory: PipelineBuilderFactory = () => {
     const builderProxy: Record<string, unknown> = {};
@@ -205,15 +209,17 @@ function createCapturingPipelineBuilderFactory(): {
       builderProxy[method] = vi.fn().mockReturnValue(builderProxy);
     }
 
-    builderProxy.setAudioInputSource = vi.fn((input: AudioInputSource) => {
-      capturedAudioInput = input;
-      return builderProxy;
-    });
-
     builderProxy.setVideoInputSource = vi.fn((input: VideoInputSource) => {
       capturedVideoInput = input;
       return builderProxy;
     });
+
+    builderProxy.setAudioInputSource = vi.fn(
+      (input: AudioInputSource | null) => {
+        capturedAudioInput = input;
+        return builderProxy;
+      },
+    );
 
     builderProxy.setSubtitleInputSource = vi.fn(
       (input: SubtitlesInputSource | null) => {
@@ -755,6 +761,68 @@ describe('FfmpegStreamFactory', () => {
       expect(frameState.paddedSize.width).toBe(3840);
       expect(frameState.paddedSize.height).toBe(2160);
     });
+  });
+
+  describe('filler audio levels', () => {
+    const channelLoudnorm = { i: -24, lra: 7, tp: -2 };
+    const fillerLoudnorm = { i: -30, lra: 7, tp: -2 };
+
+    async function captureAudioState(
+      type: ContentBackedStreamLineupItem['type'],
+    ) {
+      const { factory, getCapturedAudioInput } =
+        createCapturingPipelineBuilderFactory();
+      const sut = new FfmpegStreamFactory(
+        makeMockFfmpegInfo(),
+        makeMockSettingsDB(makeFfmpegSettings()),
+        factory,
+        makeMockFeatureFlagService(),
+        makeMockStreamSelector(),
+        makeTranscodeConfig({
+          audioVolumePercent: 100,
+          audioLoudnormConfig: channelLoudnorm,
+          fillerAudioVolumePercent: 50,
+          fillerAudioLoudnormConfig: fillerLoudnorm,
+        }),
+        makeChannel(),
+      );
+
+      await sut.createStreamSession({
+        stream: {
+          source: new HttpStreamSource('http://example.com/video.ts'),
+          details: makeStreamDetails(),
+        },
+        options: {
+          startTime: dayjs.duration(0),
+          duration: dayjs.duration({ seconds: 30 }),
+          // A fresh object, because FfmpegState mutates the shared constant.
+          outputFormat: { type: 'mpegts' as const },
+          ptsOffset: 0,
+          realtime: true,
+          streamMode: 'hls',
+        },
+        lineupItem: makeLineupItem(type),
+      });
+
+      return getCapturedAudioInput()?.desiredState;
+    }
+
+    test('programs use the channel levels', async () => {
+      const state = await captureAudioState('program');
+
+      expect(state?.audioVolume).toBe(100);
+      expect(state?.loudnormConfig).toEqual(channelLoudnorm);
+    });
+
+    test.each(['commercial', 'fallback'] as const)(
+      '%s items use the filler levels',
+      async (type) => {
+        const state = await captureAudioState(type);
+
+        expect(state?.audioVolume).toBe(50);
+        expect(state?.loudnormConfig).toEqual(fillerLoudnorm);
+      },
+    );
   });
 
   describe('audio renditions', () => {

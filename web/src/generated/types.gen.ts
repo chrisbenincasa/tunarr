@@ -6574,6 +6574,25 @@ export type GetApiChannelsByIdTranscodeConfigResponses = {
              */
             offsetGain?: number;
         } | null;
+        fillerAudioVolumePercent: number | null;
+        fillerAudioLoudnormConfig: {
+            /**
+             * integrated loudness target
+             */
+            i: number;
+            /**
+             * loudness range target
+             */
+            lra: number;
+            /**
+             * maximum true peak
+             */
+            tp: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        } | null;
         normalizeFrameRate: boolean;
         deinterlaceVideo: boolean;
         disableChannelOverlay: boolean;
@@ -9666,6 +9685,25 @@ export type GetApiTranscodeConfigsResponses = {
              */
             offsetGain?: number;
         } | null;
+        fillerAudioVolumePercent: number | null;
+        fillerAudioLoudnormConfig: {
+            /**
+             * integrated loudness target
+             */
+            i: number;
+            /**
+             * loudness range target
+             */
+            lra: number;
+            /**
+             * maximum true peak
+             */
+            tp: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        } | null;
         normalizeFrameRate: boolean;
         deinterlaceVideo: boolean;
         disableChannelOverlay: boolean;
@@ -9704,6 +9742,25 @@ export type PostApiTranscodeConfigsData = {
         audioSampleRate: number;
         audioVolumePercent?: number;
         audioLoudnormConfig: {
+            /**
+             * integrated loudness target
+             */
+            i?: number;
+            /**
+             * loudness range target
+             */
+            lra?: number;
+            /**
+             * maximum true peak
+             */
+            tp?: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        } | null;
+        fillerAudioVolumePercent?: number | null;
+        fillerAudioLoudnormConfig?: {
             /**
              * integrated loudness target
              */
@@ -9764,6 +9821,25 @@ export type PostApiTranscodeConfigsResponses = {
         audioSampleRate: number;
         audioVolumePercent: number;
         audioLoudnormConfig: {
+            /**
+             * integrated loudness target
+             */
+            i: number;
+            /**
+             * loudness range target
+             */
+            lra: number;
+            /**
+             * maximum true peak
+             */
+            tp: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        } | null;
+        fillerAudioVolumePercent: number | null;
+        fillerAudioLoudnormConfig: {
             /**
              * integrated loudness target
              */
@@ -9879,6 +9955,25 @@ export type GetApiTranscodeConfigsByIdResponses = {
              */
             offsetGain?: number;
         } | null;
+        fillerAudioVolumePercent: number | null;
+        fillerAudioLoudnormConfig: {
+            /**
+             * integrated loudness target
+             */
+            i: number;
+            /**
+             * loudness range target
+             */
+            lra: number;
+            /**
+             * maximum true peak
+             */
+            tp: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        } | null;
         normalizeFrameRate: boolean;
         deinterlaceVideo: boolean;
         disableChannelOverlay: boolean;
@@ -9918,6 +10013,25 @@ export type PutApiTranscodeConfigsByIdData = {
         audioSampleRate: number;
         audioVolumePercent?: number;
         audioLoudnormConfig: {
+            /**
+             * integrated loudness target
+             */
+            i?: number;
+            /**
+             * loudness range target
+             */
+            lra?: number;
+            /**
+             * maximum true peak
+             */
+            tp?: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        } | null;
+        fillerAudioVolumePercent?: number | null;
+        fillerAudioLoudnormConfig?: {
             /**
              * integrated loudness target
              */
@@ -9997,6 +10111,25 @@ export type PutApiTranscodeConfigsByIdResponses = {
              */
             offsetGain?: number;
         } | null;
+        fillerAudioVolumePercent: number | null;
+        fillerAudioLoudnormConfig: {
+            /**
+             * integrated loudness target
+             */
+            i: number;
+            /**
+             * loudness range target
+             */
+            lra: number;
+            /**
+             * maximum true peak
+             */
+            tp: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        } | null;
         normalizeFrameRate: boolean;
         deinterlaceVideo: boolean;
         disableChannelOverlay: boolean;
@@ -10059,6 +10192,25 @@ export type PostApiTranscodeConfigsByIdCopyResponses = {
         audioSampleRate: number;
         audioVolumePercent: number;
         audioLoudnormConfig: {
+            /**
+             * integrated loudness target
+             */
+            i: number;
+            /**
+             * loudness range target
+             */
+            lra: number;
+            /**
+             * maximum true peak
+             */
+            tp: number;
+            /**
+             * offset gain to add before peak limiter
+             */
+            offsetGain?: number;
+        } | null;
+        fillerAudioVolumePercent: number | null;
+        fillerAudioLoudnormConfig: {
             /**
              * integrated loudness target
              */
@@ -13316,6 +13468,25 @@ export type PostApiTroubleshootResponses = {
             audioSampleRate: number;
             audioVolumePercent: number;
             audioLoudnormConfig: {
+                /**
+                 * integrated loudness target
+                 */
+                i: number;
+                /**
+                 * loudness range target
+                 */
+                lra: number;
+                /**
+                 * maximum true peak
+                 */
+                tp: number;
+                /**
+                 * offset gain to add before peak limiter
+                 */
+                offsetGain?: number;
+            } | null;
+            fillerAudioVolumePercent: number | null;
+            fillerAudioLoudnormConfig: {
                 /**
                  * integrated loudness target
                  */
