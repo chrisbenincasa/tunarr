@@ -198,16 +198,17 @@ Tunarr applies **Audio Volume %** before loudness normalization, so normalizatio
 
 Filler and channel fallback content can play at different levels from regular programs. Commercials and bumpers are often mastered louder than shows, so a lower filler level evens out a channel.
 
-Set **Filler Audio Levels** to **Custom** to show two settings:
+**Filler Audio Levels** defaults to **Default**, which plays filler with the **Audio Volume %** and **Loudness Normalization** settings above. Set it to **Custom** to show two settings:
 
 | Setting | Effect |
 |---|---|
 | **Filler Audio Volume %** | Volume for filler items. Works like **Audio Volume %**. |
-| **Filler Loudness Normalization** | **Same as channel** uses the channel's loudness settings. **Custom** sets separate loudness targets for filler, and turns normalization on for filler even when the channel has it off. |
+| **Filler Loudness Normalization** | **Default** uses the **Loudness Normalization** setting above. **Custom** sets separate loudness targets for filler, and turns normalization on for filler even when **Loudness Normalization** is off. |
 
 - Filler levels apply to items from filler lists and to the channel's fallback filler.
 - When loudness normalization applies to filler, **Filler Audio Volume %** has no effect. Lower the filler **Integrated Loudness (I)** target instead.
-- Filler cannot turn loudness normalization off while the channel has it on.
+- Each filler setting replaces its main setting for filler items. They don't combine, so a main volume of 80% and a filler volume of 50% plays filler at 50%.
+- Filler cannot turn loudness normalization off while **Loudness Normalization** is on.
 
 !!! info
     Channels using the [ErsatzTV next](ersatztv-next.md) backend ignore filler audio levels. That backend has no per-item audio controls yet.

@@ -1618,6 +1618,8 @@ msgstr "Debug"
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -1645,6 +1647,14 @@ msgstr "Default only"
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "Default profile"
 msgstr "Default profile"
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Default uses the Audio Loudness Normalization setting above."
+msgstr "Default uses the Audio Loudness Normalization setting above."
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Default uses the Audio Volume and Audio Loudness Normalization settings above. Custom sets separate levels for filler and channel fallback content."
+msgstr "Default uses the Audio Volume and Audio Loudness Normalization settings above. Custom sets separate levels for filler and channel fallback content."
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 #: src/components/channels/ChannelDeleteDialog.tsx
@@ -4535,11 +4545,6 @@ msgid "Running..."
 msgstr "Running..."
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
-msgid "Same as channel"
-msgstr "Same as channel"
-
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Sample rate cannot be changed when copying input audio"
 msgstr "Sample rate cannot be changed when copying input audio"
 
@@ -4754,10 +4759,6 @@ msgstr "Server Path"
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Server Settings"
 msgstr "Server Settings"
-
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
-msgid "Set a separate volume or loudness target for filler and channel fallback content."
-msgstr "Set a separate volume or loudness target for filler and channel fallback content."
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx

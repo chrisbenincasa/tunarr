@@ -93,11 +93,11 @@ const fillerValues = () =>
   };
 
 describe('TranscodeConfigAudioSettingsForm filler audio', () => {
-  test('starts on "Same as channel" when both filler fields are null', () => {
+  test('starts on "Default" when both filler fields are null', () => {
     renderForm();
 
     expect(selectFor('Filler Audio Levels')).toHaveTextContent(
-      'Same as channel',
+      'Default',
     );
     expect(screen.queryByLabelText('Filler Audio Volume')).toBeNull();
   });
@@ -125,7 +125,7 @@ describe('TranscodeConfigAudioSettingsForm filler audio', () => {
     expect(screen.getByLabelText('Filler Loudness Target')).toHaveValue('-24');
   });
 
-  test('"Same as channel" clears both filler fields back to null', async () => {
+  test('"Default" clears both filler fields back to null', async () => {
     const { user } = renderForm({
       fillerAudioVolumePercent: 50,
       fillerAudioLoudnormConfig: { i: -30, lra: 7, tp: -2 },
@@ -136,7 +136,7 @@ describe('TranscodeConfigAudioSettingsForm filler audio', () => {
     expect(screen.getByLabelText('Filler Audio Volume')).toHaveValue('50');
 
     await user.click(levels);
-    await user.click(screen.getByRole('option', { name: 'Same as channel' }));
+    await user.click(screen.getByRole('option', { name: 'Default' }));
 
     expect(fillerValues()).toEqual({ volume: null, loudnorm: null });
     expect(screen.queryByLabelText('Filler Audio Volume')).toBeNull();

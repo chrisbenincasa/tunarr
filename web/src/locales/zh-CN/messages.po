@@ -1618,6 +1618,8 @@ msgstr "调试"
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -1644,6 +1646,14 @@ msgstr ""
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "Default profile"
+msgstr ""
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Default uses the Audio Loudness Normalization setting above."
+msgstr ""
+
+#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
+msgid "Default uses the Audio Volume and Audio Loudness Normalization settings above. Custom sets separate levels for filler and channel fallback content."
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
@@ -4535,11 +4545,6 @@ msgid "Running..."
 msgstr "运行中…"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
-msgid "Same as channel"
-msgstr ""
-
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Sample rate cannot be changed when copying input audio"
 msgstr "复制输入音频时无法修改采样率"
 
@@ -4754,10 +4759,6 @@ msgstr "服务器路径"
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Server Settings"
 msgstr "服务器设置"
-
-#: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
-msgid "Set a separate volume or loudness target for filler and channel fallback content."
-msgstr ""
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx

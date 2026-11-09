@@ -322,11 +322,11 @@ export const TranscodeConfigAudioSettingsForm = ({
               </InputLabel>
               <Select
                 label={t`Filler Audio Levels`}
-                value={fillerLevelsEnabled ? 'custom' : 'channel'}
+                value={fillerLevelsEnabled ? 'custom' : 'default'}
                 onChange={() => onFillerLevelsChange(!fillerLevelsEnabled)}
               >
-                <MenuItem value={'channel'}>
-                  <Trans>Same as channel</Trans>
+                <MenuItem value={'default'}>
+                  <Trans>Default</Trans>
                 </MenuItem>
                 <MenuItem value={'custom'}>
                   <Trans>Custom</Trans>
@@ -334,8 +334,9 @@ export const TranscodeConfigAudioSettingsForm = ({
               </Select>
               <FormHelperText>
                 <Trans>
-                  Set a separate volume or loudness target for filler and
-                  channel fallback content.
+                  Default uses the Audio Volume and Audio Loudness
+                  Normalization settings above. Custom sets separate levels
+                  for filler and channel fallback content.
                 </Trans>
               </FormHelperText>
             </FormControl>
@@ -368,18 +369,24 @@ export const TranscodeConfigAudioSettingsForm = ({
                   </InputLabel>
                   <Select
                     label={t`Filler Loudness Normalization`}
-                    value={fillerLoudnormEnabled ? 'custom' : 'channel'}
+                    value={fillerLoudnormEnabled ? 'custom' : 'default'}
                     onChange={() =>
                       onFillerLoudnormChange(!fillerLoudnormEnabled)
                     }
                   >
-                    <MenuItem value={'channel'}>
-                      <Trans>Same as channel</Trans>
+                    <MenuItem value={'default'}>
+                      <Trans>Default</Trans>
                     </MenuItem>
                     <MenuItem value={'custom'}>
                       <Trans>Custom (loudnorm)</Trans>
                     </MenuItem>
                   </Select>
+                  <FormHelperText>
+                    <Trans>
+                      Default uses the Audio Loudness Normalization setting
+                      above.
+                    </Trans>
+                  </FormHelperText>
                 </FormControl>
               </Grid>
             </>

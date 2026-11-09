@@ -17,7 +17,7 @@ type AudioLevelSettings = Pick<
 
 /**
  * Filler list items and channel fallback items take the filler audio levels.
- * Each filler level left null falls back to the channel level.
+ * Each filler level left null falls back to the main transcode config level.
  */
 export function resolveAudioLevels(
   transcodeConfig: AudioLevelSettings,
