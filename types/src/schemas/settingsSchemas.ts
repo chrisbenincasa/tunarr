@@ -90,6 +90,7 @@ export const FfmpegSettingsSchema = z.object({
   ffprobeExecutablePath: z.string().default('/usr/bin/ffprobe'),
   enableLogging: z.boolean().default(false),
   enableFileLogging: z.boolean().default(false),
+  fileLogRetentionCount: z.number().int().min(1).default(50),
   logLevel: z.enum(FfmpegLogLevels).optional().default('warning'),
   languagePreferences: LanguagePreferencesSchema.default({
     preferences: [{ iso6391: 'en', iso6392: 'eng', displayName: 'English' }],

@@ -31,6 +31,7 @@ import { useState } from 'react';
 import type { SubmitHandler } from 'react-hook-form';
 import { Controller, useForm } from 'react-hook-form';
 import UnsavedNavigationAlert from '../../components/settings/UnsavedNavigationAlert.tsx';
+import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 
 import { DeleteConfirmationDialog } from '@/components/DeleteConfirmationDialog.tsx';
 import type { DeepRequired } from 'ts-essentials';
@@ -233,8 +234,7 @@ export default function FfmpegSettingsPage() {
                 <Trans>
                   Enable ffmpeg logging to different sinks. Outputting to a file
                   will create a new log file for every spawned ffmpeg process in
-                  the Tunarr log directory. These files are automatically
-                  cleaned up by a background process.
+                  the Tunarr log directory. Old files are deleted automatically.
                 </Trans>
               </FormHelperText>
             </FormControl>
@@ -277,6 +277,18 @@ export default function FfmpegSettingsPage() {
               </FormControl>
             )}
           </Stack>
+          <Box sx={{ flexBasis: { xs: '100%', md: '50%' } }}>
+            <NumericFormControllerText
+              control={control}
+              name="fileLogRetentionCount"
+              rules={{ min: 1, required: true }}
+              TextFieldProps={{
+                label: t`FFMPEG Log Files to Keep`,
+                fullWidth: true,
+                helperText: t`Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour, whatever the log method. Error logs are written in every mode. Files still being written are never deleted.`,
+              }}
+            />
+          </Box>
         </Stack>
         <FormControl sx={{ flexBasis: { xs: '100%', md: '50%' } }}>
           <InputLabel id="hls-direct-output-format-label">

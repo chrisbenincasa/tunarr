@@ -31,6 +31,7 @@ import type {
 import { UpdatePlexPlayStatusScheduledTask } from './plex/UpdatePlexPlayStatusTask.ts';
 import { RefreshMediaSourceLibraryTask } from './RefreshMediaSourceLibraryTask.ts';
 import { RemoveDanglingProgramsFromSearchTask } from './RemoveDanglingProgramsFromSearchTask.ts';
+import { PruneFfmpegLogsTask } from './PruneFfmpegLogsTask.ts';
 import { RollLogFileTask } from './RollLogFileTask.ts';
 import { ScanLibrariesTask } from './ScanLibrariesTask.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
@@ -71,6 +72,8 @@ const TasksModule = new ContainerModule(({ bind }) => {
   );
 
   bind(RollLogFileTask).toSelf();
+
+  bind(PruneFfmpegLogsTask).toSelf();
 
   bind<Factory<() => BackupTask, [DeepReadonly<BackupConfiguration>]>>(
     factoryKey(BackupTask),

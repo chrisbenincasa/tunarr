@@ -2058,8 +2058,12 @@ msgid "Enable embedded subtitle extraction"
 msgstr "Enable embedded subtitle extraction"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
-msgid "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. These files are automatically cleaned up by a background process."
-msgstr "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. These files are automatically cleaned up by a background process."
+msgid "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. Old files are deleted automatically."
+msgstr "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. Old files are deleted automatically."
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+#~ msgid "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. These files are automatically cleaned up by a background process."
+#~ msgstr "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. These files are automatically cleaned up by a background process."
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Enable if the watermark is an animated GIF or PNG. The watermark will loop according to the image's configuration. If this option is enabled and the image is not animated, there will be playback errors."
@@ -2399,6 +2403,10 @@ msgstr "FFmpeg Executable Path"
 #: src/pages/system/TroubleshootPage.tsx
 msgid "FFmpeg Log"
 msgstr "FFmpeg Log"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "FFMPEG Log Files to Keep"
+msgstr "FFMPEG Log Files to Keep"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -5626,6 +5634,14 @@ msgstr "Tunarr Backend URL:"
 #: src/components/profiles/StreamSelectionProfileSelect.tsx
 msgid "Tunarr Default"
 msgstr "Tunarr Default"
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+msgid "Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour, whatever the log method. Error logs are written in every mode. Files still being written are never deleted."
+msgstr "Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour, whatever the log method. Error logs are written in every mode. Files still being written are never deleted."
+
+#: src/pages/settings/FfmpegSettingsPage.tsx
+#~ msgid "Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour. Files written in the last 10 minutes are never deleted."
+#~ msgstr "Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour. Files written in the last 10 minutes are never deleted."
 
 #: src/components/ui/patterns/AppShell/PhoneNav.tsx
 #: src/components/ui/patterns/AppShell/ShellTopBar.tsx
