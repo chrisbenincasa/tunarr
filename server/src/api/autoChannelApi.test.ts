@@ -10,8 +10,14 @@ import {
   validatorCompiler,
 } from 'fastify-type-provider-zod';
 import { describe, expect, test, vi } from 'vitest';
+import type { ChannelDB } from '../db/ChannelDB.ts';
+import type { SmartCollectionsDB } from '../db/SmartCollectionsDB.ts';
+import type { TranscodeConfigDB } from '../db/TranscodeConfigDB.ts';
+import type * as AutoChannelServiceModule from '../services/AutoChannelService.ts';
 import type { AutoChannelService } from '../services/AutoChannelService.ts';
+import type { MeilisearchService } from '../services/MeilisearchService.ts';
 import { GenericBadRequestError } from '../types/errors.ts';
+import { Result } from '../types/result.ts';
 import type { ZodTypeProvider } from '../util/zod.ts';
 import { AutoChannelApiController } from './autoChannelApi.ts';
 
@@ -19,6 +25,9 @@ import { AutoChannelApiController } from './autoChannelApi.ts';
 vi.mock('../services/AutoChannelService.ts', () => ({
   AutoChannelService: class {},
 }));
+
+// The real service, used in one test, loads the DI container through it.
+vi.mock('../services/Scheduler.js', () => ({ GlobalScheduler: {} }));
 
 const channel: Channel = {
   id: 'a1b2c3d4-e5f6-4a7b-8c9d-0e1f2a3b4c5d',
@@ -197,5 +206,57 @@ describe('POST /auto-channels/create', () => {
     expect(res.json()).toEqual({
       message: 'No default transcode config exists',
     });
+  });
+
+  test('answers 400 when dynamicParams does not fit the preset', async () => {
+    const { AutoChannelService: RealAutoChannelService } =
+      await vi.importActual<typeof AutoChannelServiceModule>(
+        '../services/AutoChannelService.ts',
+      );
+    const smartCollectionsDB = {
+      insert: vi.fn(() =>
+        Promise.resolve(Result.success({ uuid: 'collection-1' })),
+      ),
+      materializeSmartCollection: vi.fn(() => Promise.resolve([{ id: 'p1' }])),
+      delete: vi.fn(() => Promise.resolve()),
+    };
+    const service = new RealAutoChannelService(
+      {} as MeilisearchService,
+      smartCollectionsDB as unknown as SmartCollectionsDB,
+      {
+        getAllChannels: () => Promise.resolve([]),
+      } as unknown as ChannelDB,
+      {
+        getDefaultConfig: () =>
+          Promise.resolve({ uuid: channel.transcodeConfigId }),
+      } as unknown as TranscodeConfigDB,
+    );
+
+    const app = Fastify().withTypeProvider<ZodTypeProvider>();
+    app.setValidatorCompiler(validatorCompiler);
+    app.setSerializerCompiler(serializerCompiler);
+    await app.register(new AutoChannelApiController(service).mount);
+
+    const res = await app.inject({
+      method: 'POST',
+      url: '/auto-channels/create',
+      payload: {
+        presetId: 'genre-channel',
+        contentAssignments: {
+          content: { query: { filterString: 'genre = "News"' } },
+          x: { query: { filterString: 'genre = "News"' } },
+        },
+        dynamicParams: {
+          type: 'weighted_mix',
+          groups: [{ role: 'x', weight: 1 }],
+        },
+      },
+    });
+
+    expect(res.statusCode).toBe(400);
+    expect(res.json()).toEqual({
+      message: 'Preset "genre-channel" does not take dynamicParams',
+    });
+    expect(smartCollectionsDB.insert).not.toHaveBeenCalled();
   });
 });

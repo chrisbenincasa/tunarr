@@ -118,6 +118,7 @@ export class AutoChannelService {
       : preset.contentRequirements;
 
     this.validateAssignments(request, roles, !!preset.dynamicRequirements);
+    this.validateRoleUsage(request, preset);
 
     // Parse every filter before writing, so a bad filter fails cleanly.
     const filtersByRole = Object.fromEntries(
@@ -328,6 +329,53 @@ export class AutoChannelService {
     }
   }
 
+  /**
+   * Rejects requests whose roles don't match the preset. Dynamic presets
+   * need dynamicParams of their own type, fixed presets take none, and
+   * every content assignment must feed a schedule slot.
+   */
+  private validateRoleUsage(
+    request: AutoChannelCreateRequest,
+    preset: ChannelPreset,
+  ) {
+    const { dynamicParams } = request;
+    let usedRoles: string[];
+
+    if (preset.dynamicRequirements) {
+      const expectedType = dynamicParamsTypeFor(preset);
+      if (!dynamicParams) {
+        throw new GenericBadRequestError(
+          `Preset "${preset.id}" needs dynamicParams of type ${expectedType}`,
+        );
+      }
+      if (dynamicParams.type !== expectedType) {
+        throw new GenericBadRequestError(
+          `Preset "${preset.id}" needs dynamicParams of type ${expectedType}, not ${dynamicParams.type}`,
+        );
+      }
+      usedRoles =
+        dynamicParams.type === 'weighted_mix'
+          ? dynamicParams.groups.map((g) => g.role)
+          : dynamicParams.blocks.map((b) => b.role);
+    } else {
+      if (dynamicParams) {
+        throw new GenericBadRequestError(
+          `Preset "${preset.id}" does not take dynamicParams`,
+        );
+      }
+      usedRoles = preset.contentRequirements.map((req) => req.role);
+    }
+
+    const unused = Object.keys(request.contentAssignments).filter(
+      (role) => !usedRoles.includes(role),
+    );
+    if (unused.length > 0) {
+      throw new GenericBadRequestError(
+        `Preset "${preset.id}" does not use content assignments for roles: ${unused.join(', ')}`,
+      );
+    }
+  }
+
   private async resolveChannelNumber(requested: number | undefined) {
     const channels = await this.channelDB.getAllChannels();
     const usedNumbers = new Set(channels.map((c) => c.number));
@@ -534,6 +582,18 @@ export class AutoChannelService {
 
     return search.parsedSearchToRequest(clause);
   }
+}
+
+/**
+ * Mirrors the wizard, which builds a weighted mix when the preset's first
+ * role has a weighted_mix picker and a Classic TV Day otherwise.
+ */
+function dynamicParamsTypeFor(
+  preset: ChannelPreset,
+): DynamicPresetParams['type'] {
+  return preset.contentRequirements[0]?.pickerHint?.type === 'weighted_mix'
+    ? 'weighted_mix'
+    : 'classic_tv_day';
 }
 
 function selectsContent(query: ContentQuery): boolean {
