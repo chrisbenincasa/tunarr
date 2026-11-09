@@ -3,6 +3,7 @@ import { useThemeTokens } from '@/hooks/useTunarrTheme.ts';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import {
   Add,
+  AutoFixHigh,
   ContentCopy,
   Delete,
   Download,
@@ -391,6 +392,13 @@ export const ChannelsView = ({
             >
               <Trans>Export M3U</Trans>
             </Button>
+            <RouterButtonLink
+              to="/channels/auto-create"
+              variant="outlined"
+              startIcon={<AutoFixHigh />}
+            >
+              <Trans>Auto Create</Trans>
+            </RouterButtonLink>
             <RouterButtonLink
               to="/channels/new"
               variant="contained"

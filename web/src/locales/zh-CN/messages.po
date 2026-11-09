@@ -913,6 +913,10 @@ msgstr ""
 msgid "Auto"
 msgstr "自动"
 
+#: src/components/channels/ChannelsView.tsx
+msgid "Auto Create"
+msgstr ""
+
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Auto Deinterlace Video"
 msgstr "自动去隔行"
