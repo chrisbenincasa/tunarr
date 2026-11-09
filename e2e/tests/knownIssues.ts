@@ -36,6 +36,7 @@ export const KNOWN_ISSUES: KnownIssue[] = [
       '/channels/$channelId/programming/slot-editor',
       '/channels/$channelId/programming/time-slot-editor',
       '/library/playlists/$showId/edit',
+      '/library/custom-shows/$',
       '/library/fillers/$fillerId/edit',
     ],
     note: 'Missing list keys in the lineup and programming editors.',
