@@ -131,6 +131,7 @@ const TABLES: Record<string, TableTarget> = {
   CustomShows: {
     url: () => '/library/playlists',
     ready: 'E2E Reruns',
+    dense: true,
     persisted: true,
     ported: true,
     sortColumn: 'Name',
