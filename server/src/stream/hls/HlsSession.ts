@@ -486,6 +486,13 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     this.logger.debug('Stream ended.');
   }
 
+  // The run loop spawns one ffmpeg per program, so no process runs between
+  // programs. The loop itself must stay alive, and it stops once the state
+  // leaves 'started'.
+  protected override isTranscodeRunning(): boolean {
+    return this.state === 'started';
+  }
+
   protected override getAdditionalRequiredFiles(): string[] {
     return this.#currentSubtitleRendition
       ? [this.getHlsOptions().subtitleStreamNameFormat]

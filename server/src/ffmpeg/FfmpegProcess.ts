@@ -58,6 +58,10 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
     return this.#exited;
   }
 
+  get running() {
+    return this.#running;
+  }
+
   get stdout() {
     if (!this.initialized) {
       return;
