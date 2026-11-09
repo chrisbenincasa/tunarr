@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (11/09/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` is in review in PR #2507, `/library/fillers` is stacked on it in PR #2511, and `/library/smart_collections` is stacked on that in PR #2514, and `/settings/sources` is stacked on that in `feat/media-sources-collection`. `/library/trash` moves to Phase 5. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next are `/system/tasks` and `/system/logs`. The forms/settings mock is still due and gates Phase 4.
+> **Status (11/09/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` is in review in PR #2507, `/library/fillers` is stacked on it in PR #2511, and `/library/smart_collections` is stacked on that in PR #2514, `/settings/sources` is stacked on that in PR #2516, and `/system/tasks` is stacked on that in `feat/tasks-collection`. `/library/trash` moves to Phase 5. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next is `/system/logs`. The forms/settings mock is still due and gates Phase 4.
 
 ## Why
 
@@ -193,6 +193,16 @@ Built on `feat/media-sources-collection`, stacked on `feat/smart-collections-col
 - Rows open the source's browse page at `/media_sources/$mediaSourceId`, and the card title links there. Nothing on this page opened it before (decided 11/09/2026).
 - The e2e table spec runs MediaSourceSettings at dense density too.
 - `/library/trash` is skipped. It renders `LibraryProgramGrid`, a grid of programs rather than a list of entities, so it moves to Phase 5 with `MediaGrid`.
+
+Built on `feat/tasks-collection`, stacked on `feat/media-sources-collection` (11/09/2026):
+
+- `/system/tasks` splits into `TasksView` and `TaskCard` in `web/src/components/system/tasks/` and `TaskSettingsPage` (data). The page's separate phone list is gone, because `CollectionView` gives phones cards.
+- The card shows the name, a status pill, the description, the last and next run, and Run now. Names are single CamelCase words, so the title offers a line break at each capital.
+- The status pill reads Running, Scheduled or Manual only, from the scheduler's `running` flag and whether the task has a schedule. The table gains a Status column to match.
+- Run now is a button in both layouts. The table's one-item Actions menu is gone.
+- The table now saves its sort, hidden columns and page size like the other collection pages. The e2e table spec runs Tasks at dense density with persistence on, and waits on `ScanLibrariesTask`, which stays on the first page in every order the spec uses.
+- The page sits inside `SystemLayout`, which keeps its System heading and `Paper` like `SettingsLayout`.
+- Tasks have no detail page, so rows don't open anything.
 
 ### Phase 4. Forms and settings
 
