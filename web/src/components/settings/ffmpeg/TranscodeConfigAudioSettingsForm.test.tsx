@@ -110,6 +110,27 @@ describe('TranscodeConfigAudioSettingsForm filler audio', () => {
     expect(fillerValues()).toEqual({ volume: 80, loudnorm: null });
   });
 
+  test('"Custom" starts at 100 when the main volume is 0', async () => {
+    const { user } = renderForm({ audioVolumePercent: 0 });
+
+    await user.click(selectFor('Filler Audio Levels'));
+    await user.click(screen.getByRole('option', { name: 'Custom' }));
+
+    expect(fillerValues().volume).toBe(100);
+  });
+
+  test('"Custom" starts at 100 when the user typed a main volume of 0', async () => {
+    const { user } = renderForm();
+
+    const mainVolume = screen.getByLabelText('Audio Volume');
+    await user.clear(mainVolume);
+    await user.type(mainVolume, '0');
+    await user.click(selectFor('Filler Audio Levels'));
+    await user.click(screen.getByRole('option', { name: 'Custom' }));
+
+    expect(fillerValues().volume).toBe(100);
+  });
+
   test('custom filler loudnorm starts from the channel loudnorm', async () => {
     const channelLoudnorm = { i: -24, lra: 7, tp: -2 };
     const { user } = renderForm({ audioLoudnormConfig: channelLoudnorm });

@@ -101,9 +101,13 @@ export const TranscodeConfigAudioSettingsForm = ({
     (enabled: boolean) => {
       setFillerLevelsEnabled(enabled);
       setFillerLoudnormEnabled(false);
+
+      // The pipeline skips the volume filter at 0 or below, so that plays
+      // at 100%. Filler volume must be at least 1.
+      const mainVolume = Number(form.getFieldValue('audioVolumePercent'));
       form.setFieldValue(
         'fillerAudioVolumePercent',
-        enabled ? form.getFieldValue('audioVolumePercent') : null,
+        enabled ? (mainVolume > 0 ? mainVolume : 100) : null,
       );
       form.setFieldValue('fillerAudioLoudnormConfig', null);
     },
