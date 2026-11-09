@@ -194,10 +194,11 @@ const TABLES: Record<string, TableTarget> = {
   MediaSourceSettings: {
     url: () => '/settings/sources',
     ready: 'E2E Shows',
+    dense: true,
     persisted: true,
     ported: true,
     sortColumn: 'Name',
-    hideColumn: 'URL',
+    hideColumn: 'Location',
     filter: async (page) => {
       await showFilters(page);
       await page.getByRole('textbox', { name: 'Filter by Name' }).fill('Shows');
