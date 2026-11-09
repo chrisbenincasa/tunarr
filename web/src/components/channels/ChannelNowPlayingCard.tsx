@@ -92,11 +92,16 @@ function programDetails(program: TvGuideProgram): ProgramDetails {
 
 export const ChannelNowPlayingCard = ({ channelId }: Props) => {
   const { data: channel } = useChannelSuspense(channelId);
-  const { data: nowPlaying, dataUpdatedAt } = useChannelNowPlaying(channelId);
+  const {
+    data: nowPlaying,
+    dataUpdatedAt,
+    errorUpdatedAt,
+  } = useChannelNowPlaying(channelId);
   const queryClient = useQueryClient();
 
-  // Refetch just after the current program ends. Keying on dataUpdatedAt
-  // reschedules after a refetch that still returns the ended program.
+  // Refetch just after the current program ends. Keying on dataUpdatedAt and
+  // errorUpdatedAt reschedules after a refetch that fails or still returns
+  // the ended program.
   useEffect(() => {
     const timer = setTimeout(
       () => {
@@ -111,7 +116,7 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
       nowPlayingRefreshDelayMs(nowPlaying.stop, Date.now()),
     );
     return () => clearTimeout(timer);
-  }, [channelId, dataUpdatedAt, nowPlaying.stop, queryClient]);
+  }, [channelId, dataUpdatedAt, errorUpdatedAt, nowPlaying.stop, queryClient]);
 
   // Re-renders the start and remaining times.
   const [now, setNow] = useState(Date.now);

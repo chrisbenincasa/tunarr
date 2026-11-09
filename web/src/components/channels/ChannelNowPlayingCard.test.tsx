@@ -14,6 +14,7 @@ const Base = Date.UTC(2026, 10, 9);
 const nowPlaying = vi.hoisted(() => ({
   program: undefined as TvGuideProgram | undefined,
   updatedAt: 0,
+  errorUpdatedAt: 0,
 }));
 
 vi.mock('../../hooks/useChannels.ts', () => ({
@@ -26,6 +27,7 @@ vi.mock('../../hooks/useTvGuide.ts', () => ({
   useChannelNowPlaying: () => ({
     data: nowPlaying.program,
     dataUpdatedAt: nowPlaying.updatedAt,
+    errorUpdatedAt: nowPlaying.errorUpdatedAt,
   }),
 }));
 
@@ -141,5 +143,32 @@ describe('ChannelNowPlayingCard', () => {
       vi.advanceTimersByTime(1_000);
     });
     expect(invalidate).toHaveBeenCalledTimes(1);
+  });
+
+  test('retries after a failed refetch', () => {
+    nowPlaying.program = movieAiring('movie-a', Base, Base + 60_000);
+    nowPlaying.errorUpdatedAt = 0;
+    const queryClient = new QueryClient();
+    const invalidate = vi
+      .spyOn(queryClient, 'invalidateQueries')
+      .mockResolvedValue();
+    const { rerender } = renderWithProviders(
+      <ChannelNowPlayingCard channelId="channel-1" />,
+      { queryClient },
+    );
+
+    act(() => {
+      vi.advanceTimersByTime(51_000);
+    });
+    expect(invalidate).toHaveBeenCalledTimes(1);
+
+    // The refetch fails, so only errorUpdatedAt moves.
+    nowPlaying.errorUpdatedAt = Date.now();
+    rerender(<ChannelNowPlayingCard channelId="channel-1" />);
+
+    act(() => {
+      vi.advanceTimersByTime(5_000);
+    });
+    expect(invalidate).toHaveBeenCalledTimes(2);
   });
 });
