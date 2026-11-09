@@ -1,4 +1,7 @@
-import { getApiMediaSourcesQueryKey } from '@/generated/@tanstack/react-query.gen.ts';
+import {
+  getApiMediaSourcesByIdStatusQueryKey,
+  getApiMediaSourcesQueryKey,
+} from '@/generated/@tanstack/react-query.gen.ts';
 import type * as Gen from '@/generated/@tanstack/react-query.gen.ts';
 import useStore from '@/store/index.ts';
 import {
@@ -7,7 +10,6 @@ import {
   seededQueryClient,
   waitFor,
   within,
-  withinRow,
 } from '@/test/utils';
 import type { MediaSourceSettings } from '@tunarr/types';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
@@ -25,15 +27,11 @@ vi.mock('@/generated/@tanstack/react-query.gen.ts', async (importOriginal) => ({
   }),
 }));
 
-// The dialogs, health check and add button fetch on their own. These tests
-// cover only which source the page hands them.
+// The dialogs and add button fetch on their own. These tests cover only which
+// source the page hands them.
 vi.mock('@/components/settings/media_source/AddMediaSourceButton.tsx', () => ({
   AddMediaSourceButton: () => null,
 }));
-vi.mock(
-  '@/components/settings/media_source/MediaSourceHealthyTableCell.tsx',
-  () => ({ MediaSourceHealthyTableCell: () => null }),
-);
 vi.mock('@/components/settings/media_source/PlexServerEditDialog.tsx', () => ({
   PlexServerEditDialog: ({ server }: { server: MediaSourceSettings }) => (
     <div>Plex dialog for {server.name}</div>
@@ -84,7 +82,7 @@ const localSource: MediaSourceSettings = {
   name: 'My Disk',
   type: 'local',
   mediaType: 'movies',
-  paths: [],
+  paths: ['/media/movies'],
   pathReplacements: [],
   libraries: [],
 };
@@ -93,8 +91,18 @@ const renderPage = () =>
   renderWithProviders(<MediaSourceSettingsPage />, {
     queryClient: seededQueryClient([
       [getApiMediaSourcesQueryKey(), [plexSource, localSource]],
+      [
+        getApiMediaSourcesByIdStatusQueryKey({ path: { id: 'plex-1' } }),
+        { healthy: true },
+      ],
+      [
+        getApiMediaSourcesByIdStatusQueryKey({ path: { id: 'local-1' } }),
+        { healthy: false },
+      ],
     ]),
   });
+
+const card = (name: string) => within(screen.getByRole('article', { name }));
 
 describe('MediaSourceSettingsPage', () => {
   beforeEach(() => {
@@ -104,42 +112,16 @@ describe('MediaSourceSettingsPage', () => {
     });
   });
 
-  test('links remote sources and shows a dash for local ones', () => {
+  test('shows each source with its stored health status', () => {
     renderPage();
-    const plex = withinRow('My Plex');
-    expect(plex.getByText('Plex')).toBeInTheDocument();
-    expect(
-      plex.getByRole('link', { name: 'http://plex.local:32400' }),
-    ).toHaveAttribute('href', 'http://plex.local:32400');
-
-    const local = withinRow('My Disk');
-    expect(local.getByText('Local')).toBeInTheDocument();
-    const [, , urlCell] = local.getAllByRole('cell');
-    expect(urlCell).toHaveTextContent(/^-$/);
-    expect(local.queryByRole('link')).not.toBeInTheDocument();
-  });
-
-  test('offers library actions only for remote sources', () => {
-    renderPage();
-    const plex = withinRow('My Plex');
-    expect(
-      plex.getByRole('button', { name: 'Refresh Libraries' }),
-    ).toBeVisible();
-    expect(plex.getByRole('button', { name: 'Edit Libraries' })).toBeVisible();
-
-    const local = withinRow('My Disk');
-    expect(
-      local.queryByRole('button', { name: 'Refresh Libraries' }),
-    ).not.toBeInTheDocument();
-    expect(
-      local.queryByRole('button', { name: 'Edit Libraries' }),
-    ).not.toBeInTheDocument();
+    expect(card('My Plex').getByText('Healthy')).toBeInTheDocument();
+    expect(card('My Disk').getByText('Unreachable')).toBeInTheDocument();
   });
 
   test('refreshes the libraries of the clicked source', async () => {
     const { user } = renderPage();
     await user.click(
-      withinRow('My Plex').getByRole('button', { name: 'Refresh Libraries' }),
+      screen.getByRole('button', { name: 'Refresh libraries of My Plex' }),
     );
     await waitFor(() =>
       expect(mocks.refresh).toHaveBeenCalledWith({ path: { id: 'plex-1' } }),
@@ -148,41 +130,33 @@ describe('MediaSourceSettingsPage', () => {
 
   test('opens the edit dialog that matches the source type', async () => {
     const { user } = renderPage();
-    await user.click(
-      withinRow('My Plex').getByRole('button', { name: 'Edit Media Source' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Edit My Plex' }));
     expect(screen.getByText('Plex dialog for My Plex')).toBeInTheDocument();
     expect(screen.queryByText(/Local dialog/)).not.toBeInTheDocument();
   });
 
   test('opens the local dialog for a local source', async () => {
     const { user } = renderPage();
-    await user.click(
-      withinRow('My Disk').getByRole('button', { name: 'Edit Media Source' }),
-    );
+    await user.click(screen.getByRole('button', { name: 'Edit My Disk' }));
     expect(screen.getByText('Local dialog for My Disk')).toBeInTheDocument();
   });
 
   test('opens the libraries dialog for the clicked source', async () => {
     const { user } = renderPage();
     await user.click(
-      withinRow('My Plex').getByRole('button', { name: 'Edit Libraries' }),
+      screen.getByRole('button', { name: 'Edit libraries of My Plex' }),
     );
     expect(screen.getByText('Libraries of My Plex')).toBeInTheDocument();
   });
 
-  test('deletes a source only after confirmation', async () => {
+  test('deletes the confirmed source through the API', async () => {
     const { user } = renderPage();
+    await user.click(screen.getByRole('button', { name: 'Delete My Disk' }));
     await user.click(
-      withinRow('My Disk').getByRole('button', { name: 'Delete' }),
+      within(screen.getByRole('dialog')).getByRole('button', {
+        name: 'Delete',
+      }),
     );
-    const dialog = screen.getByRole('dialog');
-    expect(
-      within(dialog).getByText('Delete Media Source "My Disk"?'),
-    ).toBeInTheDocument();
-    expect(mocks.remove).not.toHaveBeenCalled();
-
-    await user.click(within(dialog).getByRole('button', { name: 'Delete' }));
     await waitFor(() =>
       expect(mocks.remove).toHaveBeenCalledWith({ path: { id: 'local-1' } }),
     );

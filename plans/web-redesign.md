@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (11/09/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` is in review in PR #2507, `/library/fillers` is stacked on it in PR #2511, and `/library/smart_collections` is stacked on that in `feat/smart-collections-collection`. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next are the remaining collection routes. The forms/settings mock is still due and gates Phase 4.
+> **Status (11/09/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` is in review in PR #2507, `/library/fillers` is stacked on it in PR #2511, and `/library/smart_collections` is stacked on that in PR #2514, and `/settings/sources` is stacked on that in `feat/media-sources-collection`. `/library/trash` moves to Phase 5. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next are `/system/tasks` and `/system/logs`. The forms/settings mock is still due and gates Phase 4.
 
 ## Why
 
@@ -181,6 +181,18 @@ Built on `feat/smart-collections-collection`, stacked on `feat/fillers-collectio
 - `EditSmartCollectionDialog` fetches the collection itself, so it stays in the page.
 - Rows now open the collection on click, like every other collection page. The old table only opened it from the View button.
 - The e2e table spec runs CustomShows, FillerLists and SmartCollections at dense density, because Comfortable shows cards. The saved-MRT-settings test stores dense density for the same reason.
+
+Built on `feat/media-sources-collection`, stacked on `feat/smart-collections-collection` (11/09/2026):
+
+- `/settings/sources` splits into `MediaSourcesView` and `MediaSourceCard` in `web/src/components/settings/media_source/` and `MediaSourceSettingsPage` (data). The page keeps the four edit dialogs and the libraries dialog.
+- The card shows the type logo, name, type, health pill, enabled-library chip and location. Remote sources add Refresh libraries and Edit libraries next to Edit and Delete.
+- The page fetches every source's health with `useQueries` and hands the view a map, so the view needs no API. Both layouts show health as a `StatusPill` (Healthy, Unreachable, Checking). `MediaSourceHealthyTableCell` is gone.
+- Local sources have no URL, so both layouts show the first folder and a "+N more" count. The table's URL column becomes Location.
+- `AddMediaSourceButton` owns its own dialogs and Plex login, so the view takes it as an `addButton` slot. It shows in the header and the empty state.
+- The page sits inside `SettingsLayout`, which keeps its Settings heading and `Paper` until Phase 4. `PageHeader` takes the place of the old in-paper heading.
+- Rows don't open anything on click. A source has a browse page at `/media_sources/$mediaSourceId`, but no link reached it from this page before either.
+- The e2e table spec runs MediaSourceSettings at dense density too.
+- `/library/trash` is skipped. It renders `LibraryProgramGrid`, a grid of programs rather than a list of entities, so it moves to Phase 5 with `MediaGrid`.
 
 ### Phase 4. Forms and settings
 
