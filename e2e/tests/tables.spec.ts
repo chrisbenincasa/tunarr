@@ -154,6 +154,7 @@ const TABLES: Record<string, TableTarget> = {
   SmartCollections: {
     url: () => '/library/smart_collections',
     ready: 'E2E Movies Only',
+    dense: true,
     persisted: true,
     ported: true,
     sortColumn: 'Name',
