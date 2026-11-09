@@ -201,12 +201,45 @@ export abstract class ExternalCollectionScanner<
       ctx.apiClient,
       ctx.library.externalKey,
     )) {
+      if (seenIds.has(collection.externalId)) {
+        continue;
+      }
       seenIds.add(collection.externalId);
       // Upsert a tag for this collection name
       const tag = await this.tagRepo.upsertTag(collection.title);
-      // Check if collection is new
-      let existingCollection = existingCollections[collection.externalId];
-      if (!existingCollection) {
+
+      // Collection rows are unique per media source, not per library. A
+      // Jellyfin or Emby BoxSet can come back through several libraries, so
+      // look for a row another library already created before inserting.
+      let existingCollection =
+        existingCollections[collection.externalId] ??
+        (await this.externalCollectionsRepo.getCollectionByExternalId(
+          ctx.mediaSource.uuid,
+          collection.externalId,
+        ));
+
+      if (existingCollection) {
+        // Attach the row to the library that returned it most recently. The
+        // cleanup pass below only deletes rows attached to the library being
+        // scanned, so this keeps a row that another library still returns.
+        if (
+          existingCollection.libraryId !== ctx.library.uuid ||
+          existingCollection.title !== collection.title
+        ) {
+          existingCollection = {
+            ...existingCollection,
+            libraryId: ctx.library.uuid,
+            title: collection.title,
+          };
+          await this.externalCollectionsRepo.updateCollection(
+            existingCollection.uuid,
+            {
+              libraryId: existingCollection.libraryId,
+              title: existingCollection.title,
+            },
+          );
+        }
+      } else {
         existingCollection = {
           uuid: v4(),
           externalKey: collection.externalId,
