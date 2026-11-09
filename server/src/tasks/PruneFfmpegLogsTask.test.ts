@@ -1,3 +1,5 @@
+import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
+import { activeFfmpegReportFiles } from '@/ffmpeg/ffmpegReportFiles.js';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -6,6 +8,7 @@ import {
   FfmpegLogMinAgeMs,
   isFfmpegLogFile,
   pruneFfmpegLogs,
+  PruneFfmpegLogsTask,
 } from './PruneFfmpegLogsTask.ts';
 
 const now = new Date('2026-11-08T12:00:00Z');
@@ -180,5 +183,51 @@ describe('pruneFfmpegLogs', () => {
     const result = await pruneFfmpegLogs(path.join(dir, 'missing'), 1, { now });
 
     expect(result).toEqual({ deleted: [], failed: [] });
+  });
+});
+
+describe('PruneFfmpegLogsTask', () => {
+  function makeTask(logsDirectory: string, fileLogRetentionCount: number) {
+    const settingsDB = {
+      systemSettings: () => ({ logging: { logsDirectory } }),
+      ffmpegSettings: () => ({ fileLogRetentionCount }),
+    };
+    return new PruneFfmpegLogsTask(settingsDB as unknown as ISettingsDB);
+  }
+
+  test('prunes the logs directory to the configured count', async () => {
+    const dir = await makeDir();
+    const oldMs = Date.now() - FfmpegLogMinAgeMs - 60_000;
+    for (let i = 0; i < 5; i++) {
+      await writeLog(dir, `ffmpeg-report-x-${i}.log`, oldMs - i * 1000);
+    }
+
+    const result = await makeTask(dir, 2).run(undefined);
+
+    expect(result.isSuccess()).toBe(true);
+    expect(await listNames(dir)).toEqual([
+      'ffmpeg-report-x-0.log',
+      'ffmpeg-report-x-1.log',
+    ]);
+  });
+
+  test('keeps reports of running ffmpeg processes', async () => {
+    const dir = await makeDir();
+    const oldMs = Date.now() - FfmpegLogMinAgeMs - 60_000;
+    await writeLog(dir, 'ffmpeg-report-new.log', oldMs);
+    await writeLog(dir, 'ffmpeg-report-live.log', oldMs - 1000);
+    await writeLog(dir, 'ffmpeg-report-dead.log', oldMs - 2000);
+
+    activeFfmpegReportFiles.add('ffmpeg-report-live.log');
+    try {
+      await makeTask(dir, 1).run(undefined);
+    } finally {
+      activeFfmpegReportFiles.delete('ffmpeg-report-live.log');
+    }
+
+    expect(await listNames(dir)).toEqual([
+      'ffmpeg-report-live.log',
+      'ffmpeg-report-new.log',
+    ]);
   });
 });
