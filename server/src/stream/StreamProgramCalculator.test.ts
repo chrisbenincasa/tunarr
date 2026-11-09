@@ -810,7 +810,10 @@ describe('StreamProgramCalculator', () => {
 
   describe('channel fallback clip', () => {
     // A=60s, flex=120s, B=60s, looked up at the start of the flex
-    async function lookupFlex(offlineMode: 'pic' | 'clip') {
+    async function lookupFlex(
+      offlineMode: 'pic' | 'clip',
+      clipDurationMs = 30_000,
+    ) {
       const fillerDB = mock<IFillerListDB>();
       const channelDB = mock<IChannelDB>();
       const programDB = mock<IProgramDB>();
@@ -827,7 +830,7 @@ describe('StreamProgramCalculator', () => {
 
       const fallback = createFakeProgramOrm({
         uuid: fallbackId,
-        duration: 30_000,
+        duration: clipDurationMs,
         mediaSourceId: tag<MediaSourceId>('mediasource-123'),
       });
       when(channelDB.getChannelFallbackPrograms(channelId)).thenReturn(
@@ -892,7 +895,18 @@ describe('StreamProgramCalculator', () => {
       expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
         type: 'fallback',
         program: { uuid: fallbackId },
+        startOffset: 0,
         streamDuration: 30_000,
+      });
+    });
+
+    test('plays the tail of a fallback clip longer than the gap', async () => {
+      const { out, fallbackId } = await lookupFlex('clip', 300_000);
+      expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
+        type: 'fallback',
+        program: { uuid: fallbackId },
+        startOffset: 180_000,
+        streamDuration: 120_000,
       });
     });
 
