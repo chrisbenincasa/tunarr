@@ -196,6 +196,17 @@ describe('resolveChecked', () => {
     );
   });
 
+  test('reads --version when describe reports an empty version', async () => {
+    const { resolver } = await makeResolver('bundled', {
+      describe: await describeOutput({ version: '' }),
+      version: `${ETV_NEXT_BINARY_NAME} ${pinnedEtvNextVersion}+linux-x64`,
+    });
+
+    await expect(resolver.resolveChecked()).resolves.toContain(
+      ETV_NEXT_BINARY_NAME,
+    );
+  });
+
   test('refuses a contract mismatch even when the env var points at it', async () => {
     const { resolver } = await makeResolver('env', {
       describe: await describeOutput({ describeVersion: 2 }),
@@ -275,6 +286,17 @@ describe('getInstalledVersion', () => {
     );
     await resolver.getInstalledVersion();
     expect(childProcessHelper.getStdout).toHaveBeenCalledTimes(1);
+  });
+
+  test('falls back to --version when describe reports an empty version', async () => {
+    const { resolver } = await makeResolver({
+      describe: await describeOutput({ version: '' }),
+      version: `${ETV_NEXT_BINARY_NAME} 0.2.5+linux-x64`,
+    });
+
+    await expect(resolver.getInstalledVersion()).resolves.toBe(
+      '0.2.5+linux-x64',
+    );
   });
 
   test('falls back to --version for a worker without describe', async () => {

@@ -7,6 +7,7 @@ import {
   findContractMismatches,
   parseDescribe,
 } from './EtvNextDescribe.ts';
+import { matchesPinnedEtvNextVersion } from './EtvNextVersion.ts';
 import type { Describe } from './generated/describe.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -26,6 +27,13 @@ describe('parseDescribe', () => {
 
     expect(described.describe_version).toBe(1);
     expect(described.runtime_capability).toBeNull();
+  });
+
+  // A pin bump fails here until the fixture is recaptured from the new worker.
+  test('the fixture comes from the pinned worker', async () => {
+    const described = await loadExample();
+
+    expect(matchesPinnedEtvNextVersion(described.binary.version)).toBe(true);
   });
 
   // Upstream adds fields without bumping describe_version.

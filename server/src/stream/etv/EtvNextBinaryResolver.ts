@@ -171,8 +171,15 @@ export class EtvNextBinaryResolver {
 
   /** Reads the worker's own version string, e.g. `0.2.5+linux-x64`. */
   async getVersion(): Promise<string | undefined> {
-    const described = await this.describe();
-    return described?.binary.version ?? (await this.readVersionFlag());
+    return this.versionOf(await this.describe());
+  }
+
+  /** The version `describe` reports, or the `--version` probe when it reports none. */
+  private async versionOf(
+    described: Describe | undefined,
+  ): Promise<string | undefined> {
+    const version = described?.binary.version;
+    return isNonEmptyString(version) ? version : await this.readVersionFlag();
   }
 
   /** The `--version` probe, for workers that predate `describe`. */
@@ -234,11 +241,11 @@ export class EtvNextBinaryResolver {
 
     const executablePath = await this.resolve();
     const described = await this.describe();
-    const version = described?.binary.version ?? (await this.readVersionFlag());
+    const version = await this.versionOf(described);
     const fromEnv =
       EtvNextBinaryResolver.envCandidatePaths().includes(executablePath);
 
-    if (!version || !matchesPinnedEtvNextVersion(version)) {
+    if (!isNonEmptyString(version) || !matchesPinnedEtvNextVersion(version)) {
       if (!fromEnv) {
         throw new EtvNextVersionMismatchError(executablePath, version);
       }
