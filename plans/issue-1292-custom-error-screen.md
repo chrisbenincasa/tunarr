@@ -6,14 +6,14 @@ Issue: https://github.com/chrisbenincasa/tunarr/issues/1292. Asks for a custom e
 
 ## Decisions
 
-| Question | Decision |
-|---|---|
-| Where the setting lives | Transcode config, next to `errorScreen` / `errorScreenAudio`. Shared across channels. |
-| Media sources | Local path, http(s) URL, or upload. |
-| Media-server items | Deferred. Error screens often play because the media server is unreachable, so a server-hosted clip fails when it is needed. A later version can copy the picked item locally. |
-| Image vs. video | One `custom` value. Probe the file to tell a still image from a video. |
-| Target branch | `main`. Medium feature with one migration. |
-| Legacy-path bugs | Separate PRs. See "Out of scope". |
+| Question                | Decision                                                                                                                                                                       |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Where the setting lives | Transcode config, next to `errorScreen` / `errorScreenAudio`. Shared across channels.                                                                                          |
+| Media sources           | Local path, http(s) URL, or upload.                                                                                                                                            |
+| Media-server items      | Deferred. Error screens often play because the media server is unreachable, so a server-hosted clip fails when it is needed. A later version can copy the picked item locally. |
+| Image vs. video         | One `custom` value. Probe the file to tell a still image from a video.                                                                                                         |
+| Target branch           | `main`. Medium feature with one migration.                                                                                                                                     |
+| Legacy-path bugs        | Separate PRs. See "Out of scope".                                                                                                                                              |
 
 ## Current state
 
@@ -93,11 +93,11 @@ New helper, shared by both paths, e.g. `server/src/stream/ErrorScreenMediaResolv
 
 ## Phases
 
-| Phase | Contents | Ships alone? |
-|---|---|---|
-| 1 | Schema, migration, resolver, custom image and custom audio on both paths, web fields using path + existing image/audio upload | Yes |
-| 2 | Looping video on both paths | Yes |
-| 3 | `/upload/video` route (MIME prefix `video/`, size cap) and an upload button for video | Yes |
+| Phase | Contents                                                                                                                      | Ships alone? |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| 1     | Schema, migration, resolver, custom image and custom audio on both paths, web fields using path + existing image/audio upload | Yes          |
+| 2     | Looping video on both paths                                                                                                   | Yes          |
+| 3     | `/upload/video` route (MIME prefix `video/`, size cap) and an upload button for video                                         | Yes          |
 
 Phase 2 holds the only new mechanism, `movie=...:loop=0`. Phases 1 and 3 reuse existing code.
 
