@@ -20,25 +20,16 @@ export function resolveScheduleSkeleton(
     return id;
   };
 
-  if (skeleton.type === 'time') {
-    return {
-      ...skeleton,
-      slots: skeleton.slots.map(({ role, ...slot }) => ({
-        ...slot,
-        id: v4(),
-        type: 'smart-collection',
-        smartCollectionId: collectionIdFor(role),
-      })),
-    };
-  }
-
-  return {
-    ...skeleton,
-    slots: skeleton.slots.map(({ role, ...slot }) => ({
+  const toCollectionSlots = <Slot extends { role: string }>(slots: Slot[]) =>
+    slots.map(({ role, ...slot }) => ({
       ...slot,
       id: v4(),
-      type: 'smart-collection',
+      type: 'smart-collection' as const,
       smartCollectionId: collectionIdFor(role),
-    })),
-  };
+    }));
+
+  // The branches narrow the union, so each spread keeps its own slot type.
+  return skeleton.type === 'time'
+    ? { ...skeleton, slots: toCollectionSlots(skeleton.slots) }
+    : { ...skeleton, slots: toCollectionSlots(skeleton.slots) };
 }
