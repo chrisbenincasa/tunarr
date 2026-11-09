@@ -78,7 +78,7 @@
     "kysely": "^0.27.6",
     "lodash-es": "^4.17.21",
     "lowdb": "^7.0.1",
-    "meilisearch": "^0.50.0",
+    "meilisearch": "^0.62.0",
     "music-metadata": "^11.10.5",
     "node-cache": "^5.1.2",
     "node-schedule": "^2.1.1",
@@ -144,7 +144,7 @@
     "vitest": "catalog:vitest"
   },
   "meilisearch": {
-    "version": "1.30.0"
+    "version": "1.56.2"
   },
   "ersatztvNext": {
     "releaseRepo": "ErsatzTV/next",

@@ -123,6 +123,12 @@ On startup, Tunarr checks the `data.ms` directory before starting Meilisearch. M
 
 Tunarr then restores the index from `ms-snapshots` when a snapshot exists, or creates an empty index. If search results are empty afterwards, rescan your libraries to rebuild the index.
 
+### Why does search stop working after I downgrade Tunarr?
+
+When a new Tunarr release bundles a newer Meilisearch, the search index in `data.ms` is upgraded in place on first start. Meilisearch cannot downgrade an index, so an older Tunarr release fails to start search with "Downgrade is not supported" in `meilisearch.log`. Snapshots in `ms-snapshots` are upgraded the same way and can't be restored by the older release either.
+
+To fix it, stop Tunarr, then delete `data.ms` and `ms-snapshots/data.ms.snapshot` from your Tunarr data directory. Start Tunarr and rescan your libraries to rebuild the index.
+
 ## What happens if `settings.json` is damaged?
 
 Tunarr reads `settings.json` from its data directory on startup. A crash or power loss right after a write can leave the file empty or cut off. Tunarr handles both cases instead of refusing to start:
