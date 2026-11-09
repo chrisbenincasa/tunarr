@@ -1,3 +1,4 @@
+import { isNonEmptyString } from '@tunarr/shared/util';
 import type { ChannelPreset } from '@tunarr/types/api';
 import { isEmpty } from 'lodash-es';
 import { z } from 'zod/v4';
@@ -94,7 +95,7 @@ export function toChannelTemplate(
   const templateRoles: ChannelTemplate['roles'] = {};
   for (const role of roles) {
     const selection = state.roleSelections[role];
-    if (selection === undefined) {
+    if (!selection) {
       continue;
     }
     templateRoles[role] = {
@@ -155,7 +156,7 @@ export function parseChannelTemplate(
   const template = parsed.data;
 
   const preset = presets.find((p) => p.id === template.presetId);
-  if (preset === undefined) {
+  if (!preset) {
     return {
       ok: false,
       error: `This template uses the "${template.presetId}" style, which this version of Tunarr doesn't have.`,
@@ -218,9 +219,9 @@ export function templateFileName(template: ChannelTemplate): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '');
-  return `${isEmpty(base) ? 'channel' : base}.tunarr-template.json`;
+  return `${isNonEmptyString(base) ? base : 'channel'}.tunarr-template.json`;
 }
 
 function emptyToUndefined(s: string | undefined): string | undefined {
-  return isEmpty(s) ? undefined : s;
+  return isNonEmptyString(s) ? s : undefined;
 }

@@ -76,6 +76,7 @@ import {
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
 import type { MediaSourceId } from '@tunarr/shared';
+import { isNonEmptyString } from '@tunarr/shared/util';
 import { tag } from '@tunarr/types';
 import type {
   AutoChannelCreateRequest,
@@ -563,7 +564,7 @@ function ChooseStyleStep({
 
     // Clear the input so picking the same file again still fires a change.
     e.target.value = '';
-    if (file === undefined) {
+    if (!file) {
       return;
     }
     file.text().then(onImport).catch(console.error);
@@ -598,7 +599,7 @@ function ChooseStyleStep({
           />
         </Button>
       </Stack>
-      {importError !== undefined && (
+      {isNonEmptyString(importError) && (
         <Alert severity="error" sx={{ mb: 2 }}>
           {importError}
         </Alert>
