@@ -102,6 +102,7 @@ const TABLES: Record<string, TableTarget> = {
   FillerLists: {
     url: () => '/library/fillers',
     ready: 'E2E Bumpers',
+    dense: true,
     persisted: true,
     ported: true,
     sortColumn: 'Name',
@@ -434,7 +435,9 @@ const savedByMrt = {
       guideDuration: 7200000,
       themePreference: 'system',
       programmingSelectorView: 'grid',
-      density: 'comfortable',
+
+      // Dense, so the filler lists page shows its table rather than cards.
+      density: 'dense',
     },
     settings: {
       backendUri: SERVER_URL,
