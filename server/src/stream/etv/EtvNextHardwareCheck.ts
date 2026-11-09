@@ -10,8 +10,8 @@ export type HardwareWarning = {
 
 /**
  * The partial channel config `describe --probe` reads. The worker marks the
- * accel, device and driver it selects as `configured`. The version is
- * required, because the worker refuses a config without one.
+ * accel, device and driver it selects as `configured`. The worker refuses an
+ * overlay without a version, and an mpeg2video overlay without a bitrate.
  */
 export function probeOverlay(selection: HardwareSelection) {
   return {
@@ -21,6 +21,8 @@ export function probeOverlay(selection: HardwareSelection) {
         accel: selection.accel,
         format: selection.videoFormat,
         bit_depth: selection.bitDepth,
+        bitrate_kbps: selection.bitrateKbps,
+        buffer_kbps: selection.bufferKbps,
         ...(selection.vaapiDevice
           ? { vaapi_device: selection.vaapiDevice }
           : {}),

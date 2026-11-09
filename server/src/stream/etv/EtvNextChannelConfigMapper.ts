@@ -199,6 +199,8 @@ export type HardwareSelection = {
   accel: HardwareAccel;
   videoFormat: VideoFormat;
   bitDepth: number;
+  bitrateKbps: number;
+  bufferKbps: number;
   vaapiDevice?: string;
   vaapiDriver?: VaapiDriver;
 };
@@ -220,7 +222,13 @@ export function findHardwareSelection(
   return {
     accel,
     videoFormat,
-    bitDepth: transcodeConfig.videoBitDepth ?? 8,
+
+    // The backend always encodes mpeg2video at 8 bits, whatever the config asks.
+    bitDepth:
+      videoFormat === 'mpeg2video' ? 8 : (transcodeConfig.videoBitDepth ?? 8),
+
+    bitrateKbps: transcodeConfig.videoBitRate,
+    bufferKbps: transcodeConfig.videoBufferSize,
     vaapiDevice: vaapi.device,
     vaapiDriver: vaapi.driver,
   };

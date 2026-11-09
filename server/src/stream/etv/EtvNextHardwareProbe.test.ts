@@ -35,6 +35,8 @@ const selection = {
   accel: 'vaapi',
   videoFormat: 'hevc',
   bitDepth: 10,
+  bitrateKbps: 10000,
+  bufferKbps: 20000,
 } as const;
 
 function makeProbe(getStdout: ChildProcessHelper['getStdout']) {

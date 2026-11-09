@@ -30,6 +30,8 @@ const selection = (
   accel: 'vaapi',
   videoFormat: 'hevc',
   bitDepth: 10,
+  bitrateKbps: 10000,
+  bufferKbps: 20000,
   ...overrides,
 });
 
@@ -38,8 +40,27 @@ describe('probeOverlay', () => {
     expect(probeOverlay(selection())).toEqual({
       version: ChannelConfigVersion,
       normalization: {
-        video: { accel: 'vaapi', format: 'hevc', bit_depth: 10 },
+        video: {
+          accel: 'vaapi',
+          format: 'hevc',
+          bit_depth: 10,
+          bitrate_kbps: 10000,
+          buffer_kbps: 20000,
+        },
       },
+    });
+  });
+
+  // The worker's config finalize fails an mpeg2video config without a
+  // bitrate, so the probe would exit before reporting anything.
+  test('gives an mpeg2video overlay the bitrate the worker requires', () => {
+    const overlay = probeOverlay(
+      selection({ videoFormat: 'mpeg2video', bitDepth: 8, bitrateKbps: 6000 }),
+    );
+
+    expect(overlay.normalization.video).toMatchObject({
+      format: 'mpeg2video',
+      bitrate_kbps: 6000,
     });
   });
 

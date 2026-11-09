@@ -9,14 +9,21 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import type { StreamLineupItem } from '../db/derived_types/StreamLineup.ts';
 import type { ChannelOrmWithTranscodeConfig } from '../db/schema/derivedTypes.ts';
 import type { TranscodeConfigOrm } from '../db/schema/TranscodeConfig.ts';
+import type { EtvNextBinaryResolver } from '../stream/etv/EtvNextBinaryResolver.ts';
 import { EtvNextDynamicTokenRegistry } from '../stream/etv/EtvNextDynamicTokenRegistry.ts';
+import { EtvNextHardwareProbe } from '../stream/etv/EtvNextHardwareProbe.ts';
 import {
   EtvNextPlayoutWriter,
   MaxCallbacksPerWindow,
 } from '../stream/etv/EtvNextPlayoutWriter.ts';
+import type {
+  AccelRuntime,
+  RuntimeCapability,
+} from '../stream/etv/generated/describe.ts';
 import type { PlayoutItem } from '../stream/etv/generated/playout.ts';
 import { FileStreamSource } from '../stream/types.ts';
 import { Result } from '../types/result.ts';
+import type { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
 import type { ZodTypeProvider } from '../util/zod.ts';
 import { EtvNextApiController } from './etvApi.ts';
 
@@ -59,6 +66,34 @@ const supportedTranscodeConfig = {
   normalizeFrameRate: false,
 } as unknown as TranscodeConfigOrm;
 
+const exampleDescribePath = nodePath.join(
+  import.meta.dirname,
+  '../stream/etv/schema/example-describe.json',
+);
+
+/**
+ * Stands in for `ersatztv-channel describe --probe`. Like the worker's config
+ * finalize, it fails an mpeg2video overlay that has no bitrate.
+ */
+function fakeDescribe(runtime: RuntimeCapability) {
+  return vi.fn(async (_exe: string, args: string[]) => {
+    const overlayPath = args[args.length - 1] ?? '';
+    const overlay = JSON.parse(await fsp.readFile(overlayPath, 'utf-8')) as {
+      normalization: { video: { format?: string; bitrate_kbps?: number } };
+    };
+    const { video } = overlay.normalization;
+    if (video.format === 'mpeg2video' && video.bitrate_kbps === undefined) {
+      throw new Error('ersatztv-channel exited with code 1');
+    }
+
+    const output = JSON.parse(
+      await fsp.readFile(exampleDescribePath, 'utf-8'),
+    ) as Record<string, unknown>;
+    output.runtime_capability = runtime;
+    return JSON.stringify(output);
+  });
+}
+
 const programItem = (streamDuration: number): StreamLineupItem =>
   ({
     type: 'program',
@@ -80,12 +115,17 @@ async function makeApp({
   channelExists = true,
   errorScreen,
   transcodeConfig,
+  probeRuntime = {
+    ffmpeg: { path: 'ffmpeg', version: '8.1', hwaccels: [] },
+    accels: [],
+  },
 }: {
   lineupItem?: StreamLineupItem;
   scheduleFails?: boolean;
   channelExists?: boolean;
   errorScreen?: string;
   transcodeConfig?: Partial<TranscodeConfigOrm>;
+  probeRuntime?: RuntimeCapability;
 } = {}) {
   const programCalculator = {
     getCurrentLineupItem: vi.fn(() =>
@@ -154,10 +194,19 @@ async function makeApp({
   const tokenRegistry = new EtvNextDynamicTokenRegistry();
   const token = tokenRegistry.issue(channelUuid, channelNumber);
 
+  const describeProbe = fakeDescribe(probeRuntime);
+  const hardwareProbe = new EtvNextHardwareProbe(
+    {
+      resolveChecked: vi.fn(() => Promise.resolve('/opt/ersatztv-channel')),
+    } as unknown as EtvNextBinaryResolver,
+    { getStdout: describeProbe } as unknown as ChildProcessHelper,
+  );
+
   const controller = new EtvNextApiController(
     tokenRegistry,
     channelDB as never,
     playoutWriter,
+    hardwareProbe,
   );
 
   const app = Fastify().withTypeProvider<ZodTypeProvider>();
@@ -168,6 +217,9 @@ async function makeApp({
     (req as unknown as { serverCtx: unknown }).serverCtx = {
       sessionManager,
       transcodeConfigDB,
+      settings: {
+        ffmpegSettings: () => ({ ffmpegExecutablePath: '/usr/bin/ffmpeg' }),
+      },
     };
     done();
   });
@@ -184,6 +236,7 @@ async function makeApp({
     etvSession,
     playoutWriter,
     transcodeConfigDB,
+    describeProbe,
   };
 }
 
@@ -662,6 +715,120 @@ describe('transcode config compatibility', () => {
     const { app } = await makeApp();
 
     const response = await compatibility(app);
+
+    expect(response.statusCode).toBe(404);
+  });
+});
+
+describe('transcode config hardware', () => {
+  const hardware = (
+    app: Awaited<ReturnType<typeof makeApp>>['app'],
+    id = '11111111-2222-4333-8444-555555555555',
+  ) =>
+    app.inject({
+      method: 'GET',
+      url: `/etv/transcode_configs/${id}/hardware`,
+    });
+
+  const vaapi = (overrides: Partial<AccelRuntime> = {}): AccelRuntime => ({
+    accel: 'vaapi',
+    configured: true,
+    status: 'available',
+    error: null,
+    device: '/dev/dri/renderD128',
+    driver: null,
+    decode: [],
+    encode: [{ format: 'h264', bit_depths: [8] }],
+    ...overrides,
+  });
+
+  const probed = (accels: AccelRuntime[]): RuntimeCapability => ({
+    ffmpeg: { path: '/usr/bin/ffmpeg', version: '8.1', hwaccels: ['vaapi'] },
+    accels,
+  });
+
+  test('warns when this machine cannot open the configured accel', async () => {
+    const { app } = await makeApp({
+      transcodeConfig: {
+        hardwareAccelerationMode: 'vaapi',
+        videoBitRate: 10000,
+        videoBufferSize: 20000,
+      } as Partial<TranscodeConfigOrm>,
+      probeRuntime: probed([
+        vaapi({ status: 'probe_failed', error: 'vaInitialize failed' }),
+      ]),
+    });
+
+    const response = await hardware(app);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      warnings: [
+        {
+          field: 'hardwareAccelerationMode',
+          reason:
+            'could not open vaapi on /dev/dri/renderD128: vaInitialize failed',
+        },
+      ],
+    });
+  });
+
+  test('warns about an mpeg2video config the accel cannot encode', async () => {
+    const { app, describeProbe } = await makeApp({
+      transcodeConfig: {
+        hardwareAccelerationMode: 'vaapi',
+        videoFormat: 'mpeg2video',
+        videoBitRate: 6000,
+        videoBufferSize: 12000,
+      } as Partial<TranscodeConfigOrm>,
+      probeRuntime: probed([vaapi()]),
+    });
+
+    const response = await hardware(app);
+
+    expect(describeProbe).toHaveBeenCalledOnce();
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      warnings: [
+        {
+          field: 'videoFormat',
+          reason:
+            'vaapi cannot encode mpeg2video on this machine, so it encodes in software',
+        },
+      ],
+    });
+  });
+
+  test('is empty when the machine encodes the config in hardware', async () => {
+    const { app } = await makeApp({
+      transcodeConfig: {
+        hardwareAccelerationMode: 'vaapi',
+        videoBitRate: 10000,
+        videoBufferSize: 20000,
+      } as Partial<TranscodeConfigOrm>,
+      probeRuntime: probed([vaapi()]),
+    });
+
+    const response = await hardware(app);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ warnings: [] });
+  });
+
+  test('is empty without probing for a config that encodes in software', async () => {
+    const { app, describeProbe } = await makeApp({ transcodeConfig: {} });
+
+    const response = await hardware(app);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ warnings: [] });
+    expect(describeProbe).not.toHaveBeenCalled();
+  });
+
+  test('answers 404 for a config that does not exist', async () => {
+    const { app } = await makeApp();
+
+    const response = await hardware(app);
 
     expect(response.statusCode).toBe(404);
   });

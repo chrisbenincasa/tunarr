@@ -412,6 +412,8 @@ describe('findHardwareSelection', () => {
       accel: 'vaapi',
       videoFormat: 'hevc',
       bitDepth: 10,
+      bitrateKbps: 10000,
+      bufferKbps: 20000,
       vaapiDevice: '/dev/dri/renderD129',
       vaapiDriver: 'ihd',
     });
@@ -442,8 +444,36 @@ describe('findHardwareSelection', () => {
       accel: 'cuda',
       videoFormat: 'h264',
       bitDepth: 8,
+      bitrateKbps: 10000,
+      bufferKbps: 20000,
       vaapiDevice: undefined,
       vaapiDriver: undefined,
     });
+  });
+
+  // The backend refuses an mpeg2video config without a bitrate.
+  test('carries the rate control the channel config would use', () => {
+    expect(
+      findHardwareSelection(
+        transcodeConfig({
+          hardwareAccelerationMode: 'vaapi',
+          videoFormat: 'mpeg2video',
+          videoBitRate: 6000,
+          videoBufferSize: 12000,
+        }),
+      ),
+    ).toMatchObject({ bitrateKbps: 6000, bufferKbps: 12000 });
+  });
+
+  test('uses 8 bits for mpeg2video, as the backend does', () => {
+    expect(
+      findHardwareSelection(
+        transcodeConfig({
+          hardwareAccelerationMode: 'vaapi',
+          videoFormat: 'mpeg2video',
+          videoBitDepth: 10,
+        }),
+      ),
+    ).toMatchObject({ videoFormat: 'mpeg2video', bitDepth: 8 });
   });
 });
