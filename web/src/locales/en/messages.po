@@ -5477,6 +5477,10 @@ msgstr "This is the name of the fake program that will appear in the TV guide wh
 msgid "This is used by iptv clients to categorize the channels. You can leave it as 'tunarr' if you don't need this sort of classification."
 msgstr "This is used by iptv clients to categorize the channels. You can leave it as 'tunarr' if you don't need this sort of classification."
 
+#: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
+msgid "This machine cannot encode this config in hardware on the ErsatzTV next backend"
+msgstr "This machine cannot encode this config in hardware on the ErsatzTV next backend"
+
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "This media source has no enabled or scanned libraries. Enable libraries for this source on the <0>Media Sources</0> page or manually trigger scans on the <1>Library</1> page."
 msgstr "This media source has no enabled or scanned libraries. Enable libraries for this source on the <0>Media Sources</0> page or manually trigger scans on the <1>Library</1> page."

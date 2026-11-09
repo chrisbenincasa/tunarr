@@ -5477,6 +5477,10 @@ msgstr "当某个时段没有节目可显示时（例如安排了较长的弹性
 msgid "This is used by iptv clients to categorize the channels. You can leave it as 'tunarr' if you don't need this sort of classification."
 msgstr "IPTV 客户端用此字段对频道分类。如果不需要此类分类，保留为 tunarr 即可。"
 
+#: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
+msgid "This machine cannot encode this config in hardware on the ErsatzTV next backend"
+msgstr ""
+
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "This media source has no enabled or scanned libraries. Enable libraries for this source on the <0>Media Sources</0> page or manually trigger scans on the <1>Library</1> page."
 msgstr "此媒体源没有已启用或已扫描的媒体库。请在<0>媒体源</0>页面启用该来源的媒体库，或在<1>媒体库</1>页面手动触发扫描。"
