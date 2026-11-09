@@ -21,6 +21,7 @@
     "generate-env": "tsx scripts/generateEnvModule.ts",
     "generate-etv-schemas": "tsx scripts/generate-etv-schemas.ts",
     "generate-openapi": "tsx src/index.ts generate-openapi",
+    "check-meilisearch-assets": "tsx scripts/download-meilisearch.ts --check-assets",
     "install-meilisearch": "tsx scripts/download-meilisearch.ts",
     "kysely": "dotenv -e .env.development -- kysely",
     "lint": "oxlint src/ --report-unused-disable-directives --max-warnings 0",
