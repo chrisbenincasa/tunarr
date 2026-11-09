@@ -36,6 +36,7 @@ import {
 } from '../../state/FfmpegState.ts';
 import { FrameState } from '../../state/FrameState.ts';
 import { FrameSize } from '../../types.ts';
+import type { FfmpegVersionResult } from '../../../ffmpegInfo.ts';
 import { NvidiaPipelineBuilder } from './NvidiaPipelineBuilder.ts';
 
 describe('NvidiaPipelineBuilder', () => {
@@ -771,5 +772,170 @@ describe('NvidiaPipelineBuilder', () => {
       'scale_cuda=format=yuv420p,hwdownload,format=yuv420p,subtitles=',
     );
     expect(filterComplex).not.toContain('format=nv12,subtitles=');
+  });
+
+  describe('crop bottom workaround', () => {
+    const ffmpeg711: FfmpegVersionResult = {
+      versionString: 'n7.1.1-56-gc2184b65d2-20250716',
+      majorVersion: 7,
+      minorVersion: 1,
+      patchVersion: 1,
+      isUnknown: false,
+    };
+
+    const etv812: FfmpegVersionResult = {
+      versionString: 'n8.1.2-etv.7',
+      majorVersion: 8,
+      minorVersion: 1,
+      patchVersion: 2,
+      isUnknown: false,
+    };
+
+    type CropCase = {
+      sourceSize: FrameSize;
+      scaledSize?: FrameSize;
+      paddedSize?: FrameSize;
+      version: FfmpegVersionResult;
+      watermark: 'none' | 'static' | 'intermittent';
+    };
+
+    function buildArgs({
+      sourceSize,
+      scaledSize = sourceSize,
+      paddedSize = scaledSize,
+      version,
+      watermark: watermarkKind,
+    }: CropCase) {
+      const video = VideoInputSource.withStream(
+        new FileStreamSource('/path/to/video.mkv'),
+        VideoStream.create({
+          codec: 'h264',
+          displayAspectRatio: '16:9',
+          frameSize: sourceSize,
+          index: 0,
+          pixelFormat: new PixelFormatYuv420P(),
+          providedSampleAspectRatio: null,
+          colorFormat: ColorFormat.unknown,
+        }),
+      );
+
+      const watermark =
+        watermarkKind === 'none'
+          ? null
+          : new WatermarkInputSource(
+              new FileStreamSource('/path/to/watermark.png'),
+              StillImageStream.create({
+                frameSize: FrameSize.withDimensions(800, 600),
+                index: 0,
+              }),
+              {
+                duration: watermarkKind === 'intermittent' ? 15 : 0,
+                enabled: true,
+                horizontalMargin: 5,
+                opacity: 100,
+                position: 'bottom-right',
+                verticalMargin: 5,
+                width: 10,
+              },
+            );
+
+      const builder = new NvidiaPipelineBuilder(
+        new NvidiaHardwareCapabilities('RTX 2080 Ti', 75),
+        EmptyFfmpegCapabilities,
+        video,
+        null,
+        null,
+        watermark,
+        null,
+      );
+
+      return builder
+        .build(
+          FfmpegState.create({ version }),
+          new FrameState({
+            isAnamorphic: false,
+            scaledSize,
+            paddedSize,
+            pixelFormat: new PixelFormatYuv420P(),
+          }),
+          DefaultPipelineOptions,
+        )
+        .getCommandArgs()
+        .join(' ');
+    }
+
+    const hd720 = FrameSize.withDimensions(1280, 720);
+
+    test.each([
+      [FrameSize.FHD, 'crop_bottom=8'],
+      [hd720, 'crop_bottom=16'],
+    ])(
+      'crops %s with a watermark on unpatched ffmpeg',
+      (frameSize, expected) => {
+        expect(
+          buildArgs({
+            sourceSize: frameSize,
+            version: ffmpeg711,
+            watermark: 'static',
+          }),
+        ).toContain(`h264_metadata=${expected}`);
+      },
+    );
+
+    test.each([
+      [hd720, FrameSize.FHD, 'crop_bottom=8'],
+      [FrameSize.withDimensions(854, 480), hd720, 'crop_bottom=16'],
+    ])(
+      'crops an upscaled %s source with a watermark on unpatched ffmpeg',
+      (sourceSize, scaledSize, expected) => {
+        expect(
+          buildArgs({
+            sourceSize,
+            scaledSize,
+            version: ffmpeg711,
+            watermark: 'static',
+          }),
+        ).toContain(`h264_metadata=${expected}`);
+      },
+    );
+
+    // Padding downloads frames to software, so overlay_cuda gets uploaded
+    // frames of the right size.
+    test.each([
+      ['a letterboxed', FrameSize.withDimensions(640, 480)],
+      ['a same-size pillarboxed', FrameSize.withDimensions(960, 720)],
+    ])('does not crop %s source', (_, sourceSize) => {
+      expect(
+        buildArgs({
+          sourceSize,
+          scaledSize: FrameSize.withDimensions(960, 720),
+          paddedSize: hd720,
+          version: ffmpeg711,
+          watermark: 'static',
+        }),
+      ).not.toContain('crop_bottom');
+    });
+
+    test('does not crop an intermittent watermark, which overlays in software', () => {
+      expect(
+        buildArgs({
+          sourceSize: hd720,
+          version: ffmpeg711,
+          watermark: 'intermittent',
+        }),
+      ).not.toContain('crop_bottom');
+    });
+
+    test('does not crop without an overlay', () => {
+      expect(
+        buildArgs({ sourceSize: hd720, version: ffmpeg711, watermark: 'none' }),
+      ).not.toContain('crop_bottom');
+    });
+
+    test('does not crop on ErsatzTV ffmpeg 8', () => {
+      expect(
+        buildArgs({ sourceSize: hd720, version: etv812, watermark: 'static' }),
+      ).not.toContain('crop_bottom');
+    });
   });
 });

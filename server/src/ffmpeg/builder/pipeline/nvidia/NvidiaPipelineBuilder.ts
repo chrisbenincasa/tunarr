@@ -43,7 +43,10 @@ import { ImageScaleFilter } from '../../filter/ImageScaleFilter.ts';
 import { LibplaceboTonemapFilter } from '../../filter/LibplaceboTonemapFilter.ts';
 import { SubtitleFilter } from '../../filter/SubtitleFilter.ts';
 import { SubtitleOverlayFilter } from '../../filter/SubtitleOverlayFilter.ts';
-import { NvidiaCropBottomBitstreamFilter } from '../../filter/nvidia/NvidiaCropBottomBitstreamFilter.ts';
+import {
+  NvidiaCropBottomBitstreamFilter,
+  ffmpegKeepsCudaFrameSize,
+} from '../../filter/nvidia/NvidiaCropBottomBitstreamFilter.ts';
 import { OverlaySubtitleCudaFilter } from '../../filter/nvidia/OverlaySubtitleCudaFilter.ts';
 import { ScaleNppFilter } from '../../filter/nvidia/ScaleNppFilter.ts';
 import { SubtitleScaleNppFilter } from '../../filter/nvidia/SubtitleScaleNppFilter.ts';
@@ -348,15 +351,24 @@ export class NvidiaPipelineBuilder extends SoftwarePipelineBuilder {
 
     currentState = this.setPixelFormat(currentState);
 
+    // On unpatched ffmpeg, overlay_cuda leaves a green band at the bottom when
+    // its input stayed on the GPU since decode, scaled or not. Padding
+    // downloads the frames first, which avoids the band. Anywhere else, the
+    // crop cuts real rows (16 at 720p).
+    const usesCudaOverlay =
+      this.context.filterChain.watermarkOverlayFilterSteps.some(
+        (step) => step instanceof OverlayWatermarkCudaFilter,
+      ) ||
+      this.context.filterChain.subtitleOverlayFilterSteps.some(
+        (step) => step instanceof OverlaySubtitleCudaFilter,
+      );
+
     if (
       this.ffmpegState.decoderHwAccelMode === HardwareAccelerationMode.Cuda &&
       this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.Cuda &&
-      (this.context.videoStream.frameSize.equals(
-        this.desiredState.scaledSize,
-      ) ||
-        (this.context.hasSubtitleOverlay() &&
-          this.desiredState.paddedSize.equals(this.desiredState.scaledSize) &&
-          (this.context.hasSubtitleOverlay() || this.context.hasWatermark)))
+      usesCudaOverlay &&
+      this.desiredState.paddedSize.equals(this.desiredState.scaledSize) &&
+      !ffmpegKeepsCudaFrameSize(this.ffmpegState.version)
     ) {
       this.pipelineSteps.push(
         new NvidiaCropBottomBitstreamFilter(
