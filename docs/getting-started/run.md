@@ -191,13 +191,15 @@ services:
 
 ### \*nix Setup
 
-After downloading the binary from Github, you must re-add executable permissions to the file. In Linux or macOS, this can be done by running
+Each release archive extracts to one folder named for the release, such as `tunarr-v2026.11.1-linux-x64/`. The folder holds the `tunarr` executable (`tunarr.exe` on Windows) and the binaries it runs beside it. The executable's name stays the same across releases, so service definitions and shortcuts keep working after an upgrade.
+
+If the executable lost its permissions after extracting, re-add them. In Linux or macOS, run
 
 ```
-chmod +x ./tunarr-linux-64
+chmod +x ./tunarr-v2026.11.1-linux-x64/tunarr
 ```
 
-Replace `tunarr-linux-64` with the path to the Tunarr binary you downloaded.
+Replace the folder name with the one from the release you downloaded.
 
 ### Meilisearch Binary
 
@@ -218,8 +220,8 @@ Setup:
 
 1. In terminal, execute `sudo mkdir /opt/tunarr/`
 2. Execute `sudo mkdir /opt/tunarr/streams`
-3. Execute a `sudo mv tunarr-linux-x64 /opt/tunarr/tunarr-linux-x64` (replace the first path with the path you downloaded Tunarr too, which will include the version) and `sudo mv meilisearch /opt/tunarr/meilisearch`
-  1. **NOTE**: On each update, you must replace BOTH the Tunarr and Meilisearch binaries in this directory.
+3. Execute `sudo mv tunarr-v2026.11.1-linux-x64/* /opt/tunarr/` (replace the folder name with the one from the release you downloaded)
+  1. **NOTE**: On each update, replace every file in this directory with the files from the new release's folder.
 4. Execute `sudo nano /etc/systemd/system/tunarr.service`
 5. Copy and paste the service definition below:
 
@@ -232,9 +234,9 @@ After=network-online.target
 [Service]
 Type=simple
 WorkingDirectory=/opt/tunarr
-ExecStart=/opt/tunarr/tunarr-linux-x64
-ExecReload=pkill -INT tunarr-linux-x64
-ExecStop=pkill -INT tunarr-linux-x64
+ExecStart=/opt/tunarr/tunarr
+ExecReload=pkill -INT tunarr
+ExecStop=pkill -INT tunarr
 KillMode=process
 Restart=always
 RestartSec=15
@@ -297,7 +299,7 @@ Save the following launchd configuration to `~/Library/LaunchAgents/tunarr.xml`.
 5. Another window will open and in the upper section we will need to select “Path” and then click on “Edit.” In this last window that opens, we will click on “New” and enter this path: `C:\Program Files\nssm`. Now we can click on OK and close all the other windows that were previously open by clicking on OK again.
 6. Open "Command Prompt" as administrator, type `nssm install`, and press enter. The nssm configuration window will open. What we are interested in for now is filling in some fields in the ‘Application’ and “Details” tabs.
 7. The first field to fill in is the service name at the bottom, in our example the name entered will simply be “Tunarr”.
-8. Assuming you've placed our `tunarr.exe` in the following path: `C:\Program files\tunarr\tunar.exe`, in the “Application” tab, simply copy and paste the entire path, including .exe, into the “Path” field. If you have Tunarr in a different location, use that path instead.
+8. Assuming you've placed our `tunarr.exe` in the following path: `C:\Program files\tunarr\tunarr.exe`, in the “Application” tab, simply copy and paste the entire path, including .exe, into the “Path” field. If you have Tunarr in a different location, use that path instead.
 9. In the “startup folder” field, enter only the path to the folder, so in our example it will be `C:\Program files\tunarr` (without quotation marks). The “arguments” field can be left blank, but if you need a different port at this stage that you have not yet changed within Tunarr, you can add `--port 8001` to change the port to 8001, or one of your choice (useful when using a program, such as dizqueTV, that has already occupied port 8000).
 10. Now go to the “Details” tab. Everything here is less important. Just enter “Tunarr” in the “Display name” field and something of your choice in the ‘Description’ field. Leave the startup type set to “Automatic.”
 11. Click on “Install service” and Tunarr will finally be installed as a service
@@ -307,7 +309,7 @@ Save the following launchd configuration to `~/Library/LaunchAgents/tunarr.xml`.
 From now on, to update tunarr, we will first have to stop the service. 
 1. Click on the start menu and search for “services”. Click on the result.
 2. On the next screen with the list of all services, right-click on Tunarr and click on “stop.” 
-3. Replace the .exe file with the updated executable, return to the services screen, right-click on Tunarr, and select “start”
+3. Replace the files in the Tunarr folder with the files from the new release's folder, return to the services screen, right-click on Tunarr, and select “start”
 
 ##### Converting Tunarr to an NSSM service
 
