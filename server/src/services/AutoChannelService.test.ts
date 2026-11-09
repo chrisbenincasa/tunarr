@@ -364,6 +364,97 @@ describe('AutoChannelService.createChannel', () => {
     expect(smartCollectionsDB.insert).not.toHaveBeenCalled();
   });
 
+  test('rejects dynamicParams on a fixed preset before writing anything', async () => {
+    const { service, smartCollectionsDB } = makeService();
+
+    await expect(
+      service.createChannel({
+        presetId: 'genre-channel',
+        contentAssignments: {
+          content: { query: { filterString: 'genre = "News"' } },
+          x: { query: { filterString: 'genre = "News"' } },
+        },
+        dynamicParams: {
+          type: 'weighted_mix',
+          groups: [{ role: 'x', weight: 1 }],
+        },
+      }),
+    ).rejects.toThrow('Preset "genre-channel" does not take dynamicParams');
+
+    expect(smartCollectionsDB.insert).not.toHaveBeenCalled();
+  });
+
+  test('rejects dynamicParams of the wrong type for the preset', async () => {
+    const { service, smartCollectionsDB } = makeService();
+
+    await expect(
+      service.createChannel({
+        ...classicTvDayRequest([0, 12 * Hour]),
+        presetId: 'weighted-mix',
+      }),
+    ).rejects.toThrow(
+      'Preset "weighted-mix" needs dynamicParams of type weighted_mix, not classic_tv_day',
+    );
+
+    expect(smartCollectionsDB.insert).not.toHaveBeenCalled();
+  });
+
+  test('rejects a dynamic preset without dynamicParams', async () => {
+    const { service, smartCollectionsDB } = makeService();
+
+    await expect(
+      service.createChannel({
+        presetId: 'weighted-mix',
+        contentAssignments: {
+          group_1: { query: { filterString: 'genre = "Comedy"' } },
+        },
+      }),
+    ).rejects.toThrow(
+      'Preset "weighted-mix" needs dynamicParams of type weighted_mix',
+    );
+
+    expect(smartCollectionsDB.insert).not.toHaveBeenCalled();
+  });
+
+  test('rejects a content assignment that dynamicParams never uses', async () => {
+    const { service, smartCollectionsDB } = makeService();
+    const request = weightedMixRequest({
+      group_1: { query: { filterString: 'genre = "Comedy"' } },
+    });
+
+    await expect(
+      service.createChannel({
+        ...request,
+        contentAssignments: {
+          ...request.contentAssignments,
+          extra: { query: { filterString: 'genre = "Drama"' } },
+        },
+      }),
+    ).rejects.toThrow(
+      'Preset "weighted-mix" does not use content assignments for roles: extra',
+    );
+
+    expect(smartCollectionsDB.insert).not.toHaveBeenCalled();
+  });
+
+  test('rejects a content assignment that a fixed preset never uses', async () => {
+    const { service, smartCollectionsDB } = makeService();
+
+    await expect(
+      service.createChannel({
+        ...shuffleRequest,
+        contentAssignments: {
+          all: { query: {} },
+          extra: { query: { filterString: 'genre = "Drama"' } },
+        },
+      }),
+    ).rejects.toThrow(
+      'Preset "24-7-shuffle" does not use content assignments for roles: extra',
+    );
+
+    expect(smartCollectionsDB.insert).not.toHaveBeenCalled();
+  });
+
   test.each(
     BuiltInPresets.filter((p) => !p.dynamicRequirements).map((p) => [p.id, p]),
   )('creates a channel from the %s preset', async (_id, preset) => {
