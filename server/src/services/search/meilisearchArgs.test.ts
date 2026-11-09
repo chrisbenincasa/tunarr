@@ -74,8 +74,12 @@ function pinnedBinaryAvailable() {
   if (!existsSync(binaryPath)) {
     return false;
   }
-  const out = execFileSync(binaryPath, ['--version'], { encoding: 'utf-8' });
-  return out.includes(serverPackage.meilisearch.version);
+  try {
+    const out = execFileSync(binaryPath, ['--version'], { encoding: 'utf-8' });
+    return out.includes(serverPackage.meilisearch.version);
+  } catch {
+    return false;
+  }
 }
 
 async function freePort() {

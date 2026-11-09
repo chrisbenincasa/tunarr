@@ -28,7 +28,6 @@ import findProcess from 'find-process';
 import { inject, injectable } from 'inversify';
 import { compact, find, isEmpty, uniq } from 'lodash-es';
 import type {
-  DocumentsQuery,
   EnqueuedTask,
   FacetDistribution,
   FacetStats,
@@ -1532,9 +1531,6 @@ export class MeilisearchService implements ISearchService {
           filter: filter,
           limit: request.paging?.limit,
           offset,
-          // This does not exist on the type yet. Explicit cast because
-          // the API supports it. Need https://github.com/meilisearch/meilisearch-js/pull/2038
-          // sort: ['title:asc' /*, 'originalReleaseDate:asc'*/],
           sort,
         });
       return {
