@@ -96,9 +96,7 @@ describe('TranscodeConfigAudioSettingsForm filler audio', () => {
   test('starts on "Default" when both filler fields are null', () => {
     renderForm();
 
-    expect(selectFor('Filler Audio Levels')).toHaveTextContent(
-      'Default',
-    );
+    expect(selectFor('Filler Audio Levels')).toHaveTextContent('Default');
     expect(screen.queryByLabelText('Filler Audio Volume')).toBeNull();
   });
 

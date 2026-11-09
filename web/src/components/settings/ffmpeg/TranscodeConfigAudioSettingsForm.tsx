@@ -334,9 +334,9 @@ export const TranscodeConfigAudioSettingsForm = ({
               </Select>
               <FormHelperText>
                 <Trans>
-                  Default uses the Audio Volume and Audio Loudness
-                  Normalization settings above. Custom sets separate levels
-                  for filler and channel fallback content.
+                  Default uses the Audio Volume and Audio Loudness Normalization
+                  settings above. Custom sets separate levels for filler and
+                  channel fallback content.
                 </Trans>
               </FormHelperText>
             </FormControl>
