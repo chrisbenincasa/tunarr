@@ -42,6 +42,7 @@ import {
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
+import { eq } from 'drizzle-orm';
 import {
   head,
   isEmpty,
@@ -65,6 +66,8 @@ import { sessionToApiSession } from '../db/converters/sessionConverter.ts';
 import { transcodeConfigOrmToDto } from '../db/converters/transcodeConfigConverters.ts';
 import type { ChannelAndLineup } from '../db/interfaces/IChannelDB.ts';
 import type { ChannelOrmWithRelations } from '../db/schema/derivedTypes.ts';
+import type { DrizzleDBAccess } from '../db/schema/index.ts';
+import { Program, ProgramType } from '../db/schema/Program.ts';
 import { findBadRequestError, unwrapError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import { PagingParams, TruthyQueryParam } from '../types/schemas.ts';
@@ -72,6 +75,39 @@ import { GUIDE_PROGRAM_FIELDS_NOTE } from './guideApi.ts';
 import { validateStreamSelectionProfileId } from './streamSelectionApi.ts';
 
 dayjs.extend(duration);
+
+const FallbackProgramTypes: ReadonlySet<ProgramType> = new Set([
+  ProgramType.Movie,
+  ProgramType.Episode,
+  ProgramType.MusicVideo,
+  ProgramType.OtherVideo,
+]);
+
+/**
+ * Checks a fallback program assignment from a save request. Returns an error
+ * message if the program does not exist or is not a video. `null` (clear) and
+ * `undefined` (leave unchanged) are always valid.
+ */
+export async function validateFallbackProgramId(
+  drizzle: DrizzleDBAccess,
+  programId: string | null | undefined,
+): Promise<string | undefined> {
+  if (programId === null || programId === undefined) {
+    return;
+  }
+  const [program] = await drizzle
+    .select({ type: Program.type })
+    .from(Program)
+    .where(eq(Program.uuid, programId))
+    .limit(1);
+  if (!program) {
+    return `Program with ID ${programId} not found`;
+  }
+  if (!FallbackProgramTypes.has(program.type)) {
+    return `A channel fallback must be a video, but program ${programId} is a ${program.type}`;
+  }
+  return;
+}
 
 const ChannelLineupQuery = z.object({
   // `.optional()` must sit outside the pipe. Inside, it only lets `undefined`
@@ -167,10 +203,16 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(404).send();
         }
 
-        const [channelFillers, channelSubtitles] = await Promise.all([
-          req.serverCtx.fillerDB.getFillersFromChannel(req.params.id),
-          req.serverCtx.channelDB.getChannelSubtitlePreferences(req.params.id),
-        ]);
+        const [channelFillers, channelSubtitles, fallbackProgram] =
+          await Promise.all([
+            req.serverCtx.fillerDB.getFillersFromChannel(req.params.id),
+            req.serverCtx.channelDB.getChannelSubtitlePreferences(
+              req.params.id,
+            ),
+            req.serverCtx.channelDB.getChannelFallbackPrograms(
+              channelAndLineup.channel.uuid,
+            ),
+          ]);
 
         const sessions = req.serverCtx.sessionManager.getAllSessionsForChannel(
           channelAndLineup.channel.uuid,
@@ -192,6 +234,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             weight: cf.weight,
           })),
           sessions: sessions.map(sessionToApiSession),
+          fallbackProgramId: fallbackProgram?.uuid ?? null,
         };
         return res.send(channelWithFillers);
       } catch (err) {
@@ -242,6 +285,13 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           if (profileError) {
             return res.status(400).send({ error: profileError });
           }
+          const fallbackError = await validateFallbackProgramId(
+            req.serverCtx.drizzleFactory(),
+            body.channel.fallbackProgramId,
+          );
+          if (fallbackError) {
+            return res.status(400).send({ error: fallbackError });
+          }
           insertResult = await Result.attemptAsync(() =>
             req.serverCtx.channelDB.saveChannel(body.channel),
           );
@@ -260,7 +310,15 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         .catch((err) => logger.error(err, 'Error regenerating guide'));
       await req.serverCtx.m3uService.regenerateCache();
 
-      return res.status(201).send(dbChannelToApiChannel(inserted));
+      const fallbackProgram =
+        await req.serverCtx.channelDB.getChannelFallbackPrograms(
+          inserted.channel.uuid,
+        );
+
+      return res.status(201).send({
+        ...dbChannelToApiChannel(inserted),
+        fallbackProgramId: fallbackProgram?.uuid ?? null,
+      });
     },
   );
 
@@ -312,6 +370,14 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(400).send({ error: profileError });
         }
 
+        const fallbackError = await validateFallbackProgramId(
+          req.serverCtx.drizzleFactory(),
+          req.body.fallbackProgramId,
+        );
+        if (fallbackError) {
+          return res.status(400).send({ error: fallbackError });
+        }
+
         const channelUpdate = {
           ...req.body,
         };
@@ -357,6 +423,11 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
 
         await req.serverCtx.m3uService.regenerateCache();
 
+        const fallbackProgram =
+          await req.serverCtx.channelDB.getChannelFallbackPrograms(
+            channel.uuid,
+          );
+
         const apiChannel = omit(
           dbChannelToApiChannel({
             ...updatedChannel,
@@ -368,7 +439,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           'programs',
         );
 
-        return res.send(apiChannel);
+        return res.send({
+          ...apiChannel,
+          fallbackProgramId: fallbackProgram?.uuid ?? null,
+        });
       } catch (err) {
         logger.error(err, req.routeOptions.config.url);
         return res.status(500).send();

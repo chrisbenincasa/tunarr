@@ -18,6 +18,18 @@ export const terminalTypeFilter: SearchFilter = {
   ],
 };
 
+// Matches every program type that can play as a channel fallback clip.
+export const videoTypeFilter: SearchFilter = {
+  op: 'or',
+  type: 'op',
+  children: [
+    createTypeSearchField('movie'),
+    createTypeSearchField('music_video'),
+    createTypeSearchField('other_video'),
+    createTypeSearchField('episode'),
+  ],
+};
+
 const pad2 = (n: number) => n.toString().padStart(2, '0');
 
 export function formatTerminalProgramTitle(program: TerminalProgram): string {

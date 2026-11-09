@@ -1,10 +1,35 @@
+import type { SearchFilter } from '@tunarr/types/schemas';
 import { describe, expect, test } from 'vitest';
 import {
   makeEpisode,
   makeSeasonGrouping,
   makeShowGrouping,
 } from '../test/programFixtures.ts';
-import { formatTerminalProgramTitle } from './programSearch.ts';
+import {
+  formatTerminalProgramTitle,
+  videoTypeFilter,
+} from './programSearch.ts';
+
+function matchedTypes(filter: SearchFilter): string[] {
+  if (filter.type === 'value') {
+    const { fieldSpec } = filter;
+    return fieldSpec.key === 'type' && fieldSpec.type === 'string'
+      ? fieldSpec.value
+      : [];
+  }
+  return filter.op === 'or' ? filter.children.flatMap(matchedTypes) : [];
+}
+
+describe('videoTypeFilter', () => {
+  test('matches every video type and leaves out music tracks', () => {
+    expect(matchedTypes(videoTypeFilter).sort()).toEqual([
+      'episode',
+      'movie',
+      'music_video',
+      'other_video',
+    ]);
+  });
+});
 
 describe('formatTerminalProgramTitle', () => {
   test('names the show, its year, and the episode code', () => {

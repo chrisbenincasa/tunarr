@@ -17,6 +17,7 @@ import { IFillerPicker } from '../services/interfaces/IFillerPicker.ts';
 import {
   createChannelOrm,
   createFakeProgram,
+  createFakeProgramOrm,
 } from '../testing/fakes/entityCreators.ts';
 import {
   calculateStreamDuration,
@@ -803,6 +804,116 @@ describe('StreamProgramCalculator', () => {
       expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
         type: 'program',
         program: { uuid: programIdB },
+      });
+    });
+  });
+
+  describe('channel fallback clip', () => {
+    // A=60s, flex=120s, B=60s, looked up at the start of the flex
+    async function lookupFlex(
+      offlineMode: 'pic' | 'clip',
+      clipDurationMs = 30_000,
+    ) {
+      const fillerDB = mock<IFillerListDB>();
+      const channelDB = mock<IChannelDB>();
+      const programDB = mock<IProgramDB>();
+      const fillerPicker = mock<IFillerPicker>();
+      const playHistoryDB = mock<ProgramPlayHistoryDB>();
+
+      const channelId = faker.string.uuid();
+      const fallbackId = faker.string.uuid();
+      const lineup: LineupItem[] = [
+        { type: 'content', durationMs: 60_000, id: faker.string.uuid() },
+        { type: 'offline', durationMs: 120_000 },
+        { type: 'content', durationMs: 60_000, id: faker.string.uuid() },
+      ];
+
+      const fallback = createFakeProgramOrm({
+        uuid: fallbackId,
+        duration: clipDurationMs,
+        mediaSourceId: tag<MediaSourceId>('mediasource-123'),
+      });
+      when(channelDB.getChannelFallbackPrograms(channelId)).thenReturn(
+        Promise.resolve(fallback),
+      );
+      when(programDB.getStreamProgramById(fallbackId)).thenReturn(
+        Promise.resolve(fallback),
+      );
+
+      const channel = createChannelOrm({
+        uuid: channelId,
+        number: 1,
+        startTime: 0,
+        duration: sumBy(lineup, (i) => i.durationMs),
+        offline: { mode: offlineMode },
+      });
+      when(channelDB.getChannelOrm(1)).thenReturn(Promise.resolve(channel));
+      when(channelDB.loadLineup(channelId)).thenReturn(
+        Promise.resolve({
+          version: 1,
+          items: lineup,
+          startTimeOffsets: calculateStartTimeOffsets(lineup),
+          lastUpdated: now(),
+        }),
+      );
+      when(fillerDB.getFillersFromChannel(channelId)).thenReturn(
+        Promise.resolve([]),
+      );
+      when(
+        fillerPicker.pickFiller(
+          anything(),
+          anything(),
+          anything(),
+          anything(),
+          anything(),
+        ),
+      ).thenReturn(
+        Promise.resolve({
+          filler: null,
+          fillerListId: null,
+          minimumWait: Number.MAX_SAFE_INTEGER,
+        }),
+      );
+
+      const calc = new StreamProgramCalculator(
+        instance(fillerDB),
+        instance(channelDB),
+        instance(programDB),
+        instance(fillerPicker),
+        instance(playHistoryDB),
+      );
+      const out = await calc.getCurrentLineupItem({
+        allowSkip: true,
+        channelId: 1,
+        startTime: 60_000,
+      });
+      return { out: out.get(), fallbackId };
+    }
+
+    test('plays the fallback clip when no filler is eligible', async () => {
+      const { out, fallbackId } = await lookupFlex('clip');
+      expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
+        type: 'fallback',
+        program: { uuid: fallbackId },
+        startOffset: 0,
+        streamDuration: 30_000,
+      });
+    });
+
+    test('plays the tail of a fallback clip longer than the gap', async () => {
+      const { out, fallbackId } = await lookupFlex('clip', 300_000);
+      expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
+        type: 'fallback',
+        program: { uuid: fallbackId },
+        startOffset: 180_000,
+        streamDuration: 120_000,
+      });
+    });
+
+    test('ignores the fallback clip in pic mode', async () => {
+      const { out } = await lookupFlex('pic');
+      expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
+        type: 'offline',
       });
     });
   });

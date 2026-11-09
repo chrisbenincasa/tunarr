@@ -1,8 +1,11 @@
 import { SaveableChannel } from '@tunarr/types';
 import { FastifyInstance } from 'fastify';
+import { v4 } from 'uuid';
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
 import { container } from '../src/container.ts';
 import { ChannelDB } from '../src/db/ChannelDB.ts';
+import type { DrizzleDBAccess } from '../src/db/schema/index.ts';
+import { Program, type ProgramType } from '../src/db/schema/Program.ts';
 import { TranscodeConfigDB } from '../src/db/TranscodeConfigDB.ts';
 import { KEYS } from '../src/types/inject.ts';
 import { getAvailablePort } from '../src/util/net.ts';
@@ -170,5 +173,59 @@ describe('PUT /channels/:id - startTime changes only when submitted', () => {
     expect(channel.startTime).toBe(
       Math.floor(rebasedStartTime / 60_000) * 60_000,
     );
+  });
+});
+
+describe('PUT /channels/:id - fallbackProgramId', () => {
+  async function createProgram(type: ProgramType) {
+    const uuid = v4();
+    await container
+      .get<DrizzleDBAccess>(KEYS.DrizzleDB)
+      .insert(Program)
+      .values({
+        uuid,
+        duration: 30000,
+        type,
+        sourceType: 'local',
+        externalKey: v4(),
+        externalSourceId: v4(),
+        title: `Fallback ${type}`,
+      });
+    return uuid;
+  }
+
+  test('stores a video program and returns it on the channel', async () => {
+    const programId = await createProgram('movie');
+
+    const res = await put({
+      ...channelPayload(),
+      offline: { mode: 'clip' },
+      fallbackProgramId: programId,
+    });
+    expect(res.statusCode, res.body).toBe(200);
+    expect(res.json().fallbackProgramId).toBe(programId);
+
+    const get = await app.inject({
+      method: 'GET',
+      url: `/api/channels/${channelId}`,
+    });
+    expect(get.json().fallbackProgramId).toBe(programId);
+  });
+
+  test('rejects a program that does not exist', async () => {
+    const res = await put({ ...channelPayload(), fallbackProgramId: v4() });
+
+    expect(res.statusCode).toBe(400);
+  });
+
+  test('rejects a program that is not a video', async () => {
+    const programId = await createProgram('track');
+
+    const res = await put({
+      ...channelPayload(),
+      fallbackProgramId: programId,
+    });
+
+    expect(res.statusCode).toBe(400);
   });
 });

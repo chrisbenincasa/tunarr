@@ -974,6 +974,113 @@ describe('ChannelDB', () => {
     });
   });
 
+  describe('channel fallback', () => {
+    async function createMovie(drizzle: Fixture['drizzle']) {
+      const programId = v4();
+      await drizzle.insert(Program).values({
+        uuid: programId,
+        duration: 30000,
+        type: 'movie',
+        sourceType: 'plex',
+        externalKey: faker.string.alphanumeric({ length: 16 }),
+        externalSourceId: faker.string.alphanumeric({ length: 16 }),
+        title: faker.word.words(3),
+        year: 2020,
+      });
+      return programId;
+    }
+
+    test('saveChannel stores the fallback program', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+      drizzle,
+    }) => {
+      const programId = await createMovie(drizzle);
+
+      const { channel } = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, {
+          number: 820,
+          offline: { mode: 'clip' },
+          fallbackProgramId: programId,
+        }),
+      );
+
+      const fallback = await channelDb.getChannelFallbackPrograms(channel.uuid);
+      expect(fallback?.uuid).toBe(programId);
+    });
+
+    test('updateChannel replaces the fallback program', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+      drizzle,
+    }) => {
+      const first = await createMovie(drizzle);
+      const second = await createMovie(drizzle);
+      const saveReq = createSaveableChannel(defaultTranscodeConfigId, {
+        number: 821,
+        fallbackProgramId: first,
+      });
+      const { channel } = await channelDb.saveChannel(saveReq);
+
+      await channelDb.updateChannel(channel.uuid, {
+        ...saveReq,
+        fallbackProgramId: second,
+      });
+
+      const fallback = await channelDb.getChannelFallbackPrograms(channel.uuid);
+      expect(fallback?.uuid).toBe(second);
+    });
+
+    test('updateChannel clears the fallback on null and keeps it when omitted', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+      drizzle,
+    }) => {
+      const programId = await createMovie(drizzle);
+      const saveReq = createSaveableChannel(defaultTranscodeConfigId, {
+        number: 822,
+      });
+      const { channel } = await channelDb.saveChannel({
+        ...saveReq,
+        fallbackProgramId: programId,
+      });
+
+      await channelDb.updateChannel(channel.uuid, saveReq);
+      expect(
+        (await channelDb.getChannelFallbackPrograms(channel.uuid))?.uuid,
+      ).toBe(programId);
+
+      await channelDb.updateChannel(channel.uuid, {
+        ...saveReq,
+        fallbackProgramId: null,
+      });
+      expect(
+        await channelDb.getChannelFallbackPrograms(channel.uuid),
+      ).toBeUndefined();
+    });
+
+    test('copyChannel copies the fallback program', async ({
+      channelDb,
+      defaultTranscodeConfigId,
+      drizzle,
+    }) => {
+      const programId = await createMovie(drizzle);
+      const { channel } = await channelDb.saveChannel(
+        createSaveableChannel(defaultTranscodeConfigId, {
+          number: 823,
+          fallbackProgramId: programId,
+        }),
+      );
+
+      const copy = await channelDb.copyChannel(channel.uuid);
+
+      const fallback = await channelDb.getChannelFallbackPrograms(
+        copy.channel.uuid,
+      );
+      expect(fallback?.uuid).toBe(programId);
+    });
+  });
+
   describe('Error Handling', () => {
     test('should return undefined for non-existent channel', async ({
       channelDb,

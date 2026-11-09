@@ -16,6 +16,8 @@ type Props<ProgramT extends ProgramOrFolder> = {
   onQueryChange: (value: string) => void;
   label?: string;
   disabled?: boolean;
+  error?: boolean;
+  helperText?: string;
   renderOptionTitle?: (opt: ProgramT) => string;
 };
 
@@ -32,6 +34,8 @@ export const ProgramSearchAutocomplete = <ProgramT extends ProgramOrFolder>({
   onQueryChange,
   label,
   disabled,
+  error,
+  helperText,
   renderOptionTitle = (program) => program.title,
 }: Props<ProgramT>) => {
   const { t } = useLingui();
@@ -108,7 +112,12 @@ export const ProgramSearchAutocomplete = <ProgramT extends ProgramOrFolder>({
         }
       }}
       renderInput={(params) => (
-        <TextField {...params} label={label ?? defaultLabel} />
+        <TextField
+          {...params}
+          label={label ?? defaultLabel}
+          error={error}
+          helperText={helperText}
+        />
       )}
       autoComplete
       onInputChange={(_, newInputValue) => {

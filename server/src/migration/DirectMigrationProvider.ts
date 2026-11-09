@@ -260,6 +260,9 @@ export class DirectMigrationProvider implements MigrationProvider {
         migration1793564678: makeMigrationFromSqlFile(
           './sql/0055_outstanding_maelstrom.sql',
         ),
+        migration1794074137: makeMigrationFromSqlFile(
+          './sql/0056_offline_clip_without_fallback_to_pic.sql',
+        ),
       } satisfies Record<string, TunarrDatabaseMigration>,
       wrapWithTransaction,
     );
