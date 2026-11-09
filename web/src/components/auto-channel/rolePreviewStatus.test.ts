@@ -102,6 +102,15 @@ describe('canCreateChannel', () => {
     expect(canCreateChannel(roles, { a: withTotal(10) })).toBe(false);
   });
 
+  test('blocks creation while a role still shows a previous count', () => {
+    expect(
+      canCreateChannel(roles, {
+        a: withTotal(10),
+        b: { ...withTotal(50), isLoading: true },
+      }),
+    ).toBe(false);
+  });
+
   test('blocks creation when a role is below its minimum', () => {
     expect(canCreateChannel(roles, { a: withTotal(10), b: withTotal(4) })).toBe(
       false,
