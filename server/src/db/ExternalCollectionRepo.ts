@@ -17,13 +17,10 @@ export class ExternalCollectionRepo {
     return this.drizzleDB.insert(ExternalCollection).values(coll).execute();
   }
 
-  updateCollection(
-    id: string,
-    update: Pick<ExternalCollection, 'libraryId' | 'title'>,
-  ) {
+  updateCollectionTitle(id: string, title: string) {
     return this.drizzleDB
       .update(ExternalCollection)
-      .set(update)
+      .set({ title })
       .where(eq(ExternalCollection.uuid, id))
       .execute();
   }

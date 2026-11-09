@@ -34,7 +34,7 @@ import type { Tag } from '../../db/schema/Tag.ts';
 import type { TagRepo } from '../../db/TagRepo.ts';
 import type { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.ts';
 import { Result } from '../../types/result.ts';
-import { groupByTyped, groupByUniq } from '../../util/index.ts';
+import { groupByTyped } from '../../util/index.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import type {
   MeilisearchService,
@@ -120,26 +120,70 @@ export abstract class ExternalCollectionScanner<
     }
 
     const apiClient = await this.getApiClient(mediaSource);
+    const existingCollections = await this.getCollectionsByExternalKey(
+      mediaSource.uuid,
+    );
+    const seenIds = new Set<string>();
+    let anyLibraryFailed = false;
 
     for (const library of enabledLibraries) {
       const result = await Result.attemptAsync(() =>
-        this.scanLibraryInternal({
-          mediaSource,
-          library,
-          apiClient,
-        }),
+        this.scanLibraryInternal(
+          {
+            mediaSource,
+            library,
+            apiClient,
+          },
+          existingCollections,
+        ),
       );
       if (result.isFailure()) {
+        anyLibraryFailed = true;
         this.logger.warn(
           result.error,
           'Failure while scanning %s library (%s) for collections',
           this.sourceType,
           library.name,
         );
+        continue;
       }
+
+      for (const id of result.getOrThrow()) {
+        seenIds.add(id);
+      }
+    }
+
+    // A failed library may still return collections that no other library
+    // does, so deleting now could drop collections that still exist.
+    if (anyLibraryFailed) {
+      this.logger.debug(
+        'Skipping removal of missing %s collections because a library scan failed',
+        this.sourceType,
+      );
+      return;
+    }
+
+    // A BoxSet can come back through several libraries, so a collection is
+    // gone only when no library returned it.
+    const enabledLibraryIds = new Set(enabledLibraries.map((lib) => lib.uuid));
+    const missingCollections = [...existingCollections.values()].filter(
+      (coll) =>
+        enabledLibraryIds.has(coll.libraryId) && !seenIds.has(coll.externalKey),
+    );
+
+    if (missingCollections.length > 0) {
+      await this.searchService.waitForPendingIndexTasks();
+      await this.applySearchUpdates(
+        await this.deleteCollections(missingCollections),
+      );
     }
   }
 
+  /**
+   * Adds and updates the collections that one library returns. It never
+   * deletes collections, because another library of the same media source
+   * may still return them. {@link scan} removes missing collections.
+   */
   async scanLibrary(req: ExternalCollectionLibraryScanRequest): Promise<void> {
     const library = await this.mediaSourceDB.getLibrary(req.libraryId);
     if (!library) {
@@ -174,26 +218,38 @@ export abstract class ExternalCollectionScanner<
       libraries: [library],
     });
 
-    await this.scanLibraryInternal({
-      apiClient,
-      library,
-      mediaSource: library.mediaSource,
-    });
+    await this.scanLibraryInternal(
+      {
+        apiClient,
+        library,
+        mediaSource: library.mediaSource,
+      },
+      await this.getCollectionsByExternalKey(library.mediaSource.uuid),
+    );
   }
 
-  private async scanLibraryInternal(ctx: Context<ApiClientT>) {
+  private async getCollectionsByExternalKey(mediaSourceId: MediaSourceId) {
+    const collections =
+      await this.externalCollectionsRepo.getByMediaSourceId(mediaSourceId);
+    return new Map(collections.map((coll) => [coll.externalKey, coll]));
+  }
+
+  /**
+   * Collection rows are unique per media source, not per library, so
+   * `existingCollections` holds every row of the media source. Rows this
+   * scan inserts are added to it.
+   *
+   * @returns the external IDs of the collections the library returned
+   */
+  private async scanLibraryInternal(
+    ctx: Context<ApiClientT>,
+    existingCollections: Map<string, ExternalCollection>,
+  ): Promise<Set<string>> {
     await this.searchService.waitForPendingIndexTasks();
     this.logger.debug(
       'Scanning %s library "%s" for collections',
       this.sourceType,
       ctx.library.name,
-    );
-    const existingCollections = groupByUniq(
-      await this.externalCollectionsRepo.getByLibraryId(ctx.library.uuid),
-      (coll) => coll.externalKey,
-    );
-    const existingCollectionExternalIds = new Set(
-      Object.keys(existingCollections),
     );
     const seenIds = new Set<string>();
     const searchUpdates: SearchUpdate[] = [];
@@ -208,38 +264,8 @@ export abstract class ExternalCollectionScanner<
       // Upsert a tag for this collection name
       const tag = await this.tagRepo.upsertTag(collection.title);
 
-      // Collection rows are unique per media source, not per library. A
-      // Jellyfin or Emby BoxSet can come back through several libraries, so
-      // look for a row another library already created before inserting.
-      let existingCollection =
-        existingCollections[collection.externalId] ??
-        (await this.externalCollectionsRepo.getCollectionByExternalId(
-          ctx.mediaSource.uuid,
-          collection.externalId,
-        ));
-
-      if (existingCollection) {
-        // Attach the row to the library that returned it most recently. The
-        // cleanup pass below only deletes rows attached to the library being
-        // scanned, so this keeps a row that another library still returns.
-        if (
-          existingCollection.libraryId !== ctx.library.uuid ||
-          existingCollection.title !== collection.title
-        ) {
-          existingCollection = {
-            ...existingCollection,
-            libraryId: ctx.library.uuid,
-            title: collection.title,
-          };
-          await this.externalCollectionsRepo.updateCollection(
-            existingCollection.uuid,
-            {
-              libraryId: existingCollection.libraryId,
-              title: existingCollection.title,
-            },
-          );
-        }
-      } else {
+      let existingCollection = existingCollections.get(collection.externalId);
+      if (!existingCollection) {
         existingCollection = {
           uuid: v4(),
           externalKey: collection.externalId,
@@ -250,6 +276,14 @@ export abstract class ExternalCollectionScanner<
         };
 
         await this.externalCollectionsRepo.insertCollection(existingCollection);
+        existingCollections.set(collection.externalId, existingCollection);
+      } else if (existingCollection.title !== collection.title) {
+        existingCollection = { ...existingCollection, title: collection.title };
+        await this.externalCollectionsRepo.updateCollectionTitle(
+          existingCollection.uuid,
+          collection.title,
+        );
+        existingCollections.set(collection.externalId, existingCollection);
       }
 
       searchUpdates.push(
@@ -262,12 +296,15 @@ export abstract class ExternalCollectionScanner<
       );
     }
 
-    const missingIds = existingCollectionExternalIds.difference(seenIds);
-    const missingCollections = seq.collect(
-      [...missingIds.values()],
-      (id) => existingCollections[id],
-    );
+    await this.applySearchUpdates(searchUpdates);
 
+    return seenIds;
+  }
+
+  private async deleteCollections(
+    missingCollections: ExternalCollection[],
+  ): Promise<SearchUpdate[]> {
+    const searchUpdates: SearchUpdate[] = [];
     for (const missingCollection of missingCollections) {
       const collection = await this.externalCollectionsRepo.getById(
         missingCollection.uuid,
@@ -306,7 +343,10 @@ export abstract class ExternalCollectionScanner<
 
       await this.externalCollectionsRepo.deleteCollection(collection.uuid);
     }
+    return searchUpdates;
+  }
 
+  private async applySearchUpdates(searchUpdates: SearchUpdate[]) {
     // Search indexes must be updated once to avoid the select + update flow
     // given that index requests are async, this avoids the race:
     // 1. Doc with tags: [A, B, C]
