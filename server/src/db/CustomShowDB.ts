@@ -130,7 +130,7 @@ export class CustomShowDB {
       const missingIds = await this.findMissingProgramIds(replacementPrograms);
       if (missingIds.length > 0) {
         throw new GenericBadRequestError(
-          `Cannot update custom show programs: ${missingIds.length} program(s) do not exist: ${missingIds.slice(0, 10).join(', ')}`,
+          `Cannot update playlist programs: ${missingIds.length} program(s) do not exist: ${missingIds.slice(0, 10).join(', ')}`,
         );
       }
     }

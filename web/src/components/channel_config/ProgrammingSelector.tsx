@@ -264,7 +264,7 @@ export const ProgrammingSelector = ({
                 ))}
                 {entityType !== 'custom-show' && customShows.length > 0 && (
                   <MenuItem value="custom-shows">
-                    <Trans>Custom Shows</Trans>
+                    <Trans>Playlists</Trans>
                   </MenuItem>
                 )}
               </Select>

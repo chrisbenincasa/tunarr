@@ -29,7 +29,7 @@ You can link more than two slots to the same group. All members of a group must 
 
 When slots are linked, the following fields are copied from the source slot and kept in sync across the group:
 
-- Content source (show, custom show, or smart collection)
+- Content source (show, playlist, or smart collection)
 - Ordering (next, shuffle, chronological, etc.)
 - Direction (ascending / descending)
 - Filler configuration
@@ -93,7 +93,7 @@ Not all slot types support linking. The following slot types can be linked:
 | Slot Type | Linkable |
 |-----------|----------|
 | Show | Yes |
-| Custom Show | Yes |
+| Playlist | Yes |
 | Smart Collection | Yes |
 | Filler | No |
 | Flex | No |

@@ -1,6 +1,6 @@
 # Library
 
-The Library contains reusable collections of content that can be used across multiple channels. This includes filler content for gaps in your schedule and custom shows that group videos together.
+The Library contains reusable collections of content that can be used across multiple channels. This includes filler content for gaps in your schedule and playlists that group videos together.
 
 <div class="grid cards" markdown>
 
@@ -10,7 +10,7 @@ The Library contains reusable collections of content that can be used across mul
 
     Collections of videos to play during [Flex](../channels/flex.md) time segments, such as commercials, bumpers, or interstitials.
 
--   **[Custom Shows](custom-shows.md)**
+-   **[Playlists](playlists.md)**
 
     ---
 
@@ -35,6 +35,6 @@ The Library contains reusable collections of content that can be used across mul
 | Feature | Use Case |
 |---------|----------|
 | **Filler** | Commercials, station IDs, bumpers, short clips to fill gaps |
-| **Custom Shows** | YouTube series, home videos, or any content you want to treat as episodic |
+| **Playlists** | YouTube series, home videos, or any content you want to treat as episodic |
 | **Smart Collections** | Auto-updating playlists based on genre, year, rating, etc. |
 | **Trash** | Reviewing and permanently removing content that disappeared from your media |

@@ -329,7 +329,7 @@ export const customShowsApiV2: RouterPluginAsyncCallback = async (fastify) => {
       if (!show.syncMediaSourceId || !show.syncExternalPlaylistId) {
         return res
           .status(400)
-          .send({ error: 'Custom show is not configured for sync' });
+          .send({ error: 'Playlist is not configured for sync' });
       }
 
       await req.serverCtx.customShowSyncService.syncShow(show.uuid);

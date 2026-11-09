@@ -69,7 +69,7 @@ const ProfileUsage = ({ profile }: { profile: Profile }) => {
   const summary = [
     channels.length > 0 ? t`${channels.length} channel(s)` : null,
     fillerLists.length > 0 ? t`${fillerLists.length} filler list(s)` : null,
-    customShows.length > 0 ? t`${customShows.length} custom show(s)` : null,
+    customShows.length > 0 ? t`${customShows.length} playlist(s)` : null,
     programCount > 0 ? t`${programCount} program(s)` : null,
   ]
     .filter((s) => s !== null)
@@ -128,12 +128,12 @@ const ProfileUsage = ({ profile }: { profile: Profile }) => {
           {customShows.length > 0 && (
             <Box>
               <Typography variant="subtitle2">
-                <Trans>Custom Shows</Trans>
+                <Trans>Playlists</Trans>
               </Typography>
               {customShows.map((show) => (
                 <RouterLink
                   key={show.uuid}
-                  to="/library/custom-shows/$showId/edit"
+                  to="/library/playlists/$showId/edit"
                   params={{ showId: show.uuid }}
                   display="block"
                 >

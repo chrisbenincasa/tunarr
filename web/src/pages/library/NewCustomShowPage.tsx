@@ -19,7 +19,7 @@ export function NewCustomShowPage() {
       <Box>
         <Breadcrumbs />
         <Typography variant="h4" sx={{ mb: 2 }}>
-          <Trans>New Custom Show</Trans>
+          <Trans>New Playlist</Trans>
         </Typography>
       </Box>
       <PaddedPaper sx={{ mb: 2 }}>

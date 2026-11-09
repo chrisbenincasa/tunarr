@@ -58,7 +58,7 @@ export default function CustomShowsPage() {
         message: (
           <Trans>
             <span>
-              Error deleting custom show: {e.message}
+              Error deleting playlist: {e.message}
               <br />
               Please consider opening a bug with details!
             </span>
@@ -83,15 +83,15 @@ export default function CustomShowsPage() {
       >
         <DialogTitle id="delete-custom-show-title">
           <Trans>
-            Delete Custom Show "
+            Delete Playlist "
             {find(customShows, { id: deleteConfirmationId })?.name}"?
           </Trans>
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-custom-show-description">
             <Trans>
-              Deleting a Custom Show will remove its programming from channels
-              that use it. This action cannot be undone.
+              Deleting a playlist will remove its programming from channels that
+              use it. This action cannot be undone.
             </Trans>
           </DialogContentText>
         </DialogContent>
@@ -143,7 +143,7 @@ export default function CustomShowsPage() {
             <Tooltip title={t`Edit`} placement="top">
               <IconButton
                 aria-label={t`Edit`}
-                to={`/library/custom-shows/${show.id}/edit`}
+                to={`/library/playlists/${show.id}/edit`}
                 component={Link}
               >
                 <Edit />
@@ -181,20 +181,19 @@ export default function CustomShowsPage() {
       >
         <Box flexDirection={'column'} flexGrow={1}>
           <Typography variant="h4">
-            <Trans>Custom Shows</Trans>
+            <Trans>Playlists</Trans>
           </Typography>
 
           <Typography maxWidth={'800px'}>
             <Trans>
-              Custom Shows are sequences of videos that represent a episodes of
-              a virtual TV show. When you add these shows to a channel, the
-              schedule tools will treat the videos as if they belonged to a
-              single TV show.
+              Playlists are ordered lists of videos that play like the episodes
+              of a single TV show. When you add a playlist to a channel, the
+              scheduling tools treat its videos as if they belonged to one show.
             </Trans>
           </Typography>
         </Box>
         <RouterButtonLink
-          to="/library/custom-shows/new"
+          to="/library/playlists/new"
           variant="contained"
           startIcon={<AddCircleIcon />}
           sx={{ alignSelf: 'end' }}
@@ -204,11 +203,11 @@ export default function CustomShowsPage() {
       </Box>
       <DataTable
         table={table}
-        aria-label={t`Custom Shows`}
+        aria-label={t`Playlists`}
         getRowProps={(row) => ({
           onClick: () => {
             navigate({
-              to: '/library/custom-shows/$showId/edit',
+              to: '/library/playlists/$showId/edit',
               params: { showId: row.original.id },
             }).catch(console.warn);
           },

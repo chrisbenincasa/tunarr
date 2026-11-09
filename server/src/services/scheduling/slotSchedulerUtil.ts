@@ -410,9 +410,7 @@ export function createSlotProgramIterator(
       );
     })
     .with({ type: 'custom-show' }, (slot) => {
-      throw new Error(
-        `Invalid ordering type for custom show slot: ${slot.order}`,
-      );
+      throw new Error(`Invalid ordering type for playlist slot: ${slot.order}`);
     })
     .with(
       {

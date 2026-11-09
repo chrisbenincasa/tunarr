@@ -22,7 +22,7 @@ const responseError = (data: unknown) =>
 describe('getApiErrorMessage', () => {
   test('returns a plain string body', () => {
     const message =
-      'Slot 0 references custom show abc, which has no content to schedule';
+      'Slot 0 references playlist abc, which has no content to schedule';
     expect(getApiErrorMessage(responseError(message))).toBe(message);
   });
 

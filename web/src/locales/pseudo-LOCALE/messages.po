@@ -149,10 +149,9 @@ msgstr ""
 msgid "{0} channel(s)"
 msgstr ""
 
-#. placeholder {0}: customShows.length
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
-msgid "{0} custom show(s)"
-msgstr ""
+#~ msgid "{0} custom show(s)"
+#~ msgstr ""
 
 #. placeholder {0}: fillerLists.length
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -186,6 +185,11 @@ msgstr ""
 #. placeholder {1}: channels.length
 #: src/components/channels/useChannelBulkActions.ts
 msgid "{0} of {1} channels failed to duplicate"
+msgstr ""
+
+#. placeholder {0}: customShows.length
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+msgid "{0} playlist(s)"
 msgstr ""
 
 #. placeholder {0}: program.title
@@ -320,7 +324,12 @@ msgstr ""
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
-msgid "{unavailableSlotCount, plural, one {# slot uses a custom show that is empty or deleted. Fix or remove it before saving.} other {# slots use a custom show that is empty or deleted. Fix or remove them before saving.}}"
+#~ msgid "{unavailableSlotCount, plural, one {# slot uses a custom show that is empty or deleted. Fix or remove it before saving.} other {# slots use a custom show that is empty or deleted. Fix or remove them before saving.}}"
+#~ msgstr ""
+
+#: src/pages/channels/RandomSlotEditorPage.tsx
+#: src/pages/channels/TimeSlotEditorPage.tsx
+msgid "{unavailableSlotCount, plural, one {# slot uses a playlist that is empty or deleted. Fix or remove it before saving.} other {# slots use a playlist that is empty or deleted. Fix or remove them before saving.}}"
 msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx
@@ -349,14 +358,18 @@ msgstr ""
 msgid "<0>Configure the directory where Tunarr writes HLS segment files when transcoding. Tunarr will create the target directory (but not intermediate directories) if it doesn't exist.<1/>Changing this field will only affect new sessions. Existing sessions will continue writing to the previous setting, but will clean out segments when the segment ends.<2/>When unset, Tunarr will write segments to its current working directory.</0>"
 msgstr ""
 
-#. placeholder {0}: e.message
 #: src/pages/library/CustomShowsPage.tsx
-msgid "<0>Error deleting custom show: {0}<1/>Please consider opening a bug with details!</0>"
-msgstr ""
+#~ msgid "<0>Error deleting custom show: {0}<1/>Please consider opening a bug with details!</0>"
+#~ msgstr ""
 
 #. placeholder {0}: e.message
 #: src/pages/library/FillerListsPage.tsx
 msgid "<0>Error deleting filler list: {0}<1/>Please consider opening a bug with details!</0>"
+msgstr ""
+
+#. placeholder {0}: e.message
+#: src/pages/library/CustomShowsPage.tsx
+msgid "<0>Error deleting playlist: {0}<1/>Please consider opening a bug with details!</0>"
 msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
@@ -394,7 +407,11 @@ msgid "A root path to scan for media. Local sources can search many different pa
 msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
-msgid "A stream selection profile chooses the audio and subtitle streams for programs on this channel. Filler lists and custom shows can assign their own profile, which takes precedence."
+#~ msgid "A stream selection profile chooses the audio and subtitle streams for programs on this channel. Filler lists and custom shows can assign their own profile, which takes precedence."
+#~ msgstr ""
+
+#: src/components/channel_config/ChannelTranscodingConfig.tsx
+msgid "A stream selection profile chooses the audio and subtitle streams for programs on this channel. Filler lists and playlists can assign their own profile, which takes precedence."
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
@@ -520,7 +537,11 @@ msgid "Add Programming"
 msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
-msgid "Add programming to custom show"
+#~ msgid "Add programming to custom show"
+#~ msgstr ""
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+msgid "Add programming to playlist"
 msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx
@@ -1223,7 +1244,11 @@ msgid "Choose the transcode configuration to use for this channel. Configure tra
 msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
-msgid "Chooses audio and subtitle streams for programs scheduled from this custom show."
+#~ msgid "Chooses audio and subtitle streams for programs scheduled from this custom show."
+#~ msgstr ""
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+msgid "Chooses audio and subtitle streams for programs scheduled from this playlist."
 msgstr ""
 
 #: src/components/filler/EditFillerListForm.tsx
@@ -1251,7 +1276,11 @@ msgid "Clear Schedule"
 msgstr ""
 
 #: src/components/channel_config/CustomShowProgrammingSelector.tsx
-msgid "Click to preview the items in this Custom Show. Note that only the whole show can be added at once."
+#~ msgid "Click to preview the items in this Custom Show. Note that only the whole show can be added at once."
+#~ msgstr ""
+
+#: src/components/channel_config/CustomShowProgrammingSelector.tsx
+msgid "Click to preview the items in this playlist. Only the whole playlist can be added at once."
 msgstr ""
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
@@ -1519,35 +1548,32 @@ msgstr ""
 
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/pages/system/TroubleshootPage.tsx
-msgid "Custom show"
-msgstr ""
+#~ msgid "Custom show"
+#~ msgstr ""
 
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/hooks/useProgramTitleFormatter.ts
-msgid "Custom Show"
-msgstr ""
+#~ msgid "Custom Show"
+#~ msgstr ""
 
-#. placeholder {0}: customShow.name
-#. placeholder {0}: showName ?? ''
 #: src/components/channel_config/SelectedProgrammingList.tsx
 #: src/hooks/slot_scheduler/useSlotName.ts
-msgid "Custom Show - {0}"
-msgstr ""
+#~ msgid "Custom Show - {0}"
+#~ msgstr ""
 
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
-msgid "Custom Show (add programs to a custom show first)"
-msgstr ""
+#~ msgid "Custom Show (add programs to a custom show first)"
+#~ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
-msgid "Custom show programs are grouped by their parent show"
-msgstr ""
+#~ msgid "Custom show programs are grouped by their parent show"
+#~ msgstr ""
 
-#. placeholder {0}: cs.description
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
-msgid "Custom Show: {0}"
-msgstr ""
+#~ msgid "Custom Show: {0}"
+#~ msgstr ""
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -1556,12 +1582,12 @@ msgstr ""
 #: src/hooks/useRouteName.ts
 #: src/pages/library/CustomShowsPage.tsx
 #: src/pages/library/CustomShowsPage.tsx
-msgid "Custom Shows"
-msgstr ""
+#~ msgid "Custom Shows"
+#~ msgstr ""
 
 #: src/pages/library/CustomShowsPage.tsx
-msgid "Custom Shows are sequences of videos that represent a episodes of a virtual TV show. When you add these shows to a channel, the schedule tools will treat the videos as if they belonged to a single TV show."
-msgstr ""
+#~ msgid "Custom Shows are sequences of videos that represent a episodes of a virtual TV show. When you add these shows to a channel, the schedule tools will treat the videos as if they belonged to a single TV show."
+#~ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Customize how movie blocks are sorted"
@@ -1674,10 +1700,9 @@ msgstr ""
 msgid "Delete Channel \"{0}\"?"
 msgstr ""
 
-#. placeholder {0}: find(customShows, { id: deleteConfirmationId })?.name
 #: src/pages/library/CustomShowsPage.tsx
-msgid "Delete Custom Show \"{0}\"?"
-msgstr ""
+#~ msgid "Delete Custom Show \"{0}\"?"
+#~ msgstr ""
 
 #. placeholder {0}: find(fillerLists, { id: deleteConfirmationId })?.name
 #: src/pages/library/FillerListsPage.tsx
@@ -1692,6 +1717,11 @@ msgstr ""
 #: src/components/settings/media_source/MediaSourceDeleteDialog.tsx
 #~ msgid "Delete Media Source?"
 #~ msgstr ""
+
+#. placeholder {0}: find(customShows, { id: deleteConfirmationId })?.name
+#: src/pages/library/CustomShowsPage.tsx
+msgid "Delete Playlist \"{0}\"?"
+msgstr ""
 
 #. placeholder {0}: confirmDelete?.name ?? ''
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -1711,7 +1741,11 @@ msgid "Delete Transcoding Config \"{0}\"?"
 msgstr ""
 
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
-msgid "Deleted custom show"
+#~ msgid "Deleted custom show"
+#~ msgstr ""
+
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "Deleted playlist"
 msgstr ""
 
 #: src/components/channels/ChannelsDeleteDialog.tsx
@@ -1723,8 +1757,8 @@ msgid "Deleting a Channel will remove all programming from the channel. This act
 msgstr ""
 
 #: src/pages/library/CustomShowsPage.tsx
-msgid "Deleting a Custom Show will remove its programming from channels that use it. This action cannot be undone."
-msgstr ""
+#~ msgid "Deleting a Custom Show will remove its programming from channels that use it. This action cannot be undone."
+#~ msgstr ""
 
 #: src/pages/library/FillerListsPage.tsx
 msgid "Deleting a Filler will remove all programming from the channel. This action cannot be undone."
@@ -1732,6 +1766,10 @@ msgstr ""
 
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Deleting a media source will remove all of its associated programs from Tunarr."
+msgstr ""
+
+#: src/pages/library/CustomShowsPage.tsx
+msgid "Deleting a playlist will remove its programming from channels that use it. This action cannot be undone."
 msgstr ""
 
 #: src/components/settings/media_source/MediaSourceDeleteDialog.tsx
@@ -3471,8 +3509,8 @@ msgstr ""
 
 #: src/pages/library/EditCustomShowPage.tsx
 #: src/pages/library/NewCustomShowPage.tsx
-msgid "New Custom Show"
-msgstr ""
+#~ msgid "New Custom Show"
+#~ msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "New Emby Media Source"
@@ -3488,6 +3526,11 @@ msgstr ""
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "New Media Source"
+msgstr ""
+
+#: src/pages/library/EditCustomShowPage.tsx
+#: src/pages/library/NewCustomShowPage.tsx
+msgid "New Playlist"
 msgstr ""
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
@@ -3911,13 +3954,48 @@ msgid "Platform"
 msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
+#: src/components/shell/CommandPaletteContainer.tsx
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+#: src/hooks/useProgramTitleFormatter.ts
+#: src/pages/system/TroubleshootPage.tsx
 msgid "Playlist"
 msgstr ""
 
-#: src/components/channel_config/plex/PlexLibrarySelector.tsx
-#: src/components/channel_config/plex/PlexProgrammingSelector.tsx
-#~ msgid "Playlists"
-#~ msgstr ""
+#. placeholder {0}: customShow.name
+#. placeholder {0}: showName ?? ''
+#: src/components/channel_config/SelectedProgrammingList.tsx
+#: src/hooks/slot_scheduler/useSlotName.ts
+msgid "Playlist - {0}"
+msgstr ""
+
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
+msgid "Playlist (add programs to a playlist first)"
+msgstr ""
+
+#: src/components/programming_controls/AddBlockShuffleModal.tsx
+msgid "Playlist programs are grouped by their playlist"
+msgstr ""
+
+#. placeholder {0}: cs.description
+#: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
+msgid "Playlist: {0}"
+msgstr ""
+
+#: src/components/channel_config/ProgrammingSelector.tsx
+#: src/components/profiles/StreamSelectionProfilesTable.tsx
+#: src/components/shell/CommandPaletteContainer.tsx
+#: src/components/shell/useShellNav.tsx
+#: src/hooks/useRouteName.ts
+#: src/pages/library/CustomShowsPage.tsx
+#: src/pages/library/CustomShowsPage.tsx
+msgid "Playlists"
+msgstr ""
+
+#: src/pages/library/CustomShowsPage.tsx
+msgid "Playlists are ordered lists of videos that play like the episodes of a single TV show. When you add a playlist to a channel, the scheduling tools treat its videos as if they belonged to one show."
+msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #~ msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Each show starts at a random episode. Use Block Shuffle to start every show at its first episode or to loop shorter shows."
@@ -4293,7 +4371,11 @@ msgid "Removes all Flex periods from the schedule."
 msgstr ""
 
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
-msgid "Removes all programs from custom show"
+#~ msgid "Removes all programs from custom show"
+#~ msgstr ""
+
+#: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+msgid "Removes all programs from playlist"
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
@@ -5068,7 +5150,11 @@ msgid "Stream Selection Profiles"
 msgstr ""
 
 #: src/pages/profiles/StreamSelectionProfilesPage.tsx
-msgid "Stream selection profiles control which audio and subtitle streams play. Assign profiles to channels, filler lists, and custom shows. Anything without an assigned profile uses the default profile."
+#~ msgid "Stream selection profiles control which audio and subtitle streams play. Assign profiles to channels, filler lists, and custom shows. Anything without an assigned profile uses the default profile."
+#~ msgstr ""
+
+#: src/pages/profiles/StreamSelectionProfilesPage.tsx
+msgid "Stream selection profiles control which audio and subtitle streams play. Assign profiles to channels, filler lists, and playlists. Anything without an assigned profile uses the default profile."
 msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
@@ -5354,16 +5440,16 @@ msgid "This could cause the following slot's programs to go unscheduled. Possibl
 msgstr ""
 
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
-msgid "This custom show has no programs. Add programs to it or choose another show."
-msgstr ""
+#~ msgid "This custom show has no programs. Add programs to it or choose another show."
+#~ msgstr ""
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
-msgid "This custom show is synced with an external playlist. Content is updated automatically and cannot be edited manually."
-msgstr ""
+#~ msgid "This custom show is synced with an external playlist. Content is updated automatically and cannot be edited manually."
+#~ msgstr ""
 
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
-msgid "This custom show was deleted. Choose another show."
-msgstr ""
+#~ msgid "This custom show was deleted. Choose another show."
+#~ msgstr ""
 
 #: src/components/profiles/condition/ConditionEditor.tsx
 msgid "This expression can't be represented in Basic mode. Edit it in CEL mode or simplify it first."
@@ -5395,6 +5481,18 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "This option is disabled because it would calculate a schedule that is too long."
+msgstr ""
+
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "This playlist has no programs. Add programs to it or choose another playlist."
+msgstr ""
+
+#: src/components/custom-shows/EditCustomShowForm.tsx
+msgid "This playlist is synced with a media server playlist. Content is updated automatically and cannot be edited manually."
+msgstr ""
+
+#: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
+msgid "This playlist was deleted. Choose another playlist."
 msgstr ""
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
@@ -5430,11 +5528,19 @@ msgid "This slot replays content aired by continue slots earlier in the period."
 msgstr ""
 
 #: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
-msgid "This slot's custom show has no programs, so the slot cannot be scheduled. Add programs to the show, choose another show, or remove the slot."
+#~ msgid "This slot's custom show has no programs, so the slot cannot be scheduled. Add programs to the show, choose another show, or remove the slot."
+#~ msgstr ""
+
+#: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
+#~ msgid "This slot's custom show was deleted, so the slot cannot be scheduled. Choose another show or remove the slot."
+#~ msgstr ""
+
+#: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
+msgid "This slot's playlist has no programs, so the slot cannot be scheduled. Add programs to the playlist, choose another playlist, or remove the slot."
 msgstr ""
 
 #: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
-msgid "This slot's custom show was deleted, so the slot cannot be scheduled. Choose another show or remove the slot."
+msgid "This slot's playlist was deleted, so the slot cannot be scheduled. Choose another playlist or remove the slot."
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
@@ -5500,7 +5606,11 @@ msgid "TO"
 msgstr ""
 
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
-msgid "To schedule movies, add them to a custom show and choose Custom Show."
+#~ msgid "To schedule movies, add them to a custom show and choose Custom Show."
+#~ msgstr ""
+
+#: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
+msgid "To schedule movies, add them to a playlist and choose Playlist."
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx

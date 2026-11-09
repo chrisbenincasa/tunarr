@@ -11,7 +11,7 @@ export default function StreamSelectionProfilesPage() {
       <Typography variant="body1" sx={{ mb: 2 }}>
         <Trans>
           Stream selection profiles control which audio and subtitle streams
-          play. Assign profiles to channels, filler lists, and custom shows.
+          play. Assign profiles to channels, filler lists, and playlists.
           Anything without an assigned profile uses the default profile.
         </Trans>
       </Typography>
