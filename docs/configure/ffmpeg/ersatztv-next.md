@@ -53,6 +53,16 @@ These translate to nothing on the worker. The channel streams; it streams withou
 
 Tunarr logs the dropped settings once when a channel starts, and the transcode config editor lists them.
 
+### Hardware check
+
+The transcode config editor also asks the worker whether this machine can use the config's hardware acceleration (`ersatztv-channel describe --probe`). It warns when:
+
+- the accel is not offered on this platform, or the configured FFmpeg was built without it
+- the device or driver cannot be opened
+- the hardware cannot encode the config's video format or bit depth, so the worker encodes in software
+
+The probe tries every device and driver, so the warning can take a few seconds to appear. Tunarr remembers the answer for ten minutes.
+
 ### VAAPI defaults
 
 An unset VAAPI device and a driver of `system` are left for the worker to fill

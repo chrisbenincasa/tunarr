@@ -171,6 +171,69 @@ function checkSupport(transcodeConfig: TranscodeConfigOrm): SupportCheck {
   };
 }
 
+/**
+ * The VAAPI device and driver a config selects. Unset, the backend uses
+ * /dev/dri/renderD128 and lets libva pick the driver, which is what Tunarr's
+ * null device and `system` driver mean.
+ */
+function vaapiSelection(
+  accel: HardwareAccel | undefined,
+  transcodeConfig: TranscodeConfigOrm,
+): { device?: string; driver?: VaapiDriver } {
+  if (accel !== 'vaapi') {
+    return {};
+  }
+
+  return {
+    device: isNonEmptyString(transcodeConfig.vaapiDevice)
+      ? transcodeConfig.vaapiDevice
+      : undefined,
+    driver: isSupportedVaapiDriver(transcodeConfig.vaapiDriver)
+      ? transcodeConfig.vaapiDriver
+      : undefined,
+  };
+}
+
+/** The hardware a config asks the backend to encode with. */
+export type HardwareSelection = {
+  accel: HardwareAccel;
+  videoFormat: VideoFormat;
+  bitDepth: number;
+  bitrateKbps: number;
+  bufferKbps: number;
+  vaapiDevice?: string;
+  vaapiDriver?: VaapiDriver;
+};
+
+/**
+ * The accel, device and driver a config selects, in the backend's terms.
+ * Undefined when the config encodes in software or cannot run on the backend.
+ */
+export function findHardwareSelection(
+  transcodeConfig: TranscodeConfigOrm,
+): HardwareSelection | undefined {
+  const check = checkSupport(transcodeConfig);
+  if (!check.supported || !check.codecs.accel) {
+    return;
+  }
+
+  const { accel, videoFormat } = check.codecs;
+  const vaapi = vaapiSelection(accel, transcodeConfig);
+  return {
+    accel,
+    videoFormat,
+
+    // The backend always encodes mpeg2video at 8 bits, whatever the config asks.
+    bitDepth:
+      videoFormat === 'mpeg2video' ? 8 : (transcodeConfig.videoBitDepth ?? 8),
+
+    bitrateKbps: transcodeConfig.videoBitRate,
+    bufferKbps: transcodeConfig.videoBufferSize,
+    vaapiDevice: vaapi.device,
+    vaapiDriver: vaapi.driver,
+  };
+}
+
 /** Reports why a transcode config cannot back an `etv_next` channel. Empty means it can. */
 export function findUnsupportedSettings(
   transcodeConfig: TranscodeConfigOrm,
@@ -300,19 +363,7 @@ export function toChannelConfig({
   const ignored = findIgnoredSettings(transcodeConfig);
   const usesAccel = !!accel;
 
-  // Unset, the backend uses /dev/dri/renderD128 and lets libva pick the
-  // driver, which is what Tunarr's null device and `system` driver mean.
-  const vaapi =
-    accel === 'vaapi'
-      ? {
-          device: isNonEmptyString(transcodeConfig.vaapiDevice)
-            ? transcodeConfig.vaapiDevice
-            : undefined,
-          driver: isSupportedVaapiDriver(transcodeConfig.vaapiDriver)
-            ? transcodeConfig.vaapiDriver
-            : undefined,
-        }
-      : { device: undefined, driver: undefined };
+  const vaapi = vaapiSelection(accel, transcodeConfig);
 
   const deinterlace = transcodeConfig.deinterlaceVideo === true;
 

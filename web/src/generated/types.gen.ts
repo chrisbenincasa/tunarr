@@ -15144,6 +15144,36 @@ export type GetApiEtvTranscodeConfigsByIdCompatibilityResponses = {
 
 export type GetApiEtvTranscodeConfigsByIdCompatibilityResponse = GetApiEtvTranscodeConfigsByIdCompatibilityResponses[keyof GetApiEtvTranscodeConfigsByIdCompatibilityResponses];
 
+export type GetApiEtvTranscodeConfigsByIdHardwareData = {
+    body?: never;
+    path: {
+        id: string;
+    };
+    query?: never;
+    url: '/api/etv/transcode_configs/{id}/hardware';
+};
+
+export type GetApiEtvTranscodeConfigsByIdHardwareErrors = {
+    /**
+     * Default Response
+     */
+    404: unknown;
+};
+
+export type GetApiEtvTranscodeConfigsByIdHardwareResponses = {
+    /**
+     * Default Response
+     */
+    200: {
+        warnings: Array<{
+            field: string;
+            reason: string;
+        }>;
+    };
+};
+
+export type GetApiEtvTranscodeConfigsByIdHardwareResponse = GetApiEtvTranscodeConfigsByIdHardwareResponses[keyof GetApiEtvTranscodeConfigsByIdHardwareResponses];
+
 export type GetApiCreditsByIdData = {
     body?: never;
     path: {
