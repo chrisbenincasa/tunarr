@@ -144,7 +144,7 @@
     "vitest": "catalog:vitest"
   },
   "meilisearch": {
-    "version": "1.56.2"
+    "version": "1.56.1"
   },
   "ersatztvNext": {
     "releaseRepo": "ErsatzTV/next",
