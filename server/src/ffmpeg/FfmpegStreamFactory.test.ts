@@ -814,12 +814,15 @@ describe('FfmpegStreamFactory', () => {
       expect(state?.loudnormConfig).toEqual(channelLoudnorm);
     });
 
-    test('filler list items use the filler levels', async () => {
-      const state = await captureAudioState('commercial');
+    test.each(['commercial', 'fallback'] as const)(
+      '%s items use the filler levels',
+      async (type) => {
+        const state = await captureAudioState(type);
 
-      expect(state?.audioVolume).toBe(50);
-      expect(state?.loudnormConfig).toEqual(fillerLoudnorm);
-    });
+        expect(state?.audioVolume).toBe(50);
+        expect(state?.loudnormConfig).toEqual(fillerLoudnorm);
+      },
+    );
   });
 
   describe('audio renditions', () => {
