@@ -7,26 +7,39 @@ import {
   CardActions,
   CardContent,
   CardMedia,
-  Fade,
   Link,
   Skeleton,
   Typography,
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { getApiChannelsByIdNowPlayingQueryKey } from '@/generated/@tanstack/react-query.gen.ts';
+import type { TvGuideProgram } from '@tunarr/types';
 import * as globalDayjs from 'dayjs';
 import { capitalize, isNil } from 'lodash-es';
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { match, P } from 'ts-pattern';
-import { useTimeout, useToggle } from 'usehooks-ts';
+import { useInterval, useToggle } from 'usehooks-ts';
+import {
+  channelFlexImageUrl,
+  nowPlayingImageUrl,
+} from '../../helpers/nowPlayingImage.ts';
+import {
+  markReady,
+  nowPlayingRefreshDelayMs,
+  pruneHiddenLayers,
+  pushProgram,
+  visibleLayerIndex,
+  type NowPlayingLayer as Layer,
+} from '../../helpers/nowPlayingLayers.ts';
 import { extractProgramGrandparent } from '../../helpers/programUtil.ts';
-import { useChannelAndProgramming } from '../../hooks/useChannelLineup.ts';
+import { useChannelSuspense } from '../../hooks/useChannels.ts';
 import { useDayjs } from '../../hooks/useDayjs.ts';
 import { useChannelNowPlaying } from '../../hooks/useTvGuide.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
 import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 import { NetworkIcon } from '../util/NetworkIcon.tsx';
-import { programArtworkUrl } from './channelSummary.ts';
+
+const CrossFadeMs = 800;
 
 type Props = {
   channelId: string;
@@ -41,126 +54,198 @@ type ProgramDetails = {
   };
 };
 
+function programDetails(program: TvGuideProgram): ProgramDetails {
+  return match(program)
+    .returnType<ProgramDetails>()
+    .with(
+      { type: 'content', program: { type: P.union('episode', 'track') } },
+      ({ program: c }) => {
+        const grandparent = extractProgramGrandparent(c);
+        const programIndex =
+          c.type === 'episode' ? c.episodeNumber : c.trackNumber;
+        const parentIndex =
+          c.type === 'episode' ? c.season?.index : c.album?.index;
+
+        return {
+          title: c.title,
+          showTitle: grandparent?.title,
+          seasonAndEpisode:
+            !isNil(programIndex) && !isNil(parentIndex)
+              ? {
+                  season: parentIndex,
+                  episode: programIndex,
+                }
+              : undefined,
+        };
+      },
+    )
+    .with({ type: 'content' }, ({ program: c }) => ({ title: c.title }))
+    .with({ type: 'custom' }, ({ program: c }) => ({
+      title: c?.program?.title ?? `Custom`,
+    }))
+    .with({ type: 'flex' }, () => ({ title: 'Flex' }))
+    .with({ type: 'redirect' }, (c) => ({
+      title: `Redirect to ${c.channelNumber}`,
+    }))
+    .exhaustive();
+}
+
 export const ChannelNowPlayingCard = ({ channelId }: Props) => {
-  const dayjs = useDayjs();
-  const { backendUri } = useSettings();
-
+  const { data: channel } = useChannelSuspense(channelId);
   const {
-    data: { lineup },
-  } = useChannelAndProgramming(channelId);
-  const { data: firstProgram } = useChannelNowPlaying(channelId);
-  const [open, toggleOpen] = useToggle(false);
-
+    data: nowPlaying,
+    dataUpdatedAt,
+    errorUpdatedAt,
+  } = useChannelNowPlaying(channelId);
   const queryClient = useQueryClient();
 
-  useTimeout(() => {
-    queryClient
-      .invalidateQueries({
-        queryKey: getApiChannelsByIdNowPlayingQueryKey({
-          path: { id: channelId },
-        }),
-      })
-      .catch(console.error);
-  }, firstProgram.stop + 5_000);
+  // Refetch just after the current program ends. Keying on dataUpdatedAt and
+  // errorUpdatedAt reschedules after a refetch that fails or still returns
+  // the ended program.
+  useEffect(() => {
+    const timer = setTimeout(
+      () => {
+        queryClient
+          .invalidateQueries({
+            queryKey: getApiChannelsByIdNowPlayingQueryKey({
+              path: { id: channelId },
+            }),
+          })
+          .catch(console.error);
+      },
+      nowPlayingRefreshDelayMs(nowPlaying.stop, Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [channelId, dataUpdatedAt, errorUpdatedAt, nowPlaying.stop, queryClient]);
 
-  const details = useMemo(() => {
-    return match(firstProgram)
-      .returnType<ProgramDetails | null>()
-      .with(P.nullish, () => null)
-      .with(
-        { type: 'content', program: { type: P.union('episode', 'track') } },
-        ({ program: c }) => {
-          const grandparent = extractProgramGrandparent(c);
-          const programIndex =
-            c.type === 'episode' ? c.episodeNumber : c.trackNumber;
-          const parentIndex =
-            c.type === 'episode' ? c.season?.index : c.album?.index;
+  // Re-renders the start and remaining times.
+  const [now, setNow] = useState(Date.now);
+  useInterval(() => setNow(Date.now()), 30_000);
 
-          return {
-            title: c.title,
-            showTitle: grandparent?.title,
-            seasonAndEpisode:
-              !isNil(programIndex) && !isNil(parentIndex)
-                ? {
-                    season: parentIndex,
-                    episode: programIndex,
-                  }
-                : undefined,
-          };
-        },
-      )
-      .with({ type: 'content' }, ({ program: c }) => ({ title: c.title }))
-      .with({ type: 'custom' }, ({ program: c }) => ({
-        title: c?.program?.title ?? `Custom`,
-      }))
-      .with({ type: 'flex' }, () => ({ title: 'Flex' }))
-      .with({ type: 'redirect' }, (c) => ({
-        title: `Redirect to ${c.channelNumber}`,
-      }))
-      .exhaustive();
-  }, [firstProgram]);
+  const [layers, setLayers] = useState<Layer[]>(() => [
+    { program: nowPlaying, ready: false },
+  ]);
+  const nextLayers = pushProgram(layers, nowPlaying);
+  if (nextLayers !== layers) {
+    setLayers(nextLayers);
+    setNow(Date.now());
+  }
 
-  const imageUrl = useMemo(() => {
-    if (!firstProgram) {
+  const visibleIndex = visibleLayerIndex(layers);
+
+  // Old layers stay mounted until the new one has faded in over them.
+  useEffect(() => {
+    if (visibleIndex <= 0) {
       return;
     }
+    const timer = setTimeout(
+      () => setLayers((current) => pruneHiddenLayers(current)),
+      CrossFadeMs,
+    );
+    return () => clearTimeout(timer);
+  }, [visibleIndex]);
 
-    if (firstProgram.type !== 'content') {
-      return;
-    }
+  return (
+    <Card sx={{ width: '100%', display: 'grid' }}>
+      {layers.map((layer, index) => {
+        const visible = index === visibleIndex;
+        return (
+          <Box
+            key={`${layer.program.start}-${layer.program.stop}`}
+            aria-hidden={!visible}
+            sx={(theme) => ({
+              gridArea: '1 / 1',
+              display: 'flex',
+              flexDirection: ['column', 'row'],
+              opacity: visible ? 1 : 0,
+              pointerEvents: visible ? 'auto' : 'none',
+              transition: theme.transitions.create('opacity', {
+                duration: CrossFadeMs,
+              }),
+            })}
+          >
+            <NowPlayingLayer
+              program={layer.program}
+              flexPicture={channel.offline.picture}
+              showSkeleton={visible && !layer.ready}
+              now={now}
+              onReady={() =>
+                setLayers((current) => markReady(current, layer.program))
+              }
+            />
+          </Box>
+        );
+      })}
+    </Card>
+  );
+};
 
-    const program = lineup.programs[firstProgram.id];
-    if (!program) {
-      return;
-    }
+type LayerProps = {
+  program: TvGuideProgram;
+  flexPicture: string | undefined;
+  showSkeleton: boolean;
+  now: number;
+  onReady: () => void;
+};
 
-    return programArtworkUrl(backendUri, program.program);
-  }, [backendUri, firstProgram, lineup.programs]);
+const NowPlayingLayer = ({
+  program,
+  flexPicture,
+  showSkeleton,
+  now,
+  onReady,
+}: LayerProps) => {
+  const dayjs = useDayjs();
+  const { backendUri } = useSettings();
+  const [open, toggleOpen] = useToggle(false);
 
+  const details = programDetails(program);
+  const flexImageUrl = channelFlexImageUrl(flexPicture, backendUri);
+  const artworkUrl = nowPlayingImageUrl(program, flexPicture, backendUri);
+
+  // Artwork that fails to load falls back to the flex image.
+  const [artworkFailed, setArtworkFailed] = useState(false);
+  const imageUrl = artworkFailed ? flexImageUrl : artworkUrl;
   const [imageLoaded, setImageLoaded] = useState(false);
 
   const handleImageLoad = () => {
     setImageLoaded(true);
+    onReady();
   };
 
   const handleImageError = () => {
     console.error(`Failed to load image: ${imageUrl}`);
-    setImageLoaded(true);
+    if (imageUrl === flexImageUrl) {
+      setImageLoaded(true);
+      onReady();
+    } else {
+      setArtworkFailed(true);
+    }
   };
 
-  const startedAgo = dayjs(firstProgram?.start).fromNow();
+  const startedAgo = dayjs(program.start).from(now);
   const remainingTime =
-    globalDayjs
-      .duration(dayjs(firstProgram?.stop ?? 0).diff(dayjs()))
-      .humanize() + ' ';
+    globalDayjs.duration(Math.max(program.stop - now, 0)).humanize() + ' ';
 
   return (
-    <Card
-      sx={{
-        display: 'flex',
-        width: '100%',
-        position: 'relative',
-        flexDirection: ['column', 'row'],
-      }}
-    >
-      <Fade in={imageLoaded}>
-        <CardMedia
-          component="img"
-          image={imageUrl}
-          alt={details?.title}
-          title={details?.title}
-          onLoad={handleImageLoad}
-          onError={handleImageError}
-          sx={{
-            display: imageLoaded ? 'block' : 'none',
-            height: 350,
-            width: ['100%', '75%'],
-            objectFit: 'cover',
-          }}
-        />
-      </Fade>
+    <>
+      <CardMedia
+        component="img"
+        image={imageUrl}
+        alt={details.title}
+        title={details.title}
+        onLoad={handleImageLoad}
+        onError={handleImageError}
+        sx={{
+          display: showSkeleton && !imageLoaded ? 'none' : 'block',
+          height: 350,
+          width: ['100%', '75%'],
+          flexShrink: 0,
+          objectFit: 'cover',
+        }}
+      />
 
-      {!imageLoaded && (
+      {showSkeleton && !imageLoaded && (
         <Skeleton
           component="div"
           variant="rectangular"
@@ -169,7 +254,7 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
           sx={{
             minHeight: 350,
             width: ['100%', '75%'],
-            zIndex: 1,
+            flexShrink: 0,
           }}
         />
       )}
@@ -178,6 +263,8 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
         sx={{
           display: 'flex',
           flexDirection: 'column',
+          flex: 1,
+          minWidth: 0,
         }}
       >
         <CardContent sx={{ flex: 1 }}>
@@ -185,9 +272,9 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
             <Trans>Now Playing:</Trans>
           </Typography>
           <Typography gutterBottom variant="h5" component="div">
-            {details?.showTitle ?? details?.title}
+            {details.showTitle ?? details.title}
           </Typography>
-          {details?.showTitle && <Typography>{details.title}</Typography>}
+          {details.showTitle && <Typography>{details.title}</Typography>}
           <Typography variant="body2" sx={{ color: 'text.secondary' }}>
             <Trans>
               Started {startedAgo} - {remainingTime}
@@ -200,38 +287,36 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
             <Trans>Details</Trans>
           </Button>
 
-          {firstProgram?.type === 'content' &&
-            firstProgram?.program.sourceType !== 'local' && (
+          {program.type === 'content' &&
+            program.program.sourceType !== 'local' && (
               <Button
                 startIcon={
                   <NetworkIcon
-                    network={firstProgram.program.sourceType}
+                    network={program.program.sourceType}
                     width={15}
                     height={15}
                   />
                 }
                 size="small"
                 component={Link}
-                href={`${backendUri}/api/programs/${firstProgram.id}/external-link`}
+                href={`${backendUri}/api/programs/${program.id}/external-link`}
                 target="_blank"
               >
-                <Trans>
-                  View in {capitalize(firstProgram.program.sourceType)}
-                </Trans>
+                <Trans>View in {capitalize(program.program.sourceType)}</Trans>
               </Button>
             )}
         </CardActions>
       </Box>
-      {firstProgram.type === 'content' && (
+      {program.type === 'content' && (
         <ProgramDetailsDialog
           open={open}
-          programId={firstProgram.id}
-          programType={firstProgram.program.type}
+          programId={program.id}
+          programType={program.program.type}
           onClose={toggleOpen}
-          start={dayjs(firstProgram.start)}
-          stop={dayjs(firstProgram.stop)}
+          start={dayjs(program.start)}
+          stop={dayjs(program.stop)}
         />
       )}
-    </Card>
+    </>
   );
 };
