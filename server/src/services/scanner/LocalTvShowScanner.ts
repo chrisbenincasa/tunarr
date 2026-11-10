@@ -9,16 +9,7 @@ import type {
 } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
-import {
-  chunk,
-  compact,
-  entries,
-  groupBy,
-  isNil,
-  isNull,
-  isUndefined,
-  range,
-} from 'lodash-es';
+import { chunk, compact, isNil, isNull, isUndefined, range } from 'lodash-es';
 import type { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
@@ -52,6 +43,7 @@ import { FallbackMetadataService } from '../local/FallbackMetadataService.ts';
 import {
   extractSeasonAndEpisodeNumber,
   extractSeasonNumberFromFolder,
+  groupEpisodeFilesBySeason,
   mapNfoActors,
   mapNfoToNamedEntity,
   tvShowNfoToShowMetadata,
@@ -447,27 +439,15 @@ export class LocalTvShowScanner extends FileSystemScanner {
     allFiles: Dirent[],
     folderId: string,
   ) {
-    const validFiles = seq.collect(allFiles, (dirent) => {
-      if (!KnownVideoFileExtensions.has(extname(dirent.name))) {
-        return;
-      }
+    const videoFiles = allFiles.filter(
+      (dirent) =>
+        KnownVideoFileExtensions.has(extname(dirent.name)) &&
+        !dirent.name.startsWith('._'),
+    );
 
-      if (dirent.name.startsWith('._')) {
-        return;
-      }
-
-      const seasonAndEpisode = extractSeasonAndEpisodeNumber(dirent.name);
-      if (!seasonAndEpisode) {
-        return;
-      }
-
-      return [dirent, seasonAndEpisode] as const;
-    });
-
-    const groupedBySeason = groupBy(validFiles, ([_, { season }]) => season);
-
-    for (const [seasonNumString, episodeFiles] of entries(groupedBySeason)) {
-      const seasonNumber = parseInt(seasonNumString);
+    for (const [seasonNumber, episodeFiles] of groupEpisodeFilesBySeason(
+      videoFiles,
+    )) {
       this.logger.debug(
         'Scanning pseudo-season (flat directory) %d',
         seasonNumber,

@@ -21,6 +21,20 @@ tv/
 
 ```
 
+## Episode File Names
+
+Tunarr reads the season and episode numbers from each episode's file name. It recognizes these forms:
+
+| Example | Season | Episode |
+|---|---|---|
+| `S01E01`, `S01 E01`, `S01.E01`, `S01_E01` | 1 | 1 |
+| `S01E01E02`, `S01E01-E02`, `S01E01-02` | 1 | 1 and 2 |
+| `1x01` | 1 | 1 |
+| `s2016.e100761` (ytdl-sub style) | 2016 | 100761 |
+| `Show.E259.720p` | none | 259 |
+
+A file name with only an episode number, such as `.E259.`, works inside a season folder, because the folder supplies the season. Shows without season folders skip these files, since Tunarr can't tell which season they belong to.
+
 ## Metadata
 
 Tunarr does its best to follow conventions laid out by the Kodi Wiki for [shows](https://kodi.wiki/view/NFO_files/TV_shows) and [episodes](https://kodi.wiki/view/NFO_files/Episodes) when reading NFO metadata for movie items. For each show item, Tunarr will look for an NFO file called `tvshow.nfo` in the show's folder. Tunarr expects each episode to have its own NFO file which matches the name of the video file exactly, but with the `.nfo` extension instead of the video extension.
