@@ -885,6 +885,37 @@ describe('ExternalCollectionScanner', () => {
         ).not.toHaveBeenCalled();
       });
 
+      it('lists the BoxSet items once per full scan', async () => {
+        const { msId, boxSet } = setup();
+        useCollectionTable(mocks.externalCollectionsRepo);
+        scanner.getAllLibraryCollections.mockImplementation(() =>
+          asyncOf(boxSet),
+        );
+
+        await scanner.scan({ mediaSourceId: msId });
+
+        expect(scanner.getCollectionItems).toHaveBeenCalledOnce();
+      });
+
+      it('lists the BoxSet items again when an earlier library fails after returning it', async () => {
+        const { msId, movies, boxSet } = setup();
+        useCollectionTable(mocks.externalCollectionsRepo);
+        scanner.getAllLibraryCollections.mockImplementation((_, libraryKey) => {
+          if (libraryKey === movies.externalKey) {
+            return (async function* () {
+              yield boxSet;
+              throw new Error('Scan failed');
+            })();
+          }
+          return asyncOf(boxSet);
+        });
+
+        await scanner.scan({ mediaSourceId: msId });
+
+        expect(mocks.logger.warn).toHaveBeenCalled();
+        expect(scanner.getCollectionItems).toHaveBeenCalledTimes(2);
+      });
+
       it('refreshes the stored title when the BoxSet is renamed', async () => {
         const { msId, boxSet, makeRow } = setup();
         const row = makeRow({ title: 'Old Title' });

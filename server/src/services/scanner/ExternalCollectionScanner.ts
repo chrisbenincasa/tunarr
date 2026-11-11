@@ -135,6 +135,7 @@ export abstract class ExternalCollectionScanner<
             apiClient,
           },
           existingCollections,
+          seenIds,
         ),
       );
       if (result.isFailure()) {
@@ -148,6 +149,8 @@ export abstract class ExternalCollectionScanner<
         continue;
       }
 
+      // Only a library that finished adds its IDs. A failed library never
+      // sent its search updates, so later libraries redo its collections.
       for (const id of result.getOrThrow()) {
         seenIds.add(id);
       }
@@ -225,6 +228,7 @@ export abstract class ExternalCollectionScanner<
         mediaSource: library.mediaSource,
       },
       await this.getCollectionsByExternalKey(library.mediaSource.uuid),
+      new Set(),
     );
   }
 
@@ -239,11 +243,17 @@ export abstract class ExternalCollectionScanner<
    * `existingCollections` holds every row of the media source. Rows this
    * scan inserts are added to it.
    *
+   * `scannedIds` holds collections that earlier libraries in the same scan
+   * already handled. A Jellyfin or Emby BoxSet lists the same items through
+   * every library, so they are skipped. Plex collections belong to a single
+   * library and never repeat.
+   *
    * @returns the external IDs of the collections the library returned
    */
   private async scanLibraryInternal(
     ctx: Context<ApiClientT>,
     existingCollections: Map<string, ExternalCollection>,
+    scannedIds: ReadonlySet<string>,
   ): Promise<Set<string>> {
     await this.searchService.waitForPendingIndexTasks();
     this.logger.debug(
@@ -257,7 +267,10 @@ export abstract class ExternalCollectionScanner<
       ctx.apiClient,
       ctx.library.externalKey,
     )) {
-      if (seenIds.has(collection.externalId)) {
+      if (
+        seenIds.has(collection.externalId) ||
+        scannedIds.has(collection.externalId)
+      ) {
         continue;
       }
       seenIds.add(collection.externalId);

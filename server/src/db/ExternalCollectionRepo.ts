@@ -63,14 +63,6 @@ export class ExternalCollectionRepo {
       .execute();
   }
 
-  getByLibraryId(libraryId: string) {
-    return this.drizzleDB.query.externalCollections
-      .findMany({
-        where: (fields, { eq }) => eq(fields.libraryId, libraryId),
-      })
-      .execute();
-  }
-
   getCollectionByExternalId(mediaSourceId: MediaSourceId, externalKey: string) {
     return this.drizzleDB.query.externalCollections
       .findFirst({
