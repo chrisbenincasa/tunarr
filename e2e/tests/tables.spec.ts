@@ -24,6 +24,9 @@ type TablePage = {
   // dense, so they run with dense density.
   dense?: boolean;
 
+  // Why the page can't pass the phone-width check yet.
+  skipPhone?: string;
+
   // A column whose values sort as plain text.
   sortColumn: string;
   hideColumn?: string;
@@ -176,6 +179,7 @@ const TABLES: Record<string, TableTarget> = {
     ready: 'Default',
     persisted: true,
     ported: true,
+    skipPhone: 'The table overflows by 275px at 390px. Phase 4 rebuilds it.',
     sortColumn: 'Name',
     hideColumn: 'Resolution',
     filter: async (page) => {
@@ -267,9 +271,10 @@ const TABLES: Record<string, TableTarget> = {
   SystemLogs: {
     url: () => '/system/logs',
     ready: 'info',
-    persisted: false,
+    persisted: true,
     ported: true,
-    sortColumn: 'Timestamp',
+    // Time cells show local times, which don't sort as text.
+    sortColumn: 'Component',
     hideColumn: 'Component',
     filter: async (page) => {
       await showFilters(page);
@@ -279,6 +284,15 @@ const TABLES: Record<string, TableTarget> = {
       await expect(
         bodyRows(page).getByRole('cell', { name: 'info', exact: true }),
       ).toHaveCount(0);
+    },
+    rowAction: async (page) => {
+      await bodyRows(page)
+        .first()
+        .getByRole('button', { name: /^Show details for / })
+        .click();
+      await expect(
+        page.getByRole('button', { name: 'Copy raw line' }),
+      ).toBeVisible();
     },
   },
 
@@ -399,6 +413,22 @@ for (const [name, target] of Object.entries(TABLES)) {
       test('fits the page width', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 });
         await open(page);
+        const overflow = await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth -
+            document.documentElement.clientWidth,
+        );
+        expect(overflow).toBe(0);
+      });
+
+      // Collection pages show cards on phones, so this waits on the text alone.
+      test('fits a phone screen', async ({ page }) => {
+        test.skip(target.skipPhone !== undefined, target.skipPhone);
+        await page.setViewportSize({ width: 390, height: 844 });
+        await page.goto(`/web${target.url(readFixtureIds())}`);
+        await expect(
+          page.getByText(target.ready, { exact: true }).first(),
+        ).toBeVisible();
         const overflow = await page.evaluate(
           () =>
             document.documentElement.scrollWidth -
