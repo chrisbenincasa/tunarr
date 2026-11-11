@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (11/09/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` is in review in PR #2507, `/library/fillers` is stacked on it in PR #2511, and `/library/smart_collections` is stacked on that in PR #2514, `/settings/sources` is stacked on that in PR #2516, and `/system/tasks` is stacked on that in `feat/tasks-collection`. `/library/trash` moves to Phase 5. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next is `/system/logs`. The forms/settings mock is still due and gates Phase 4.
+> **Status (11/11/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` is in review in PR #2507, `/library/fillers` is stacked on it in PR #2511, and `/library/smart_collections` is stacked on that in PR #2514, `/settings/sources` is stacked on that in PR #2516, `/system/tasks` is stacked on that in PR #2519, and `/system/logs` is stacked on that in `feat/logs-collection`. That finishes Phase 3's pages. `/library/trash` moves to Phase 5. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. The forms/settings mock is still due and gates Phase 4.
 
 ## Why
 
@@ -53,15 +53,15 @@ Each layer has stories before the layer above uses it.
 
 ## Page types
 
-| Type            | Screens | Routes                                                                                                                                                                           |
-| --------------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| App shell       | all     | top nav, ⌘K search, color mode, Settings                                                                                                                                         |
-| Collection      | ~9      | `/channels`, `/library/custom-shows`, `/library/fillers`, `/library/smart_collections`, `/library/trash`, `/media_sources`, `/settings/sources`, `/system/tasks`, `/system/logs` |
-| Form / settings | ~14     | channel new/edit, custom show and filler new/edit, `/settings/*` tabs, `/settings/ffmpeg/$configId`                                                                              |
-| Lineup editor   | 3       | `/channels/$id/programming`, custom show and filler `programming`                                                                                                                |
-| Slot editors    | 2       | `/channels/$id/programming/slot-editor`, `time-slot-editor`                                                                                                                      |
-| Media browser   | ~4      | `programming/add`, `/media_sources/$id/libraries/$libraryId`, `/search`, `/media/$programType/$programId`                                                                        |
-| One-offs        | ~6      | `/guide`, `/channels/$id/watch`, `/welcome`, `/system`, `/system/debug`, `/system/troubleshoot`                                                                                  |
+| Type            | Screens | Routes                                                                                                                                                                                                    |
+| --------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| App shell       | all     | top nav, ⌘K search, color mode, Settings                                                                                                                                                                  |
+| Collection      | ~9      | `/channels`, `/library/custom-shows`, `/library/fillers`, `/library/smart_collections`, `/library/trash`, `/media_sources`, `/settings/sources`, `/system/tasks`, `/system/logs` (table at every density) |
+| Form / settings | ~14     | channel new/edit, custom show and filler new/edit, `/settings/*` tabs, `/settings/ffmpeg/$configId`                                                                                                       |
+| Lineup editor   | 3       | `/channels/$id/programming`, custom show and filler `programming`                                                                                                                                         |
+| Slot editors    | 2       | `/channels/$id/programming/slot-editor`, `time-slot-editor`                                                                                                                                               |
+| Media browser   | ~4      | `programming/add`, `/media_sources/$id/libraries/$libraryId`, `/search`, `/media/$programType/$programId`                                                                                                 |
+| One-offs        | ~6      | `/guide`, `/channels/$id/watch`, `/welcome`, `/system`, `/system/debug`, `/system/troubleshoot`                                                                                                           |
 
 ## Storybook
 
@@ -203,6 +203,16 @@ Built on `feat/tasks-collection`, stacked on `feat/media-sources-collection` (11
 - The table now saves its sort, hidden columns and page size like the other collection pages. The e2e table spec runs Tasks at dense density with persistence on, and waits on `ScanLibrariesTask`, which stays on the first page in every order the spec uses.
 - The page sits inside `SystemLayout`, which keeps its System heading and `Paper` like `SettingsLayout`.
 - Tasks have no detail page, so rows don't open anything.
+
+Built on `feat/logs-collection`, stacked on `feat/tasks-collection` (11/11/2026):
+
+- `/system/logs` is not a card page. Log lines have no identity or actions, people scan them down a time column, and new lines arrive at the top. The table shows at every density, and only phones get a list of entries. Mocks of cards, this table and a log console were compared on a canvas, and the user chose the table plus the console's pause toggle (11/11/2026). Canvas: https://claude.ai/artifact/44KbwQ3JL6tLGiyaFqV5JR (private)
+- `SystemLogsView`, `LogEntry` (phone), `LogDetail` and `LogLevelPill` live in `web/src/components/system/system-logs/`. `web/.gitignore` ignores every folder named `logs`, so the folder can't use that name. `SystemLogsPage` keeps the `EventSource`, the 1,000-line buffer and the pause snapshot.
+- Rows expand to show the line's `err` (type, message, stack) and its other fields, with a Copy raw line button. The old page dropped all of these.
+- `DataTable` gains `renderDetail`, which draws a full-width row under each expanded row. `expandColumn()` adds the chevron. Row expanding is registered in `tunarrFeatures`, so any table can use it with `getRowCanExpand`.
+- Pause freezes the lines on screen while the stream keeps filling the buffer. The header shows Live, or Paused with a count of new lines. Resume shows everything.
+- `CollectionView` gains `equalRowHeights`, so an opened phone entry doesn't stretch the others. Its phone column is now `minmax(0, 1fr)`, because unbreakable text in a card widened the page past the screen.
+- The e2e table spec gains a phone-width check for every ported page. `TranscodeConfigs` skips it, because its table already overflows by 275px at 390px.
 
 ### Phase 4. Forms and settings
 

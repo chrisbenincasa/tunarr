@@ -1,3 +1,4 @@
+import useStore from '@/store/index.ts';
 import { act, renderWithProviders, screen, within } from '@/test/utils';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 import { SystemLogsPage } from './SystemLogsPage.tsx';
@@ -43,19 +44,18 @@ const stream = () => {
   return source;
 };
 
-// The open filter menu hides the rest of the page from the accessibility tree.
 const messages = () =>
-  within(screen.getAllByRole('rowgroup', { hidden: true })[1])
-    .getAllByRole('row', { hidden: true })
-    .map(
-      (row) =>
-        within(row).getAllByRole('cell', { hidden: true })[3].textContent,
-    );
+  within(screen.getAllByRole('rowgroup')[1])
+    .getAllByRole('row')
+    .map((row) => within(row).getAllByRole('cell').at(-1)?.textContent);
 
 describe('SystemLogsPage', () => {
   beforeEach(() => {
     FakeEventSource.instances = [];
     vi.stubGlobal('EventSource', FakeEventSource);
+    useStore.setState(({ settings }) => {
+      settings.ui.tableSettings = {};
+    });
   });
 
   afterEach(() => {
@@ -68,18 +68,6 @@ describe('SystemLogsPage', () => {
 
     stream().emit(logLine(30, 'Server started'), logLine(50, 'Scan failed'));
     expect(messages()).toEqual(['Scan failed', 'Server started']);
-
-    const row = screen.getByText('Scan failed').closest('tr');
-    if (!row) {
-      throw new Error('No row for "Scan failed"');
-    }
-    const cells = within(row).getAllByRole('cell');
-    expect(cells.map((cell) => cell.textContent)).toEqual([
-      new Date(1_700_000_000_000).toISOString(),
-      'error',
-      'Scanner',
-      'Scan failed',
-    ]);
   });
 
   test('drops lines that are not JSON or have an unknown level', () => {
@@ -90,9 +78,6 @@ describe('SystemLogsPage', () => {
       logLine(40, 'Low disk'),
     );
     expect(messages()).toEqual(['Low disk']);
-    expect(
-      screen.getByText(/Displays the last 1 system log events/),
-    ).toBeInTheDocument();
   });
 
   test('keeps only the newest 1000 lines', () => {
@@ -101,31 +86,37 @@ describe('SystemLogsPage', () => {
       ...Array.from({ length: 1001 }, (_, i) => logLine(30, `line ${i}`)),
     );
     expect(
-      screen.getByText(/Displays the last 1000 system log events/),
+      screen.getByRole('link', { name: 'Download last 1,000 lines' }),
     ).toBeInTheDocument();
     expect(messages()[0]).toBe('line 1000');
   });
 
-  test('filters lines by level', async () => {
+  test('holds the lines on screen while paused and counts new ones', async () => {
     const { user } = renderWithProviders(<SystemLogsPage />);
-    stream().emit(
-      logLine(30, 'Server started'),
-      logLine(40, 'Low disk'),
-      logLine(50, 'Scan failed'),
-    );
-    await user.click(screen.getByRole('button', { name: 'Show/Hide filters' }));
-    await user.click(screen.getByRole('combobox', { name: 'Filter by Level' }));
-    await user.click(screen.getByRole('option', { name: 'warn' }));
-    await user.click(screen.getByRole('option', { name: 'error' }));
-    expect(messages()).toEqual(['Scan failed', 'Low disk']);
+    stream().emit(logLine(30, 'Before pause'));
+    await user.click(screen.getByRole('button', { name: 'Pause' }));
+
+    stream().emit(logLine(30, 'During pause 1'), logLine(30, 'During pause 2'));
+    expect(messages()).toEqual(['Before pause']);
+    expect(screen.getByText('Paused, 2 new lines')).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Resume' }));
+    expect(messages()).toEqual([
+      'During pause 2',
+      'During pause 1',
+      'Before pause',
+    ]);
+    expect(screen.getByText('Live')).toBeInTheDocument();
   });
 
-  test('limits the partial download to the rows on hand', () => {
+  test('limits the partial download to the lines on hand', () => {
     renderWithProviders(<SystemLogsPage />);
     stream().emit(logLine(30, 'one'), logLine(30, 'two'));
     expect(
-      screen.getByRole('link', { name: /Download last/ }).getAttribute('href'),
-    ).toMatch(/lineLimit=2$/);
+      screen
+        .getByRole('link', { name: 'Download last 2 lines' })
+        .getAttribute('href'),
+    ).toMatch(/download=true&pretty=true&lineLimit=2$/);
     expect(
       screen
         .getByRole('link', { name: 'Download all logs' })

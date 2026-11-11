@@ -26,6 +26,10 @@ export type CollectionViewProps<TItem> = {
   // Narrowest a card may get before the grid drops a column.
   minCardWidth?: number;
 
+  // Gives every row the height of the tallest card on the page. Turn it off
+  // for cards that grow when opened.
+  equalRowHeights?: boolean;
+
   // Pages the cards. Pass the table's state so both layouts share a page size.
   pagination?: {
     state: PaginationState;
@@ -44,6 +48,7 @@ export const CollectionView = <TItem,>({
   'aria-label': ariaLabel,
   layout,
   minCardWidth = 300,
+  equalRowHeights = true,
   pagination,
 }: CollectionViewProps<TItem>) => {
   const { theme, tokens, dense } = useThemeTokens();
@@ -75,17 +80,22 @@ export const CollectionView = <TItem,>({
         m: 0,
         p: 0,
         display: 'grid',
+        // minmax(0, …) keeps a card's unbreakable text from widening the
+        // column past the screen.
         gridTemplateColumns: {
-          xs: '1fr',
+          xs: 'minmax(0, 1fr)',
           sm: `repeat(auto-fill, minmax(${minCardWidth}px, 1fr))`,
         },
-        // Every row takes the height of the tallest card on the page.
-        gridAutoRows: '1fr',
+        gridAutoRows: equalRowHeights ? '1fr' : undefined,
         gap: dense ? 1.5 : 2.5,
       }}
     >
       {shown.map((item) => (
-        <Box component="li" key={getItemKey(item)} sx={{ display: 'flex' }}>
+        <Box
+          component="li"
+          key={getItemKey(item)}
+          sx={{ display: 'flex', minWidth: 0 }}
+        >
           {renderCard(item)}
         </Box>
       ))}
