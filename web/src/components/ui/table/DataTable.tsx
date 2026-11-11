@@ -30,13 +30,14 @@ import {
 } from '@mui/material';
 import type { Row, RowData, RowSelectionState } from '@tanstack/react-table';
 import { clamp } from 'lodash-es';
-import { type ReactNode, useEffect, useRef, useState } from 'react';
+import { Fragment, type ReactNode, useEffect, useRef, useState } from 'react';
 import { SortButton } from './SortButton.tsx';
 import { TablePager } from './TablePager.tsx';
 import { ColumnFilter } from './filters/ColumnFilter.tsx';
 import { sxList } from './sx.ts';
 import {
   ActionsColumnId,
+  ExpandColumnId,
   SelectColumnId,
   type TunarrColumn,
   type TunarrFeatures,
@@ -55,6 +56,10 @@ export type DataTableProps<TData extends RowData> = {
   // generic message instead.
   emptyFallback?: ReactNode;
   getRowProps?: (row: Row<TunarrFeatures, TData>) => TableRowProps;
+
+  // Drawn in a full-width row under each expanded row. Pair it with
+  // expandColumn() and the table's getRowCanExpand option.
+  renderDetail?: (row: Row<TunarrFeatures, TData>) => ReactNode;
   loading?: boolean;
   defaultShowFilters?: boolean;
   'aria-label'?: string;
@@ -77,7 +82,7 @@ const isTextEntry = (el: Element) =>
 
 // Columns that hold their own controls. Their clicks never reach the row.
 const isControlColumn = (id: string) =>
-  id === ActionsColumnId || id === SelectColumnId;
+  id === ActionsColumnId || id === SelectColumnId || id === ExpandColumnId;
 
 // Moves a saved page index that falls outside the page range back into it.
 // autoResetPageIndex skips the first render, so it never repairs one on load.
@@ -143,7 +148,7 @@ const cellAlign = <TData extends RowData>(
   column: TunarrColumn<TData>,
   isFirst: boolean,
 ): TableCellProps['align'] => {
-  if (column.id === SelectColumnId) {
+  if (column.id === SelectColumnId || column.id === ExpandColumnId) {
     return 'left';
   }
   if (column.id === ActionsColumnId) {
@@ -157,6 +162,7 @@ export const DataTable = <TData extends RowData>({
   toolbarActions,
   emptyFallback,
   getRowProps,
+  renderDetail,
   loading = false,
   defaultShowFilters = false,
   'aria-label': ariaLabel,
@@ -497,75 +503,94 @@ export const DataTable = <TData extends RowData>({
                       const isActive =
                         keyboardNavigation !== undefined &&
                         row.id === activeRowId;
+                      const detail =
+                        renderDetail && row.getIsExpanded()
+                          ? renderDetail(row)
+                          : undefined;
                       return (
-                        <TableRow
-                          key={row.id}
-                          hover={clickable}
-                          selected={row.getIsSelected()}
-                          tabIndex={keyboardNavigation ? -1 : undefined}
-                          ref={(el: HTMLTableRowElement | null) => {
-                            if (el) {
-                              rowElements.current.set(row.id, el);
-                            } else {
-                              rowElements.current.delete(row.id);
-                            }
-                          }}
-                          {...rowProps}
-                          sx={[
-                            clickable && { cursor: 'pointer' },
-                            { outline: 'none' },
-                            isActive &&
-                              ((theme) => ({
-                                boxShadow: `inset 3px 0 0 ${theme.palette.primary.main}`,
-                              })),
-                            ...sxList(rowProps?.sx),
-                          ]}
-                        >
-                          {row.getVisibleCells().map((cell) => {
-                            const column = cell.column;
-                            const meta = column.columnDef.meta;
-                            const isActions = column.id === ActionsColumnId;
-                            const isControl = isControlColumn(column.id);
-                            return (
-                              <TableCell
-                                key={cell.id}
-                                align={cellAlign(
-                                  column,
-                                  column.id === firstColumnId,
-                                )}
-                                {...meta?.cellProps}
-                                sx={[
-                                  (theme) => ({
-                                    width: meta?.width,
-                                    ...(meta?.numeric && {
-                                      ...theme.typography.mono,
+                        <Fragment key={row.id}>
+                          <TableRow
+                            hover={clickable}
+                            selected={row.getIsSelected()}
+                            tabIndex={keyboardNavigation ? -1 : undefined}
+                            ref={(el: HTMLTableRowElement | null) => {
+                              if (el) {
+                                rowElements.current.set(row.id, el);
+                              } else {
+                                rowElements.current.delete(row.id);
+                              }
+                            }}
+                            {...rowProps}
+                            sx={[
+                              clickable && { cursor: 'pointer' },
+                              { outline: 'none' },
+                              isActive &&
+                                ((theme) => ({
+                                  boxShadow: `inset 3px 0 0 ${theme.palette.primary.main}`,
+                                })),
+                              ...sxList(rowProps?.sx),
+                            ]}
+                          >
+                            {row.getVisibleCells().map((cell) => {
+                              const column = cell.column;
+                              const meta = column.columnDef.meta;
+                              const isActions = column.id === ActionsColumnId;
+                              const isControl = isControlColumn(column.id);
+                              return (
+                                <TableCell
+                                  key={cell.id}
+                                  align={cellAlign(
+                                    column,
+                                    column.id === firstColumnId,
+                                  )}
+                                  {...meta?.cellProps}
+                                  sx={[
+                                    (theme) => ({
+                                      width: meta?.width,
+                                      ...(meta?.numeric && {
+                                        ...theme.typography.mono,
+                                      }),
                                     }),
-                                  }),
-                                  isActions &&
-                                    ((theme) => ({
-                                      py: 0,
-                                      whiteSpace: 'nowrap',
-                                      '& .MuiIconButton-root': {
-                                        p: 0.75,
-                                        color: 'text.secondary',
-                                      },
-                                      '& .MuiSvgIcon-root': {
-                                        fontSize: theme.sizes.fontSize + 6,
-                                      },
-                                    })),
-                                  ...sxList(meta?.cellProps?.sx),
-                                ]}
-                                onClick={
-                                  isControl
-                                    ? (e) => e.stopPropagation()
-                                    : meta?.cellProps?.onClick
-                                }
+                                    isActions &&
+                                      ((theme) => ({
+                                        py: 0,
+                                        whiteSpace: 'nowrap',
+                                        '& .MuiIconButton-root': {
+                                          p: 0.75,
+                                          color: 'text.secondary',
+                                        },
+                                        '& .MuiSvgIcon-root': {
+                                          fontSize: theme.sizes.fontSize + 6,
+                                        },
+                                      })),
+                                    ...sxList(meta?.cellProps?.sx),
+                                  ]}
+                                  onClick={
+                                    isControl
+                                      ? (e) => e.stopPropagation()
+                                      : meta?.cellProps?.onClick
+                                  }
+                                >
+                                  <table.FlexRender cell={cell} />
+                                </TableCell>
+                              );
+                            })}
+                          </TableRow>
+                          {detail !== undefined && (
+                            <TableRow>
+                              <TableCell
+                                colSpan={visibleColumns.length}
+                                sx={(theme) => ({
+                                  p: 0,
+                                  backgroundColor:
+                                    theme.palette.tokens.surfaceRaised,
+                                })}
                               >
-                                <table.FlexRender cell={cell} />
+                                {detail}
                               </TableCell>
-                            );
-                          })}
-                        </TableRow>
+                            </TableRow>
+                          )}
+                        </Fragment>
                       );
                     })
                   )}
