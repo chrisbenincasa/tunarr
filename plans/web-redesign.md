@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (11/09/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` is in review in PR #2507, `/library/fillers` is stacked on it in PR #2511, and `/library/smart_collections` is stacked on that in `feat/smart-collections-collection`. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next are the remaining collection routes. The forms/settings mock is still due and gates Phase 4.
+> **Status (11/09/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` is in review in PR #2507, `/library/fillers` is stacked on it in PR #2511, and `/library/smart_collections` is stacked on that in PR #2514. `/library/trash` is stacked on smart collections in `feat/trash-page`. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next are the remaining collection routes. The forms/settings mock is still due and gates Phase 4.
 
 ## Why
 
@@ -97,7 +97,7 @@ Each phase is one or more PRs against `main`. Each PR leaves the app working.
 - Density reaches the MRT tables through `useStoreBackedTableSettings`. Done on branch, and temporary until `DataTable` replaces MRT.
 - Storybook with the provider decorator and the scheme and density toolbar.
 - First primitives with stories: `StatusPill`, `MonoText`, `PageHeader`.
-- Then `Segmented` (bans `ToggleButtonGroup` and `ToggleButton`), `KeyHint` and `EmptyState`. `EmptyState` has no mock yet, so its stories are the reference. Multi-select toggle groups (`TrashPage`) stay on the legacy list until a multi-select primitive exists.
+- Then `Segmented` (bans `ToggleButtonGroup` and `ToggleButton`), `KeyHint` and `EmptyState`. `EmptyState` has no mock yet, so its stories are the reference. Multi-select toggle groups stay on the legacy list until a multi-select primitive exists. `TrashPage` left the list by switching to filter chips.
 - The Vitest add-on, the a11y add-on (warnings only) and the story diff script.
 
 ### Phase 1. Mocks for the remaining page types
@@ -181,6 +181,16 @@ Built on `feat/smart-collections-collection`, stacked on `feat/fillers-collectio
 - `EditSmartCollectionDialog` fetches the collection itself, so it stays in the page.
 - Rows now open the collection on click, like every other collection page. The old table only opened it from the View button.
 - The e2e table spec runs CustomShows, FillerLists and SmartCollections at dense density, because Comfortable shows cards. The saved-MRT-settings test stores dense density for the same reason.
+
+Built on `feat/trash-page`, stacked on `feat/smart-collections-collection` (11/09/2026):
+
+- Trash lists programs, not entities, so it doesn't use `CollectionView`. Its grid is `LibraryProgramGrid`, shared with search and the library pages, and Phase 5 (`MediaGrid`) rebuilds it. This PR rebuilds only the page around the grid.
+- `/library/trash` splits into `TrashView` (props only, with stories) in `web/src/components/library/` and `TrashPage` (data). The view takes the grid as `children`, so its stories use a placeholder box.
+- `PageHeader` holds the Empty Trash button. The explainer paragraph shrinks to the header subtitle, and the breadcrumbs are gone.
+- The type filter stays multi-select. It uses token-styled filter chips with `aria-pressed`, plus an All chip that clears the selection. `TrashPage` is off the `ToggleButtonGroup` legacy list.
+- The drain shows in a token-styled panel with its count, a progress bar and Cancel. The bar turns to the warning color while cancelling.
+- The page passes the view one `TrashDrain` state (`idle`, `starting`, `running` or `cancelling`) built from `useEmptyTrash`.
+- An empty trash still shows only an empty grid. An `EmptyState` needs the grid's result count, which `LibraryProgramGrid` doesn't expose, so it waits for Phase 5.
 
 ### Phase 4. Forms and settings
 
