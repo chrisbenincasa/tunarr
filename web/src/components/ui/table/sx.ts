@@ -11,3 +11,18 @@ export const sxList = (sx: SxProps<Theme> | undefined): SxArray => {
   }
   return isSxArray(sx) ? sx : [sx];
 };
+
+// Hides content on screen but keeps it for screen readers. Lengths are strings
+// because sx reads a number up to 1 as a fraction, so width: 1 would mean 100%
+// and widen the page.
+export const visuallyHidden = {
+  position: 'absolute',
+  width: '1px',
+  height: '1px',
+  margin: '-1px',
+  padding: 0,
+  border: 0,
+  overflow: 'hidden',
+  clip: 'rect(0 0 0 0)',
+  whiteSpace: 'nowrap',
+} as const;

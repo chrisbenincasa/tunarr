@@ -2,9 +2,10 @@ import { Add, Delete, Edit, PlayArrow } from '@mui/icons-material';
 import { Button, IconButton, Tooltip, Typography } from '@mui/material';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { useMemo } from 'react';
+import { expect, userEvent, within } from 'storybook/test';
 import { StatusPill } from '../StatusPill.tsx';
 import { DataTable, type DataTableProps } from './DataTable.tsx';
-import { actionsColumn } from './columns.tsx';
+import { actionsColumn, expandColumn } from './columns.tsx';
 import { createAppColumnHelper, useTunarrTable } from './tunarrTable.ts';
 import { useStoreBackedTableSettings } from './useStoreBackedTableSettings.ts';
 
@@ -140,6 +141,35 @@ const PersistedDemo = () => {
   return <DataTable table={table} aria-label="Channels" />;
 };
 
+const ExpandableDemo = () => {
+  const demoColumns = useDemoColumns('last');
+  const columns = useMemo(
+    () => [
+      expandColumn<DemoChannel>({ getLabel: (channel) => channel.name }),
+      ...demoColumns,
+    ],
+    [demoColumns],
+  );
+  const table = useTunarrTable({
+    columns,
+    data: channels,
+    getRowCanExpand: () => true,
+  });
+  return (
+    <DataTable
+      table={table}
+      aria-label="Channels"
+      getRowProps={(row) => ({ onClick: () => row.toggleExpanded() })}
+      renderDetail={({ original }) => (
+        <Typography sx={{ px: 2, py: 1.5 }}>
+          Channel {original.number} streams with the {original.transcode}{' '}
+          transcode profile.
+        </Typography>
+      )}
+    />
+  );
+};
+
 const meta = {
   title: 'Patterns/DataTable',
   component: DemoTable,
@@ -208,4 +238,21 @@ export const Paginated: Story = { args: { data: manyRows, pageSize: 25 } };
 // settings persist in local storage under the StorybookDemo table name.
 export const PersistedSettings: Story = {
   render: () => <PersistedDemo />,
+};
+
+// Rows open a detail row under them, from the chevron or a row click.
+export const ExpandableRows: Story = {
+  render: () => <ExpandableDemo />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await userEvent.click(
+      canvas.getByRole('button', { name: 'Show details for Classic Sitcoms' }),
+    );
+    await expect(
+      canvas.getByText(/Channel 2 streams with the NVENC 1080p/),
+    ).toBeVisible();
+    await expect(
+      canvas.getByRole('button', { name: 'Hide details for Classic Sitcoms' }),
+    ).toHaveAttribute('aria-expanded', 'true');
+  },
 };
