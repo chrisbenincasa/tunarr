@@ -403,6 +403,7 @@ describe('XmlTvWriter', () => {
             ...(hasArtwork ? ['icon'] : []),
             ...(type === 'movie' ? [] : ['episode-num', 'episode-num']),
             ...(type === 'track' ? ['video'] : []),
+            'previously-shown',
             'rating',
             ...(hasArtwork ? ['image'] : []),
           ]);
@@ -448,10 +449,35 @@ describe('XmlTvWriter', () => {
         );
         expect(children.map((node) => node.tagName)).toEqual([
           'title',
-          ...(hasArtwork ? ['icon', 'image'] : []),
+          ...(hasArtwork ? ['icon'] : []),
+          'previously-shown',
+          ...(hasArtwork ? ['image'] : []),
         ]);
       },
     );
+
+    test('marks flex programmes as previously shown', () => {
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
+      const xml = writeXmltv(
+        writer.generateXmltv([
+          {
+            channel: createChannelOrm({ number: 1, name: 'Test Channel' }),
+            programs: [
+              {
+                programming: { type: 'flex' },
+                title: 'Flex',
+                start: Date.parse('2026-09-22T00:00:00Z'),
+                stop: Date.parse('2026-09-22T00:30:00Z'),
+                durationMs: 1_800_000,
+              },
+            ],
+          },
+        ]),
+      );
+      expect(xml).toMatch(
+        /<title>Flex<\/title><previously-shown\s*\/><\/programme>/,
+      );
+    });
   });
 
   describe('television', () => {
