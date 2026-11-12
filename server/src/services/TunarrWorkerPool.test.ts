@@ -4,7 +4,11 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 // the pool leaves the class in its temporal dead zone when the container tries
 // to bind it, so the container has to be the entry point.
 import '../container.ts';
-import { TunarrWorkerPool } from './TunarrWorkerPool.ts';
+import {
+  MAX_WORKERS,
+  resolveWorkerPoolSize,
+  TunarrWorkerPool,
+} from './TunarrWorkerPool.ts';
 import type { TunarrSubprocessService } from './TunarrSubprocessService.ts';
 
 class FakeWorker extends EventEmitter {
@@ -220,5 +224,21 @@ describe('TunarrWorkerPool task timeouts', () => {
 
     expect(subprocess.createWorker).toHaveBeenCalledTimes(workerCount + 1);
     expect(replacement?.terminate).toHaveBeenCalled();
+  });
+});
+
+describe('resolveWorkerPoolSize', () => {
+  test('caps the default size at 4 workers', () => {
+    expect(MAX_WORKERS).toBe(4);
+    expect(resolveWorkerPoolSize(16, null)).toBe(4);
+  });
+
+  test('uses one worker per CPU below the cap', () => {
+    expect(resolveWorkerPoolSize(2, null)).toBe(2);
+  });
+
+  test('lets the env var override the cap', () => {
+    expect(resolveWorkerPoolSize(16, 8)).toBe(8);
+    expect(resolveWorkerPoolSize(16, 1)).toBe(1);
   });
 });
