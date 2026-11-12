@@ -271,6 +271,9 @@ export class XmlTvWriter {
 
     // @iptv/xmltv emits children in property insertion order. Keep direct
     // program children in DTD order: icon before episode-num, image last.
+    //
+    // Every programme gets <previously-shown/>. Tunarr replays existing media,
+    // and without the tag some guide clients mark airings as new.
     const partial: XmltvProgramme = {
       start: new Date(guideItem.start),
       stop: new Date(guideItem.stop),
@@ -419,6 +422,8 @@ export class XmlTvWriter {
         partial.video = { present: false };
       }
 
+      partial.previouslyShown = {};
+
       const rating = firstDefined(program.rating, program.show?.rating);
       if (rating) {
         partial.rating ??= [
@@ -437,6 +442,8 @@ export class XmlTvWriter {
       if (url) {
         partial.image = [{ _value: url, size: 3, type: 'poster' }];
       }
+    } else {
+      partial.previouslyShown = {};
     }
 
     return partial;
