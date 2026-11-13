@@ -1,5 +1,6 @@
 import type { TupleToUnion } from '@/types/util.js';
-import type { EverySchedule } from '@tunarr/types/schemas';
+import type { EverySchedule, LibraryScanSchedule } from '@tunarr/types/schemas';
+import { LibraryScanIntervalHours } from '@tunarr/types/schemas';
 import type {
   CronFields,
   DayOfTheMonthRange,
@@ -10,7 +11,8 @@ import parser from 'cron-parser';
 import CronExpression from 'cron-parser/lib/expression';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration.js';
-import { range, reduce } from 'lodash-es';
+import { range, reduce, uniq } from 'lodash-es';
+import type { DeepReadonly } from 'ts-essentials';
 import { run } from './index.ts';
 
 dayjs.extend(duration);
@@ -96,4 +98,66 @@ export function scheduleRuleToCronString(schedule: EverySchedule) {
       second: getRange('second', 'second') as SixtyRange[],
     })
     .stringify();
+}
+
+export function isValidCronExpression(expression: string): boolean {
+  if (expression.trim().length === 0) {
+    return false;
+  }
+  try {
+    parser.parseExpression(expression);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Returns the cron expression for a library scan schedule, or null when
+ * scheduled scans are off.
+ */
+export function libraryScanScheduleToCron(
+  schedule: DeepReadonly<LibraryScanSchedule>,
+): string | null {
+  switch (schedule.type) {
+    case 'off':
+      return null;
+    case 'interval':
+      return `0 ${schedule.minute} */${schedule.hours} * * *`;
+    case 'days': {
+      const days = uniq(schedule.daysOfWeek).sort((a, b) => a - b);
+      const dayField = days.length === 7 ? '*' : days.join(',');
+      return `0 ${schedule.minute} ${schedule.hour} * * ${dayField}`;
+    }
+    case 'cron':
+      return schedule.cron;
+  }
+}
+
+/**
+ * Converts the retired `rescanIntervalHours` setting into the schedule that
+ * fires at the same times. Values that scheduled nothing map to `off`.
+ */
+export function legacyRescanIntervalToSchedule(
+  hours: number,
+): LibraryScanSchedule {
+  if (!Number.isInteger(hours) || hours <= 0) {
+    return { type: 'off' };
+  }
+
+  if (hours >= 24) {
+    return {
+      type: 'days',
+      daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+      hour: 0,
+      minute: 30,
+    };
+  }
+
+  const interval = LibraryScanIntervalHours.find((h) => h === hours);
+  if (interval) {
+    return { type: 'interval', hours: interval, minute: 30 };
+  }
+
+  return { type: 'cron', cron: `0 30 */${hours} * * *` };
 }

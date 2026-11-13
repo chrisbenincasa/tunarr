@@ -1,6 +1,6 @@
 # Database
 
-*Last Updated: 2026-09-29*
+*Last Updated: 2026-11-13*
 
 ## Stores
 
@@ -21,6 +21,10 @@
   (`LegacyMigration*.ts`, `Migration<timestamp>_*.ts`), loaded through
   `migration/DirectMigrationProvider.ts`. `migration/DrizzleMigrator.ts` applies the Drizzle SQL.
 - `migration/lineups/` migrates lineup JSON files. `migration/streamCache/` clears cached stream state.
+- `settings.json` has no migration runner. Zod strips unknown keys on read, so a renamed or reshaped
+  setting is converted with a `z.preprocess` on its section in `SettingsSchema` (`db/SettingsDB.ts`).
+  The main thread rewrites the file at startup, which drops the old key. One-off flags in
+  `MigrationStateSchema` cover changes that need more than a parse, such as `hasEnabledLogRollByDefault`.
 
 ## Access layer
 

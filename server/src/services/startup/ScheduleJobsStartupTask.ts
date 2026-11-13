@@ -5,11 +5,8 @@ import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { CleanupSessionsTask } from '../../tasks/CleanupSessionsTask.ts';
 import { OnDemandChannelStateTask } from '../../tasks/OnDemandChannelStateTask.ts';
 import { RefreshMediaSourceLibraryTask } from '../../tasks/RefreshMediaSourceLibraryTask.ts';
-import { ScanLibrariesTask } from '../../tasks/ScanLibrariesTask.ts';
 import { ScheduledTask } from '../../tasks/ScheduledTask.ts';
 import { SubtitleExtractorTask } from '../../tasks/SubtitleExtractorTask.ts';
-import { SyncCollectionsTask } from '../../tasks/SyncCollectionsTask.ts';
-import { SyncCustomShowsTask } from '../../tasks/SyncCustomShowsTask.ts';
 import { UpdateXmlTvTask } from '../../tasks/UpdateXmlTvTask.ts';
 import { autoFactoryKey, KEYS } from '../../types/inject.ts';
 import { InjectLogger } from '../../util/inject.ts';
@@ -21,6 +18,7 @@ import {
   minutesCrontab,
   scheduleBackupJobs,
 } from '../Scheduler.ts';
+import { scheduleLibraryScanJobs } from '../libraryScanSchedule.ts';
 import { ChannelLineupMigratorStartupTask } from './ChannelLineupMigratorStartupTask.ts';
 import { SimpleStartupTask } from './IStartupTask.ts';
 
@@ -99,43 +97,8 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
       ),
     );
 
-    GlobalScheduler.scheduleTask(
-      ScanLibrariesTask.ID,
-      new ScheduledTask(
-        ScanLibrariesTask,
-        // Offset from the hourly library refresh so scans never start while
-        // library availability is being updated.
-        hoursCrontab(
-          this.settingsDB.globalMediaSourceSettings().rescanIntervalHours,
-          30,
-        ),
-        container.get<() => ScanLibrariesTask>(ScanLibrariesTask.KEY),
-        undefined,
-      ),
-    );
-
-    GlobalScheduler.scheduleTask(
-      SyncCollectionsTask.ID,
-      new ScheduledTask(
-        SyncCollectionsTask,
-        hoursCrontab(
-          this.settingsDB.globalMediaSourceSettings().rescanIntervalHours,
-        ),
-        container.get<() => SyncCollectionsTask>(SyncCollectionsTask.KEY),
-        undefined,
-      ),
-    );
-
-    GlobalScheduler.scheduleTask(
-      SyncCustomShowsTask.ID,
-      new ScheduledTask(
-        SyncCustomShowsTask,
-        hoursCrontab(
-          this.settingsDB.globalMediaSourceSettings().rescanIntervalHours,
-        ),
-        container.get<() => SyncCustomShowsTask>(SyncCustomShowsTask.KEY),
-        undefined,
-      ),
+    scheduleLibraryScanJobs(
+      this.settingsDB.globalMediaSourceSettings().scanSchedule,
     );
 
     scheduleBackupJobs(this.settingsDB.backup);
