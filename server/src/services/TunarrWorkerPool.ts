@@ -23,13 +23,25 @@ import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { TunarrSubprocessService } from './TunarrSubprocessService.ts';
 
-const MAX_WORKERS = 8;
+// Each worker is a separate V8 isolate that loads the full server bundle, so
+// every idle worker costs about 100 MB of resident memory (#2373).
+export const MAX_WORKERS = 4;
 
-const cpuCount = cpus().length;
+/**
+ * An explicit env var setting wins, even above MAX_WORKERS. Otherwise the pool
+ * uses one worker per CPU, capped at MAX_WORKERS.
+ */
+export function resolveWorkerPoolSize(
+  cpuCount: number,
+  envVarSetting: number | null,
+) {
+  return envVarSetting ?? Math.min(cpuCount, MAX_WORKERS);
+}
 
-const envVarSetting = getNumericEnvVar(WORKER_POOL_SIZE_ENV_VAR);
-
-const numWorkers = envVarSetting ?? Math.min(cpuCount, MAX_WORKERS);
+const numWorkers = resolveWorkerPoolSize(
+  cpus().length,
+  getNumericEnvVar(WORKER_POOL_SIZE_ENV_VAR),
+);
 
 // A worker that dies is respawned, but a worker that cannot start at all —
 // a broken bundle, a bad entry path — would otherwise be respawned in a tight
