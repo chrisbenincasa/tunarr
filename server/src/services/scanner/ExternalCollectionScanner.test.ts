@@ -142,6 +142,64 @@ async function* asyncOf<T>(...items: T[]): AsyncGenerator<T> {
   }
 }
 
+/**
+ * Backs the collection repo mocks with an in-memory table, so scans of
+ * several libraries see each other's writes.
+ */
+function useCollectionTable(
+  repo: ExternalCollectionRepo,
+  initialRows: ExternalCollection[] = [],
+) {
+  const rows = new Map(initialRows.map((row) => [row.uuid, { ...row }]));
+  vi.mocked(repo.getByMediaSourceId).mockImplementation((mediaSourceId) =>
+    Promise.resolve(
+      [...rows.values()].filter((row) => row.mediaSourceId === mediaSourceId),
+    ),
+  );
+  vi.mocked(repo.getById).mockImplementation((id) => {
+    const row = rows.get(id);
+    return Promise.resolve(
+      row ? ({ ...row, groupings: [], programs: [] } as never) : undefined,
+    );
+  });
+  vi.mocked(repo.getCollectionByExternalId).mockImplementation(
+    (mediaSourceId, externalKey) =>
+      Promise.resolve(
+        [...rows.values()].find(
+          (row) =>
+            row.mediaSourceId === mediaSourceId &&
+            row.externalKey === externalKey,
+        ),
+      ),
+  );
+  vi.mocked(repo.insertCollection).mockImplementation((row) => {
+    const duplicate = [...rows.values()].some(
+      (existing) =>
+        existing.mediaSourceId === row.mediaSourceId &&
+        existing.externalKey === row.externalKey,
+    );
+    if (duplicate) {
+      throw new Error(
+        'UNIQUE constraint failed: external_collections.media_source_id, external_collections.external_key',
+      );
+    }
+    rows.set(row.uuid, { ...row });
+    return Promise.resolve(undefined as never);
+  });
+  vi.mocked(repo.updateCollectionTitle).mockImplementation((id, title) => {
+    const row = rows.get(id);
+    if (row) {
+      rows.set(id, { ...row, title });
+    }
+    return Promise.resolve(undefined as never);
+  });
+  vi.mocked(repo.deleteCollection).mockImplementation((id) => {
+    rows.delete(id);
+    return Promise.resolve(undefined as never);
+  });
+  return rows;
+}
+
 // --- Mock factory helpers ---
 
 function makeMocks() {
@@ -163,10 +221,12 @@ function makeMocks() {
     {} as unknown as MediaSourceApiFactory;
 
   const externalCollectionsRepo: ExternalCollectionRepo = {
-    getByLibraryId: vi.fn().mockResolvedValue([]),
+    getByMediaSourceId: vi.fn().mockResolvedValue([]),
     insertCollection: vi.fn().mockResolvedValue(undefined),
+    updateCollectionTitle: vi.fn().mockResolvedValue(undefined),
     deleteCollection: vi.fn().mockResolvedValue(undefined),
     getById: vi.fn().mockResolvedValue(undefined),
+    getCollectionByExternalId: vi.fn().mockResolvedValue(undefined),
     getCollectionProgramGroupings: vi.fn().mockResolvedValue([]),
     getCollectionPrograms: vi.fn().mockResolvedValue([]),
   } as unknown as ExternalCollectionRepo;
@@ -244,7 +304,7 @@ describe('ExternalCollectionScanner', () => {
 
       expect(scanner.getAllLibraryCollections).not.toHaveBeenCalled();
       expect(
-        mocks.externalCollectionsRepo.getByLibraryId,
+        mocks.externalCollectionsRepo.getByMediaSourceId,
       ).not.toHaveBeenCalled();
     });
 
@@ -266,11 +326,10 @@ describe('ExternalCollectionScanner', () => {
 
       await scanner.scan({ mediaSourceId: mediaSource.uuid });
 
-      expect(
-        mocks.externalCollectionsRepo.getByLibraryId,
-      ).toHaveBeenCalledOnce();
-      expect(mocks.externalCollectionsRepo.getByLibraryId).toHaveBeenCalledWith(
-        'enabled-lib',
+      expect(scanner.getAllLibraryCollections).toHaveBeenCalledOnce();
+      expect(scanner.getAllLibraryCollections).toHaveBeenCalledWith(
+        expect.anything(),
+        enabledLib.externalKey,
       );
     });
 
@@ -321,9 +380,9 @@ describe('ExternalCollectionScanner', () => {
       const tag = makeTag(collection.title);
 
       vi.mocked(mocks.mediaSourceDB.getById).mockResolvedValue(mediaSource);
-      vi.mocked(mocks.externalCollectionsRepo.getByLibraryId).mockResolvedValue(
-        [existingColl],
-      );
+      vi.mocked(
+        mocks.externalCollectionsRepo.getByMediaSourceId,
+      ).mockResolvedValue([existingColl]);
       scanner.getAllLibraryCollections.mockReturnValue(asyncOf(collection));
       scanner.getCollectionItems.mockReturnValue(asyncOf());
       vi.mocked(mocks.tagRepo.upsertTag).mockResolvedValue(tag);
@@ -495,9 +554,9 @@ describe('ExternalCollectionScanner', () => {
       const removedProgramExtKey = 'removed-movie-ext';
 
       vi.mocked(mocks.mediaSourceDB.getById).mockResolvedValue(mediaSource);
-      vi.mocked(mocks.externalCollectionsRepo.getByLibraryId).mockResolvedValue(
-        [existingColl],
-      );
+      vi.mocked(
+        mocks.externalCollectionsRepo.getByMediaSourceId,
+      ).mockResolvedValue([existingColl]);
       // Previously this program was in the collection
       vi.mocked(
         mocks.externalCollectionsRepo.getCollectionPrograms,
@@ -542,9 +601,9 @@ describe('ExternalCollectionScanner', () => {
       const removedGroupingExtKey = 'removed-show-ext';
 
       vi.mocked(mocks.mediaSourceDB.getById).mockResolvedValue(mediaSource);
-      vi.mocked(mocks.externalCollectionsRepo.getByLibraryId).mockResolvedValue(
-        [existingColl],
-      );
+      vi.mocked(
+        mocks.externalCollectionsRepo.getByMediaSourceId,
+      ).mockResolvedValue([existingColl]);
       vi.mocked(
         mocks.externalCollectionsRepo.getCollectionProgramGroupings,
       ).mockResolvedValue([
@@ -586,9 +645,9 @@ describe('ExternalCollectionScanner', () => {
       const taggedProgramUuid = v4();
 
       vi.mocked(mocks.mediaSourceDB.getById).mockResolvedValue(mediaSource);
-      vi.mocked(mocks.externalCollectionsRepo.getByLibraryId).mockResolvedValue(
-        [missingColl],
-      );
+      vi.mocked(
+        mocks.externalCollectionsRepo.getByMediaSourceId,
+      ).mockResolvedValue([missingColl]);
       // API returns no collections now
       scanner.getAllLibraryCollections.mockReturnValue(asyncOf());
       // getById for the missing collection returns it with its programs
@@ -696,6 +755,208 @@ describe('ExternalCollectionScanner', () => {
         ]),
       );
     });
+
+    describe('when a BoxSet comes back through several libraries (#1975)', () => {
+      function setup() {
+        const msId = makeMediaSourceId();
+        const movies = makeLibrary(msId, {
+          uuid: 'movies-lib',
+          externalKey: 'lib-movies',
+        });
+        const tv = makeLibrary(msId, { uuid: 'tv-lib', externalKey: 'lib-tv' });
+        const mediaSource = makeMediaSource([movies, tv], { uuid: msId });
+        const boxSet = makeCollection({
+          externalId: 'boxset-ext',
+          mediaSourceId: msId,
+          title: 'Shared BoxSet',
+        });
+        const makeRow = (overrides: Partial<ExternalCollection> = {}) =>
+          makeExternalCollection({
+            externalKey: boxSet.externalId,
+            libraryId: tv.uuid,
+            mediaSourceId: msId,
+            title: boxSet.title,
+            ...overrides,
+          });
+
+        vi.mocked(mocks.mediaSourceDB.getById).mockResolvedValue(mediaSource);
+        vi.mocked(mocks.tagRepo.upsertTag).mockResolvedValue(
+          makeTag(boxSet.title),
+        );
+        scanner.getCollectionItems.mockImplementation(() => asyncOf());
+
+        return { msId, movies, tv, boxSet, makeRow };
+      }
+
+      it('creates one collection row on the first scan', async () => {
+        const { msId, movies, boxSet } = setup();
+        const rows = useCollectionTable(mocks.externalCollectionsRepo);
+        scanner.getAllLibraryCollections.mockImplementation(() =>
+          asyncOf(boxSet),
+        );
+
+        await scanner.scan({ mediaSourceId: msId });
+
+        expect(mocks.logger.warn).not.toHaveBeenCalled();
+        expect([...rows.values()]).toEqual([
+          expect.objectContaining({
+            externalKey: boxSet.externalId,
+            libraryId: movies.uuid,
+          }),
+        ]);
+      });
+
+      it('leaves the row alone on later scans', async () => {
+        const { msId, boxSet, makeRow } = setup();
+        useCollectionTable(mocks.externalCollectionsRepo, [makeRow()]);
+        scanner.getAllLibraryCollections.mockImplementation(() =>
+          asyncOf(boxSet),
+        );
+
+        await scanner.scan({ mediaSourceId: msId });
+
+        expect(mocks.logger.warn).not.toHaveBeenCalled();
+        expect(
+          mocks.externalCollectionsRepo.insertCollection,
+        ).not.toHaveBeenCalled();
+        expect(
+          mocks.externalCollectionsRepo.updateCollectionTitle,
+        ).not.toHaveBeenCalled();
+        expect(
+          mocks.externalCollectionsRepo.deleteCollection,
+        ).not.toHaveBeenCalled();
+      });
+
+      it.each(['movies', 'tv'] as const)(
+        'keeps the row when the %s library it is attached to stops returning the BoxSet',
+        async (owner) => {
+          const { msId, movies, tv, boxSet, makeRow } = setup();
+          const ownerLib = owner === 'movies' ? movies : tv;
+          const otherLib = owner === 'movies' ? tv : movies;
+          const row = makeRow({ libraryId: ownerLib.uuid });
+          const rows = useCollectionTable(mocks.externalCollectionsRepo, [row]);
+          scanner.getAllLibraryCollections.mockImplementation(
+            (_, libraryKey) =>
+              libraryKey === otherLib.externalKey ? asyncOf(boxSet) : asyncOf(),
+          );
+
+          await scanner.scan({ mediaSourceId: msId });
+
+          expect(
+            mocks.externalCollectionsRepo.deleteCollection,
+          ).not.toHaveBeenCalled();
+          expect([...rows.keys()]).toEqual([row.uuid]);
+        },
+      );
+
+      it('deletes the row when no library returns the BoxSet', async () => {
+        const { msId, makeRow } = setup();
+        const row = makeRow();
+        const rows = useCollectionTable(mocks.externalCollectionsRepo, [row]);
+        scanner.getAllLibraryCollections.mockImplementation(() => asyncOf());
+
+        await scanner.scan({ mediaSourceId: msId });
+
+        expect(
+          mocks.externalCollectionsRepo.deleteCollection,
+        ).toHaveBeenCalledWith(row.uuid);
+        expect(rows.size).toBe(0);
+      });
+
+      it('deletes nothing when a library scan fails', async () => {
+        const { msId, movies, makeRow } = setup();
+        useCollectionTable(mocks.externalCollectionsRepo, [makeRow()]);
+        scanner.getAllLibraryCollections.mockImplementation((_, libraryKey) => {
+          if (libraryKey === movies.externalKey) {
+            return (async function* () {
+              throw new Error('Scan failed');
+              // eslint-disable-next-line no-unreachable
+              yield makeCollection();
+            })();
+          }
+          return asyncOf();
+        });
+
+        await scanner.scan({ mediaSourceId: msId });
+
+        expect(mocks.logger.warn).toHaveBeenCalled();
+        expect(
+          mocks.externalCollectionsRepo.deleteCollection,
+        ).not.toHaveBeenCalled();
+      });
+
+      it('lists the BoxSet items once per full scan', async () => {
+        const { msId, boxSet } = setup();
+        useCollectionTable(mocks.externalCollectionsRepo);
+        scanner.getAllLibraryCollections.mockImplementation(() =>
+          asyncOf(boxSet),
+        );
+
+        await scanner.scan({ mediaSourceId: msId });
+
+        expect(scanner.getCollectionItems).toHaveBeenCalledOnce();
+      });
+
+      it('lists the BoxSet items again when an earlier library fails after returning it', async () => {
+        const { msId, movies, boxSet } = setup();
+        useCollectionTable(mocks.externalCollectionsRepo);
+        scanner.getAllLibraryCollections.mockImplementation((_, libraryKey) => {
+          if (libraryKey === movies.externalKey) {
+            return (async function* () {
+              yield boxSet;
+              throw new Error('Scan failed');
+            })();
+          }
+          return asyncOf(boxSet);
+        });
+
+        await scanner.scan({ mediaSourceId: msId });
+
+        expect(mocks.logger.warn).toHaveBeenCalled();
+        expect(scanner.getCollectionItems).toHaveBeenCalledTimes(2);
+      });
+
+      it('refreshes the stored title when the BoxSet is renamed', async () => {
+        const { msId, boxSet, makeRow } = setup();
+        const row = makeRow({ title: 'Old Title' });
+        const rows = useCollectionTable(mocks.externalCollectionsRepo, [row]);
+        scanner.getAllLibraryCollections.mockImplementation(() =>
+          asyncOf(boxSet),
+        );
+
+        await scanner.scan({ mediaSourceId: msId });
+
+        expect(rows.get(row.uuid)?.title).toBe(boxSet.title);
+        expect(
+          mocks.externalCollectionsRepo.updateCollectionTitle,
+        ).toHaveBeenCalledOnce();
+      });
+    });
+
+    it('processes a collection listed twice by one library only once', async () => {
+      const msId = makeMediaSourceId();
+      const library = makeLibrary(msId);
+      const mediaSource = makeMediaSource([library], { uuid: msId });
+      const collection = makeCollection({ mediaSourceId: msId });
+
+      vi.mocked(mocks.mediaSourceDB.getById).mockResolvedValue(mediaSource);
+      vi.mocked(mocks.tagRepo.upsertTag).mockResolvedValue(
+        makeTag(collection.title),
+      );
+      useCollectionTable(mocks.externalCollectionsRepo);
+      scanner.getAllLibraryCollections.mockReturnValue(
+        asyncOf(collection, collection),
+      );
+      scanner.getCollectionItems.mockImplementation(() => asyncOf());
+
+      await scanner.scan({ mediaSourceId: msId });
+
+      expect(mocks.logger.warn).not.toHaveBeenCalled();
+      expect(
+        mocks.externalCollectionsRepo.insertCollection,
+      ).toHaveBeenCalledOnce();
+      expect(scanner.getCollectionItems).toHaveBeenCalledOnce();
+    });
   });
 
   describe('scanLibrary()', () => {
@@ -733,6 +994,43 @@ describe('ExternalCollectionScanner', () => {
       await expect(
         scanner.scanLibrary({ libraryId: library.uuid }),
       ).rejects.toThrow(/non-jellyfin media source/);
+    });
+
+    it('reuses a row another library created and never deletes rows', async () => {
+      const msId = makeMediaSourceId();
+      const movies = makeLibrary(msId, { uuid: 'movies-lib' });
+      const tv = makeLibrary(msId, { uuid: 'tv-lib', externalKey: 'lib-tv' });
+      const boxSet = makeCollection({ externalId: 'boxset-ext' });
+      const sharedRow = makeExternalCollection({
+        externalKey: boxSet.externalId,
+        libraryId: movies.uuid,
+        mediaSourceId: msId,
+        title: boxSet.title,
+      });
+      const goneRow = makeExternalCollection({
+        externalKey: 'gone-ext',
+        libraryId: tv.uuid,
+        mediaSourceId: msId,
+      });
+      useCollectionTable(mocks.externalCollectionsRepo, [sharedRow, goneRow]);
+      vi.mocked(mocks.mediaSourceDB.getLibrary).mockResolvedValue({
+        ...tv,
+        mediaSource: makeMediaSource([], { uuid: msId, type: 'jellyfin' }),
+      } as never);
+      vi.mocked(mocks.tagRepo.upsertTag).mockResolvedValue(
+        makeTag(boxSet.title),
+      );
+      scanner.getAllLibraryCollections.mockReturnValue(asyncOf(boxSet));
+      scanner.getCollectionItems.mockImplementation(() => asyncOf());
+
+      await scanner.scanLibrary({ libraryId: tv.uuid });
+
+      expect(
+        mocks.externalCollectionsRepo.insertCollection,
+      ).not.toHaveBeenCalled();
+      expect(
+        mocks.externalCollectionsRepo.deleteCollection,
+      ).not.toHaveBeenCalled();
     });
 
     it('scans successfully when library is enabled and type matches', async () => {
