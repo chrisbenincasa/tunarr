@@ -286,12 +286,14 @@ export const addMediaToCurrentChannel = (programs: AddedMedia[]) =>
   useStore.setState(({ channelEditor, programLookup }) => {
     if (channelEditor.currentEntity && programs.length > 0) {
       channelEditor.dirty.programs = true;
-      const addedDuration = sumBy(programs, (program) =>
-        match(program)
-          .with({ type: 'custom-show' }, ({ program }) => program.duration ?? 0)
-          .with({ type: Imported }, ({ media }) => media.duration)
-          .exhaustive(),
-      );
+      const addedDuration = sumBy(programs, (program) => {
+        switch (program.type) {
+          case 'custom-show':
+            return program.program.duration ?? 0;
+          case Imported:
+            return program.media.duration;
+        }
+      });
 
       // Convert any external program types to our internal representation
       const allNewPrograms = seq.collect(programs, (item) => {

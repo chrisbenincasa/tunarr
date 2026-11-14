@@ -6,7 +6,6 @@ import type {
   CustomProgram,
 } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
-import { match, P } from 'ts-pattern';
 import { ProgramConverter } from '../db/converters/ProgramConverter.ts';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { KEYS } from '../types/inject.ts';
@@ -31,12 +30,17 @@ export class MaterializeLineupCommand {
   ): Promise<Record<string, ContentProgram>> {
     const programIds = new Set(
       seq.collect(request.lineup, (p) => {
-        return match(p)
-          .with({ type: 'content', id: P.nonNullable }, (c) => c.id ?? null)
-          .with({ type: 'custom' }, (c) => c.id)
-          .with({ type: 'filler' }, (f) => f.id)
-          .with({ type: P._ }, () => null)
-          .exhaustive();
+        switch (p.type) {
+          case 'content':
+            return p.id ?? null;
+          case 'custom':
+            return p.id;
+          case 'filler':
+            return p.id;
+          case 'redirect':
+          case 'flex':
+            return null;
+        }
       }),
     );
 
@@ -59,37 +63,39 @@ export class MaterializeLineupCommand {
     programsById: Record<string, ContentProgram>,
   ): ChannelProgram[] {
     return seq.collect(lineup, (lineupItem) => {
-      return match(lineupItem)
-        .with({ type: 'content' }, (c) => {
-          const program = programsById[c.id ?? ''];
+      switch (lineupItem.type) {
+        case 'content': {
+          const program = programsById[lineupItem.id ?? ''];
           if (!program) return;
           return {
-            ...c,
+            ...lineupItem,
             ...program,
             // We have to keep the lineup program's duration
             // here and not just override with the whole duration
-            duration: c.duration,
+            duration: lineupItem.duration,
           } satisfies ContentProgram;
-        })
-        .with({ type: 'custom' }, (c) => {
-          const program = programsById[c.id ?? ''];
+        }
+        case 'custom': {
+          const program = programsById[lineupItem.id ?? ''];
           if (!program) return;
 
           // Nest the program instead of spreading it. A spread would replace a
           // mid-roll segment's duration with the full program duration and
           // turn the item into plain content, dropping its custom show.
-          return { ...c, program } satisfies CustomProgram;
-        })
-        .with({ type: 'filler' }, (f) => {
-          const program = programsById[f.id];
+          return { ...lineupItem, program } satisfies CustomProgram;
+        }
+        case 'filler': {
+          const program = programsById[lineupItem.id];
           if (!program) return null;
           return {
-            ...f,
+            ...lineupItem,
             program,
           } satisfies ChannelProgram;
-        })
-        .with({ type: P._ }, (p) => p)
-        .exhaustive();
+        }
+        case 'redirect':
+        case 'flex':
+          return lineupItem;
+      }
     });
   }
 }

@@ -30,19 +30,31 @@ import { prettyItemDuration } from './util.ts';
 export function extractProgramGrandparent(
   program: TerminalProgram,
 ): Maybe<Show | MusicArtist> {
-  return match(program)
-    .with({ type: 'episode' }, (ep) => ep.show ?? ep.season?.show)
-    .with({ type: 'track' }, (track) => track.artist ?? track.album?.artist)
-    .otherwise(() => undefined);
+  switch (program.type) {
+    case 'episode':
+      return program.show ?? program.season?.show;
+    case 'track':
+      return program.artist ?? program.album?.artist;
+    case 'movie':
+    case 'other_video':
+    case 'music_video':
+      return;
+  }
 }
 
 export function extractProgramParent(
   program: TerminalProgram,
 ): Maybe<Season | MusicAlbum> {
-  return match(program)
-    .with({ type: 'episode' }, (ep) => ep.season)
-    .with({ type: 'track' }, (track) => track.album)
-    .otherwise(() => undefined);
+  switch (program.type) {
+    case 'episode':
+      return program.season;
+    case 'track':
+      return program.album;
+    case 'movie':
+    case 'other_video':
+    case 'music_video':
+      return;
+  }
 }
 
 function getGrandparentExternalId(program: TerminalProgram) {

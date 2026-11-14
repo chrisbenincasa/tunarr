@@ -1,6 +1,5 @@
 import { inject, injectable } from 'inversify';
 import type { StrictOmit } from 'ts-essentials';
-import { match } from 'ts-pattern';
 import type { z } from 'zod/v4';
 import type { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 
@@ -53,34 +52,33 @@ export class NoopWorkerPool implements IWorkerPool {
     Req extends StrictOmit<WorkerRequest, 'requestId'>,
     Out = z.infer<(typeof WorkerRequestToResponse)[Req['type']]>,
   >(request: Req, _timeout?: number): Promise<Out> {
-    return (
-      match(request as WorkerRequest)
-        // .returnType<Promise<Out>>()
-        .with({ type: 'status' }, () =>
-          Promise.resolve<Out>({
-            status: 'healthy',
-            type: 'status',
-          } as Out),
-        )
-        .with({ type: 'restart' }, () => {
-          return Promise.resolve<Out>(void 0 as Out);
-        })
-        .with({ type: 'time-slots' }, async ({ request, type }) => {
-          const result = await this.timeSlotSchedulerService.schedule(request);
-          return {
-            result,
-            type,
-          } satisfies z.infer<OutTypes[typeof type]>;
-        })
-        .with({ type: 'schedule-slots' }, async ({ request, type }) => {
-          const result = await this.slotSchedulerService.schedule(request);
-
-          return {
-            result,
-            type,
-          };
-        })
-        .exhaustive() as Promise<Out>
-    );
+    const workerRequest = request as WorkerRequest;
+    switch (workerRequest.type) {
+      case 'status':
+        return {
+          status: 'healthy',
+          type: 'status',
+        } as Out;
+      case 'restart':
+        return void 0 as Out;
+      case 'time-slots': {
+        const result = await this.timeSlotSchedulerService.schedule(
+          workerRequest.request,
+        );
+        return {
+          result,
+          type: workerRequest.type,
+        } satisfies z.infer<OutTypes['time-slots']> as Out;
+      }
+      case 'schedule-slots': {
+        const result = await this.slotSchedulerService.schedule(
+          workerRequest.request,
+        );
+        return {
+          result,
+          type: workerRequest.type,
+        } as Out;
+      }
+    }
   }
 }

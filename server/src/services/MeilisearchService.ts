@@ -1738,11 +1738,22 @@ export class MeilisearchService implements ISearchService {
                 )
                   ? encodeCaseSensitiveId(filteredValue[0]!)
                   : filteredValue[0]!;
-                const mappedOp = match(op)
-                  .returnType<StringOperators>()
-                  .with('in', () => '=')
-                  .with('not in', () => '!=')
-                  .otherwise(() => op);
+                let mappedOp: StringOperators;
+                switch (op) {
+                  case 'in':
+                    mappedOp = '=';
+                    break;
+                  case 'not in':
+                    mappedOp = '!=';
+                    break;
+                  case '=':
+                  case '!=':
+                  case 'contains':
+                  case 'not contains':
+                  case 'starts with':
+                    mappedOp = op;
+                    break;
+                }
                 return `${mappedOp.toUpperCase()} '${v.replaceAll(`'`, `\\'`)}'`;
               } else if (op === 'in' || op === 'not in') {
                 const searchOperator = op.toUpperCase();

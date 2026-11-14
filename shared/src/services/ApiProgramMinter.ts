@@ -13,7 +13,6 @@ import {
   type SingleExternalIdType,
 } from '@tunarr/types/schemas';
 import { isNil } from 'lodash-es';
-import { match } from 'ts-pattern';
 import { seq } from '../util/index.js';
 import { parsePlexGuid } from '../util/plexUtil.js';
 
@@ -61,17 +60,17 @@ export class ApiProgramMinter {
     serverName: string,
     originalProgram: ContentProgramOriginalProgram,
   ): ExternalId[] {
-    return match(originalProgram)
-      .with({ sourceType: 'plex' }, ({ program: originalProgram }) =>
-        this.mintExternalIdsForPlex(serverName, originalProgram),
-      )
-      .with({ sourceType: 'jellyfin' }, ({ program: originalProgram }) =>
-        this.mintExternalIdsForJellyfin(serverName, originalProgram),
-      )
-      .with({ sourceType: 'emby' }, ({ program: originalProgram }) =>
-        this.mintExternalIdsForEmby(serverName, originalProgram),
-      )
-      .exhaustive();
+    switch (originalProgram.sourceType) {
+      case 'plex':
+        return this.mintExternalIdsForPlex(serverName, originalProgram.program);
+      case 'jellyfin':
+        return this.mintExternalIdsForJellyfin(
+          serverName,
+          originalProgram.program,
+        );
+      case 'emby':
+        return this.mintExternalIdsForEmby(serverName, originalProgram.program);
+    }
   }
 
   static mintExternalIdsForPlex(

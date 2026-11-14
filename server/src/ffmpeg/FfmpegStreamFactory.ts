@@ -658,25 +658,22 @@ export class FfmpegStreamFactory {
             .with(P.string, (path) => new FileStreamSource(path))
             .otherwise(() => streamSource);
 
-          const stream = match(pickedSubtitleStream.type)
-            .with(
-              'embedded',
-              () =>
-                new EmbeddedSubtitleStream(
-                  pickedSubtitleStream.codec,
-                  pickedSubtitleStream.index ?? 0,
-                  SubtitleMethods.Convert,
-                ),
-            )
-            .with(
-              'external',
-              () =>
-                new ExternalSubtitleStream(
-                  pickedSubtitleStream.codec,
-                  SubtitleMethods.Convert,
-                ),
-            )
-            .otherwise(() => null);
+          let stream: EmbeddedSubtitleStream | ExternalSubtitleStream;
+          switch (pickedSubtitleStream.type) {
+            case 'embedded':
+              stream = new EmbeddedSubtitleStream(
+                pickedSubtitleStream.codec,
+                pickedSubtitleStream.index ?? 0,
+                SubtitleMethods.Convert,
+              );
+              break;
+            case 'external':
+              stream = new ExternalSubtitleStream(
+                pickedSubtitleStream.codec,
+                SubtitleMethods.Convert,
+              );
+              break;
+          }
 
           if (stream) {
             subtitleSource = new SubtitlesInputSource(

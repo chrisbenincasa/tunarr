@@ -8,6 +8,7 @@ import path from 'node:path';
 import { v4 } from 'uuid';
 import type { Artwork } from '../db/schema/Artwork.ts';
 import type { MediaSourceId } from '../db/schema/base.ts';
+import type { MaterializedGuideItem } from '../types/guide.ts';
 import type {
   ProgramGroupingOrmWithRelations,
   ProgramWithRelationsOrm,
@@ -477,6 +478,107 @@ describe('XmlTvWriter', () => {
       expect(xml).toMatch(
         /<title>Flex<\/title><previously-shown\s*\/><\/programme>/,
       );
+    });
+  });
+
+  describe('title and sub-title', () => {
+    function titles(item: Omit<MaterializedGuideItem, 'start' | 'stop'>) {
+      const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
+      const [programme] =
+        writer.generateXmltv([
+          {
+            channel: createChannelOrm({ number: 1, name: 'Test Channel' }),
+            programs: [
+              {
+                ...item,
+                start: Date.parse('2026-09-22T00:00:00Z'),
+                stop: Date.parse('2026-09-22T00:30:00Z'),
+              },
+            ],
+          },
+        ]).programmes ?? [];
+      return {
+        title: programme?.title?.[0]?._value,
+        subTitle: programme?.subTitle?.[0]?._value,
+      };
+    }
+
+    const durationMs = 1_800_000;
+
+    test('movie uses the guide title and has no sub-title', () => {
+      const program = makeProgram({ type: 'movie', title: 'Movie' });
+      expect(
+        titles({
+          programming: { type: 'program', program },
+          title: 'Guide Movie',
+          durationMs,
+        }),
+      ).toEqual({ title: 'Guide Movie', subTitle: undefined });
+    });
+
+    test('episode uses the show title and the episode title as sub-title', () => {
+      const program = makeProgram({
+        type: 'episode',
+        title: 'Episode',
+        showTitle: 'Show',
+      });
+      expect(
+        titles({
+          programming: { type: 'program', program },
+          title: 'Episode',
+          durationMs,
+        }),
+      ).toEqual({ title: 'Show', subTitle: 'Episode' });
+    });
+
+    test('episode titled like its show has no sub-title', () => {
+      const program = makeProgram({
+        type: 'episode',
+        title: 'Show',
+        showTitle: 'Show',
+      });
+      expect(
+        titles({
+          programming: { type: 'program', program },
+          title: 'Show',
+          durationMs,
+        }),
+      ).toEqual({ title: 'Show', subTitle: undefined });
+    });
+
+    test('track uses the album title and prefixes the sub-title with it', () => {
+      const program = makeProgram({
+        type: 'track',
+        title: 'Song',
+        album: makeGrouping({ type: 'album', title: 'Album' }),
+      } as Partial<ProgramWithRelationsOrm>);
+      expect(
+        titles({
+          programming: { type: 'program', program },
+          title: 'Song',
+          durationMs,
+        }),
+      ).toEqual({ title: 'Album', subTitle: 'Album - Song' });
+    });
+
+    test('flex uses the guide title', () => {
+      expect(
+        titles({ programming: { type: 'flex' }, title: 'Off Air', durationMs }),
+      ).toEqual({ title: 'Off Air', subTitle: undefined });
+    });
+
+    test('redirect names the target channel', () => {
+      expect(
+        titles({
+          programming: {
+            type: 'redirect',
+            channelId: v4(),
+            channelNumber: 7,
+            channelName: 'Seven',
+          },
+          durationMs,
+        }),
+      ).toEqual({ title: 'Redirect to Channel 7', subTitle: undefined });
     });
   });
 

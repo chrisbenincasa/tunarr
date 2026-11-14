@@ -17,7 +17,6 @@ import type {
   TerminalProgram,
 } from '@tunarr/types';
 import { orderBy } from 'lodash-es';
-import { match } from 'ts-pattern';
 import type { ProgramGroupingChildCounts } from '../db/interfaces/IProgramDB.ts';
 import type { CreditType } from '../db/schema/Credit.ts';
 import type {
@@ -168,80 +167,61 @@ export class ApiProgramConverters {
           )
         : null;
 
-    return match(program)
-      .with(
-        { type: 'episode' },
-        (ep) =>
-          ({
-            ...base,
-            type: 'episode',
-            summary: ep.summary,
-            originalTitle: null,
-            episodeNumber: ep.episode ?? 0,
-            season:
-              convertedParent?.type === 'season' ? convertedParent : undefined,
-            show:
-              convertedGrandparent?.type === 'show'
-                ? convertedGrandparent
-                : undefined,
-            seasonId: ep.seasonUuid,
-            showId: ep.tvShowUuid,
-          }) satisfies Episode,
-      )
-      .with(
-        { type: 'movie' },
-        (movie) =>
-          ({
-            ...base,
-            type: 'movie',
-            originalTitle: null,
-            plot: movie.plot,
-            rating: movie.rating,
-            summary: movie.summary,
-            tagline: movie.tagline,
-          }) satisfies Movie,
-      )
-      .with(
-        { type: 'track' },
-        () =>
-          ({
-            ...base,
-            type: 'track',
-            originalTitle: null,
-            trackNumber: program.episode ?? 0,
-            album:
-              convertedParent?.type === 'album' ? convertedParent : undefined,
-            artist:
-              convertedGrandparent?.type === 'artist'
-                ? convertedGrandparent
-                : undefined,
-            albumId: program.albumUuid,
-            artistId: program.artistUuid,
-          }) satisfies MusicTrack,
-      )
-      .with(
-        {
+    switch (program.type) {
+      case 'episode':
+        return {
+          ...base,
+          type: 'episode',
+          summary: program.summary,
+          originalTitle: null,
+          episodeNumber: program.episode ?? 0,
+          season:
+            convertedParent?.type === 'season' ? convertedParent : undefined,
+          show:
+            convertedGrandparent?.type === 'show'
+              ? convertedGrandparent
+              : undefined,
+          seasonId: program.seasonUuid,
+          showId: program.tvShowUuid,
+        } satisfies Episode;
+      case 'movie':
+        return {
+          ...base,
+          type: 'movie',
+          originalTitle: null,
+          plot: program.plot,
+          rating: program.rating,
+          summary: program.summary,
+          tagline: program.tagline,
+        } satisfies Movie;
+      case 'track':
+        return {
+          ...base,
+          type: 'track',
+          originalTitle: null,
+          trackNumber: program.episode ?? 0,
+          album:
+            convertedParent?.type === 'album' ? convertedParent : undefined,
+          artist:
+            convertedGrandparent?.type === 'artist'
+              ? convertedGrandparent
+              : undefined,
+          albumId: program.albumUuid,
+          artistId: program.artistUuid,
+        } satisfies MusicTrack;
+      case 'other_video':
+        return {
+          ...base,
           type: 'other_video',
-        },
-        () =>
-          ({
-            ...base,
-            type: 'other_video',
-            originalTitle: null,
-          }) satisfies OtherVideo,
-      )
-      .with(
-        {
+          originalTitle: null,
+        } satisfies OtherVideo;
+      case 'music_video':
+        return {
+          ...base,
           type: 'music_video',
-        },
-        () =>
-          ({
-            ...base,
-            type: 'music_video',
-            originalTitle: null,
-          }) satisfies MusicVideo,
-      )
-      .exhaustive();
+          originalTitle: null,
+        } satisfies MusicVideo;
+    }
   }
 
   static convertProgramGrouping(
@@ -325,54 +305,39 @@ export class ApiProgramConverters {
       actors: convertCreditWithArtwork(grouping.credits ?? [], 'cast'),
     } satisfies Partial<ProgramGrouping>;
 
-    const result = match(grouping)
-      .returnType<ProgramGrouping>()
-      .with(
-        { type: 'season' },
-        () =>
-          ({
-            ...base,
-            type: 'season',
-            studios,
-            childCount,
-            grandchildCount,
-          }) satisfies Season,
-      )
-      .with(
-        { type: 'show' },
-        () =>
-          ({
-            ...base,
-            type: 'show',
-            studios,
-            childCount,
-            grandchildCount,
-            rating: grouping.rating,
-          }) satisfies Show,
-      )
-      .with(
-        { type: 'album' },
-        () =>
-          ({
-            ...base,
-            type: 'album',
-            childCount,
-            grandchildCount,
-          }) satisfies MusicAlbum,
-      )
-      .with(
-        { type: 'artist' },
-        () =>
-          ({
-            ...base,
-            type: 'artist',
-            childCount,
-            grandchildCount,
-          }) satisfies MusicArtist,
-      )
-      .exhaustive();
-
-    return result;
+    switch (grouping.type) {
+      case 'season':
+        return {
+          ...base,
+          type: 'season',
+          studios,
+          childCount,
+          grandchildCount,
+        } satisfies Season;
+      case 'show':
+        return {
+          ...base,
+          type: 'show',
+          studios,
+          childCount,
+          grandchildCount,
+          rating: grouping.rating,
+        } satisfies Show;
+      case 'album':
+        return {
+          ...base,
+          type: 'album',
+          childCount,
+          grandchildCount,
+        } satisfies MusicAlbum;
+      case 'artist':
+        return {
+          ...base,
+          type: 'artist',
+          childCount,
+          grandchildCount,
+        } satisfies MusicArtist;
+    }
   }
 }
 

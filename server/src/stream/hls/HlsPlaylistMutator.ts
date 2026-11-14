@@ -14,7 +14,6 @@ import {
   trimEnd,
 } from 'lodash-es';
 import { basename } from 'node:path';
-import { match } from 'ts-pattern';
 import { SegmentNameRegex } from './BaseHlsSession.ts';
 
 type MutateOptions = {
@@ -41,6 +40,39 @@ export type FilterBeforeSegmentNumber = {
 export type HlsPlaylistFilterOptions =
   | FilterBeforeDate
   | FilterBeforeSegmentNumber;
+
+function filterSegments(
+  segments: PlaylistSegment[],
+  filterOptions: HlsPlaylistFilterOptions,
+): PlaylistSegment[] {
+  switch (filterOptions.type) {
+    case 'before_date':
+      return reject(segments, (segment) =>
+        segment.startTime.isBefore(filterOptions.before),
+      );
+    case 'before_segment_number': {
+      const minSeg = Math.max(
+        filterOptions.segmentNumber - filterOptions.segmentsToKeepBefore,
+        filterOptions.segmentFloor ?? 0,
+      );
+      return seq.collect(segments, (segment) => {
+        const fileName = basename(segment.line);
+        const matches = fileName.match(SegmentNameRegex);
+        if (!matches || matches.length < 2) {
+          return;
+        }
+        const int = parseInt(matches[1]!);
+        if (isNaN(int)) {
+          return;
+        }
+        if (int < minSeg) {
+          return;
+        }
+        return segment;
+      });
+    }
+  }
+}
 
 export class HlsPlaylistMutator {
   trimPlaylist(
@@ -148,39 +180,7 @@ export class HlsPlaylistMutator {
 
     if (allSegments.length > maxSegmentsToKeep) {
       const filtered = filterOptions
-        ? match(filterOptions)
-            .with({ type: 'before_date' }, ({ before }) =>
-              reject(allSegments, (segment) =>
-                segment.startTime.isBefore(before),
-              ),
-            )
-            .with(
-              {
-                type: 'before_segment_number',
-              },
-              (beforeSeg) => {
-                const minSeg = Math.max(
-                  beforeSeg.segmentNumber - beforeSeg.segmentsToKeepBefore,
-                  beforeSeg.segmentFloor ?? 0,
-                );
-                return seq.collect(allSegments, (segment) => {
-                  const fileName = basename(segment.line);
-                  const matches = fileName.match(SegmentNameRegex);
-                  if (!matches || matches.length < 2) {
-                    return;
-                  }
-                  const int = parseInt(matches[1]!);
-                  if (isNaN(int)) {
-                    return;
-                  }
-                  if (int < minSeg) {
-                    return;
-                  }
-                  return segment;
-                });
-              },
-            )
-            .exhaustive()
+        ? filterSegments(allSegments, filterOptions)
         : allSegments;
 
       // The window always ends at the live edge. The filter only sets a floor,

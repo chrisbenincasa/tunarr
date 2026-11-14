@@ -1,7 +1,6 @@
 import type { MediaSourceId, MediaSourceType } from '@/db/schema/base.js';
 import crypto from 'node:crypto';
 import path from 'path';
-import { match, P } from 'ts-pattern';
 import type { Maybe, Nilable, Nullable } from '../types/util.ts';
 import { isNonEmptyString } from './index.ts';
 
@@ -13,11 +12,18 @@ type MinimalProgram = {
 };
 
 export function subtitleCodecToExt(codec: string): Nullable<string> {
-  return match(codec)
-    .with(P.union('srt', 'subrip', 'mov_text'), () => 'srt')
-    .with('ass', () => 'ass')
-    .with('webvtt', () => 'vtt')
-    .otherwise(() => null);
+  switch (codec) {
+    case 'srt':
+    case 'subrip':
+    case 'mov_text':
+      return 'srt';
+    case 'ass':
+      return 'ass';
+    case 'webvtt':
+      return 'vtt';
+    default:
+      return null;
+  }
 }
 
 /**

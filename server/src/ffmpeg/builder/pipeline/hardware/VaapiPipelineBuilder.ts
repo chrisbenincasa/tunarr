@@ -397,10 +397,16 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
 
     let filter: FilterOption | undefined;
     if (!pipelineOptions.disableHardwareFilters) {
-      filter = match(this.selectHardwareTonemap())
-        .with('opencl', () => new TonemapOpenclFilter(currentState))
-        .with('vaapi', () => new TonemapVaapiFilter(currentState))
-        .otherwise(() => undefined);
+      switch (this.selectHardwareTonemap()) {
+        case 'opencl':
+          filter = new TonemapOpenclFilter(currentState);
+          break;
+        case 'vaapi':
+          filter = new TonemapVaapiFilter(currentState);
+          break;
+        case undefined:
+          break;
+      }
     }
 
     if (filter) {
