@@ -1,6 +1,6 @@
 # Database
 
-*Last Updated: 2026-11-13*
+*Last Updated: 2026-11-14*
 
 ## Stores
 
@@ -32,6 +32,9 @@
   `ProgramDB.ts` are facades over them.
 - Interfaces live in `db/interfaces/`. Kysely-to-API converters live in `db/converters/`.
 - Kysely uses `CamelCasePlugin`. Drizzle uses `snake_case` casing. Both come from `DBAccess`.
+- `db/slowQueryLog.ts` wraps each better-sqlite3 connection in `DBAccess`, so it times queries from
+  both ORMs. A query that runs at least `TUNARR_SLOW_QUERY_THRESHOLD_MS` (default 500, `0` turns it off)
+  logs a warning with its SQL, duration, and call stack. Parameters are left out.
 - Backups: `db/backup/`.
 
 Known quirk: `program.duration` and `channel.duration` are `INTEGER` columns, but Jellyfin and Emby

@@ -58,6 +58,7 @@ Tunarr has various command line / environment variables for configuration. These
 | Environment Variable | Command Line Flag | Default | Description |
 | -------------------- | ----------------- | ------- | ----------- |
 | `TUNARR_LOG_LEVEL` | N/A | `info` | Sets the log level. Valid values: `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `silent`. Overrides the UI setting. |
+| `TUNARR_SLOW_QUERY_THRESHOLD_MS` | N/A | `500` | Logs a warning for each database query that runs at least this many milliseconds, with its SQL and the code that ran it. Queries block the server while they run, so these warnings explain freezes and stalls. Set to `0` to turn them off. |
 | `LOG_DIRECTORY` | N/A | (data dir) | Sets a custom directory for log files. |
 
 ### Streaming
