@@ -55,6 +55,13 @@ describe('inRange', () => {
     expect(inRange(-1000, [undefined, 10])).toBe(true);
   });
 
+  // Matches the table's inNumberRange, so cards and rows agree.
+  test('swaps inverted bounds', () => {
+    expect(inRange(1, [40, 1])).toBe(true);
+    expect(inRange(40, [40, 1])).toBe(true);
+    expect(inRange(41, [40, 1])).toBe(false);
+  });
+
   test('passes everything when there is no filter', () => {
     expect(inRange(3, undefined)).toBe(true);
   });

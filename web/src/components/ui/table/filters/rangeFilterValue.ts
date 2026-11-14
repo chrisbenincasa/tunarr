@@ -24,11 +24,11 @@ export const parseBound = (text: string): Bound => {
   return Number.isFinite(n) ? n : undefined;
 };
 
-// Inclusive at both ends, like the inNumberRange filter function. A blank
-// bound is open.
+// Matches the table's inNumberRange filter function. Both ends are inclusive,
+// a blank bound is open, and inverted bounds are swapped.
 export const inRange = (value: number, filterValue: unknown) => {
-  const [min, max] = toRangeFilterValue(filterValue);
-  return (
-    (min === undefined || value >= min) && (max === undefined || value <= max)
-  );
+  const [a, b] = toRangeFilterValue(filterValue);
+  const min = a ?? Number.NEGATIVE_INFINITY;
+  const max = b ?? Number.POSITIVE_INFINITY;
+  return value >= Math.min(min, max) && value <= Math.max(min, max);
 };
