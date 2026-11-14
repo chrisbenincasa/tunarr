@@ -107,15 +107,21 @@ describe('CustomShowsView table', () => {
     );
   });
 
-  test('filters shows by program count', async () => {
+  test('filters rows by program count from the header', async () => {
     const { user } = renderView('table');
     expect(showNames()).toEqual(['Shorts', 'Marathon']);
-    await user.click(screen.getByRole('button', { name: 'Show/Hide filters' }));
     await user.type(
       screen.getByRole('textbox', { name: 'Min # Programs' }),
       '10',
     );
     expect(showNames()).toEqual(['Marathon']);
+
+    await user.click(
+      screen.getByRole('button', { name: /^Show\/Hide filters/ }),
+    );
+    expect(
+      screen.getAllByRole('textbox', { name: 'Min # Programs' }),
+    ).toHaveLength(1);
   });
 });
 
@@ -127,6 +133,39 @@ describe('CustomShowsView cards', () => {
       card.getByText((_, el) => el?.textContent === '40 programs · 1d 16h'),
     ).toBeInTheDocument();
     expect(card.getByText('Synced')).toBeInTheDocument();
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+  });
+
+  test('marks a playlist that is syncing', () => {
+    renderView('cards', [
+      { ...show('show-live', 'Live Sync', 5, 'plex-1'), isSyncing: true },
+    ]);
+    const card = within(screen.getByRole('article', { name: 'Live Sync' }));
+    expect(card.getByText('Syncing')).toBeInTheDocument();
+  });
+
+  test('filters cards by program count from the header', async () => {
+    const { user } = renderView('cards');
+    await user.type(
+      screen.getByRole('textbox', { name: 'Max # Programs' }),
+      '10',
+    );
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(screen.getByRole('article', { name: 'Shorts' })).toBeInTheDocument();
+  });
+
+  test('offers to clear the filter when no cards match', async () => {
+    const { user } = renderView('cards');
+    await user.type(
+      screen.getByRole('textbox', { name: 'Min # Programs' }),
+      '100',
+    );
+    expect(screen.queryAllByRole('article')).toHaveLength(0);
+    expect(
+      screen.getByText('No playlists match this filter.'),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Clear filter' }));
     expect(screen.getAllByRole('article')).toHaveLength(2);
   });
 

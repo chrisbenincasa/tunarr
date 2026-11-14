@@ -139,6 +139,9 @@ const SelectionPrune = <TData extends RowData>({
   return null;
 };
 
+const showsRowFilter = <TData extends RowData>(column: TunarrColumn<TData>) =>
+  column.getCanFilter() && !column.columnDef.meta?.filterInHeader;
+
 const cellAlign = <TData extends RowData>(
   column: TunarrColumn<TData>,
   isFirst: boolean,
@@ -246,7 +249,7 @@ export const DataTable = <TData extends RowData>({
       {(state) => {
         const leafColumns = table.getAllLeafColumns();
         const hideableColumns = leafColumns.filter((c) => c.getCanHide());
-        const canFilter = leafColumns.some((c) => c.getCanFilter());
+        const canFilter = leafColumns.some(showsRowFilter);
         const canSearch = table.options.enableGlobalFilter ?? true;
         const activeFilters = state.columnFilters.length;
         const visibleColumns = table.getVisibleLeafColumns();
@@ -455,7 +458,7 @@ export const DataTable = <TData extends RowData>({
                                     <SortButton column={column} />
                                   )}
                                 </Box>
-                                {showFilters && column.getCanFilter() && (
+                                {showFilters && showsRowFilter(column) && (
                                   <ColumnFilter column={column} />
                                 )}
                               </Stack>

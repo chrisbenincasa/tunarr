@@ -10,7 +10,9 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  Stack,
   Tooltip,
+  Typography,
 } from '@mui/material';
 import type { CustomShow } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -28,6 +30,8 @@ import {
 } from '../ui/patterns/CollectionView/index.ts';
 import { DataTable } from '../ui/table/DataTable.tsx';
 import { actionsColumn } from '../ui/table/columns.tsx';
+import { RangeFilter } from '../ui/table/filters/RangeFilter.tsx';
+import { toRangeFilterValue } from '../ui/table/filters/rangeFilterValue.ts';
 import {
   createAppColumnHelper,
   useTunarrTable,
@@ -80,7 +84,7 @@ export const CustomShowsView = ({
         }),
         columnHelper.accessor('contentCount', {
           header: t`# Programs`,
-          meta: { filterVariant: 'range', numeric: true },
+          meta: { filterVariant: 'range', filterInHeader: true, numeric: true },
         }),
         columnHelper.accessor('totalDuration', {
           header: t`Duration`,
@@ -126,6 +130,33 @@ export const CustomShowsView = ({
 
   const showCount = shows.length;
 
+  // The table applies this filter itself. The cards read the same value, so
+  // both layouts show the same shows.
+  const programsColumn = table.getColumn('contentCount');
+  const [minPrograms, maxPrograms] = toRangeFilterValue(
+    programsColumn?.getFilterValue(),
+  );
+  const visibleShows = shows.filter(
+    (show) =>
+      (minPrograms === undefined || show.contentCount >= minPrograms) &&
+      (maxPrograms === undefined || show.contentCount <= maxPrograms),
+  );
+
+  const noMatches = (
+    <EmptyState
+      icon={<VideoLibrary />}
+      title={<Trans>No playlists match this filter.</Trans>}
+      actions={
+        <Button
+          variant="outlined"
+          onClick={() => programsColumn?.setFilterValue(undefined)}
+        >
+          <Trans>Clear filter</Trans>
+        </Button>
+      }
+    />
+  );
+
   const empty = (
     <EmptyState
       icon={<VideoLibrary />}
@@ -155,21 +186,36 @@ export const CustomShowsView = ({
           </Trans>
         }
         actions={
-          <RouterButtonLink
-            to="/library/playlists/new"
-            variant="contained"
-            startIcon={<Add />}
+          <Stack
+            direction="row"
+            sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 2 }}
           >
-            <Trans>New</Trans>
-          </RouterButtonLink>
+            {programsColumn && showCount > 0 && (
+              <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  <Trans># Programs</Trans>
+                </Typography>
+                <Box sx={{ width: 140 }}>
+                  <RangeFilter column={programsColumn} />
+                </Box>
+              </Stack>
+            )}
+            <RouterButtonLink
+              to="/library/playlists/new"
+              variant="contained"
+              startIcon={<Add />}
+            >
+              <Trans>New</Trans>
+            </RouterButtonLink>
+          </Stack>
         }
       />
       <CollectionView
         aria-label={t`Playlists`}
         layout={layout}
-        items={shows}
+        items={visibleShows}
         getItemKey={(show) => show.id}
-        empty={empty}
+        empty={showCount === 0 ? empty : noMatches}
         minCardWidth={260}
         pagination={{
           state: tableState.state.pagination,
