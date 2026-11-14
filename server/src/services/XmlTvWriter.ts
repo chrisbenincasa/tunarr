@@ -490,11 +490,12 @@ export class XmlTvWriter {
       });
     }
 
-    // Generic fallback: program's own poster
+    // Generic fallback: program's own poster, else its thumbnail. Local other
+    // videos and music videos only ever store a thumbnail.
     candidates.push({
       id: program.uuid,
       artwork: program.artwork,
-      types: ['poster'],
+      types: ['poster', 'thumbnail'],
       source: program,
     });
 
