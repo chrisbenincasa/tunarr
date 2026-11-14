@@ -50,6 +50,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { z } from 'zod/v4';
 import type { Maybe } from '../types/util.ts';
 import { getDefaultLogLevel } from '../util/defaults.ts';
+import { legacyRescanIntervalToSchedule } from '../util/schedulingUtil.ts';
 
 // Version 1 -> 2: slot show ids changed to be the program_grouping ID
 //   rather than the show name.
@@ -60,13 +61,39 @@ export const defaultXmlTvSettings = (dbBasePath: string): XmlTvSettings => ({
   outputPath: path.resolve(dbBasePath, 'xmltv.xml'),
 });
 
+// Settings files from before the scan schedule store `rescanIntervalHours`.
+// Convert it on read. The next write drops the old key.
+function migrateLegacyMediaSourceSettings(value: unknown) {
+  if (
+    typeof value !== 'object' ||
+    value === null ||
+    'scanSchedule' in value ||
+    !('rescanIntervalHours' in value)
+  ) {
+    return value;
+  }
+
+  const { rescanIntervalHours, ...rest } = value;
+  if (typeof rescanIntervalHours !== 'number') {
+    return rest;
+  }
+
+  return {
+    ...rest,
+    scanSchedule: legacyRescanIntervalToSchedule(rescanIntervalHours),
+  };
+}
+
 export const SettingsSchema = z.object({
   clientId: z.string(),
   hdhr: HdhrSettingsSchema,
   xmltv: XmlTvSettingsSchema,
   plexStream: PlexStreamSettingsSchema,
   ffmpeg: FfmpegSettingsSchema,
-  mediaSource: GlobalMediaSourceSettingsSchema,
+  mediaSource: z.preprocess(
+    migrateLegacyMediaSourceSettings,
+    GlobalMediaSourceSettingsSchema,
+  ),
   streamSelection: StreamSelectionSettingsSchema.default(
     () => defaultStreamSelectionSettings,
   ),

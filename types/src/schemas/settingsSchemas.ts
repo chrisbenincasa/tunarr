@@ -1,6 +1,6 @@
 import z from 'zod/v4';
 import { type TupleToUnion } from '../util.js';
-import { ScheduleSchema } from './utilSchemas.js';
+import { CronScheduleSchema, ScheduleSchema } from './utilSchemas.js';
 
 export const XmlTvSettingsSchema = z.object({
   programmingHours: z.number().default(12),
@@ -210,8 +210,34 @@ export const HdhrSettingsSchema = z.object({
   tunerCount: z.number().default(2),
 });
 
+// Hours that divide 24, so gaps between scans stay even across midnight.
+export const LibraryScanIntervalHours = [1, 2, 3, 4, 6, 8, 12] as const;
+
+export const LibraryScanScheduleSchema = z.discriminatedUnion('type', [
+  z.object({ type: z.literal('off') }),
+  z.object({
+    type: z.literal('interval'),
+    hours: z.literal(LibraryScanIntervalHours),
+    minute: z.int().min(0).max(59),
+  }),
+  z.object({
+    type: z.literal('days'),
+    // 0 is Sunday, matching cron.
+    daysOfWeek: z.array(z.int().min(0).max(6)).min(1),
+    hour: z.int().min(0).max(23),
+    minute: z.int().min(0).max(59),
+  }),
+  CronScheduleSchema,
+]);
+
+export type LibraryScanSchedule = z.infer<typeof LibraryScanScheduleSchema>;
+
 export const GlobalMediaSourceSettingsSchema = z.object({
-  rescanIntervalHours: z.number().nonnegative().default(6),
+  scanSchedule: LibraryScanScheduleSchema.default({
+    type: 'interval',
+    hours: 6,
+    minute: 30,
+  }),
 });
 
 export type GlobalMediaSourceSettings = z.infer<

@@ -37,7 +37,7 @@ When creating or editing a playlist:
 3. Select the **Playlist** from that media source to sync with.
 4. Save the playlist.
 
-An initial sync runs immediately when a synced playlist is first created. After that, syncs run automatically on the same schedule as media source library refreshes (configured in Settings under the media source rescan interval).
+An initial sync runs immediately when a synced playlist is first created. After that, syncs run automatically on the library scan schedule, set in **Settings → Scanner**. See [Scheduled Scans](../media_sources/index.md#scheduled-scans). If scheduled scans are off, playlists sync only when you sync them by hand.
 
 ### Manual Sync
 

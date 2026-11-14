@@ -12671,7 +12671,21 @@ export type GetApiSettingsMediaSourceResponses = {
      * Default Response
      */
     200: {
-        rescanIntervalHours: number;
+        scanSchedule: {
+            type: 'off';
+        } | {
+            type: 'interval';
+            hours: 1 | 2 | 3 | 4 | 6 | 8 | 12;
+            minute: number;
+        } | {
+            type: 'days';
+            daysOfWeek: Array<number>;
+            hour: number;
+            minute: number;
+        } | {
+            type: 'cron';
+            cron: string;
+        };
     };
 };
 
@@ -12679,19 +12693,58 @@ export type GetApiSettingsMediaSourceResponse = GetApiSettingsMediaSourceRespons
 
 export type PutApiSettingsMediaSourceData = {
     body?: {
-        rescanIntervalHours?: number;
+        scanSchedule?: {
+            type: 'off';
+        } | {
+            type: 'interval';
+            hours: 1 | 2 | 3 | 4 | 6 | 8 | 12;
+            minute: number;
+        } | {
+            type: 'days';
+            daysOfWeek: Array<number>;
+            hour: number;
+            minute: number;
+        } | {
+            type: 'cron';
+            cron: string;
+        };
     };
     path?: never;
     query?: never;
     url: '/api/settings/media-source';
 };
 
+export type PutApiSettingsMediaSourceErrors = {
+    /**
+     * Default Response
+     */
+    400: {
+        message: string;
+    };
+};
+
+export type PutApiSettingsMediaSourceError = PutApiSettingsMediaSourceErrors[keyof PutApiSettingsMediaSourceErrors];
+
 export type PutApiSettingsMediaSourceResponses = {
     /**
      * Default Response
      */
     200: {
-        rescanIntervalHours: number;
+        scanSchedule: {
+            type: 'off';
+        } | {
+            type: 'interval';
+            hours: 1 | 2 | 3 | 4 | 6 | 8 | 12;
+            minute: number;
+        } | {
+            type: 'days';
+            daysOfWeek: Array<number>;
+            hour: number;
+            minute: number;
+        } | {
+            type: 'cron';
+            cron: string;
+        };
     };
 };
 
