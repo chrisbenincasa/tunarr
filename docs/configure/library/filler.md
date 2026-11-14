@@ -56,7 +56,7 @@ Tunarr provides two ways to assign filler lists to multiple channels at once, sa
 
 ### Assign a Filler List to Multiple Channels
 
-From the **Library > Fillers** page, click the **Assign to Channels** button (playlist icon) in the row actions for any filler list. This opens a dialog where you can:
+From the **Library > Fillers** page, click **Assign** on any filler list's card. In table view, click the **Assign to Channels** button (playlist icon) in the row actions instead. Either opens a dialog where you can:
 
 1. Set the **relative weight** and **cooldown** for the filler list (defaults: 50 and 30 seconds)
 2. Select which channels should receive the filler list (use **Select All** / **Deselect All** for quick selection)
