@@ -48,6 +48,27 @@ describe('SmartCollectionsView table', () => {
     expect(withinRow('Cartoons').getByText(/animated/)).toBeInTheDocument();
   });
 
+  test('matches keywords in the Query filter and search', async () => {
+    const { user } = renderView('table');
+
+    await user.click(screen.getByRole('button', { name: 'Show/Hide filters' }));
+    const queryFilter = screen.getByRole('textbox', {
+      name: 'Filter by Query',
+    });
+    await user.type(queryFilter, 'animated');
+    expect(screen.getByText('Cartoons')).toBeInTheDocument();
+    expect(screen.queryByText('Action Movies')).not.toBeInTheDocument();
+    await user.clear(queryFilter);
+
+    await user.click(screen.getByRole('button', { name: 'Show/Hide search' }));
+    await user.type(
+      screen.getByRole('textbox', { name: 'Search' }),
+      'animated',
+    );
+    expect(screen.getByText('Cartoons')).toBeInTheDocument();
+    expect(screen.queryByText('Action Movies')).not.toBeInTheDocument();
+  });
+
   test('opens a collection when its row is clicked', async () => {
     const { user, onOpenCollection } = renderView('table');
     await user.click(screen.getByText('Cartoons'));

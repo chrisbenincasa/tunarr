@@ -67,22 +67,27 @@ export const SmartCollectionsView = ({
             </Box>
           ),
         }),
-        columnHelper.accessor((c) => c.filterString ?? '', {
-          id: 'filterString',
-          header: t`Query`,
-          enableSorting: false,
-          cell: ({ row: { original: c } }) =>
-            isNonEmptyString(c.keywords) || isNonEmptyString(c.filterString) ? (
-              <>
-                {isNonEmptyString(c.keywords) && <>“{c.keywords}” </>}
-                {isNonEmptyString(c.filterString) && (
-                  <MonoText>{c.filterString}</MonoText>
-                )}
-              </>
-            ) : (
-              '—'
-            ),
-        }),
+        columnHelper.accessor(
+          (c) =>
+            [c.keywords, c.filterString].filter(isNonEmptyString).join(' '),
+          {
+            id: 'filterString',
+            header: t`Query`,
+            enableSorting: false,
+            cell: ({ row: { original: c } }) =>
+              isNonEmptyString(c.keywords) ||
+              isNonEmptyString(c.filterString) ? (
+                <>
+                  {isNonEmptyString(c.keywords) && <>“{c.keywords}” </>}
+                  {isNonEmptyString(c.filterString) && (
+                    <MonoText>{c.filterString}</MonoText>
+                  )}
+                </>
+              ) : (
+                '—'
+              ),
+          },
+        ),
       ]),
       actionsColumn<SmartCollection>({
         render: ({ original: collection }) => (
