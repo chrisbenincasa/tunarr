@@ -76,7 +76,7 @@ export const CustomShowCard = ({ show, onDelete }: CustomShowCardProps) => {
         <Box>
           <StatusPill
             status={show.isSyncing ? 'live' : 'idle'}
-            label={show.isSyncing ? t`Syncing` : t`Synced playlist`}
+            label={show.isSyncing ? t`Syncing` : t`Synced`}
           />
         </Box>
       )}

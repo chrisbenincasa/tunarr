@@ -129,16 +129,16 @@ export const CustomShowsView = ({
   const empty = (
     <EmptyState
       icon={<VideoLibrary />}
-      title={<Trans>You haven't created any custom shows yet.</Trans>}
+      title={<Trans>You haven't created any playlists yet.</Trans>}
       description={
         <Trans>
-          A custom show is an ordered list of videos that channels schedule as
-          if they were episodes of one TV show.
+          A playlist is an ordered list of videos that channels schedule as if
+          they were episodes of one TV show.
         </Trans>
       }
       actions={
         <RouterButtonLink to="/library/playlists/new" variant="contained">
-          <Trans>Create a Custom Show</Trans>
+          <Trans>Create a Playlist</Trans>
         </RouterButtonLink>
       }
     />
@@ -147,11 +147,11 @@ export const CustomShowsView = ({
   return (
     <>
       <PageHeader
-        title={<Trans>Custom Shows</Trans>}
+        title={<Trans>Playlists</Trans>}
         subtitle={
           <Trans>
             <MonoText>{showCount}</MonoText>{' '}
-            <Plural value={showCount} one="custom show" other="custom shows" />
+            <Plural value={showCount} one="playlist" other="playlists" />
           </Trans>
         }
         actions={
@@ -165,7 +165,7 @@ export const CustomShowsView = ({
         }
       />
       <CollectionView
-        aria-label={t`Custom Shows`}
+        aria-label={t`Playlists`}
         layout={layout}
         items={shows}
         getItemKey={(show) => show.id}
@@ -181,7 +181,7 @@ export const CustomShowsView = ({
         table={
           <DataTable
             table={table}
-            aria-label={t`Custom Shows`}
+            aria-label={t`Playlists`}
             emptyFallback={empty}
             getRowProps={(row) => ({
               onClick: () => onOpenShow(row.original),
@@ -196,13 +196,13 @@ export const CustomShowsView = ({
         aria-describedby="delete-custom-show-description"
       >
         <DialogTitle id="delete-custom-show-title">
-          <Trans>Delete Custom Show "{pendingDelete?.name}"?</Trans>
+          <Trans>Delete Playlist "{pendingDelete?.name}"?</Trans>
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-custom-show-description">
             <Trans>
-              Deleting a Custom Show will remove its programming from channels
-              that use it. This action cannot be undone.
+              Deleting a playlist will remove its programming from channels that
+              use it. This action cannot be undone.
             </Trans>
           </DialogContentText>
         </DialogContent>
