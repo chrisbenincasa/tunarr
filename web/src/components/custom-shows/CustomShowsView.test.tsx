@@ -67,6 +67,12 @@ describe('CustomShowsView table', () => {
     ).not.toBeInTheDocument();
   });
 
+  test("shows each show's total runtime", () => {
+    renderView('table');
+    expect(withinRow('Shorts').getByText('3h')).toBeInTheDocument();
+    expect(withinRow('Marathon').getByText('1d 16h')).toBeInTheDocument();
+  });
+
   test('opens a show when its row is clicked', async () => {
     const { user, onOpenShow } = renderView('table');
     await user.click(screen.getByText('Shorts'));
