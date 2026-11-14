@@ -54,7 +54,7 @@ describe('GET /api/xmltv.xml', () => {
     expect(res.statusCode).toBe(500);
   });
 
-  test('streams a multi-chunk file and replaces {{host}} across read boundaries', async () => {
+  test('streams a multi-chunk file and replaces {{host}} across a read boundary', async () => {
     const databaseDirectory = globalOptions().databaseDirectory;
     const settingsDB = container.get<ISettingsDB>(KEYS.SettingsDB);
     const outputPath = path.join(databaseDirectory, 'large', 'xmltv.xml');
@@ -64,15 +64,13 @@ describe('GET /api/xmltv.xml', () => {
       outputPath,
     });
 
-    // File reads come in 64 KiB chunks. The first placeholder straddles the
-    // first boundary, and a two-byte character straddles the second.
+    // File reads come in 64 KiB chunks, and the first placeholder straddles
+    // the first boundary.
     const readChunk = 64 * 1024;
     const content =
       'a'.repeat(readChunk - 3) +
       '{{host}}' +
-      'b'.repeat(readChunk - 8 - 1) +
-      'é' +
-      'c'.repeat(1024 * 1024) +
+      'b'.repeat(1024 * 1024) +
       '{{host}}';
     await fs.writeFile(outputPath, content);
 

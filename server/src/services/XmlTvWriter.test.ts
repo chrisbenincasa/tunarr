@@ -193,6 +193,17 @@ describe('XmlTvWriter', () => {
       ]);
     });
 
+    test('replaces a scratch file left by a crashed write', async () => {
+      const outputPath = path.join(tmpDir, 'xmltv.xml');
+      await fs.writeFile(`${outputPath}.tmp`, 'partial guide from a crash');
+      const writer = makeWriter(outputPath);
+
+      await writer.write([]);
+
+      await expect(fs.readFile(outputPath, 'utf8')).resolves.toContain('<tv');
+      await expect(fs.readdir(tmpDir)).resolves.toEqual(['xmltv.xml']);
+    });
+
     test('keeps the previous file when serializing fails', async () => {
       const outputPath = path.join(tmpDir, 'xmltv.xml');
       await fs.writeFile(outputPath, 'previous guide');

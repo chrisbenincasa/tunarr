@@ -82,7 +82,9 @@ async function writeChunksInPlace(
   outputPath: string,
   chunks: AsyncIterable<string>,
 ) {
-  const tempPath = `${outputPath}.${process.pid}.tmp`;
+  // A fixed name, so a write after a crash overwrites the leftover file. The
+  // module lock keeps writes from overlapping.
+  const tempPath = `${outputPath}.tmp`;
   try {
     const file = await open(tempPath, 'w');
     try {
