@@ -46,7 +46,6 @@ import {
   uniq,
   uniqBy,
 } from 'lodash-es';
-import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
@@ -1331,35 +1330,41 @@ export class TVGuideService {
       : (resolveIconUrl(channel.icon, makeLocalUrl('/images/tunarr.png')) ??
         makeLocalUrl('/images/tunarr.png'));
 
-    const program = match(materializedItem)
-      .returnType<TvGuideProgram>()
-      .with({ type: 'flex' }, (flex) => ({
-        ...baseItem,
-        ...flex,
-        type: 'flex',
-        icon,
-        title: isNonEmptyString(channel.guideFlexTitle)
-          ? channel.guideFlexTitle
-          : channel.name,
-      }))
-      .with({ type: 'content', id: P.string }, (content) => ({
-        ...baseItem,
-        ...content,
-        type: 'content',
-      }))
-      .with({ type: 'redirect' }, (redirect) => ({
-        ...baseItem,
-        ...redirect,
-        type: 'redirect',
-      }))
-      .otherwise(() => ({
-        ...baseItem,
-        type: 'flex',
-        icon,
-        title: isNonEmptyString(channel.guideFlexTitle)
-          ? channel.guideFlexTitle
-          : channel.name,
-      }));
+    const flexTitle = isNonEmptyString(channel.guideFlexTitle)
+      ? channel.guideFlexTitle
+      : channel.name;
+
+    let program: TvGuideProgram;
+    switch (materializedItem.type) {
+      case 'flex':
+        program = {
+          ...baseItem,
+          ...materializedItem,
+          type: 'flex',
+          icon,
+          title: flexTitle,
+        };
+        break;
+      case 'redirect':
+        program = { ...baseItem, ...materializedItem, type: 'redirect' };
+        break;
+      case 'content':
+        if (materializedItem.id !== undefined) {
+          program = {
+            ...baseItem,
+            ...materializedItem,
+            id: materializedItem.id,
+            type: 'content',
+          };
+          break;
+        }
+        program = { ...baseItem, type: 'flex', icon, title: flexTitle };
+        break;
+      case 'custom':
+      case 'filler':
+        program = { ...baseItem, type: 'flex', icon, title: flexTitle };
+        break;
+    }
 
     if (
       guideItem.isPaused &&
