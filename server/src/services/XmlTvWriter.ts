@@ -20,7 +20,6 @@ import { inject, injectable } from 'inversify';
 import throttle from '@/util/throttle.js';
 import { chunk, compact, escape, flatMap, isNil, map, round } from 'lodash-es';
 import { writeFile } from 'node:fs/promises';
-import { match } from 'ts-pattern';
 import { type ArtworkType } from '../db/schema/Artwork.ts';
 import type { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
 import type { MaterializedGuideItem } from '../types/guide.ts';
@@ -255,20 +254,22 @@ export class XmlTvWriter {
         break;
     }
 
-    const subTitle = match(guideItem.programming)
-      .with({ type: 'program', program: { type: 'episode' } }, ({ program }) =>
-        program.title === title ? undefined : program.title,
-      )
-      .with(
-        { type: 'program', program: { type: 'track' } },
-        ({ program }) =>
-          `${program.album?.title ? `${program.album.title} - ` : ''}${program.title}`,
-      )
-      // .with(
-      //   { type: 'custom', program: { subtype: P.union('track', 'episode') } },
-      //   (p) => p.program?.title,
-      // )
-      .otherwise(() => undefined);
+    let subTitle: string | undefined;
+    if (guideItem.programming.type === 'program') {
+      const program = guideItem.programming.program;
+      switch (program.type) {
+        case 'episode':
+          subTitle = program.title === title ? undefined : program.title;
+          break;
+        case 'track':
+          subTitle = `${program.album?.title ? `${program.album.title} - ` : ''}${program.title}`;
+          break;
+        case 'movie':
+        case 'music_video':
+        case 'other_video':
+          break;
+      }
+    }
 
     // @iptv/xmltv emits children in property insertion order. Keep direct
     // program children in DTD order: icon before episode-num, image last.
