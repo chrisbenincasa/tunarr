@@ -28,7 +28,6 @@ import findProcess from 'find-process';
 import { inject, injectable } from 'inversify';
 import { compact, find, isEmpty, uniq } from 'lodash-es';
 import type {
-  DocumentsQuery,
   EnqueuedTask,
   FacetDistribution,
   FacetStats,
@@ -37,7 +36,7 @@ import type {
   Settings,
   Task,
 } from 'meilisearch';
-import { MeiliSearch, MeiliSearchApiError } from 'meilisearch';
+import { Meilisearch, MeilisearchApiError } from 'meilisearch';
 import { createWriteStream } from 'node:fs';
 import fs from 'node:fs/promises';
 import os from 'node:os';
@@ -89,6 +88,7 @@ import throttle from '../util/throttle.ts';
 import { FileSystemService } from './FileSystemService.ts';
 import type { ISearchService } from './ISearchService.ts';
 import { SearchParser } from './search/SearchParser.ts';
+import { buildMeilisearchArgs } from './search/meilisearchArgs.ts';
 import { prepareSearchIndexDirectory } from './search/searchIndexDirectory.ts';
 
 type FlattenArrayTypes<T> = {
@@ -396,7 +396,7 @@ export class MeilisearchService implements ISearchService {
   private started = false;
   private proc?: ChildProcessWrapper;
   private port?: number;
-  #client?: MeiliSearch;
+  #client?: Meilisearch;
   private resolveReady: () => void = () => {};
   private rejectReady: (reason?: unknown) => void = () => {};
   private readonly ready = new Promise<void>((resolve, reject) => {
@@ -462,67 +462,45 @@ export class MeilisearchService implements ISearchService {
 
         await this.killOrphanedProcess();
 
-        const args = [
-          '--http-addr',
-          `localhost:${this.port}`,
-          '--db-path',
-          `${this.dbPath}`,
-          '--no-analytics',
-          '--experimental-dumpless-upgrade',
-        ];
-
         // Restore from snapshot if we don't have an index folder already
-        const snapshotPath = path.join(
-          this.fileSystemService.getMsSnapshotsPath(),
-          'data.ms.snapshot',
-        );
-        const snapshotExists = await fileExists(snapshotPath);
-        if (!indexFolderExists && snapshotExists) {
+        const snapshotDir = this.fileSystemService.getMsSnapshotsPath();
+        const snapshotPath = path.join(snapshotDir, 'data.ms.snapshot');
+        const restoreSnapshot =
+          !indexFolderExists && (await fileExists(snapshotPath));
+        if (restoreSnapshot) {
           this.logger.debug(
             'Restoring search index from snapshot: %s',
             snapshotPath,
           );
-          args.push('--import-snapshot', snapshotPath);
         }
 
+        const searchSettings =
+          this.settingsDB.systemSettings().server.searchSettings;
         const indexingRamSetting =
           getEnvVar(TUNARR_ENV_VARS.SEARCH_MAX_RAM) ??
-          this.settingsDB.systemSettings().server.searchSettings
-            .maxIndexingMemory;
-        if (indexingRamSetting) {
-          args.push('--max-indexing-memory', `${indexingRamSetting}`);
-        }
+          searchSettings.maxIndexingMemory;
 
-        const indexingMaxThreads = getNumericEnvVar(
-          TUNARR_ENV_VARS.SEARCH_MAX_INDEXING_THREADS,
-        );
-        if (indexingMaxThreads) {
-          args.push('--max-indexing-threads', indexingMaxThreads.toString());
-        }
-
-        args.push(
-          '--schedule-snapshot',
-          dayjs
-            .duration({
-              hours:
-                this.settingsDB.systemSettings().server.searchSettings
-                  .snapshotIntervalHours,
-            })
-            .asSeconds()
-            .toFixed(0),
-          '--snapshot-dir',
-          this.fileSystemService.getMsSnapshotsPath(),
-        );
-
-        if (
-          !isWindows() &&
-          getBooleanEnvVar(
-            TUNARR_ENV_VARS.SEARCH_REDUCE_INDEXER_MEMORY_USAGE,
-            false,
-          )
-        ) {
-          args.push('--experimental-reduce-indexing-memory-usage');
-        }
+        const args = buildMeilisearchArgs({
+          port: this.port,
+          dbPath: this.dbPath,
+          snapshotDir,
+          snapshotIntervalSeconds: dayjs
+            .duration({ hours: searchSettings.snapshotIntervalHours })
+            .asSeconds(),
+          importSnapshotPath: restoreSnapshot ? snapshotPath : undefined,
+          maxIndexingMemory: indexingRamSetting
+            ? `${indexingRamSetting}`
+            : undefined,
+          maxIndexingThreads:
+            getNumericEnvVar(TUNARR_ENV_VARS.SEARCH_MAX_INDEXING_THREADS) ??
+            undefined,
+          reduceIndexingMemoryUsage:
+            !isWindows() &&
+            getBooleanEnvVar(
+              TUNARR_ENV_VARS.SEARCH_REDUCE_INDEXER_MEMORY_USAGE,
+              false,
+            ),
+        });
 
         const searchServerLogFile = path.join(
           this.settingsDB.systemSettings().logging.logsDirectory,
@@ -780,7 +758,7 @@ export class MeilisearchService implements ISearchService {
       throw new Error('Service was not started yet');
     }
     if (!this.#client) {
-      this.#client = new MeiliSearch({ host: `http://localhost:${this.port}` });
+      this.#client = new Meilisearch({ host: `http://localhost:${this.port}` });
     }
 
     return this.#client;
@@ -841,7 +819,7 @@ export class MeilisearchService implements ISearchService {
         ProgramsIndex.name,
       ).getDocument(id);
     } catch (e) {
-      if (e instanceof MeiliSearchApiError && e.response.status === 404) {
+      if (e instanceof MeilisearchApiError && e.response.status === 404) {
         return Promise.resolve(undefined);
       }
       throw e;
@@ -872,7 +850,7 @@ export class MeilisearchService implements ISearchService {
 
       return results;
     } catch (e) {
-      if (e instanceof MeiliSearchApiError && e.response.status === 404) {
+      if (e instanceof MeilisearchApiError && e.response.status === 404) {
         return Promise.resolve([]);
       }
       throw e;
@@ -1553,11 +1531,8 @@ export class MeilisearchService implements ISearchService {
           filter: filter,
           limit: request.paging?.limit,
           offset,
-          // This does not exist on the type yet. Explicit cast because
-          // the API supports it. Need https://github.com/meilisearch/meilisearch-js/pull/2038
-          // sort: ['title:asc' /*, 'originalReleaseDate:asc'*/],
           sort,
-        } as DocumentsQuery<IndexDocumentTypeT>);
+        });
       return {
         type: 'filter',
         ...results,
