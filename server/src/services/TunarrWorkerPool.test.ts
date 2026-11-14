@@ -5,6 +5,7 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 // to bind it, so the container has to be the entry point.
 import '../container.ts';
 import {
+  isWorkerPoolEnabled,
   MAX_WORKERS,
   resolveWorkerPoolSize,
   TunarrWorkerPool,
@@ -228,9 +229,8 @@ describe('TunarrWorkerPool task timeouts', () => {
 });
 
 describe('resolveWorkerPoolSize', () => {
-  test('caps the default size at 4 workers', () => {
-    expect(MAX_WORKERS).toBe(4);
-    expect(resolveWorkerPoolSize(16, null)).toBe(4);
+  test('caps the default size at MAX_WORKERS', () => {
+    expect(resolveWorkerPoolSize(16, null)).toBe(MAX_WORKERS);
   });
 
   test('uses one worker per CPU below the cap', () => {
@@ -240,5 +240,32 @@ describe('resolveWorkerPoolSize', () => {
   test('lets the env var override the cap', () => {
     expect(resolveWorkerPoolSize(16, 8)).toBe(8);
     expect(resolveWorkerPoolSize(16, 1)).toBe(1);
+  });
+
+  test('ignores a negative env var setting', () => {
+    expect(resolveWorkerPoolSize(2, -1)).toBe(2);
+  });
+
+  test('uses one worker when no CPUs are reported', () => {
+    expect(resolveWorkerPoolSize(0, null)).toBe(1);
+  });
+});
+
+describe('isWorkerPoolEnabled', () => {
+  test('is on by default', () => {
+    expect(isWorkerPoolEnabled(true, null)).toBe(true);
+  });
+
+  test('is off when the pool size is set to 0', () => {
+    expect(isWorkerPoolEnabled(true, 0)).toBe(false);
+  });
+
+  test('is off when TUNARR_USE_WORKER_POOL is false', () => {
+    expect(isWorkerPoolEnabled(false, null)).toBe(false);
+    expect(isWorkerPoolEnabled(false, 4)).toBe(false);
+  });
+
+  test('stays on for a negative pool size, which is ignored', () => {
+    expect(isWorkerPoolEnabled(true, -1)).toBe(true);
   });
 });
