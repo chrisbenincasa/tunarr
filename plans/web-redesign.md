@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (11/09/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` is in review in PR #2507, and `/library/fillers` is stacked on it in `feat/fillers-collection`. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next are the remaining collection routes. The forms/settings mock is still due and gates Phase 4.
+> **Status (11/14/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` and `/library/fillers` are in review together in PR #2507, because PR #2511 merged the fillers work into its branch. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next are the remaining collection routes. The forms/settings mock is still due and gates Phase 4.
 
 ## Why
 
@@ -166,9 +166,10 @@ Built on `feat/custom-shows-collection` (11/09/2026):
 - The view owns the delete confirmation. The page only runs the mutation.
 - No bulk selection yet. Bulk delete is the only candidate action, so whether it earns a follow-up PR is still open.
 - The page header drops the explainer paragraph. The empty state carries it instead.
-- User-facing text says "Playlists", matching the rename on `rename-custom-shows-to-playlists`. Code names stay `CustomShow*`. Links keep `/library/custom-shows` until that rename moves the routes to `/library/playlists`.
+- The Name search and `# Programs` range filter are table controls, so the card grid at Comfortable density has no filter. `/channels` handles its column filters the same way. Whether card layouts get a header filter is still open.
+- User-facing text says "Playlists" and links go to `/library/playlists`, both from the rename in PR #2513. Code names stay `CustomShow*`.
 
-Built on `feat/fillers-collection`, stacked on `feat/custom-shows-collection` (11/09/2026):
+Built on `feat/fillers-collection` and merged into `feat/custom-shows-collection` as PR #2511 (11/09/2026):
 
 - `/library/fillers` splits the same way, into `FillerListsView` and `FillerListCard` in `web/src/components/fillers/` and `FillerListsPage` (data).
 - A filler list has only a name and a program count, so its card shows those plus Edit, Assign and Delete.
