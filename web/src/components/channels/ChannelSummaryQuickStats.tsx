@@ -7,7 +7,6 @@ import type { ChannelStreamMode } from '@tunarr/types';
 import * as globalDayjs from 'dayjs';
 import { find, round, uniq } from 'lodash-es';
 import { useMemo } from 'react';
-import { match } from 'ts-pattern';
 import { useTranscodeConfigs } from '../../hooks/settingsHooks.ts';
 import { useChannelAndProgramming } from '../../hooks/useChannelLineup.ts';
 import { RouterLink } from '../base/RouterLink.tsx';
@@ -33,12 +32,18 @@ export const ChannelSummaryQuickStats = ({ channelId }: Props) => {
   const uniqPrograms = useMemo(
     () =>
       uniq(
-        seq.collect(lineup.lineup, (p) =>
-          match(p)
-            .with({ type: 'content' }, ({ id }) => id)
-            .with({ type: 'custom' }, ({ id }) => id)
-            .otherwise(() => null),
-        ),
+        seq.collect(lineup.lineup, (p) => {
+          switch (p.type) {
+            case 'content':
+              return p.id;
+            case 'custom':
+              return p.id;
+            case 'filler':
+            case 'redirect':
+            case 'flex':
+              return null;
+          }
+        }),
       ).length,
     [lineup.lineup],
   );

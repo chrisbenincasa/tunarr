@@ -9,11 +9,11 @@ import { untag } from '@tunarr/types';
 import { isValidSingleExternalIdType } from '@tunarr/types/schemas';
 import type { RunResult } from 'better-sqlite3';
 import { and, isNull as dbIsNull, eq, or, sql } from 'drizzle-orm';
+import type { SQL } from 'drizzle-orm';
 import type { BaseSQLiteDatabase } from 'drizzle-orm/sqlite-core';
 import { inject, injectable } from 'inversify';
 import type { InsertResult, Kysely } from 'kysely';
 import { chunk, compact, isNil, keys, omit, partition, uniq } from 'lodash-es';
-import { P, match } from 'ts-pattern';
 import { groupByUniq, isDefined } from '../../util/index.ts';
 import {
   ProgramGrouping,
@@ -61,17 +61,26 @@ export class ProgramGroupingUpsertRepository {
       const incomingYear = newGroupingAndRelations.programGrouping.year;
       entity = await this.drizzleDB.query.programGrouping.findFirst({
         where: (fields, { eq, and, isNull }) => {
-          const parentClause = match(newGroupingAndRelations.programGrouping)
-            .with({ type: 'season', showUuid: P.nonNullable }, (season) =>
-              compact([
-                eq(fields.showUuid, season.showUuid),
-                season.index ? eq(fields.index, season.index) : null,
-              ]),
-            )
-            .with({ type: 'album', artistUuid: P.nonNullable }, (album) => [
-              eq(fields.artistUuid, album.artistUuid),
-            ])
-            .otherwise(() => []);
+          const grouping = newGroupingAndRelations.programGrouping;
+          let parentClause: SQL[] = [];
+          switch (grouping.type) {
+            case 'season':
+              if (!isNil(grouping.showUuid)) {
+                parentClause = compact([
+                  eq(fields.showUuid, grouping.showUuid),
+                  grouping.index ? eq(fields.index, grouping.index) : null,
+                ]);
+              }
+              break;
+            case 'album':
+              if (!isNil(grouping.artistUuid)) {
+                parentClause = [eq(fields.artistUuid, grouping.artistUuid)];
+              }
+              break;
+            case 'show':
+            case 'artist':
+              break;
+          }
           return and(
             eq(
               fields.libraryId,

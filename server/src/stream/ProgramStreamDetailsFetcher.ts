@@ -11,7 +11,6 @@ import {
   trimEnd,
   trimStart,
 } from 'lodash-es';
-import { match } from 'ts-pattern';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import type {
   MediaSourceWithRelations,
@@ -315,21 +314,22 @@ export class ProgramStreamDetailsFetcher {
       );
     }
 
-    return match(artwork)
-      .with({ kind: 'file' }, async ({ path }) => {
+    switch (artwork.kind) {
+      case 'file': {
+        const { path } = artwork;
         const exists = await fileExists(path).catch((e) => {
           this.logger.warn(e, 'Unable to read cached artwork at %s', path);
           return false;
         });
         return exists ? new FileStreamSource(path) : undefined;
-      })
-      .with({ kind: 'url' }, async ({ url, headers }) =>
-        (await this.isReachable(url, headers))
-          ? new HttpStreamSource(url, headers)
-          : undefined,
-      )
-      .with({ kind: 'not-found' }, () => Promise.resolve(undefined))
-      .exhaustive();
+      }
+      case 'url':
+        return (await this.isReachable(artwork.url, artwork.headers))
+          ? new HttpStreamSource(artwork.url, artwork.headers)
+          : undefined;
+      case 'not-found':
+        return;
+    }
   }
 
   private async isReachable(
@@ -386,39 +386,29 @@ export class ProgramStreamDetailsFetcher {
         serverPath,
       );
 
-      return match(server)
-        .with(
-          { type: 'plex' },
-          (server) =>
-            new HttpStreamSource(
-              `${trimEnd(server.uri, '/')}/${trimStart(serverPath, '/')}?X-Plex-Token=${
-                server.accessToken
-              }`,
-            ),
-        )
-        .with(
-          { type: 'jellyfin' },
-          (server) =>
-            new HttpStreamSource(
-              `${trimEnd(server.uri, '/')}/Videos/${trimStart(serverPath, '/')}/stream?static=true`,
-              {
-                'X-Emby-Token': server.accessToken,
-              },
-            ),
-        )
-        .with(
-          { type: 'emby' },
-          (server) =>
-            new HttpStreamSource(
-              `${trimEnd(server.uri, '/')}/Videos/${trimStart(serverPath, '/')}/stream?X-Emby-Token=${
-                server.accessToken
-              }&static=true`,
-            ),
-        )
-        .with({ type: 'local' }, () => {
+      switch (server.type) {
+        case 'plex':
+          return new HttpStreamSource(
+            `${trimEnd(server.uri, '/')}/${trimStart(serverPath, '/')}?X-Plex-Token=${
+              server.accessToken
+            }`,
+          );
+        case 'jellyfin':
+          return new HttpStreamSource(
+            `${trimEnd(server.uri, '/')}/Videos/${trimStart(serverPath, '/')}/stream?static=true`,
+            {
+              'X-Emby-Token': server.accessToken,
+            },
+          );
+        case 'emby':
+          return new HttpStreamSource(
+            `${trimEnd(server.uri, '/')}/Videos/${trimStart(serverPath, '/')}/stream?X-Emby-Token=${
+              server.accessToken
+            }&static=true`,
+          );
+        case 'local':
           throw new Error(`Remote paths are not supported for local media`);
-        })
-        .exhaustive();
+      }
     } else {
       throw new Error('Could not resolve stream URL');
     }

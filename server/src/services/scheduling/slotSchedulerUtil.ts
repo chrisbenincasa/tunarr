@@ -257,29 +257,32 @@ export function createFillerIterators(
   > = {};
 
   for (const fillerDef of slotFiller) {
-    const fakeSlot = match(fillerDef.fillerOrder)
-      .returnType<FillerProgrammingSlot>()
-      .with('uniform', () => ({
-        id: v4(), // New id for virtual slot
-        type: 'filler',
-        order: 'uniform',
-        decayFactor: 0.5,
-        recoveryFactor: 0.05,
-        durationWeighting: 'linear',
-        fillerListId: fillerDef.fillerListId,
-      }))
-      .with(P.union('shuffle_prefer_long', 'shuffle_prefer_short'), (order) => {
-        return {
+    let fakeSlot: FillerProgrammingSlot;
+    switch (fillerDef.fillerOrder) {
+      case 'uniform':
+        fakeSlot = {
+          id: v4(), // New id for virtual slot
+          type: 'filler',
+          order: 'uniform',
+          decayFactor: 0.5,
+          recoveryFactor: 0.05,
+          durationWeighting: 'linear',
+          fillerListId: fillerDef.fillerListId,
+        };
+        break;
+      case 'shuffle_prefer_long':
+      case 'shuffle_prefer_short':
+        fakeSlot = {
           id: v4(),
           type: 'filler',
           fillerListId: fillerDef.fillerListId,
-          order,
+          order: fillerDef.fillerOrder,
           decayFactor: 0.5,
           durationWeighting: 'linear',
           recoveryFactor: 0.05,
-        } satisfies FillerProgrammingSlot;
-      })
-      .exhaustive();
+        };
+        break;
+    }
 
     const iteratorKey = slotIteratorKey(fakeSlot);
     const slotId = `filler.${fillerDef.fillerListId}` satisfies SlotId;

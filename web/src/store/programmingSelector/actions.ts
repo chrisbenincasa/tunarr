@@ -6,7 +6,6 @@ import { type PlexFilter, type PlexSort } from '@tunarr/types/api';
 import type { SearchRequest } from '@tunarr/types/schemas';
 
 import { groupBy, has, reject, some, uniq } from 'lodash-es';
-import { match } from 'ts-pattern';
 import useStore from '..';
 import { Emby, Jellyfin, Local, Plex } from '../../helpers/constants.ts';
 import {
@@ -133,18 +132,23 @@ export const removeSelectedMedia = (media: SelectedMedia[]) =>
     const grouped = groupSelectedMedia(media);
 
     const it = (selectedMedia: SelectedMedia) => {
-      return match(selectedMedia)
-        .with({ type: 'custom-show' }, (cs) =>
-          some(grouped['custom-show'], { customShowId: cs.customShowId }),
-        )
-        .otherwise(
-          (srcMedia) =>
-            grouped[srcMedia.type]?.some(
+      switch (selectedMedia.type) {
+        case 'custom-show':
+          return some(grouped['custom-show'], {
+            customShowId: selectedMedia.customShowId,
+          });
+        case Plex:
+        case Jellyfin:
+        case Emby:
+        case Local:
+          return (
+            grouped[selectedMedia.type]?.some(
               (target) =>
-                target.mediaSource.id === srcMedia.mediaSource.id &&
-                target.id === srcMedia.id,
-            ) ?? false,
-        );
+                target.mediaSource.id === selectedMedia.mediaSource.id &&
+                target.id === selectedMedia.id,
+            ) ?? false
+          );
+      }
     };
 
     state.selectedMedia = reject(state.selectedMedia, it);

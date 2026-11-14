@@ -16,7 +16,6 @@ import type { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { extname } from 'node:path';
 import { format } from 'node:util';
-import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
@@ -648,12 +647,26 @@ export class LocalMusicScanner extends FileSystemScanner {
     artworkType: ArtworkType,
     force: boolean = false,
   ) {
-    const artworkFileNames = match(artworkType)
-      .with('poster', () => ['poster', 'folder'])
-      .with('fanart', () => ['fanart'])
-      .with('thumbnail', () => ['thumb'])
-      .with('banner', () => ['banner'])
-      .otherwise(() => []);
+    let artworkFileNames: string[];
+    switch (artworkType) {
+      case 'poster':
+        artworkFileNames = ['poster', 'folder'];
+        break;
+      case 'fanart':
+        artworkFileNames = ['fanart'];
+        break;
+      case 'thumbnail':
+        artworkFileNames = ['thumb'];
+        break;
+      case 'banner':
+        artworkFileNames = ['banner'];
+        break;
+      case 'logo':
+      case 'watermark':
+      case 'landscape':
+        artworkFileNames = [];
+        break;
+    }
 
     return await this.produceArtwork(
       artistFullPath,
@@ -668,12 +681,26 @@ export class LocalMusicScanner extends FileSystemScanner {
     artworkType: ArtworkType,
     force: boolean = false,
   ) {
-    const artworkFileNames = match(artworkType)
-      .with('poster', () => ['poster', 'folder', '**/folder'])
-      .with('fanart', () => ['fanart'])
-      .with('thumbnail', () => ['thumb'])
-      .with('banner', () => ['banner'])
-      .otherwise(() => []);
+    let artworkFileNames: string[];
+    switch (artworkType) {
+      case 'poster':
+        artworkFileNames = ['poster', 'folder', '**/folder'];
+        break;
+      case 'fanart':
+        artworkFileNames = ['fanart'];
+        break;
+      case 'thumbnail':
+        artworkFileNames = ['thumb'];
+        break;
+      case 'banner':
+        artworkFileNames = ['banner'];
+        break;
+      case 'logo':
+      case 'watermark':
+      case 'landscape':
+        artworkFileNames = [];
+        break;
+    }
 
     return await this.produceArtwork(
       albumFullPath,

@@ -228,31 +228,32 @@ export class XmlTvWriter {
     guideItem: MaterializedGuideItem,
     xmlChannelId: string,
   ): XmltvProgramme {
-    const title = match(guideItem)
-      .with(
-        { programming: { type: 'program' } },
-        ({ title, programming: { program } }) => {
-          switch (program.type) {
-            case 'movie':
-            case 'music_video':
-            case 'other_video':
-              return title ?? program.title;
-            case 'episode':
-              return program.show?.title ?? program.showTitle ?? program.title;
-            case 'track':
-              return (
-                program.album?.title ?? program.artistName ?? program.title
-              );
-          }
-        },
-      )
-      // .with({ type: 'custom' }, (c) => c.program?.title ?? 'Custom Program')
-      .with({ programming: { type: 'flex' } }, (c) => c.title)
-      .with(
-        { programming: { type: 'redirect' } },
-        (c) => `Redirect to Channel ${c.programming.channelNumber}`,
-      )
-      .exhaustive();
+    let title: string | undefined;
+    switch (guideItem.programming.type) {
+      case 'program': {
+        const program = guideItem.programming.program;
+        switch (program.type) {
+          case 'movie':
+          case 'music_video':
+          case 'other_video':
+            title = guideItem.title ?? program.title;
+            break;
+          case 'episode':
+            title = program.show?.title ?? program.showTitle ?? program.title;
+            break;
+          case 'track':
+            title = program.album?.title ?? program.artistName ?? program.title;
+            break;
+        }
+        break;
+      }
+      case 'flex':
+        title = guideItem.title;
+        break;
+      case 'redirect':
+        title = `Redirect to Channel ${guideItem.programming.channelNumber}`;
+        break;
+    }
 
     const subTitle = match(guideItem.programming)
       .with({ type: 'program', program: { type: 'episode' } }, ({ program }) =>
@@ -387,12 +388,22 @@ export class XmlTvWriter {
         partial.icon = [{ src: url }];
       }
 
-      const [seasonNumber, episodeNumber] = match(program)
-        .with({ type: 'episode' }, (ep) => {
-          return [ep.season?.index ?? ep.seasonNumber, ep.episode];
-        })
-        .with({ type: 'track' }, (track) => [track.album?.index, track.episode])
-        .otherwise(() => [null, null]);
+      let seasonNumber: number | null | undefined = null;
+      let episodeNumber: number | null | undefined = null;
+      switch (program.type) {
+        case 'episode':
+          seasonNumber = program.season?.index ?? program.seasonNumber;
+          episodeNumber = program.episode;
+          break;
+        case 'track':
+          seasonNumber = program.album?.index;
+          episodeNumber = program.episode;
+          break;
+        case 'movie':
+        case 'music_video':
+        case 'other_video':
+          break;
+      }
 
       partial.episodeNum = [];
       if (!isNil(episodeNumber)) {

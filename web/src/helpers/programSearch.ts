@@ -3,7 +3,6 @@ import type { TerminalProgram } from '@tunarr/types';
 import { getGrandparentItem } from '@tunarr/types';
 import type { SearchFilter } from '@tunarr/types/schemas';
 import { isNil } from 'lodash-es';
-import { match, P } from 'ts-pattern';
 
 // Matches every program type that can actually play.
 export const terminalTypeFilter: SearchFilter = {
@@ -21,22 +20,24 @@ export const terminalTypeFilter: SearchFilter = {
 const pad2 = (n: number) => n.toString().padStart(2, '0');
 
 export function formatTerminalProgramTitle(program: TerminalProgram): string {
-  return match(program)
-    .with(
-      { type: P.union('movie', 'other_video', 'music_video') },
-      (video) => video.title,
-    )
-    .with({ type: 'episode' }, (ep) => {
-      const show = getGrandparentItem(ep);
-      if (!show) return ep.title;
+  switch (program.type) {
+    case 'movie':
+    case 'other_video':
+    case 'music_video':
+      return program.title;
+    case 'episode': {
+      const show = getGrandparentItem(program);
+      if (!show) return program.title;
       const year = isNil(show.year) ? '' : ` (${show.year})`;
-      const season = isNil(ep.season?.index) ? '' : `S${pad2(ep.season.index)}`;
-      return `${ep.title} - ${show.title}${year} ${season}E${pad2(ep.episodeNumber)}`;
-    })
-    .with({ type: 'track' }, (track) => {
-      const artist = getGrandparentItem(track);
-      if (!artist) return track.title;
-      return `${track.title} - ${artist.title}`;
-    })
-    .exhaustive();
+      const season = isNil(program.season?.index)
+        ? ''
+        : `S${pad2(program.season.index)}`;
+      return `${program.title} - ${show.title}${year} ${season}E${pad2(program.episodeNumber)}`;
+    }
+    case 'track': {
+      const artist = getGrandparentItem(program);
+      if (!artist) return program.title;
+      return `${program.title} - ${artist.title}`;
+    }
+  }
 }

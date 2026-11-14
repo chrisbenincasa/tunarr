@@ -25,7 +25,11 @@ import type {
   Writer,
 } from '@tunarr/types';
 import type { MediaSourceStatus } from '@tunarr/types/api';
-import type { EmbyLibrary, EmbyMediaSourceInfo } from '@tunarr/types/emby';
+import type {
+  EmbyCollectionType,
+  EmbyLibrary,
+  EmbyMediaSourceInfo,
+} from '@tunarr/types/emby';
 import {
   EmbyAuthenticationResultSchema,
   EmbyLibraryItemsResponse,
@@ -360,14 +364,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
       sourceType: 'emby',
       title: lib.Name,
       uuid: v4(),
-      childType: match(lib.CollectionType)
-        .returnType<Folder['childType']>()
-        .with('movies', () => 'movie')
-        .with('musicvideos', () => 'music_video')
-        .with('tvshows', () => 'show')
-        .with('music', () => 'artist')
-        .with(P.union('homevideos', 'unknown'), () => 'other_video')
-        .otherwise(() => undefined),
+      childType: libraryChildType(lib.CollectionType),
     } satisfies Library;
   }
 
@@ -1169,13 +1166,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
           mediaSourceId: this.options.mediaSource.uuid,
           libraryId: '',
           sourceType: 'emby',
-          childType: match(f.CollectionType)
-            .returnType<Folder['childType']>()
-            .with('movies', () => 'movie')
-            .with('musicvideos', () => 'music_video')
-            .with('tvshows', () => 'show')
-            .with('music', () => 'artist')
-            .otherwise(() => undefined),
+          childType: folderChildType(f.CollectionType),
         }),
       )
       .otherwise(() => null);
@@ -2058,4 +2049,46 @@ function getSeasonNumberFromPath(path: string): Nullable<number> {
   }
 
   return null;
+}
+
+function libraryChildType(
+  collectionType: EmbyCollectionType,
+): Folder['childType'] {
+  switch (collectionType) {
+    case 'movies':
+      return 'movie';
+    case 'musicvideos':
+      return 'music_video';
+    case 'tvshows':
+      return 'show';
+    case 'music':
+      return 'artist';
+    case 'homevideos':
+    case 'unknown':
+      return 'other_video';
+    case 'trailers':
+    case 'boxsets':
+    case 'books':
+    case 'photos':
+    case 'livetv':
+    case 'playlists':
+    case 'folders':
+      return;
+  }
+}
+
+// Item CollectionType is an unvalidated string, unlike the library enum.
+function folderChildType(collectionType: Maybe<string>): Folder['childType'] {
+  switch (collectionType) {
+    case 'movies':
+      return 'movie';
+    case 'musicvideos':
+      return 'music_video';
+    case 'tvshows':
+      return 'show';
+    case 'music':
+      return 'artist';
+    default:
+      return;
+  }
 }

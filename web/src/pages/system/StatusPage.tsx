@@ -30,11 +30,11 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { compact, isEmpty, map, reject } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useState } from 'react';
-import { match } from 'ts-pattern';
 import {
   getApiSystemHealthQueryKey,
   postApiSystemFixersByFixerIdRunMutation,
 } from '../../generated/@tanstack/react-query.gen.ts';
+import type { GetApiSystemHealthResponse } from '../../generated/types.gen.ts';
 
 // TODO: Get these from server.
 const FfmpegVersionCheck = 'FfmpegVersion';
@@ -52,6 +52,41 @@ const AllKnownChecks = [
   // MissingProgramAssociationsHealthCheck,
   BaseImageHealthCheck,
 ] as const;
+
+type KnownCheck = (typeof AllKnownChecks)[number];
+
+function checkDisplayName(check: KnownCheck) {
+  switch (check) {
+    case FfmpegVersionCheck:
+      return 'FFmpeg Version';
+    case HardwareAccelerationCheck:
+      return 'Hardware Acceleration';
+    case FfmpegDebugLoggingCheck:
+      return 'FFmpeg Report Logging';
+    case FfmpegTranscodeDirectory:
+      return 'FFmpeg Transcode Directory';
+    case BaseImageHealthCheck:
+      return 'Base Docker Image Tag';
+  }
+}
+
+function healthIcon(
+  type: GetApiSystemHealthResponse[string]['type'] | undefined,
+  isLoading: boolean,
+) {
+  switch (type) {
+    case 'error':
+      return <Error color="error" />;
+    case 'warning':
+      return <Warning color="warning" />;
+    case 'healthy':
+      return <CheckCircle color="success" />;
+    case 'info':
+      return <Info color="info" />;
+    case undefined:
+      return isLoading ? <RotatingLoopIcon /> : <QuestionMark />;
+  }
+}
 
 export const StatusPage = () => {
   const { t } = useLingui();
@@ -92,26 +127,10 @@ export const StatusPage = () => {
   const renderHealthCheckResults = () => {
     const checkRows = compact(
       map(AllKnownChecks, (check) => {
-        const prettyName = match(check)
-          // .with(MissingSeasonNumbersCheck, () => 'Missing Season Numbers')
-          .with(FfmpegVersionCheck, () => 'FFmpeg Version')
-          .with(HardwareAccelerationCheck, () => 'Hardware Acceleration')
-          .with(FfmpegDebugLoggingCheck, () => 'FFmpeg Report Logging')
-          // .with(
-          //   MissingProgramAssociationsHealthCheck,
-          //   () => 'Missing Program Associations',
-          // )
-          .with(FfmpegTranscodeDirectory, () => 'FFmpeg Transcode Directory')
-          .with(BaseImageHealthCheck, () => 'Base Docker Image Tag')
-          .exhaustive();
+        const prettyName = checkDisplayName(check);
 
-        const fixer = match(check)
-          // .with(MissingSeasonNumbersCheck, () => 'MissingSeasonNumbersFixer')
-          // .with(
-          //   MissingProgramAssociationsHealthCheck,
-          //   () => 'BackfillProgramGroupings',
-          // )
-          .otherwise(() => null);
+        // No health check has a fixer yet.
+        const fixer: string | null = null;
 
         const data = systemHealthQuery.data?.[check];
 
@@ -119,18 +138,7 @@ export const StatusPage = () => {
           fixer && runningFixers.has(fixer) ? (
             <RotatingLoopIcon />
           ) : (
-            match(data?.type)
-              .with('error', () => <Error color="error" />)
-              .with('warning', () => <Warning color="warning" />)
-              .with('healthy', () => <CheckCircle color="success" />)
-              .with('info', () => <Info color="info" />)
-              .otherwise(() =>
-                systemHealthQuery.isLoading ? (
-                  <RotatingLoopIcon />
-                ) : (
-                  <QuestionMark />
-                ),
-              )
+            healthIcon(data?.type, systemHealthQuery.isLoading)
           );
 
         return (

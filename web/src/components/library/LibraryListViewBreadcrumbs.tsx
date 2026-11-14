@@ -3,10 +3,31 @@ import { Album, Folder, Home, Mic, Tv } from '@mui/icons-material';
 import { Breadcrumbs, Link } from '@mui/material';
 import type { ProgramOrFolder } from '@tunarr/types';
 import { isEmpty, map } from 'lodash-es';
-import { match } from 'ts-pattern';
 import type { ProgramHierarchyHookReturn } from '../../hooks/channel_config/useProgramHierarchy.ts';
 
 type Props = ProgramHierarchyHookReturn<ProgramOrFolder>;
+
+function contextIcon(type: ProgramOrFolder['type']) {
+  switch (type) {
+    case 'show':
+      return <Tv sx={{ mr: 0.5 }} fontSize="inherit" />;
+    case 'artist':
+      return <Mic sx={{ mr: 0.5 }} fontSize="inherit" />;
+    case 'album':
+      return <Album sx={{ mr: 0.5 }} fontSize="inherit" />;
+    case 'folder':
+      return <Folder sx={{ mr: 0.5 }} fontSize="inherit" />;
+    case 'movie':
+    case 'episode':
+    case 'track':
+    case 'other_video':
+    case 'music_video':
+    case 'season':
+    case 'collection':
+    case 'playlist':
+      return null;
+  }
+}
 
 export const LibraryListViewBreadcrumbs = ({
   parentContext,
@@ -15,12 +36,7 @@ export const LibraryListViewBreadcrumbs = ({
 }: Props) => {
   const contextLinks = map(parentContext, (item, idx) => {
     const isLast = idx === parentContext.length - 1;
-    const icon = match(item.type)
-      .with('show', () => <Tv sx={{ mr: 0.5 }} fontSize="inherit" />)
-      .with('artist', () => <Mic sx={{ mr: 0.5 }} fontSize="inherit" />)
-      .with('album', () => <Album sx={{ mr: 0.5 }} fontSize="inherit" />)
-      .with('folder', () => <Folder sx={{ mr: 0.5 }} fontSize="inherit" />)
-      .otherwise(() => null);
+    const icon = contextIcon(item.type);
     return (
       <Link
         underline={isLast ? 'none' : 'hover'}

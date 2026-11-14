@@ -4,18 +4,25 @@ import PlexLogo from '@/assets/plex.svg?react';
 import { Computer } from '@mui/icons-material';
 import type { SvgIconProps } from '@mui/material';
 import type { MediaSourceType } from '@tunarr/types';
-import { match } from 'ts-pattern';
 
 type Props = SvgIconProps & {
   network: MediaSourceType;
 };
 
+function networkIconComponent(network: MediaSourceType) {
+  switch (network) {
+    case 'plex':
+      return PlexLogo;
+    case 'emby':
+      return EmbyLogo;
+    case 'jellyfin':
+      return JellyfinLogo;
+    case 'local':
+      return Computer;
+  }
+}
+
 export const NetworkIcon = ({ network, ...rest }: Props) => {
-  const Icon = match(network)
-    .with('plex', () => PlexLogo)
-    .with('emby', () => EmbyLogo)
-    .with('jellyfin', () => JellyfinLogo)
-    .with('local', () => Computer)
-    .exhaustive();
+  const Icon = networkIconComponent(network);
   return <Icon {...rest} />;
 };

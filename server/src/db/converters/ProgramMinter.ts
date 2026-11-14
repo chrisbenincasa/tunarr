@@ -64,35 +64,48 @@ export class ProgramDaoMinter {
     localFolderId?: string,
     now: number = +dayjs(),
   ): NewProgramWithRelations {
-    return match(program)
-      .with({ type: 'movie' }, (movie) =>
-        this.mintMovie(mediaSource, mediaLibrary, movie, localFolderId, now),
-      )
-      .with({ type: 'episode' }, (episode) =>
-        this.mintEpisode(
+    switch (program.type) {
+      case 'movie':
+        return this.mintMovie(
           mediaSource,
           mediaLibrary,
-          episode,
+          program,
           localFolderId,
           now,
-        ),
-      )
-      .with({ type: 'track' }, (track) =>
-        this.mintMusicTrack(
+        );
+      case 'episode':
+        return this.mintEpisode(
           mediaSource,
           mediaLibrary,
-          track,
+          program,
           localFolderId,
           now,
-        ),
-      )
-      .with({ type: 'music_video' }, (mv) =>
-        this.mintMusicVideo(mediaSource, mediaLibrary, mv, localFolderId, now),
-      )
-      .with({ type: 'other_video' }, (ov) =>
-        this.mintOtherVideo(mediaSource, mediaLibrary, ov, localFolderId, now),
-      )
-      .exhaustive();
+        );
+      case 'track':
+        return this.mintMusicTrack(
+          mediaSource,
+          mediaLibrary,
+          program,
+          localFolderId,
+          now,
+        );
+      case 'music_video':
+        return this.mintMusicVideo(
+          mediaSource,
+          mediaLibrary,
+          program,
+          localFolderId,
+          now,
+        );
+      case 'other_video':
+        return this.mintOtherVideo(
+          mediaSource,
+          mediaLibrary,
+          program,
+          localFolderId,
+          now,
+        );
+    }
   }
 
   mintMovie(

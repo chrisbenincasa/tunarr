@@ -20,7 +20,11 @@
  * under vitest is vitest's own entry point.
  *
  *   pnpm bench:worker-pool
- *   pnpm bench:worker-pool -- --programs 4000 --days 60 --slots-per-day 48
+ *   pnpm bench:worker-pool --programs 4000 --days 60 --slots-per-day 48
+ *   pnpm bench:worker-pool --days 365 --program-minutes 1
+ *
+ * Pass flags without a `--` separator. `parseArgs` treats everything after `--`
+ * as positionals, so the flags would be ignored.
  */
 import Sqlite from 'better-sqlite3';
 import http from 'node:http';
@@ -35,6 +39,8 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { parseArgs } from 'node:util';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from '../src/db/schema/index.ts';
+import { CustomShow } from '../src/db/schema/CustomShow.ts';
+import { CustomShowContent } from '../src/db/schema/CustomShowContent.ts';
 import { MediaSource } from '../src/db/schema/MediaSource.ts';
 import { MediaSourceLibrary } from '../src/db/schema/MediaSourceLibrary.ts';
 import { Program } from '../src/db/schema/Program.ts';
@@ -46,6 +52,7 @@ const { values } = parseArgs({
     programs: { type: 'string', default: '3000' },
     days: { type: 'string', default: '45' },
     'slots-per-day': { type: 'string', default: '48' },
+    'program-minutes': { type: 'string', default: '30' },
     'pool-size': { type: 'string', default: '2' },
     'probe-interval': { type: 'string', default: '10' },
     'slow-threshold': { type: 'string', default: '25' },
@@ -59,6 +66,8 @@ const { values } = parseArgs({
 const PROGRAM_COUNT = Number.parseInt(values.programs, 10);
 const MAX_DAYS = Number.parseInt(values.days, 10);
 const SLOTS_PER_DAY = Number.parseInt(values['slots-per-day'], 10);
+const PROGRAM_DURATION_MS =
+  Number.parseInt(values['program-minutes'], 10) * 60 * 1000;
 const POOL_SIZE = Number.parseInt(values['pool-size'], 10);
 const PROBE_INTERVAL_MS = Number.parseInt(values['probe-interval'], 10);
 const SLOW_THRESHOLD_MS = Number.parseInt(values['slow-threshold'], 10);
@@ -67,7 +76,6 @@ const TRIALS = Number.parseInt(values.trials, 10);
 
 const BOOT_TIMEOUT_MS = 240_000;
 const SAVE_TIMEOUT_MS = 600_000;
-const HALF_HOUR_MS = 30 * 60 * 1000;
 /**
  * Probing continues this long after the save returns. The lineup save fires the
  * guide refresh without awaiting it, so the response comes back before the
@@ -117,7 +125,10 @@ async function waitFor(
  * as a single flex block and the benchmark measures nothing while appearing to
  * work.
  */
-function seedPrograms(dbPath: string, count: number): string[] {
+function seedPrograms(
+  dbPath: string,
+  count: number,
+): { programIds: string[]; customShowId: string } {
   const sqlite = new Sqlite(dbPath);
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');
@@ -159,7 +170,7 @@ function seedPrograms(dbPath: string, count: number): string[] {
       createdAt: now,
       updatedAt: now,
       title: `Bench Movie ${i}`,
-      duration: HALF_HOUR_MS,
+      duration: PROGRAM_DURATION_MS,
       type: 'movie' as const,
       sourceType: 'plex' as const,
       externalKey: `ext-${uuid}`,
@@ -184,8 +195,34 @@ function seedPrograms(dbPath: string, count: number): string[] {
     }
   });
 
+  // Time slots schedule shows, custom shows, smart collections, and filler,
+  // not raw programs. A custom show holding every seeded program is the
+  // smallest of those to seed directly.
+  const customShowId = randomUUID();
+  db.insert(CustomShow)
+    .values({
+      uuid: customShowId,
+      name: 'Bench Show',
+      createdAt: now,
+      updatedAt: now,
+    })
+    .run();
+  db.transaction((tx) => {
+    for (let i = 0; i < rows.length; i += 300) {
+      tx.insert(CustomShowContent)
+        .values(
+          rows.slice(i, i + 300).map((r, j) => ({
+            contentUuid: r.uuid,
+            customShowUuid: customShowId,
+            index: i + j,
+          })),
+        )
+        .run();
+    }
+  });
+
   sqlite.close();
-  return rows.map((r) => r.uuid);
+  return { programIds: rows.map((r) => r.uuid), customShowId };
 }
 
 function startServer(
@@ -277,7 +314,7 @@ async function api(
   return { status: res.status, text: await res.text() };
 }
 
-function makeSchedule() {
+function makeSchedule(customShowId: string) {
   const dayMs = 24 * 60 * 60 * 1000;
   return {
     type: 'time' as const,
@@ -288,7 +325,8 @@ function makeSchedule() {
     period: 'day' as const,
     timeZoneOffset: new Date().getTimezoneOffset(),
     slots: Array.from({ length: SLOTS_PER_DAY }, (_, i) => ({
-      type: 'movie' as const,
+      type: 'custom-show' as const,
+      customShowId,
       startTime: Math.floor((dayMs / SLOTS_PER_DAY) * i),
       order: 'shuffle' as const,
       direction: 'asc' as const,
@@ -409,9 +447,10 @@ function startProbe(): {
 async function runConfiguration(
   label: string,
   templateDir: string,
-  programIds: string[],
+  seeded: { programIds: string[]; customShowId: string },
   usePool: boolean,
 ): Promise<RunResult> {
+  const { programIds, customShowId } = seeded;
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tunarr-ab-run-'));
   await fs.rm(dataDir, { recursive: true, force: true });
   await fs.cp(templateDir, dataDir, { recursive: true });
@@ -502,7 +541,7 @@ async function runConfiguration(
         type: 'time',
         programs: programIds,
         seed: [1, 2, 3, 4],
-        schedule: makeSchedule(),
+        schedule: makeSchedule(customShowId),
       },
       SAVE_TIMEOUT_MS,
     );
@@ -522,7 +561,9 @@ async function runConfiguration(
       totalPrograms?: number;
     };
     const lineup = body.lineup ?? [];
-    const contentCount = lineup.filter((i) => i.type === 'content').length;
+    const contentCount = lineup.filter(
+      (i) => i.type === 'content' || i.type === 'custom',
+    ).length;
 
     // A lineup that is entirely flex means the seeded programs never made it
     // into the schedule — the usual cause is a missing media source or library
@@ -707,10 +748,7 @@ async function main() {
     }
 
     log(`Seeding ${PROGRAM_COUNT} programs...`);
-    const programIds = seedPrograms(
-      path.join(templateDir, 'db.db'),
-      PROGRAM_COUNT,
-    );
+    const seeded = seedPrograms(path.join(templateDir, 'db.db'), PROGRAM_COUNT);
 
     const offRuns: RunResult[] = [];
     const onRuns: RunResult[] = [];
@@ -722,11 +760,9 @@ async function main() {
     for (let trial = 1; trial <= TRIALS; trial++) {
       log(`\n--- trial ${trial}/${TRIALS} ---`);
       offRuns.push(
-        await runConfiguration('pool-off', templateDir, programIds, false),
+        await runConfiguration('pool-off', templateDir, seeded, false),
       );
-      onRuns.push(
-        await runConfiguration('pool-on', templateDir, programIds, true),
-      );
+      onRuns.push(await runConfiguration('pool-on', templateDir, seeded, true));
     }
 
     report(offRuns, onRuns);

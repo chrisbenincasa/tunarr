@@ -14,7 +14,6 @@ import {
 import { isNil } from 'lodash-es';
 import { useSnackbar } from 'notistack';
 import { useCallback, useState } from 'react';
-import { match, P } from 'ts-pattern';
 import { Imported } from '../../helpers/constants.ts';
 import {
   defaultLibrarySearchFilter,
@@ -73,25 +72,28 @@ export default function SelectedProgrammingActions({
             currentSearchRequest?.filter ??
             defaultLibrarySearchFilter(selectedServer, library),
         }).then((res) => {
-          const selectedMedia = res.map((program) =>
-            match(program)
-              .returnType<SelectedMedia>()
-              .with({ sourceType: 'local' }, () => ({
-                type: 'local',
-                id: program.uuid,
-                mediaSource: selectedServer,
-              }))
-              .with({ sourceType: P._ }, (other) => ({
-                type: other.sourceType,
-                id: program.uuid,
-                mediaSource: selectedServer,
-                libraryId:
-                  selectedLibrary?.type === Imported
-                    ? selectedLibrary?.view.id
-                    : '',
-              }))
-              .exhaustive(),
-          );
+          const selectedMedia = res.map((program): SelectedMedia => {
+            switch (program.sourceType) {
+              case 'local':
+                return {
+                  type: 'local',
+                  id: program.uuid,
+                  mediaSource: selectedServer,
+                };
+              case 'plex':
+              case 'jellyfin':
+              case 'emby':
+                return {
+                  type: program.sourceType,
+                  id: program.uuid,
+                  mediaSource: selectedServer,
+                  libraryId:
+                    selectedLibrary?.type === Imported
+                      ? selectedLibrary?.view.id
+                      : '',
+                };
+            }
+          });
           addSelectedMedia(selectedMedia);
           addKnownMediaForServer(selectedServer.id, res);
         });

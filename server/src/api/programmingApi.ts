@@ -39,7 +39,6 @@ import { ArtworkTypes } from '../db/schema/Artwork.ts';
 import type { RemoteSourceType } from '../db/schema/base.js';
 import { RemoteSourceTypes, type MediaSourceId } from '../db/schema/base.js';
 
-import { match } from 'ts-pattern';
 import { ForceScanCommand } from '../commands/ForceScanCommand.ts';
 import { GetProgramGroupingById } from '../commands/GetProgramGroupingById.ts';
 import { MaterializeProgramGroupings } from '../commands/MaterializeProgramGroupings.ts';
@@ -500,29 +499,33 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         const materialized = await container
           .get<MaterializeProgramsCommand>(MaterializeProgramsCommand)
           .execute(results);
-        const result = match(grouping.type)
-          .returnType<ProgramChildrenResult>()
-          .with('album', () => ({
-            total,
-            result: {
-              type: 'track',
-              programs: materialized.filter(
-                (p): p is MusicTrack => p.type === 'track',
-              ),
-            },
-            size: materialized.length,
-          }))
-          .with('season', () => ({
-            total,
-            result: {
-              type: 'episode',
-              programs: materialized.filter(
-                (p): p is Episode => p.type === 'episode',
-              ),
-            },
-            size: materialized.length,
-          }))
-          .exhaustive();
+        let result: ProgramChildrenResult;
+        switch (grouping.type) {
+          case 'album':
+            result = {
+              total,
+              result: {
+                type: 'track',
+                programs: materialized.filter(
+                  (p): p is MusicTrack => p.type === 'track',
+                ),
+              },
+              size: materialized.length,
+            };
+            break;
+          case 'season':
+            result = {
+              total,
+              result: {
+                type: 'episode',
+                programs: materialized.filter(
+                  (p): p is Episode => p.type === 'episode',
+                ),
+              },
+              size: materialized.length,
+            };
+            break;
+        }
         return res.send(result);
       } else {
         const { total, results } = await req.serverCtx.programDB.getChildren(
@@ -534,29 +537,33 @@ export const programmingApi: RouterPluginAsyncCallback = async (fastify) => {
         const materialized = await container
           .get<MaterializeProgramGroupings>(MaterializeProgramGroupings)
           .execute(results);
-        const result = match(grouping.type)
-          .returnType<ProgramChildrenResult>()
-          .with('artist', () => ({
-            total,
-            result: {
-              type: 'album',
-              programs: materialized.filter(
-                (p): p is MusicAlbum => p.type === 'album',
-              ),
-            },
-            size: materialized.length,
-          }))
-          .with('show', () => ({
-            total,
-            result: {
-              type: 'season',
-              programs: materialized.filter(
-                (p): p is Season => p.type === 'season',
-              ),
-            },
-            size: materialized.length,
-          }))
-          .exhaustive();
+        let result: ProgramChildrenResult;
+        switch (grouping.type) {
+          case 'artist':
+            result = {
+              total,
+              result: {
+                type: 'album',
+                programs: materialized.filter(
+                  (p): p is MusicAlbum => p.type === 'album',
+                ),
+              },
+              size: materialized.length,
+            };
+            break;
+          case 'show':
+            result = {
+              total,
+              result: {
+                type: 'season',
+                programs: materialized.filter(
+                  (p): p is Season => p.type === 'season',
+                ),
+              },
+              size: materialized.length,
+            };
+            break;
+        }
         return res.send(result);
       }
     },

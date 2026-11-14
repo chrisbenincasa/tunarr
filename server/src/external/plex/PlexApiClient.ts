@@ -581,25 +581,26 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
     return this.iterateChildItems(
       libraryId,
       PlexMediaContainerResponseSchema,
-      (item, library) =>
-        match(item)
-          .with({ type: 'movie' }, (movie) =>
-            this.plexMovieInjection(movie, library),
-          )
-          .with({ type: 'show' }, (show) =>
-            this.plexShowInjection(show, library),
-          )
-          .with({ type: 'artist' }, (artist) =>
-            this.plexMusicArtistInjection(artist, library),
-          )
-          .with({ type: 'episode' }, (episode) =>
-            this.plexEpisodeInjection(episode, library),
-          )
-          .otherwise((x) =>
-            Result.failure(
-              `Found collection with unsupported child: ${JSON.stringify(x)}`,
-            ),
-          ),
+      (item, library): Result<ProgramOrFolder> => {
+        switch (item.type) {
+          case 'movie':
+            return this.plexMovieInjection(item, library);
+          case 'show':
+            return this.plexShowInjection(item, library);
+          case 'artist':
+            return this.plexMusicArtistInjection(item, library);
+          case 'episode':
+            return this.plexEpisodeInjection(item, library);
+          case 'season':
+          case 'album':
+          case 'track':
+          case 'playlist':
+          case 'collection':
+            return Result.failure(
+              `Found collection with unsupported child: ${JSON.stringify(item)}`,
+            );
+        }
+      },
       50,
       `/library/collections/${collectionId}/children`,
     );
@@ -726,37 +727,29 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
   async getItemMetadata(key: string): Promise<Result<ProgramOrFolder>> {
     const rawResponse = await this.getItemMetadataRaw(key);
     return rawResponse.flatMap((media) => {
-      return this.findLibraryFromPlexMedia(media).flatMap((library) =>
-        match(media)
-          .returnType<Result<ProgramOrFolder>>()
-          .with({ type: 'movie' }, (movie) =>
-            this.plexMovieInjection(movie, library),
-          )
-          .with({ type: 'episode' }, (ep) =>
-            this.plexEpisodeInjection(ep, library),
-          )
-          .with({ type: 'show' }, (show) =>
-            this.plexShowInjection(show, library),
-          )
-          .with({ type: 'season' }, (season) =>
-            this.plexSeasonInjection(season, library),
-          )
-          .with({ type: 'album' }, (album) =>
-            this.plexAlbumInjection(album, library),
-          )
-          .with({ type: 'artist' }, (artist) =>
-            this.plexMusicArtistInjection(artist, library),
-          )
-          .with({ type: 'track' }, (track) =>
-            this.plexTrackInjection(track, library),
-          )
-          .with({ type: 'collection' }, () => {
-            throw new Error('Collections are not supported in this call');
-          })
-          .with({ type: 'playlist' }, () => {
-            throw new Error('Playlists are not supported in this call');
-          })
-          .exhaustive(),
+      return this.findLibraryFromPlexMedia(media).flatMap(
+        (library): Result<ProgramOrFolder> => {
+          switch (media.type) {
+            case 'movie':
+              return this.plexMovieInjection(media, library);
+            case 'episode':
+              return this.plexEpisodeInjection(media, library);
+            case 'show':
+              return this.plexShowInjection(media, library);
+            case 'season':
+              return this.plexSeasonInjection(media, library);
+            case 'album':
+              return this.plexAlbumInjection(media, library);
+            case 'artist':
+              return this.plexMusicArtistInjection(media, library);
+            case 'track':
+              return this.plexTrackInjection(media, library);
+            case 'collection':
+              throw new Error('Collections are not supported in this call');
+            case 'playlist':
+              throw new Error('Playlists are not supported in this call');
+          }
+        },
       );
     });
   }
@@ -941,11 +934,18 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       );
     }
 
-    const path = match(itemType)
-      .with('collection', () => `/library/collections/${key}/children`)
-      .with('playlist', () => `/playlists/${key}/items`)
-      .with('item', () => `/library/metadata/${key}/children`)
-      .exhaustive();
+    let path: string;
+    switch (itemType) {
+      case 'collection':
+        path = `/library/collections/${key}/children`;
+        break;
+      case 'playlist':
+        path = `/playlists/${key}/items`;
+        break;
+      case 'item':
+        path = `/library/metadata/${key}/children`;
+        break;
+    }
 
     const pageSize = 50;
     // Bounds a server that ignores X-Plex-Container-Start and therefore never
@@ -1094,26 +1094,30 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       return null;
     }
 
-    const result = match(item)
-      .returnType<Result<PlexItem>>()
-      .with({ type: 'album' }, (album) =>
-        this.plexAlbumInjection(album, library),
-      )
-      .with({ type: 'artist' }, (artist) =>
-        this.plexMusicArtistInjection(artist, library),
-      )
-      .with({ type: 'episode' }, (ep) => this.plexEpisodeInjection(ep, library))
-      .with({ type: 'season' }, (season) =>
-        this.plexSeasonInjection(season, library),
-      )
-      .with({ type: 'show' }, (show) => this.plexShowInjection(show, library))
-      .with({ type: 'movie' }, (movie) =>
-        this.plexMovieInjection(movie, library),
-      )
-      .with({ type: 'track' }, (track) =>
-        this.plexTrackInjection(track, library),
-      )
-      .exhaustive();
+    let result: Result<PlexItem>;
+    switch (item.type) {
+      case 'album':
+        result = this.plexAlbumInjection(item, library);
+        break;
+      case 'artist':
+        result = this.plexMusicArtistInjection(item, library);
+        break;
+      case 'episode':
+        result = this.plexEpisodeInjection(item, library);
+        break;
+      case 'season':
+        result = this.plexSeasonInjection(item, library);
+        break;
+      case 'show':
+        result = this.plexShowInjection(item, library);
+        break;
+      case 'movie':
+        result = this.plexMovieInjection(item, library);
+        break;
+      case 'track':
+        result = this.plexTrackInjection(item, library);
+        break;
+    }
     if (result.isFailure()) {
       this.logger.warn(result.error, `Unable to convert Plex item: %O`, item);
       return null;
@@ -1259,10 +1263,15 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
       imageType = 'poster',
     } = opts;
     const cleanKey = itemKey.replaceAll(/\/library\/metadata\//g, '');
-    const path = match(imageType)
-      .with('poster', () => 'thumb')
-      .with('background', () => 'art')
-      .exhaustive();
+    let path: string;
+    switch (imageType) {
+      case 'poster':
+        path = 'thumb';
+        break;
+      case 'background':
+        path = 'art';
+        break;
+    }
 
     let thumbUrl: URL;
     const key = `/library/metadata/${cleanKey}/${path}?X-Plex-Token=${accessToken}`;
