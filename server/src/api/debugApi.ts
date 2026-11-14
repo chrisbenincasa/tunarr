@@ -16,7 +16,7 @@ import { getHeapStatistics } from 'v8';
 import z from 'zod/v4';
 import { container } from '../container.ts';
 import type { MediaSourceType } from '../db/schema/base.ts';
-import { TunarrWorkerPool } from '../services/TunarrWorkerPool.ts';
+import type { IWorkerPool } from '../interfaces/IWorkerPool.ts';
 import type { GenericExternalCollectionScanner } from '../services/scanner/ExternalCollectionScanner.ts';
 import { KEYS } from '../types/inject.ts';
 import type { Maybe } from '../types/util.ts';
@@ -315,7 +315,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (_, res) => {
-      const pool = container.get(TunarrWorkerPool);
+      const pool = container.get<IWorkerPool>(KEYS.WorkerPool);
 
       const response = await pool.queueTask({ type: 'status' });
       return res.send(response);
@@ -330,7 +330,7 @@ export const debugApi: RouterPluginAsyncCallback = async (fastify) => {
       },
     },
     async (_, res) => {
-      const pool = container.get(TunarrWorkerPool);
+      const pool = container.get<IWorkerPool>(KEYS.WorkerPool);
 
       const response = await Promise.race([
         pool.queueTask({ type: 'restart', code: 1 }),
