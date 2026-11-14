@@ -17,9 +17,11 @@ import { fileTypeFromStream } from 'file-type';
 import { randomUUID } from 'node:crypto';
 import { createReadStream, promises as fsPromises } from 'node:fs';
 import path from 'node:path';
+import { pipeline } from 'node:stream';
 import { z } from 'zod/v4';
 import { container } from '../container.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
+import { ReplaceAllTransform } from '../util/streams.ts';
 import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import { basicAuthConfigFromEnv, isAuthorized } from '../util/basicAuth.js';
 import { isDev, isNonEmptyString, run } from '../util/index.js';
@@ -263,12 +265,22 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         const host = `${req.protocol}://${req.host}`;
 
         const outputPath = await container.get(XmlTvWriter).resolveOutputPath();
-        const fileContent = await fsPromises.readFile(outputPath, 'utf8');
-        const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
+        // Opened before streaming so a missing file still returns a 500.
+        const file = await fsPromises.open(outputPath, 'r');
+        const body = pipeline(
+          file.createReadStream({ encoding: 'utf8' }),
+          new ReplaceAllTransform('{{host}}', host),
+          (err) => {
+            // A client that disconnects early is not an error worth logging.
+            if (err && err.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
+              logger.warn(err, 'Failed to stream the XMLTV file');
+            }
+          },
+        );
         return res
           .header('Cache-Control', 'no-store')
           .header('Content-Type', 'application/xml')
-          .send(fileFinal);
+          .send(body);
       } catch (err) {
         logger.error(err);
         return res.status(500).send('error');
