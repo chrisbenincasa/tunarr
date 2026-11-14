@@ -30,7 +30,6 @@ import {
 import { DataTable } from '../ui/table/DataTable.tsx';
 import { actionsColumn } from '../ui/table/columns.tsx';
 import { HeaderRangeFilter } from '../ui/table/filters/HeaderRangeFilter.tsx';
-import { inRange } from '../ui/table/filters/rangeFilterValue.ts';
 import {
   createAppColumnHelper,
   useTunarrTable,
@@ -129,22 +128,27 @@ export const CustomShowsView = ({
 
   const showCount = shows.length;
 
-  // The table applies this filter itself. The cards read the same value, so
-  // both layouts show the same shows.
+  // Cards show the rows that pass every table filter, so both layouts agree.
   const programsColumn = table.getColumn('contentCount');
-  const visibleShows = shows.filter((show) =>
-    inRange(show.contentCount, programsColumn?.getFilterValue()),
-  );
+  const visibleShows = table
+    .getFilteredRowModel()
+    .rows.map((row) => row.original);
+
+  // A hidden column keeps its header filter while filtered, so the filter can
+  // still be cleared.
+  const headerFilterColumn =
+    programsColumn &&
+    showCount > 0 &&
+    (programsColumn.getIsVisible() || programsColumn.getIsFiltered())
+      ? programsColumn
+      : undefined;
 
   const noMatches = (
     <EmptyState
       icon={<VideoLibrary />}
       title={<Trans>No playlists match this filter.</Trans>}
       actions={
-        <Button
-          variant="outlined"
-          onClick={() => programsColumn?.setFilterValue(undefined)}
-        >
+        <Button variant="outlined" onClick={() => table.resetColumnFilters()}>
           <Trans>Clear filter</Trans>
         </Button>
       }
@@ -184,8 +188,8 @@ export const CustomShowsView = ({
             direction="row"
             sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 2 }}
           >
-            {programsColumn && showCount > 0 && (
-              <HeaderRangeFilter column={programsColumn} />
+            {headerFilterColumn && (
+              <HeaderRangeFilter column={headerFilterColumn} />
             )}
             <RouterButtonLink
               to="/library/playlists/new"

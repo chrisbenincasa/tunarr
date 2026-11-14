@@ -34,7 +34,6 @@ import {
 import { DataTable } from '../ui/table/DataTable.tsx';
 import { actionsColumn } from '../ui/table/columns.tsx';
 import { HeaderRangeFilter } from '../ui/table/filters/HeaderRangeFilter.tsx';
-import { inRange } from '../ui/table/filters/rangeFilterValue.ts';
 import {
   createAppColumnHelper,
   useTunarrTable,
@@ -124,22 +123,27 @@ export const FillerListsView = ({
 
   const fillerCount = fillers.length;
 
-  // The table applies this filter itself. The cards read the same value, so
-  // both layouts show the same filler lists.
+  // Cards show the rows that pass every table filter, so both layouts agree.
   const programsColumn = table.getColumn('contentCount');
-  const visibleFillers = fillers.filter((filler) =>
-    inRange(filler.contentCount, programsColumn?.getFilterValue()),
-  );
+  const visibleFillers = table
+    .getFilteredRowModel()
+    .rows.map((row) => row.original);
+
+  // A hidden column keeps its header filter while filtered, so the filter can
+  // still be cleared.
+  const headerFilterColumn =
+    programsColumn &&
+    fillerCount > 0 &&
+    (programsColumn.getIsVisible() || programsColumn.getIsFiltered())
+      ? programsColumn
+      : undefined;
 
   const noMatches = (
     <EmptyState
       icon={<QueueMusic />}
       title={<Trans>No filler lists match this filter.</Trans>}
       actions={
-        <Button
-          variant="outlined"
-          onClick={() => programsColumn?.setFilterValue(undefined)}
-        >
+        <Button variant="outlined" onClick={() => table.resetColumnFilters()}>
           <Trans>Clear filter</Trans>
         </Button>
       }
@@ -183,8 +187,8 @@ export const FillerListsView = ({
             direction="row"
             sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 2 }}
           >
-            {programsColumn && fillerCount > 0 && (
-              <HeaderRangeFilter column={programsColumn} />
+            {headerFilterColumn && (
+              <HeaderRangeFilter column={headerFilterColumn} />
             )}
             <RouterButtonLink
               to="/library/fillers/new"

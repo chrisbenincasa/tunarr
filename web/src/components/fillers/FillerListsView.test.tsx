@@ -119,6 +119,33 @@ describe('FillerListsView table', () => {
       screen.getAllByRole('textbox', { name: 'Min # Programs' }),
     ).toHaveLength(1);
   });
+  test('hides the header filter along with the # Programs column', async () => {
+    const { user } = renderView('table');
+    await user.click(screen.getByRole('button', { name: 'Show/Hide columns' }));
+    await user.click(
+      screen.getByRole('checkbox', { name: 'Toggle visibility # Programs' }),
+    );
+    await user.keyboard('{Escape}');
+    expect(
+      screen.queryByRole('textbox', { name: 'Min # Programs' }),
+    ).not.toBeInTheDocument();
+  });
+
+  test('keeps the header filter for a hidden column while it filters', async () => {
+    const { user } = renderView('table');
+    await user.type(
+      screen.getByRole('textbox', { name: 'Min # Programs' }),
+      '10',
+    );
+    await user.click(screen.getByRole('button', { name: 'Show/Hide columns' }));
+    await user.click(
+      screen.getByRole('checkbox', { name: 'Toggle visibility # Programs' }),
+    );
+    await user.keyboard('{Escape}');
+    expect(screen.getByRole('textbox', { name: 'Min # Programs' })).toHaveValue(
+      '10',
+    );
+  });
 });
 
 describe('FillerListsView cards', () => {
@@ -202,5 +229,58 @@ describe('FillerListsView cards', () => {
     expect(
       screen.getByRole('link', { name: 'Create a Filler List' }),
     ).toHaveAttribute('href', '/library/fillers/new');
+  });
+  test('applies a Name filter set in the table to the cards', async () => {
+    const { user, rerender, onOpenFiller, onAssignChannels, onDeleteFiller } =
+      renderView('table');
+    await user.click(
+      screen.getByRole('button', { name: /^Show\/Hide filters/ }),
+    );
+    await user.type(
+      screen.getByRole('textbox', { name: 'Filter by Name' }),
+      'Retro',
+    );
+    rerender(
+      <FillerListsView
+        fillers={fillers}
+        layout="cards"
+        onOpenFiller={onOpenFiller}
+        onAssignChannels={onAssignChannels}
+        onDeleteFiller={onDeleteFiller}
+      />,
+    );
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(
+      screen.getByRole('article', { name: 'Retro Ads' }),
+    ).toBeInTheDocument();
+  });
+
+  test('clears every table filter from the empty state', async () => {
+    const { user, rerender, onOpenFiller, onAssignChannels, onDeleteFiller } =
+      renderView('table');
+    await user.click(
+      screen.getByRole('button', { name: /^Show\/Hide filters/ }),
+    );
+    await user.type(
+      screen.getByRole('textbox', { name: 'Filter by Name' }),
+      'Bumpers',
+    );
+    await user.type(
+      screen.getByRole('textbox', { name: 'Min # Programs' }),
+      '10',
+    );
+    rerender(
+      <FillerListsView
+        fillers={fillers}
+        layout="cards"
+        onOpenFiller={onOpenFiller}
+        onAssignChannels={onAssignChannels}
+        onDeleteFiller={onDeleteFiller}
+      />,
+    );
+    expect(screen.queryAllByRole('article')).toHaveLength(0);
+
+    await user.click(screen.getByRole('button', { name: 'Clear filter' }));
+    expect(screen.getAllByRole('article')).toHaveLength(2);
   });
 });
