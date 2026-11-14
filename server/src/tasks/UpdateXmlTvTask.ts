@@ -94,9 +94,18 @@ export class UpdateXmlTvTask extends Task2<typeof UpdateXmlTvTaskRequest> {
         );
       }
 
-      GlobalScheduler.getScheduledJob(SubtitleExtractorTask.ID)
-        .runNow(true)
-        .catch((err) => this.logger.error(err));
+      // The hourly extraction run fires on the same tick as scheduled guide
+      // updates. A second run would repeat the same work alongside it.
+      const subtitleJob = GlobalScheduler.getScheduledJob(
+        SubtitleExtractorTask.ID,
+      );
+      if (subtitleJob.running) {
+        this.logger.debug(
+          'Subtitle extraction is already running, so the guide update will not start another run',
+        );
+      } else {
+        subtitleJob.runNow(true).catch((err) => this.logger.error(err));
+      }
 
       this.logger.info('XMLTV Updated at %s', dayjs().format());
 

@@ -8,6 +8,21 @@ import { ProgramGrouping } from '../schema/ProgramGrouping.ts';
 import type { ProgramState } from '../schema/base.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
 
+/**
+ * True when a grouping has an 'ok' program under it.
+ *
+ * The unary `+` keeps SQLite off `program_state_index`. With that index the
+ * subquery walks every 'ok' program once per grouping, which blocks the server
+ * for seconds on large libraries. Without it SQLite probes the four parent
+ * indexes instead.
+ */
+export const groupingHasLiveProgram = sql`EXISTS (SELECT 1 FROM ${Program} p
+  WHERE +p.state = 'ok'
+    AND (p.season_uuid = ${ProgramGrouping.uuid}
+      OR p.album_uuid = ${ProgramGrouping.uuid}
+      OR p.tv_show_uuid = ${ProgramGrouping.uuid}
+      OR p.artist_uuid = ${ProgramGrouping.uuid}))`;
+
 @injectable()
 export class ProgramStateRepository {
   constructor(@inject(KEYS.DrizzleDB) private drizzleDB: DrizzleDBAccess) {}
@@ -63,13 +78,6 @@ export class ProgramStateRepository {
     libraryId: string,
     types: readonly ProgramGroupingType[],
   ): Promise<{ missingIds: string[]; restoredIds: string[] }> {
-    const hasLiveProgram = sql`EXISTS (SELECT 1 FROM ${Program} p
-      WHERE p.state = 'ok'
-        AND (p.season_uuid = ${ProgramGrouping.uuid}
-          OR p.album_uuid = ${ProgramGrouping.uuid}
-          OR p.tv_show_uuid = ${ProgramGrouping.uuid}
-          OR p.artist_uuid = ${ProgramGrouping.uuid}))`;
-
     const inScope = and(
       eq(ProgramGrouping.libraryId, libraryId),
       inArray(ProgramGrouping.type, [...types]),
@@ -79,13 +87,23 @@ export class ProgramStateRepository {
       .update(ProgramGrouping)
       .set({ state: 'missing' })
       .where(
-        and(inScope, eq(ProgramGrouping.state, 'ok'), not(hasLiveProgram)),
+        and(
+          inScope,
+          eq(ProgramGrouping.state, 'ok'),
+          not(groupingHasLiveProgram),
+        ),
       );
 
     const restored = await this.drizzleDB
       .update(ProgramGrouping)
       .set({ state: 'ok' })
-      .where(and(inScope, eq(ProgramGrouping.state, 'missing'), hasLiveProgram))
+      .where(
+        and(
+          inScope,
+          eq(ProgramGrouping.state, 'missing'),
+          groupingHasLiveProgram,
+        ),
+      )
       .returning({ uuid: ProgramGrouping.uuid });
 
     const missing = await this.drizzleDB
