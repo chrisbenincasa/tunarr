@@ -12,7 +12,6 @@ import {
   IconButton,
   Stack,
   Tooltip,
-  Typography,
 } from '@mui/material';
 import type { CustomShow } from '@tunarr/types';
 import dayjs from 'dayjs';
@@ -30,8 +29,8 @@ import {
 } from '../ui/patterns/CollectionView/index.ts';
 import { DataTable } from '../ui/table/DataTable.tsx';
 import { actionsColumn } from '../ui/table/columns.tsx';
-import { RangeFilter } from '../ui/table/filters/RangeFilter.tsx';
-import { toRangeFilterValue } from '../ui/table/filters/rangeFilterValue.ts';
+import { HeaderRangeFilter } from '../ui/table/filters/HeaderRangeFilter.tsx';
+import { inRange } from '../ui/table/filters/rangeFilterValue.ts';
 import {
   createAppColumnHelper,
   useTunarrTable,
@@ -133,13 +132,8 @@ export const CustomShowsView = ({
   // The table applies this filter itself. The cards read the same value, so
   // both layouts show the same shows.
   const programsColumn = table.getColumn('contentCount');
-  const [minPrograms, maxPrograms] = toRangeFilterValue(
-    programsColumn?.getFilterValue(),
-  );
-  const visibleShows = shows.filter(
-    (show) =>
-      (minPrograms === undefined || show.contentCount >= minPrograms) &&
-      (maxPrograms === undefined || show.contentCount <= maxPrograms),
+  const visibleShows = shows.filter((show) =>
+    inRange(show.contentCount, programsColumn?.getFilterValue()),
   );
 
   const noMatches = (
@@ -191,14 +185,7 @@ export const CustomShowsView = ({
             sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 2 }}
           >
             {programsColumn && showCount > 0 && (
-              <Stack direction="row" sx={{ alignItems: 'center', gap: 1 }}>
-                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                  <Trans># Programs</Trans>
-                </Typography>
-                <Box sx={{ width: 140 }}>
-                  <RangeFilter column={programsColumn} />
-                </Box>
-              </Stack>
+              <HeaderRangeFilter column={programsColumn} />
             )}
             <RouterButtonLink
               to="/library/playlists/new"

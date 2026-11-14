@@ -166,7 +166,7 @@ Built on `feat/custom-shows-collection` (11/09/2026):
 - The view owns the delete confirmation. The page only runs the mutation.
 - No bulk selection yet. Bulk delete is the only candidate action, so whether it earns a follow-up PR is still open.
 - The page header drops the explainer paragraph. The empty state carries it instead.
-- The `# Programs` range filter sits in the page header, so it filters the cards and the table alike. Its value stays in the table state, so it persists. The column sets `filterInHeader`, which keeps `DataTable` from drawing a second copy in its filter row. The Name filter and search stay table-only. `/library/fillers` still has its `# Programs` filter in the table only.
+- The `# Programs` range filter sits in the page header (`HeaderRangeFilter`), so it filters the cards and the table alike. Its value lives in the table's filter state, so it survives a switch between densities. Filters are not saved across reloads. The column sets `filterInHeader`, which keeps `DataTable` from drawing a second copy in its filter row. The Name filter and search stay table-only. `/library/fillers` uses the same header filter.
 - User-facing text says "Playlists" and links go to `/library/playlists`, both from the rename in PR #2513. Code names stay `CustomShow*`.
 
 Built on `feat/fillers-collection` and merged into `feat/custom-shows-collection` as PR #2511 (11/09/2026):

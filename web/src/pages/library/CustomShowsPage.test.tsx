@@ -1,6 +1,7 @@
 import { getApiCustomShowsQueryKey } from '@/generated/@tanstack/react-query.gen.ts';
 import type * as Gen from '@/generated/@tanstack/react-query.gen.ts';
 import useStore from '@/store/index.ts';
+import { navigateMock } from '@/test/routerMock.tsx';
 import {
   renderWithProviders,
   screen,
@@ -8,6 +9,8 @@ import {
   waitFor,
   within,
 } from '@/test/utils';
+import { createTunarrTheme } from '@/theme.ts';
+import { ThemeProvider } from '@mui/material';
 import type { CustomShow } from '@tunarr/types';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import CustomShowsPage from './CustomShowsPage.tsx';
@@ -34,10 +37,16 @@ const shows: CustomShow[] = [
   },
 ];
 
-const renderPage = () =>
-  renderWithProviders(<CustomShowsPage />, {
-    queryClient: seededQueryClient([[getApiCustomShowsQueryKey(), shows]]),
-  });
+// Dense density shows the table, so rows can be clicked.
+const renderPage = (dense = false) =>
+  renderWithProviders(
+    <ThemeProvider theme={createTunarrTheme(dense ? 'dense' : 'comfortable')}>
+      <CustomShowsPage />
+    </ThemeProvider>,
+    {
+      queryClient: seededQueryClient([[getApiCustomShowsQueryKey(), shows]]),
+    },
+  );
 
 describe('CustomShowsPage', () => {
   beforeEach(() => {
@@ -69,5 +78,14 @@ describe('CustomShowsPage', () => {
     await waitFor(() =>
       expect(mocks.remove).toHaveBeenCalledWith({ path: { id: 'show-big' } }),
     );
+  });
+
+  test('opens a playlist when its table row is clicked', async () => {
+    const { user } = renderPage(true);
+    await user.click(screen.getByText('Marathon'));
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/library/playlists/$showId/edit',
+      params: { showId: 'show-big' },
+    });
   });
 });

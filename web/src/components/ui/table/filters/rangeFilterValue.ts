@@ -23,3 +23,12 @@ export const parseBound = (text: string): Bound => {
   const n = Number(trimmed);
   return Number.isFinite(n) ? n : undefined;
 };
+
+// Inclusive at both ends, like the inNumberRange filter function. A blank
+// bound is open.
+export const inRange = (value: number, filterValue: unknown) => {
+  const [min, max] = toRangeFilterValue(filterValue);
+  return (
+    (min === undefined || value >= min) && (max === undefined || value <= max)
+  );
+};

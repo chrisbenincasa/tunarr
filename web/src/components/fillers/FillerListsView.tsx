@@ -15,6 +15,7 @@ import {
   DialogContentText,
   DialogTitle,
   IconButton,
+  Stack,
   Tooltip,
 } from '@mui/material';
 import type { FillerList } from '@tunarr/types';
@@ -32,6 +33,8 @@ import {
 } from '../ui/patterns/CollectionView/index.ts';
 import { DataTable } from '../ui/table/DataTable.tsx';
 import { actionsColumn } from '../ui/table/columns.tsx';
+import { HeaderRangeFilter } from '../ui/table/filters/HeaderRangeFilter.tsx';
+import { inRange } from '../ui/table/filters/rangeFilterValue.ts';
 import {
   createAppColumnHelper,
   useTunarrTable,
@@ -75,7 +78,7 @@ export const FillerListsView = ({
         }),
         columnHelper.accessor('contentCount', {
           header: t`# Programs`,
-          meta: { filterVariant: 'range', numeric: true },
+          meta: { filterVariant: 'range', filterInHeader: true, numeric: true },
         }),
         actionsColumn<FillerList>({
           render: ({ original: filler }) => (
@@ -121,6 +124,28 @@ export const FillerListsView = ({
 
   const fillerCount = fillers.length;
 
+  // The table applies this filter itself. The cards read the same value, so
+  // both layouts show the same filler lists.
+  const programsColumn = table.getColumn('contentCount');
+  const visibleFillers = fillers.filter((filler) =>
+    inRange(filler.contentCount, programsColumn?.getFilterValue()),
+  );
+
+  const noMatches = (
+    <EmptyState
+      icon={<QueueMusic />}
+      title={<Trans>No filler lists match this filter.</Trans>}
+      actions={
+        <Button
+          variant="outlined"
+          onClick={() => programsColumn?.setFilterValue(undefined)}
+        >
+          <Trans>Clear filter</Trans>
+        </Button>
+      }
+    />
+  );
+
   const empty = (
     <EmptyState
       icon={<QueueMusic />}
@@ -154,21 +179,29 @@ export const FillerListsView = ({
           </Trans>
         }
         actions={
-          <RouterButtonLink
-            to="/library/fillers/new"
-            variant="contained"
-            startIcon={<Add />}
+          <Stack
+            direction="row"
+            sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 2 }}
           >
-            <Trans>New</Trans>
-          </RouterButtonLink>
+            {programsColumn && fillerCount > 0 && (
+              <HeaderRangeFilter column={programsColumn} />
+            )}
+            <RouterButtonLink
+              to="/library/fillers/new"
+              variant="contained"
+              startIcon={<Add />}
+            >
+              <Trans>New</Trans>
+            </RouterButtonLink>
+          </Stack>
         }
       />
       <CollectionView
         aria-label={t`Filler Lists`}
         layout={layout}
-        items={fillers}
+        items={visibleFillers}
         getItemKey={(filler) => filler.id}
-        empty={empty}
+        empty={fillerCount === 0 ? empty : noMatches}
         minCardWidth={280}
         pagination={{
           state: tableState.state.pagination,

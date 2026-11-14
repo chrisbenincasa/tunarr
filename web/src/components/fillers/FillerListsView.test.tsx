@@ -103,19 +103,52 @@ describe('FillerListsView table', () => {
     );
   });
 
-  test('filters filler lists by program count', async () => {
+  test('filters rows by program count from the header', async () => {
     const { user } = renderView('table');
     expect(fillerNames()).toEqual(['Bumpers', 'Retro Ads']);
-    await user.click(screen.getByRole('button', { name: 'Show/Hide filters' }));
     await user.type(
       screen.getByRole('textbox', { name: 'Min # Programs' }),
       '10',
     );
     expect(fillerNames()).toEqual(['Retro Ads']);
+
+    await user.click(
+      screen.getByRole('button', { name: /^Show\/Hide filters/ }),
+    );
+    expect(
+      screen.getAllByRole('textbox', { name: 'Min # Programs' }),
+    ).toHaveLength(1);
   });
 });
 
 describe('FillerListsView cards', () => {
+  test('filters cards by program count from the header', async () => {
+    const { user } = renderView('cards');
+    await user.type(
+      screen.getByRole('textbox', { name: 'Max # Programs' }),
+      '10',
+    );
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(
+      screen.getByRole('article', { name: 'Bumpers' }),
+    ).toBeInTheDocument();
+  });
+
+  test('offers to clear the filter when no cards match', async () => {
+    const { user } = renderView('cards');
+    await user.type(
+      screen.getByRole('textbox', { name: 'Min # Programs' }),
+      '1000',
+    );
+    expect(screen.queryAllByRole('article')).toHaveLength(0);
+    expect(
+      screen.getByText('No filler lists match this filter.'),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Clear filter' }));
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+  });
+
   test('shows one card per filler list with its count', () => {
     renderView('cards');
     const card = within(screen.getByRole('article', { name: 'Retro Ads' }));
