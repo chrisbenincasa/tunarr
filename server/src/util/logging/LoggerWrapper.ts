@@ -180,6 +180,7 @@ export class RootLoggerWrapper extends BaseLoggerWrapper {
           classLoggerBindings(caller, className),
           opts,
         ) as Logger,
+        className,
       );
       this.children[className] = classLogger;
     }
@@ -202,17 +203,21 @@ export class RootLoggerWrapper extends BaseLoggerWrapper {
 }
 
 class LoggerWrapper extends BaseLoggerWrapper {
-  constructor(wrappedLogger: Logger) {
+  readonly #levelOverride?: LogLevels;
+
+  // Production bindings omit the class name, so it is passed in directly.
+  constructor(wrappedLogger: Logger, className?: string) {
     super(wrappedLogger);
-    const className = this.className;
-    if (isNonEmptyString(className)) {
-      const customLogLevel = getEnvironmentLogLevel(
-        `TUNARR_LOG_LEVEL_${className.toUpperCase()}`,
-      );
-      if (customLogLevel) {
-        this.wrappedLogger.level = customLogLevel;
-      }
+    this.#levelOverride = className
+      ? getEnvironmentLogLevel(`TUNARR_LOG_LEVEL_${className.toUpperCase()}`)
+      : undefined;
+    if (this.#levelOverride) {
+      this.wrappedLogger.level = this.#levelOverride;
     }
+  }
+
+  override updateLevel(level: LogLevels, streams: MultiStreamRes<LogLevels>) {
+    super.updateLevel(this.#levelOverride ?? level, streams);
   }
 
   child(
@@ -228,6 +233,7 @@ class LoggerWrapper extends BaseLoggerWrapper {
           classLoggerBindings(caller, className),
           opts,
         ) as Logger,
+        className,
       );
       this.children[className] = classLogger;
     }

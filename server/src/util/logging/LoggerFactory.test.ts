@@ -1,5 +1,10 @@
-import { describe, expect, it } from 'vitest';
-import { resolveBaseLogLevel, resolveLogFileMode } from './LoggerFactory.ts';
+import { symbols } from 'pino';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  lowestClassLogLevelOverride,
+  resolveBaseLogLevel,
+  resolveLogFileMode,
+} from './LoggerFactory.ts';
 
 /**
  * Regression for #2193 — every worker thread built its own rolling
@@ -83,5 +88,63 @@ describe('resolveBaseLogLevel (#1992)', () => {
         settingsLogLevel: 'info',
       }),
     ).toEqual({ source: 'env', level: 'trace' });
+  });
+});
+
+describe('lowestClassLogLevelOverride', () => {
+  it('returns the finest per-class level and ignores the global var', () => {
+    expect(
+      lowestClassLogLevelOverride({
+        TUNARR_LOG_LEVEL: 'trace',
+        TUNARR_LOG_LEVEL_SCANNER: 'debug',
+        TUNARR_LOG_LEVEL_HTTPCLIENT: 'http_out',
+        OTHER: 'trace',
+      }),
+    ).toBe('http_out');
+  });
+
+  it('returns undefined when no class override is set', () => {
+    expect(lowestClassLogLevelOverride({ TUNARR_LOG_LEVEL: 'debug' })).toBe(
+      undefined,
+    );
+  });
+});
+
+describe('LoggerFactory class level overrides', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.resetModules();
+  });
+
+  async function importWithOverride() {
+    vi.stubEnv('TUNARR_LOG_LEVEL_OVERRIDETEST', 'trace');
+    vi.resetModules();
+    const { LoggerFactory } = await import('./LoggerFactory.ts');
+    return LoggerFactory;
+  }
+
+  it('opens the shared streams at the override level', async () => {
+    const factory = await importWithOverride();
+    const shared = factory.root[symbols.streamSym] as unknown as {
+      streams: { level: number }[];
+    };
+
+    expect(shared.streams.map((s) => s.level)).toEqual([10]);
+    expect(factory.child({ className: 'OverrideTest' }).level).toBe('trace');
+  });
+
+  it('reuses the shared streams on every child call', async () => {
+    const factory = await importWithOverride();
+    const shared = factory.root[symbols.streamSym] as unknown as {
+      streams: { stream: unknown }[];
+    };
+    const streamsBefore = shared.streams;
+    const firstStream = streamsBefore[0]?.stream;
+
+    factory.child({ className: 'OverrideTest' });
+    factory.child({ className: 'OverrideTest' });
+
+    expect(shared.streams).toBe(streamsBefore);
+    expect(shared.streams[0]?.stream).toBe(firstStream);
   });
 });
