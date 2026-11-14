@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (11/01/2026):** Phases 0 and 2 are merged. Phase 0 shipped in PR #2348 (tokens and theme), PR #2349 (story diff script) and PR #2359 (`Segmented`, `KeyHint`, `EmptyState`, with `ToggleButtonGroup` banned). Phase 2 (`AppShell`) shipped in PR #2356. `plans/mrt-replacement.md` Phase 0 (`DataTable`) merged in PR #2350 on 10/25/2026, so Phase 3 is unblocked but not started. Next is `CollectionView` with `/channels` as the pilot. MRT replacement Phase 1 runs alongside it. The forms/settings mock is still due and gates Phase 4.
+> **Status (11/14/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` and `/library/fillers` are in review together in PR #2507, because PR #2511 merged the fillers work into its branch. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next are the remaining collection routes. The forms/settings mock is still due and gates Phase 4.
 
 ## Why
 
@@ -157,6 +157,23 @@ Built on `feat/channels-bulk`, stacked on `feat/collection-view` (11/02/2026):
 - Selection and keyboard navigation exist only in the table. The card mock has no checkboxes.
 - Bulk Export M3U links to `/api/channels.m3u?channels=1,4,7`. That param builds an uncached playlist of just those channels. Selected stealth channels are included when basic auth is off or the request carries valid credentials, because the route itself is public. The `download` flag makes the server send the playlist as an attachment.
 - Bulk duplicate and delete run one channel at a time and report failures in one toast.
+
+Built on `feat/custom-shows-collection` (11/09/2026):
+
+- `/library/custom-shows` splits into `CustomShowsView` (props only, with stories) in `web/src/components/custom-shows/` and `CustomShowsPage` (data).
+- The list endpoint returns no artwork, so `CustomShowCard` has no hero image. It shows the name, program count, total runtime, a sync pill for linked playlists, Edit and Delete.
+- The table gains a Duration column, so both layouts show the same facts.
+- The view owns the delete confirmation. The page only runs the mutation.
+- No bulk selection yet. Bulk delete is the only candidate action, so whether it earns a follow-up PR is still open.
+- The page header drops the explainer paragraph. The empty state carries it instead.
+- The `# Programs` range filter sits in the page header (`HeaderRangeFilter`), so it filters the cards and the table alike. Its value lives in the table's filter state, so it survives a switch between densities. Filters are not saved across reloads. The column sets `filterInHeader`, which keeps `DataTable` from drawing a second copy in its filter row. The Name filter and search stay table-only. `/library/fillers` uses the same header filter.
+- User-facing text says "Playlists" and links go to `/library/playlists`, both from the rename in PR #2513. Code names stay `CustomShow*`.
+
+Built on `feat/fillers-collection` and merged into `feat/custom-shows-collection` as PR #2511 (11/09/2026):
+
+- `/library/fillers` splits the same way, into `FillerListsView` and `FillerListCard` in `web/src/components/fillers/` and `FillerListsPage` (data).
+- A filler list has only a name and a program count, so its card shows those plus Edit, Assign and Delete.
+- `AssignFillerToChannelsDialog` fetches channels itself, so it stays in the page. The view reports which list to assign.
 
 ### Phase 4. Forms and settings
 

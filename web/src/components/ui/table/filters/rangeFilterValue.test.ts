@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest';
-import { parseBound, toRangeFilterValue } from './rangeFilterValue.ts';
+import { inRange, parseBound, toRangeFilterValue } from './rangeFilterValue.ts';
 
 describe('parseBound', () => {
   test.each([
@@ -39,5 +39,30 @@ describe('toRangeFilterValue', () => {
     ['Infinity', [1, Number.POSITIVE_INFINITY]],
   ])('treats %s as no bounds', (_, value) => {
     expect(toRangeFilterValue(value)).toEqual([undefined, undefined]);
+  });
+});
+
+describe('inRange', () => {
+  test('includes both bounds', () => {
+    expect(inRange(1, [1, 5])).toBe(true);
+    expect(inRange(5, [1, 5])).toBe(true);
+    expect(inRange(0, [1, 5])).toBe(false);
+    expect(inRange(6, [1, 5])).toBe(false);
+  });
+
+  test('treats a blank bound as open', () => {
+    expect(inRange(1000, [10, undefined])).toBe(true);
+    expect(inRange(-1000, [undefined, 10])).toBe(true);
+  });
+
+  // Matches the table's inNumberRange, so cards and rows agree.
+  test('swaps inverted bounds', () => {
+    expect(inRange(1, [40, 1])).toBe(true);
+    expect(inRange(40, [40, 1])).toBe(true);
+    expect(inRange(41, [40, 1])).toBe(false);
+  });
+
+  test('passes everything when there is no filter', () => {
+    expect(inRange(3, undefined)).toBe(true);
   });
 });

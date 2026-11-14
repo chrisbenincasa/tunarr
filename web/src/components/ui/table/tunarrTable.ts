@@ -40,6 +40,10 @@ export type TunarrColumnMeta = {
   filterVariant?: FilterVariant;
   filterOptions?: readonly string[];
 
+  // The page header draws this column's filter, so the filter row skips it.
+  // The filter value still lives in the table state.
+  filterInHeader?: boolean;
+
   // Right-aligns the column and sets its values in the mono face.
   numeric?: boolean;
   width?: number | string;
