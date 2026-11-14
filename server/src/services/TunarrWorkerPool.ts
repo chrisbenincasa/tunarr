@@ -28,11 +28,23 @@ import { TunarrSubprocessService } from './TunarrSubprocessService.ts';
 export const MAX_WORKERS = 4;
 
 /**
+ * The pool is off when TUNARR_USE_WORKER_POOL is false or the pool size is
+ * set to exactly 0. Background tasks then run on the main thread.
+ */
+export function isWorkerPoolEnabled(
+  useWorkerPool: boolean,
+  poolSizeSetting: number | null,
+) {
+  return useWorkerPool && poolSizeSetting !== 0;
+}
+
+/**
  * An explicit env var setting wins, even above MAX_WORKERS. Otherwise the pool
  * uses one worker per CPU, capped at MAX_WORKERS.
  *
- * The pool always has at least one worker. A setting below 1 is ignored, and
- * `os.cpus()` can report no CPUs in some containers.
+ * The pool always has at least one worker. A negative setting is ignored, and
+ * `os.cpus()` can report no CPUs in some containers. A setting of 0 turns the
+ * pool off instead (see isWorkerPoolEnabled).
  */
 export function resolveWorkerPoolSize(
   cpuCount: number,

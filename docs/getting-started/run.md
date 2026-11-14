@@ -98,7 +98,7 @@ Tunarr has various command line / environment variables for configuration. These
 | Environment Variable | Command Line Flag | Default | Description |
 | -------------------- | ----------------- | ------- | ----------- |
 | `TUNARR_USE_WORKER_POOL` | N/A | `true` | Runs background tasks, such as slot schedule generation, in a pool of worker threads. A worker that misses a task's deadline is terminated and replaced, and its queued tasks fail. Set to `false` to run these tasks on the main thread. |
-| `TUNARR_WORKER_POOL_SIZE` | N/A | (CPU count, max 4) | Number of worker threads in the pool. Each worker adds memory use. Values below 1 are ignored. Recommended: no more than the number of CPUs on the host. |
+| `TUNARR_WORKER_POOL_SIZE` | N/A | (CPU count, max 4) | Number of worker threads in the pool. Each worker adds memory use. Set to `0` to turn the pool off and run these tasks on the main thread, the same as `TUNARR_USE_WORKER_POOL=false`. Negative values are ignored. Recommended: no more than the number of CPUs on the host. |
 
 ### Debug
 
