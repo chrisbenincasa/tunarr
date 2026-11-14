@@ -30,12 +30,18 @@ export const MAX_WORKERS = 4;
 /**
  * An explicit env var setting wins, even above MAX_WORKERS. Otherwise the pool
  * uses one worker per CPU, capped at MAX_WORKERS.
+ *
+ * The pool always has at least one worker. A setting below 1 is ignored, and
+ * `os.cpus()` can report no CPUs in some containers.
  */
 export function resolveWorkerPoolSize(
   cpuCount: number,
   envVarSetting: number | null,
 ) {
-  return envVarSetting ?? Math.min(cpuCount, MAX_WORKERS);
+  if (envVarSetting !== null && envVarSetting >= 1) {
+    return envVarSetting;
+  }
+  return Math.max(1, Math.min(cpuCount, MAX_WORKERS));
 }
 
 const numWorkers = resolveWorkerPoolSize(
