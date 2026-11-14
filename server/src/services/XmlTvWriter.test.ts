@@ -952,12 +952,31 @@ describe('XmlTvWriter', () => {
         expect(url).toBe(`{{host}}/api/programs/${programId}/artwork/poster`);
       });
 
-      test('other_video returns undefined when no poster artwork', () => {
+      // Local scanners store only a thumbnail for these types.
+      test.each(['other_video', 'music_video'] as const)(
+        '%s uses thumbnail when it has no poster',
+        (type) => {
+          const programId = v4();
+          const program = makeProgram({
+            uuid: programId,
+            type,
+            sourceType: 'local',
+            artwork: [makeArtwork('thumbnail')],
+          });
+
+          const url = resolveArtworkUrl(program, { useShowPoster: false });
+          expect(url).toBe(
+            `{{host}}/api/programs/${programId}/artwork/thumbnail`,
+          );
+        },
+      );
+
+      test('other_video returns undefined when it has no poster or thumbnail', () => {
         const programId = v4();
         const program = makeProgram({
           uuid: programId,
           type: 'other_video',
-          artwork: [makeArtwork('thumbnail')],
+          artwork: [makeArtwork('fanart')],
         });
 
         const url = resolveArtworkUrl(program, { useShowPoster: false });
