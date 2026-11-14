@@ -2,7 +2,6 @@ import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import type { CondensedChannelProgram } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
 import { sum } from 'lodash-es';
-import { match } from 'ts-pattern';
 import { condensedProgramToLineupItem } from '../db/channel/lineupItemConversion.ts';
 import type { LineupItem } from '../db/derived_types/Lineup.ts';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
@@ -62,9 +61,13 @@ export class RegenerateChannelLineupCommand {
       );
 
       const programIds = seq.collect(lineupItems, (item) => {
-        return match(item)
-          .with({ type: 'content' }, (i) => i.id)
-          .otherwise(() => null);
+        switch (item.type) {
+          case 'content':
+            return item.id;
+          case 'offline':
+          case 'redirect':
+            return null;
+        }
       });
 
       this.channelDB.replaceChannelPrograms(channelId, programIds);

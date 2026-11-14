@@ -400,14 +400,16 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           ? progressService.getScanProgress(req.params.mediaSourceId)
           : progressService.getScanProgress(req.params.libraryId);
 
-      const response = match(progress)
-        .returnType<ScanProgress>()
-        .with({ state: 'in_progress' }, (ip) => ({
-          ...ip,
-          startedAt: +ip.startedAt,
-        }))
-        .with(P._, (p) => p)
-        .exhaustive();
+      let response: ScanProgress;
+      switch (progress.state) {
+        case 'in_progress':
+          response = { ...progress, startedAt: +progress.startedAt };
+          break;
+        case 'not_scanning':
+        case 'queued':
+          response = progress;
+          break;
+      }
 
       return res.send(response);
     },
@@ -561,45 +563,45 @@ export const mediaSourceRouter: RouterPluginAsyncCallback = async (
           return res.status(404).send();
         }
 
-        const healthyPromise = match(server)
-          .returnType<Promise<MediaSourceStatus>>()
-          .with({ type: 'plex' }, async (server) => {
-            return (
-              await req.serverCtx.mediaSourceApiFactory.getPlexApiClientForMediaSource(
-                server,
-              )
-            ).checkServerStatus();
-          })
-          .with({ type: 'jellyfin' }, async (server) => {
-            return (
-              await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
-                server,
-              )
-            ).ping();
-          })
-          .with({ type: 'emby' }, async (server) => {
-            return (
-              await req.serverCtx.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
-                server,
-              )
-            ).ping();
-          })
-          .with({ type: 'local' }, async (source) => {
-            // TODO: Check all paths.
-            let ok = true;
-            for (const mediaPath of source.paths) {
-              ok &&= await fileExists(mediaPath.path);
-              if (!ok) {
-                break;
+        const checkHealth = async (): Promise<MediaSourceStatus> => {
+          switch (server.type) {
+            case 'plex':
+              return (
+                await req.serverCtx.mediaSourceApiFactory.getPlexApiClientForMediaSource(
+                  server,
+                )
+              ).checkServerStatus();
+            case 'jellyfin':
+              return (
+                await req.serverCtx.mediaSourceApiFactory.getJellyfinApiClientForMediaSource(
+                  server,
+                )
+              ).ping();
+            case 'emby':
+              return (
+                await req.serverCtx.mediaSourceApiFactory.getEmbyApiClientForMediaSource(
+                  server,
+                )
+              ).ping();
+            case 'local': {
+              // TODO: Check all paths.
+              let ok = true;
+              for (const mediaPath of server.paths) {
+                ok &&= await fileExists(mediaPath.path);
+                if (!ok) {
+                  break;
+                }
+              }
+              if (ok) {
+                return { healthy: true };
+              } else {
+                return { healthy: false, status: 'unreachable' };
               }
             }
-            if (ok) {
-              return { healthy: true };
-            } else {
-              return { healthy: false, status: 'unreachable' };
-            }
-          })
-          .exhaustive();
+          }
+        };
+
+        const healthyPromise = checkHealth();
 
         const status = await Promise.race([
           healthyPromise,

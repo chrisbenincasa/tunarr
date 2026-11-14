@@ -106,20 +106,18 @@ function linkableSlotsAreEqual(
 }
 
 function slotHasId(slot: LinkableSlotViewModel) {
-  return match(slot)
-    .with({ type: 'show' }, (show) =>
-      isNonEmptyString(show.show?.uuid ?? show.showId),
-    )
-    .with({ type: 'smart-collection' }, (sm) =>
-      isNonEmptyString(sm.smartCollectionId ?? sm.smartCollection?.uuid),
-    )
-    .with({ type: 'custom-show' }, (cs) =>
-      isNonEmptyString(cs.customShowId ?? cs.customShow?.id),
-    )
-    .with({ type: 'filler' }, (f) =>
-      isNonEmptyString(f.fillerListId ?? f.fillerList?.id),
-    )
-    .exhaustive();
+  switch (slot.type) {
+    case 'show':
+      return isNonEmptyString(slot.show?.uuid ?? slot.showId);
+    case 'smart-collection':
+      return isNonEmptyString(
+        slot.smartCollectionId ?? slot.smartCollection?.uuid,
+      );
+    case 'custom-show':
+      return isNonEmptyString(slot.customShowId ?? slot.customShow?.id);
+    case 'filler':
+      return isNonEmptyString(slot.fillerListId ?? slot.fillerList?.id);
+  }
 }
 
 export function SlotLinkingControl({

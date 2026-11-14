@@ -18,7 +18,6 @@ import type {
 import { isGroupingItemType, isTerminalItemType } from '@tunarr/types';
 import { compact } from 'lodash-es';
 import React, { useMemo } from 'react';
-import { match, P } from 'ts-pattern';
 import { RouterLink } from '../../components/base/RouterLink.tsx';
 import { Route } from '../../routes/media_/$programType.$programId.tsx';
 
@@ -64,50 +63,44 @@ export const ProgramPage = () => {
   const programData = query?.data ?? parentQuery?.data;
   const isLoading = query.isLoading ?? parentQuery.isLoading;
 
-  const breadcrumbLinks = useMemo(() => {
-    return match(programData)
-      .returnType<React.ReactElement[]>()
-      .with(P.nullish, () => [])
-      .with({ type: 'episode' }, (ep) => {
-        const show = ep.show ?? ep.season?.show;
+  const breadcrumbLinks = useMemo((): React.ReactElement[] => {
+    if (!programData) {
+      return [];
+    }
+
+    switch (programData.type) {
+      case 'episode': {
+        const show = programData.show ?? programData.season?.show;
         return compact([
           show ? makeLink(show) : null,
-          ep.season ? makeLink(ep.season) : null,
-          makeLink(ep, true),
+          programData.season ? makeLink(programData.season) : null,
+          makeLink(programData, true),
         ]);
-      })
-      .with({ type: 'season' }, (season) =>
-        compact([
-          season.show ? makeLink(season.show) : null,
-          makeLink(season, true),
-        ]),
-      )
-      .with({ type: 'track' }, (track) => {
-        const artist = track.artist ?? track.album?.artist;
+      }
+      case 'season':
+        return compact([
+          programData.show ? makeLink(programData.show) : null,
+          makeLink(programData, true),
+        ]);
+      case 'track': {
+        const artist = programData.artist ?? programData.album?.artist;
         return compact([
           artist ? makeLink(artist) : null,
-          track.album ? makeLink(track.album) : null,
+          programData.album ? makeLink(programData.album) : null,
         ]);
-      })
-      .with({ type: 'album' }, (album) =>
-        compact([
-          album.artist ? makeLink(album.artist) : null,
-          makeLink(album, true),
-        ]),
-      )
-      .with(
-        {
-          type: P.union(
-            'show',
-            'artist',
-            'movie',
-            'music_video',
-            'other_video',
-          ),
-        },
-        () => [],
-      )
-      .exhaustive();
+      }
+      case 'album':
+        return compact([
+          programData.artist ? makeLink(programData.artist) : null,
+          makeLink(programData, true),
+        ]);
+      case 'show':
+      case 'artist':
+      case 'movie':
+      case 'music_video':
+      case 'other_video':
+        return [];
+    }
   }, [programData]);
 
   return (

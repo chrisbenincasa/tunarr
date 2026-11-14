@@ -13,7 +13,6 @@ import {
   shuffle,
   values,
 } from 'lodash-es';
-import { match } from 'ts-pattern';
 import {
   extractProgramGrandparent,
   extractProgramParent,
@@ -99,6 +98,19 @@ export const BlockShufflePresets: Record<
   },
 };
 
+function programIndex(program: UIContentProgram['program']) {
+  switch (program.type) {
+    case 'episode':
+      return program.episodeNumber;
+    case 'track':
+      return program.trackNumber;
+    case 'movie':
+    case 'other_video':
+    case 'music_video':
+      return 1;
+  }
+}
+
 function sortProgram(
   p: UIContentProgram,
   by: 'release_date' | 'index' | 'alpha',
@@ -109,11 +121,7 @@ function sortProgram(
     }
     case 'index': {
       const seasonNumber = extractProgramParent(p.program)?.index ?? 1;
-      const episodeNumber = match(p.program)
-        .with({ type: 'episode' }, (ep) => ep.episodeNumber)
-        .with({ type: 'track' }, (track) => track.trackNumber)
-        .otherwise(() => 1);
-      return seasonNumber * (1e5 + episodeNumber);
+      return seasonNumber * (1e5 + programIndex(p.program));
     }
 
     case 'alpha':

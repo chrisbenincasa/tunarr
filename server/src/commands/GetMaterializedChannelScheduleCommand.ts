@@ -13,7 +13,6 @@ import type {
 } from '@tunarr/types/api';
 import { inject, injectable } from 'inversify';
 import { uniq } from 'lodash-es';
-import { match } from 'ts-pattern';
 import { ormChannelToApiChannel } from '../db/converters/channelConverters.ts';
 import type { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import { ServerContext } from '../ServerContext.ts';
@@ -105,96 +104,100 @@ export class GetMaterializedChannelScheduleCommand {
           ? {}
           : await this.serverContext.channelDB.loadAllLineupConfigs();
 
-      const materializedSlots = schedule.slots.map((slot) => {
-        return match(slot)
-          .returnType<MaterializedTimeSlot>()
-          .with({ type: 'show' }, (showSlot) => {
-            const materializedShow = materializedShows[showSlot.showId];
-            if (
-              !materializedShow ||
-              !materializedShow.show ||
-              materializedShow.raw.state === 'missing'
-            ) {
-              this.logger.error(
-                `Could not materialize show with ID ${showSlot.showId} from schedule!`,
-              );
-              return {
-                ...showSlot,
-                show: null,
-                missingShow: {
-                  title: materializedShow?.raw.title,
-                },
-              } satisfies MaterializedTimeSlot;
-            }
+      const materializedSlots = schedule.slots.map(
+        (slot): MaterializedTimeSlot => {
+          switch (slot.type) {
+            case 'show': {
+              const materializedShow = materializedShows[slot.showId];
+              if (
+                !materializedShow ||
+                !materializedShow.show ||
+                materializedShow.raw.state === 'missing'
+              ) {
+                this.logger.error(
+                  `Could not materialize show with ID ${slot.showId} from schedule!`,
+                );
+                return {
+                  ...slot,
+                  show: null,
+                  missingShow: {
+                    title: materializedShow?.raw.title,
+                  },
+                } satisfies MaterializedTimeSlot;
+              }
 
-            return {
-              ...showSlot,
-              show: materializedShow.show,
-            };
-          })
-          .with({ type: 'filler' }, (slot) => {
-            const filler = materializedFiller[slot.fillerListId];
-            if (!filler) {
-              this.logger.warn(
-                'Filler with ID %s not found in database, but it scheduled in a time slot',
-                slot.fillerListId,
-              );
+              return {
+                ...slot,
+                show: materializedShow.show,
+              };
             }
-            return {
-              ...slot,
-              fillerList: filler
-                ? {
-                    contentCount: filler.contentCount,
-                    id: filler.uuid,
-                    name: filler.name,
-                  }
-                : null,
-              isMissing: !filler,
-            } satisfies MaterializedFillerTimeSlot;
-          })
-          .with({ type: 'custom-show' }, (slot) => {
-            const customShow = materializedCustomShows[slot.customShowId];
-            if (!customShow) {
-              this.logger.warn(
-                'Custom show with ID %s not found in database, but is scheduled in a time slot',
-                slot.customShowId,
-              );
+            case 'filler': {
+              const filler = materializedFiller[slot.fillerListId];
+              if (!filler) {
+                this.logger.warn(
+                  'Filler with ID %s not found in database, but it scheduled in a time slot',
+                  slot.fillerListId,
+                );
+              }
+              return {
+                ...slot,
+                fillerList: filler
+                  ? {
+                      contentCount: filler.contentCount,
+                      id: filler.uuid,
+                      name: filler.name,
+                    }
+                  : null,
+                isMissing: !filler,
+              } satisfies MaterializedFillerTimeSlot;
             }
-            return {
-              ...slot,
-              customShow: customShow
-                ? {
-                    ...customShow,
-                    id: customShow.uuid,
-                    lastSyncedAt: customShow.lastSyncedAt?.getTime(),
-                    isSyncing: false,
-                  }
-                : null,
-              isMissing: !customShow,
-            } satisfies MaterializedCustomShowTimeSlot;
-          })
-          .with({ type: 'redirect' }, (slot) => {
-            const channel = channels[slot.channelId];
-            if (!channel) {
-              this.logger.warn(
-                'Channel with ID %s not found in database, but is scheduled in a slot',
-              );
+            case 'custom-show': {
+              const customShow = materializedCustomShows[slot.customShowId];
+              if (!customShow) {
+                this.logger.warn(
+                  'Custom show with ID %s not found in database, but is scheduled in a time slot',
+                  slot.customShowId,
+                );
+              }
+              return {
+                ...slot,
+                customShow: customShow
+                  ? {
+                      ...customShow,
+                      id: customShow.uuid,
+                      lastSyncedAt: customShow.lastSyncedAt?.getTime(),
+                      isSyncing: false,
+                    }
+                  : null,
+                isMissing: !customShow,
+              } satisfies MaterializedCustomShowTimeSlot;
             }
-            return {
-              ...slot,
-              channel: channel ? ormChannelToApiChannel(channel) : null,
-              isMissing: !channel,
-            } satisfies MaterializedRedirectTimeSlot;
-          })
-          .with({ type: 'smart-collection' }, (slot) => {
-            return {
-              ...slot,
-              smartCollection: smartCollections[slot.smartCollectionId] ?? null,
-              isMissing: !smartCollections[slot.smartCollectionId],
-            };
-          })
-          .otherwise((slot) => slot);
-      });
+            case 'redirect': {
+              const channel = channels[slot.channelId];
+              if (!channel) {
+                this.logger.warn(
+                  'Channel with ID %s not found in database, but is scheduled in a slot',
+                );
+              }
+              return {
+                ...slot,
+                channel: channel ? ormChannelToApiChannel(channel) : null,
+                isMissing: !channel,
+              } satisfies MaterializedRedirectTimeSlot;
+            }
+            case 'smart-collection': {
+              return {
+                ...slot,
+                smartCollection:
+                  smartCollections[slot.smartCollectionId] ?? null,
+                isMissing: !smartCollections[slot.smartCollectionId],
+              };
+            }
+            case 'flex':
+              return slot;
+          }
+        },
+      );
 
       return {
         ...schedule,
@@ -254,21 +257,20 @@ export class GetMaterializedChannelScheduleCommand {
           ? {}
           : await this.serverContext.channelDB.loadAllLineupConfigs();
 
-      const materializedSlots = schedule.slots.map((slot) => {
-        return match(slot)
-          .returnType<MaterializedSlot>()
-          .with({ type: 'show' }, (showSlot) => {
-            const materializedShow = materializedShows[showSlot.showId];
+      const materializedSlots = schedule.slots.map((slot): MaterializedSlot => {
+        switch (slot.type) {
+          case 'show': {
+            const materializedShow = materializedShows[slot.showId];
             if (
               !materializedShow ||
               !materializedShow.show ||
               materializedShow.raw.state === 'missing'
             ) {
               this.logger.error(
-                `Could not materialize show with ID ${showSlot.showId} from schedule!`,
+                `Could not materialize show with ID ${slot.showId} from schedule!`,
               );
               return {
-                ...showSlot,
+                ...slot,
                 show: null,
                 missingShow: {
                   title: materializedShow?.raw?.title,
@@ -277,11 +279,11 @@ export class GetMaterializedChannelScheduleCommand {
             }
 
             return {
-              ...showSlot,
+              ...slot,
               show: materializedShow.show,
             };
-          })
-          .with({ type: 'filler' }, (slot) => {
+          }
+          case 'filler': {
             const filler = materializedFiller[slot.fillerListId];
             if (!filler) {
               this.logger.warn(
@@ -300,8 +302,8 @@ export class GetMaterializedChannelScheduleCommand {
                 : null,
               isMissing: !filler,
             };
-          })
-          .with({ type: 'custom-show' }, (slot) => {
+          }
+          case 'custom-show': {
             const customShow = materializedCustomShows[slot.customShowId];
             if (!customShow) {
               this.logger.warn(
@@ -321,8 +323,8 @@ export class GetMaterializedChannelScheduleCommand {
                 : null,
               isMissing: !customShow,
             } satisfies MaterializedCustomShowRandomSlot;
-          })
-          .with({ type: 'redirect' }, (slot) => {
+          }
+          case 'redirect': {
             const channel = channels[slot.channelId];
             if (!channel) {
               this.logger.warn(
@@ -334,15 +336,20 @@ export class GetMaterializedChannelScheduleCommand {
               channel: channel ? ormChannelToApiChannel(channel) : null,
               isMissing: !channel,
             };
-          })
-          .with({ type: 'smart-collection' }, (slot) => {
-            return {
+          }
+          case 'smart-collection': {
+            // MaterializedSlot has no smart collection variant, so a fresh
+            // object literal here would fail the excess property check.
+            const materialized = {
               ...slot,
               smartCollection: smartCollections[slot.smartCollectionId] ?? null,
               isMissing: !smartCollections[slot.smartCollectionId],
             };
-          })
-          .otherwise((slot) => slot);
+            return materialized;
+          }
+          case 'flex':
+            return slot;
+        }
       });
 
       return {
