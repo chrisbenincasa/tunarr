@@ -26,6 +26,7 @@ Tunarr generates M3U playlists that work with any IPTV player. Some recommended 
 |----------|-----|
 | iOS / Apple TV | [UHF](https://www.uhfapp.com/) |
 | Android TV | [TiviMate](https://tivimate.com/) |
+| macOS | [Aero](https://aeroplay.tv/) |
 | Cross-platform | [VLC](https://www.videolan.org/vlc/) |
 
 ## Connection Methods
