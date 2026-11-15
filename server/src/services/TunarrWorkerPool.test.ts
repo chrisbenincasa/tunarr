@@ -229,8 +229,9 @@ describe('TunarrWorkerPool task timeouts', () => {
 });
 
 describe('resolveWorkerPoolSize', () => {
-  test('caps the default size at MAX_WORKERS', () => {
-    expect(resolveWorkerPoolSize(16, null)).toBe(MAX_WORKERS);
+  test('caps the default size at 4 workers', () => {
+    expect(MAX_WORKERS).toBe(4);
+    expect(resolveWorkerPoolSize(16, null)).toBe(4);
   });
 
   test('uses one worker per CPU below the cap', () => {
