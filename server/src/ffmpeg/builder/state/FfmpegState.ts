@@ -19,6 +19,8 @@ export type AudioCodecOverride = {
   outputIndex: number;
   /** Target codec to transcode to (e.g. 'ac3'). */
   codec: string;
+  bitrateKbps?: number;
+  channels?: number;
 };
 
 const VaapiTonemapType = ['vaapi', 'opencl'] as const;
