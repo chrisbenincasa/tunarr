@@ -1,8 +1,8 @@
 # Reshuffle Schedules on Loop
 
-> **Status (10/13/2026):** Scheduler plumbing (PR plan step 2) built on branch
-> `feat/slot-cycle-snapshots`, not yet merged. Boundary service next, once #2306 lands. Phase 2
-> (manual lineups) is deferred.
+> **Status (10/13/2026):** Slice 3 (boundary service, data fields, lock, save rules) built on
+> branch `feat/slot-cycle-boundary`, stacked on #2311, not merged. Needs a rebase onto `main`
+> after #2308 and #2311 land. Slice 4 (web toggle) is next. Phase 2 (manual lineups) is deferred.
 
 Stopgap for dynamic schedules (Tunarr v2). A slot channel's lineup holds one cycle of content at a
 time. Before a cycle ends, the server builds the next one from the same schedule, continuing the RNG
@@ -66,6 +66,10 @@ stream and each iterator's state. Users get a fresh shuffle every cycle without 
   06:00 and 18:00, say), the cycle ends at 06:00, and the next cycle starts there.
 - Each cycle starts exactly where the previous one ended.
 - Each time-slot cycle is generated from its own `t0`, so DST is handled per cycle.
+- Cycle start and end times are computed in the server's local timezone, not the schedule's
+  `timeZoneOffset`. Nothing else on the server reads that field; the scheduler itself derives
+  period boundaries from `dayjs(startTime)` in local time, so any other zone would desync a cycle
+  boundary from the slots laid against it.
 
 ### Build ahead
 
@@ -111,6 +115,8 @@ One seed per channel, with skip counts, keeps every cycle reproducible from the 
 
 - `RegenerateChannelLineupCommand` replays the airing cycle from its snapshot, then rebuilds every
   built-ahead cycle from the new end state. One write.
+- If every built cycle has already aired, regeneration catches up instead, as the task does after
+  downtime.
 - Slot lineups with a seed are already regenerated, not patched, by `ReconcileProgramDurationsTask`,
   so the reconciler's patch rules never touch these lineups.
 
@@ -128,6 +134,9 @@ One seed per channel, with skip counts, keeps every cycle reproducible from the 
 
 - `rebuildEachCycle: boolean`. Missing reads as off.
 - `cycles: Array<{ itemCount, durationMs, snapshot }>`, in lineup order.
+- `nextCycleSnapshot`, the end snapshot of the last built cycle. Cycles store their own _start_
+  snapshot, so the end snapshot of the last one needs its own field or the last cycle would need
+  a non-deterministic rebuild to recover it.
 
 New optional fields need no `ChannelLineupMigrator` step.
 
@@ -150,7 +159,10 @@ New optional fields need no `ChannelLineupMigrator` step.
 ### Opt-in
 
 - Toggle label: "Rebuild each cycle".
-- On by default for new slot schedules. Existing slot channels stay off until the owner turns it on.
+- The server does not default `rebuildEachCycle` on when a save request omits it, because slice 4's
+  web toggle hasn't landed yet and a server-side default would silently enable rebuilding with no
+  UI to see or turn it off. The web form defaults the toggle on for new slot schedules once it ships;
+  existing slot channels stay off until the owner turns it on.
 - Helper text says that shuffles change each cycle, ordered shows continue, and time slots ignore
   `maxDays`.
 - A slot save keeps the toggle state and resets seed, cycles, snapshots and `startTime`.

@@ -495,6 +495,7 @@ export function saveTimeSlotSchedule(
   channelId: string,
   programIds: string[],
   schedule: TimeSlotSchedule,
+  extra: { rebuildEachCycle?: boolean } = {},
 ) {
   return app.inject({
     method: 'POST',
@@ -504,6 +505,7 @@ export function saveTimeSlotSchedule(
       programs: programIds,
       schedule,
       seed: [1, 2, 3, 4],
+      ...extra,
     },
   });
 }

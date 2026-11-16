@@ -3,31 +3,24 @@ import { type IChannelDB } from '@/db/interfaces/IChannelDB.js';
 import { KEYS } from '@/types/inject.js';
 import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
-import type { MutexMap } from '@/util/mutexMap.js';
 import dayjs from 'dayjs';
 import { bindingScopeValues, inject, injectable } from 'inversify';
 import { isNull, isUndefined } from 'lodash-es';
+import type { ChannelLineupLock } from './ChannelLineupLock.ts';
 import { GlobalScheduler } from './Scheduler.ts';
 
-// Singleton is load-bearing, not an optimization. #locks below serializes
-// read-modify-write of a channel's onDemandConfig, and a lock only serializes
-// callers that share it. The container autobinds this class, and Inversify's
-// default scope is Transient, so without this each of the three injection sites
-// -- ServerContext, OnDemandChannelStateTask, and the HlsSession factory in
-// StreamModule -- would hold a private MutexMap and lock a channel only against
-// itself.
+// Singleton is load-bearing, not an optimization. The container autobinds this
+// class, and Inversify's default scope is Transient, so each of the three
+// injection sites -- ServerContext, OnDemandChannelStateTask, and the
+// HlsSession factory in StreamModule -- would otherwise get its own instance.
 @injectable(bindingScopeValues.Singleton)
 export class OnDemandChannelService {
-  #locks: MutexMap;
-
   @InjectLogger() declare private readonly logger: Logger;
 
   constructor(
-    @inject(KEYS.MutexMap) mutexMap: MutexMap,
+    @inject(KEYS.ChannelLineupLock) private locks: ChannelLineupLock,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
-  ) {
-    this.#locks = mutexMap;
-  }
+  ) {}
 
   async isChannelPlaying(id: string) {
     const channelAndLineup = await this.channelDB.loadChannelAndLineup(id);
@@ -43,7 +36,13 @@ export class OnDemandChannelService {
   // Serializes a lineup write with pause and resume, which read and rewrite
   // the on-demand cursor.
   runWithChannelLock<T>(channelId: string, cb: () => Promise<T>): Promise<T> {
-    return this.#locks.runWithLockId(channelId, cb);
+    return this.locks.run(channelId, cb);
+  }
+
+  // Use for work handed to a timer from inside the lock. See
+  // ChannelLineupLock.runDetached.
+  runWithoutChannelLock<T>(cb: () => T): T {
+    return this.locks.runDetached(cb);
   }
 
   async pauseAllChannels() {
@@ -60,7 +59,7 @@ export class OnDemandChannelService {
     stopTime?: number,
     rewindMs: number = 0,
   ) {
-    return this.#locks.runWithLockId(channelId, async () => {
+    return this.locks.run(channelId, async () => {
       const channelAndLineup = await this.loadOnDemandChannelLineup(channelId);
 
       if (isUndefined(channelAndLineup)) {
@@ -99,10 +98,14 @@ export class OnDemandChannelService {
           cursor: nextCursor,
         })
         .then(() => {
-          GlobalScheduler.scheduleOneOffTask(
-            KEYS.UpdateXmlTvTaskFactory,
-            dayjs().add(1000),
-            [channelId],
+          // Detached: the timer would otherwise inherit this lock and run the
+          // update believing it still holds it.
+          this.locks.runDetached(() =>
+            GlobalScheduler.scheduleOneOffTask(
+              KEYS.UpdateXmlTvTaskFactory,
+              dayjs().add(1000),
+              [channelId],
+            ),
           );
         })
         .finally(() => {
@@ -116,7 +119,7 @@ export class OnDemandChannelService {
   }
 
   async resumeChannel(channelId: string) {
-    return this.#locks.runWithLockId(channelId, async () => {
+    return this.locks.run(channelId, async () => {
       const channelAndLineup = await this.loadOnDemandChannelLineup(channelId);
 
       if (isUndefined(channelAndLineup)) {
@@ -151,10 +154,14 @@ export class OnDemandChannelService {
           );
         });
 
-      GlobalScheduler.scheduleOneOffTask(
-        KEYS.UpdateXmlTvTaskFactory,
-        dayjs().add(1000),
-        [channelId],
+      // Detached: the timer would otherwise inherit this lock and run the
+      // update believing it still holds it.
+      this.locks.runDetached(() =>
+        GlobalScheduler.scheduleOneOffTask(
+          KEYS.UpdateXmlTvTaskFactory,
+          dayjs().add(1000),
+          [channelId],
+        ),
       );
     });
   }

@@ -38,7 +38,8 @@ force scan). They are called from services and APIs, not from the CLI.
 
 - `server/src/tasks/TaskRegistry.ts` registers tasks. `ScheduledTask.ts` handles cron timing.
 - Notable tasks: `ScanLibrariesTask`, `UpdateXmlTvTask`, `RefreshMediaSourceLibraryTask`,
-  `ReconcileProgramDurationsTask`, `SubtitleExtractorTask`, `OnDemandChannelStateTask`.
+  `ReconcileProgramDurationsTask`, `SubtitleExtractorTask`, `OnDemandChannelStateTask`,
+  `SlotCycleBoundaryTask`.
 - `tasks/fixers/` holds one-shot data repair jobs.
 
 ## Web
