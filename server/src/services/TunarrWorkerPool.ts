@@ -328,6 +328,7 @@ export class TunarrWorkerPool implements IWorkerPool {
     }
 
     this.logger.info(`Starting worker ${idx}`);
+    const createdAt = performance.now();
     const worker = this.subprocessService.createWorker();
 
     this.#pool[idx] = {
@@ -350,8 +351,13 @@ export class TunarrWorkerPool implements IWorkerPool {
 
       match(parsed.data)
         .with({ type: 'event', eventType: 'started' }, () => {
-          // We should only ever get one of these
-          this.logger.debug('Worker %d is ready', idx);
+          // We should only ever get one of these.
+          // scripts/worker-startup.ts parses this line.
+          this.logger.info(
+            'Worker %d ready in %d ms',
+            idx,
+            Math.round(performance.now() - createdAt),
+          );
           started = true;
           this.#consecutiveRestarts[idx] = 0;
           const pooled = this.#pool[idx];
