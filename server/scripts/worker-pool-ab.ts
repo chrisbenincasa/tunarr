@@ -36,12 +36,17 @@ import { parseArgs } from 'node:util';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from '../src/db/schema/index.ts';
 import { MediaSource } from '../src/db/schema/MediaSource.ts';
+import { CustomShow } from '../src/db/schema/CustomShow.ts';
+import { CustomShowContent } from '../src/db/schema/CustomShowContent.ts';
 import { MediaSourceLibrary } from '../src/db/schema/MediaSourceLibrary.ts';
 import { Program } from '../src/db/schema/Program.ts';
 import type { ProbeSummary } from '../src/util/probeStats.ts';
 import { summarizeProbes } from '../src/util/probeStats.ts';
 
 const { values } = parseArgs({
+  // pnpm forwards a literal `--`, after which parseArgs reads every flag as a
+  // positional and silently ignores it.
+  args: process.argv.slice(2).filter((arg) => arg !== '--'),
   options: {
     programs: { type: 'string', default: '3000' },
     days: { type: 'string', default: '45' },
@@ -53,7 +58,6 @@ const { values } = parseArgs({
     trials: { type: 'string', default: '3' },
     'keep-logs': { type: 'boolean', default: false },
   },
-  allowPositionals: true,
 });
 
 const PROGRAM_COUNT = Number.parseInt(values.programs, 10);
@@ -82,8 +86,10 @@ type RunResult = {
   probe: ProbeSummary;
   baseline: ProbeSummary;
   workersStarted: number;
-  contentCount: number;
+  totalPrograms: number;
 };
+
+type Seed = { programIds: string[]; customShowId: string };
 
 function log(msg: string) {
   console.log(msg);
@@ -117,7 +123,7 @@ async function waitFor(
  * as a single flex block and the benchmark measures nothing while appearing to
  * work.
  */
-function seedPrograms(dbPath: string, count: number): string[] {
+function seedPrograms(dbPath: string, count: number): Seed {
   const sqlite = new Sqlite(dbPath);
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');
@@ -176,16 +182,37 @@ function seedPrograms(dbPath: string, count: number): string[] {
   // Chunked to stay under SQLite's bound-variable ceiling.
   const perRow = 20;
   const chunkSize = Math.floor(1000 / perRow);
+  const customShowId = randomUUID();
+  const content = rows.map((r, index) => ({
+    contentUuid: r.uuid,
+    customShowUuid: customShowId,
+    index,
+  }));
   db.transaction((tx) => {
     for (let i = 0; i < rows.length; i += chunkSize) {
       tx.insert(Program)
         .values(rows.slice(i, i + chunkSize))
         .run();
     }
+
+    // Time slots schedule movies through a custom show (#2235).
+    tx.insert(CustomShow)
+      .values({
+        uuid: customShowId,
+        name: 'Bench Show',
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
+    for (let i = 0; i < content.length; i += chunkSize) {
+      tx.insert(CustomShowContent)
+        .values(content.slice(i, i + chunkSize))
+        .run();
+    }
   });
 
   sqlite.close();
-  return rows.map((r) => r.uuid);
+  return { programIds: rows.map((r) => r.uuid), customShowId };
 }
 
 function startServer(
@@ -277,7 +304,7 @@ async function api(
   return { status: res.status, text: await res.text() };
 }
 
-function makeSchedule() {
+function makeSchedule(customShowId: string) {
   const dayMs = 24 * 60 * 60 * 1000;
   return {
     type: 'time' as const,
@@ -288,7 +315,8 @@ function makeSchedule() {
     period: 'day' as const,
     timeZoneOffset: new Date().getTimezoneOffset(),
     slots: Array.from({ length: SLOTS_PER_DAY }, (_, i) => ({
-      type: 'movie' as const,
+      type: 'custom-show' as const,
+      customShowId,
       startTime: Math.floor((dayMs / SLOTS_PER_DAY) * i),
       order: 'shuffle' as const,
       direction: 'asc' as const,
@@ -409,7 +437,7 @@ function startProbe(): {
 async function runConfiguration(
   label: string,
   templateDir: string,
-  programIds: string[],
+  seed: Seed,
   usePool: boolean,
 ): Promise<RunResult> {
   const dataDir = await fs.mkdtemp(path.join(os.tmpdir(), 'tunarr-ab-run-'));
@@ -486,7 +514,7 @@ async function runConfiguration(
     await delay(3_000);
 
     log(
-      `[${label}] saving schedule: ${programIds.length} programs, ${MAX_DAYS} days, ${SLOTS_PER_DAY} slots/day`,
+      `[${label}] saving schedule: ${seed.programIds.length} programs, ${MAX_DAYS} days, ${SLOTS_PER_DAY} slots/day`,
     );
     const probe = startProbe();
     // Baseline: probe the idle server first, so loaded latency has something to
@@ -500,9 +528,9 @@ async function runConfiguration(
       `/channels/${channelId}/programming`,
       {
         type: 'time',
-        programs: programIds,
+        programs: seed.programIds,
         seed: [1, 2, 3, 4],
-        schedule: makeSchedule(),
+        schedule: makeSchedule(seed.customShowId),
       },
       SAVE_TIMEOUT_MS,
     );
@@ -517,26 +545,23 @@ async function runConfiguration(
       );
     }
 
-    const body = JSON.parse(saveRes.text) as {
-      lineup?: { type: string }[];
-      totalPrograms?: number;
-    };
-    const lineup = body.lineup ?? [];
-    const contentCount = lineup.filter((i) => i.type === 'content').length;
+    const totalPrograms =
+      (JSON.parse(saveRes.text) as { totalPrograms?: number }).totalPrograms ??
+      0;
 
-    // A lineup that is entirely flex means the seeded programs never made it
-    // into the schedule — the usual cause is a missing media source or library
-    // row, which MaterializeProgramsCommand drops silently. The run would still
-    // produce numbers, and they would be measuring nothing.
-    if (contentCount === 0) {
+    // No scheduled programs means the seed never made it into the schedule —
+    // the usual cause is a missing media source or library row, which
+    // MaterializeProgramsCommand drops silently. The run would still produce
+    // numbers, and they would be measuring nothing.
+    if (totalPrograms === 0) {
       throw new Error(
-        `[${label}] lineup contains no content programs (${lineup.length} items, all flex). ` +
+        `[${label}] schedule contains no programs. ` +
           `The seeded programs were not scheduled, so this measurement is meaningless.`,
       );
     }
 
     log(
-      `[${label}] save returned in ${saveMs.toFixed(0)}ms — ${lineup.length} lineup items, ${contentCount} content`,
+      `[${label}] save returned in ${saveMs.toFixed(0)}ms — ${totalPrograms} programs`,
     );
 
     return {
@@ -545,7 +570,7 @@ async function runConfiguration(
       probe: loaded,
       baseline,
       workersStarted,
-      contentCount,
+      totalPrograms,
     };
   } finally {
     await stopServer(child);
@@ -707,10 +732,7 @@ async function main() {
     }
 
     log(`Seeding ${PROGRAM_COUNT} programs...`);
-    const programIds = seedPrograms(
-      path.join(templateDir, 'db.db'),
-      PROGRAM_COUNT,
-    );
+    const seed = seedPrograms(path.join(templateDir, 'db.db'), PROGRAM_COUNT);
 
     const offRuns: RunResult[] = [];
     const onRuns: RunResult[] = [];
@@ -722,11 +744,9 @@ async function main() {
     for (let trial = 1; trial <= TRIALS; trial++) {
       log(`\n--- trial ${trial}/${TRIALS} ---`);
       offRuns.push(
-        await runConfiguration('pool-off', templateDir, programIds, false),
+        await runConfiguration('pool-off', templateDir, seed, false),
       );
-      onRuns.push(
-        await runConfiguration('pool-on', templateDir, programIds, true),
-      );
+      onRuns.push(await runConfiguration('pool-on', templateDir, seed, true));
     }
 
     report(offRuns, onRuns);
