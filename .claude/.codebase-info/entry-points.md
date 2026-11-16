@@ -1,6 +1,6 @@
 # Entry Points
 
-*Last Updated: 2026-11-07*
+*Last Updated: 2026-11-16*
 
 ## Process start
 
@@ -40,6 +40,9 @@ force scan). They are called from services and APIs, not from the CLI.
 - Notable tasks: `ScanLibrariesTask`, `UpdateXmlTvTask`, `RefreshMediaSourceLibraryTask`,
   `ReconcileProgramDurationsTask`, `SubtitleExtractorTask`, `OnDemandChannelStateTask`.
 - `tasks/fixers/` holds one-shot data repair jobs.
+- `Task2.run` and `MediaSourceScanCoordinator` scans record themselves in `util/activeWork.ts`.
+  `util/eventLoopStallMonitor.ts`, started by `Server.runServer`, logs a warning for each event loop
+  stall of at least `TUNARR_EVENT_LOOP_STALL_THRESHOLD_MS` (default 1000) and names that work.
 
 ## Web
 

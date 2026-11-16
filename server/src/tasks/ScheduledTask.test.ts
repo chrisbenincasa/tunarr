@@ -1,8 +1,10 @@
 import dayjs from 'dayjs';
 import { afterEach, describe, expect, test } from 'vitest';
+import { performance } from 'node:perf_hooks';
 import z from 'zod';
+import { workBetween } from '../util/activeWork.ts';
 import { ScheduledTask } from './ScheduledTask.ts';
-import { Task2 } from './Task.ts';
+import { SimpleTask, Task2 } from './Task.ts';
 
 const TestTaskRequest = z
   .object({
@@ -95,5 +97,20 @@ describe('ScheduledTask', () => {
       { channelId: 'call-1' },
       { channelId: 'call-2' },
     ]);
+  });
+});
+
+class ActiveWorkTask extends SimpleTask<string[]> {
+  protected runInternal(): Promise<string[]> {
+    const now = performance.now();
+    return Promise.resolve(workBetween(now, now));
+  }
+}
+
+describe('Task2', () => {
+  test('records itself as active work while it runs', async () => {
+    const result = await new ActiveWorkTask().run(undefined);
+
+    expect(result.get()).toContain('ActiveWorkTask');
   });
 });
