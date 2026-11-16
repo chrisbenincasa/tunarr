@@ -430,6 +430,7 @@ categories:
 ```
 
 - Name the folder anything, such as `next`. The release fills in the rest.
+- Title the post `# Tunarr <version>: <headline>`. Use the expected version or `next`, and the release replaces it with the real one.
 - Keep only one draft post at a time. The release workflow skips promotion when it finds more than one.
 - Everything above `<!-- more -->` is the excerpt on the Releases page.
 - Link to the full guide pages rather than repeating them. Paths are relative to the post, such as `../../../configure/stream-selection.md`.
@@ -441,6 +442,7 @@ Each stable release opens a PR titled `docs(blog): publish the <version> release
 
 - renames the folder to the version, such as `docs/blog/posts/2026.11.2/`
 - sets `date` to the release date and `slug` to the version, so the post is published at `https://tunarr.com/blog/2026.11.2/`
+- sets the version in a title that starts with `# Tunarr <version>` or `# Tunarr next`
 - removes `draft: true`
 
 Merge the PR if the post describes that release. Close it if the post belongs to a later release. The next release force-pushes the same branch and opens a new PR, so only one promotion PR is ever open.

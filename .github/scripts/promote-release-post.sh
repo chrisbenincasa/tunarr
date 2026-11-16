@@ -10,8 +10,8 @@
 #   RELEASE_DATE       YYYY-MM-DD for the post's date. Defaults to today in UTC.
 #
 # A pending post is docs/blog/posts/<folder>/index.md with `draft: true` in its
-# front matter. The PR renames the folder to the version, sets `date` and
-# `slug`, and drops `draft`. Every release force-pushes the same branch, so at
+# front matter. The PR renames the folder to the version, sets `date`, `slug`
+# and the version in the title, and drops `draft`. Every release force-pushes the same branch, so at
 # most one promotion PR is open and it always targets the newest release.
 #
 # The release already exists when this runs. Ambiguous drafts become workflow
@@ -70,8 +70,10 @@ if [ "${SOURCE}" != "${TARGET}" ]; then
   git mv "${SOURCE}" "${TARGET}"
 fi
 
-# Rewrites only the front matter. Missing date or slug keys are added before
-# the closing fence.
+# Rewrites the front matter and the version in the title. Missing date or slug
+# keys are added before the closing fence. A title of the form
+# "# Tunarr <version or next>: ..." gets the real version, because drafts are
+# written before the version is known. Other titles are left alone.
 POST="${TARGET}/index.md"
 awk -v date="${RELEASE_DATE}" -v slug="${VERSION}" '
   NR == 1 && $0 == "---" { in_fm = 1; print; next }
@@ -83,6 +85,12 @@ awk -v date="${RELEASE_DATE}" -v slug="${VERSION}" '
   in_fm && /^draft:/ { next }
   in_fm && /^date:/ { print "date: " date; seen_date = 1; next }
   in_fm && /^slug:/ { print "slug: \"" slug "\""; seen_slug = 1; next }
+  !in_fm && !seen_title && /^# / {
+    seen_title = 1
+    if (match($0, /^# Tunarr (next|[0-9][0-9][0-9][0-9]\.[0-9]+\.[0-9]+)/)) {
+      print "# Tunarr " slug substr($0, RLENGTH + 1); next
+    }
+  }
   { print }
 ' "${POST}" > "${POST}.tmp"
 mv "${POST}.tmp" "${POST}"
@@ -108,6 +116,7 @@ The release workflow opened this PR after cutting [v${VERSION}](https://github.c
 
 - Renamed \`${SOURCE}/\` to \`${TARGET}/\`
 - Set \`date: ${RELEASE_DATE}\` and \`slug: "${VERSION}"\`
+- Set the version in the title, if the title starts with \`# Tunarr <version>\`
 - Removed \`draft: true\`
 
 Merge it if the post describes this release. Close it if the post belongs to a later release, and the next release will propose it again.
