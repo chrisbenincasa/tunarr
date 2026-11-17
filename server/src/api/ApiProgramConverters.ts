@@ -228,6 +228,9 @@ export class ApiProgramConverters {
             ...base,
             type: 'other_video',
             originalTitle: null,
+            summary: program.summary,
+            plot: program.plot,
+            tagline: program.tagline,
           }) satisfies OtherVideo,
       )
       .with(

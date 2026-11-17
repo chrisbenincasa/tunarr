@@ -228,6 +228,9 @@ export type TerminalProgramInput = {
         path?: string | null;
     }>;
     state: 'ok' | 'missing';
+    summary: string | null;
+    plot: string | null;
+    tagline: string | null;
     mediaSourceId: string;
     libraryId: string;
     canonicalId: string;
@@ -1640,6 +1643,9 @@ export type TerminalProgram = {
         path?: string | null;
     }>;
     state: 'ok' | 'missing';
+    summary: string | null;
+    plot: string | null;
+    tagline: string | null;
     mediaSourceId: string;
     libraryId: string;
     canonicalId: string;
@@ -11474,6 +11480,9 @@ export type GetApiPlexByMediaSourceIdSearchResponses = {
                 path?: string | null;
             }>;
             state: 'ok' | 'missing';
+            summary: string | null;
+            plot: string | null;
+            tagline: string | null;
             mediaSourceId: string;
             libraryId: string;
             canonicalId: string;
@@ -12226,6 +12235,7 @@ export type GetJellyfinLibraryGenresResponses = {
             ParentArtItemId?: string | null;
             ParentArtImageTag?: string | null;
             SeriesThumbImageTag?: string | null;
+            Summary?: string;
             ImageBlurHashes?: {
                 Primary?: {
                     [key: string]: string;

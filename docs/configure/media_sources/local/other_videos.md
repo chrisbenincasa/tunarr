@@ -25,6 +25,8 @@ commercials/
 
 Tunarr does its best to follow conventions laid out by the [Kodi Wiki](https://kodi.wiki/view/NFO_files/Movies) when reading NFO metadata for "other videos" items. For each "other videos" item, Tunarr will look for an NFO file called `$VIDEO.nfo` where `$VIDEO` is the exact name of the video file, with extensions swapped. Other video NFO metadata can have either a `movie` or `episodedetails` root tag.
 
+Tunarr uses the NFO `<plot>` field as the Other Video's summary. The summary appears as the program's description (`<desc>`) in the XMLTV guide.
+
 ## Artwork 
 
 Tunarr will attempt to scan various artwork files for each "other videos" item, including thumbnails. These are generally used to power the UI and guide, but potentially have other future uses as well.

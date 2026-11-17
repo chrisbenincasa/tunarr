@@ -170,7 +170,13 @@ export class ProgramConverter {
         trackNumber: track.episode ?? 0,
       }))
       .with({ type: 'music_video' }, () => ({ ...base, type: 'music_video' }))
-      .with({ type: 'other_video' }, () => ({ ...base, type: 'other_video' }))
+      .with({ type: 'other_video' }, (otherVideo) => ({
+        ...base,
+        type: 'other_video',
+        summary: otherVideo.summary,
+        plot: otherVideo.plot,
+        tagline: otherVideo.tagline,
+      }))
       .exhaustive();
 
     const version = first(program.versions);

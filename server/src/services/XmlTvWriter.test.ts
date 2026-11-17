@@ -456,6 +456,20 @@ describe('XmlTvWriter', () => {
       },
     );
 
+    test('writes an other_video summary as <desc>', () => {
+      const { xml, children } = serializeProgram(
+        makeProgram({
+          type: 'other_video',
+          title: 'Filler Clip',
+          summary: 'A local NFO plot',
+          sourceType: 'local',
+        }),
+      );
+
+      expect(children.map((node) => node.tagName)).toContain('desc');
+      expect(xml).toContain('<desc>A local NFO plot</desc>');
+    });
+
     test('marks flex programmes as previously shown', () => {
       const writer = new XmlTvWriter(inMemorySettingsDB(), globalOptions());
       const xml = writeXmltv(

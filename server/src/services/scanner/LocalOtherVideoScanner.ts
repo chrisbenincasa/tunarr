@@ -413,7 +413,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
     }
 
     return Result.attemptAsync(() =>
-      Promise.resolve(this.nfoToOtherVideo(extractedResult)),
+      Promise.resolve(LocalOtherVideoScanner.nfoToOtherVideo(extractedResult)),
     );
   }
 
@@ -427,7 +427,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
     return;
   }
 
-  private nfoToOtherVideo(nfo: OtherVideoNfo): OtherVideoMetadata {
+  public static nfoToOtherVideo(nfo: OtherVideoNfo): OtherVideoMetadata {
     const identifiers: Identifier[] = seq.collect(nfo.uniqueid, (id) => {
       const typ = id['@_type'].toLowerCase().trim();
       switch (typ) {
@@ -484,6 +484,9 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
         })) ?? [],
       artwork: [], // Added later
       state: 'ok',
+      summary: nfo.plot ?? null,
+      plot: null,
+      tagline: null,
     };
   }
 
