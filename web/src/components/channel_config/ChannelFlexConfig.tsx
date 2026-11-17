@@ -8,6 +8,7 @@ import {
   Divider,
   FormControl,
   FormControlLabel,
+  FormHelperText,
   IconButton,
   InputLabel,
   MenuItem,
@@ -39,7 +40,9 @@ import { isNonEmptyString, typedProperty } from '../../helpers/util.ts';
 import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
+import { postApiUploadAudio } from '../../generated/sdk.gen.ts';
 import { RouterLink } from '../base/RouterLink.tsx';
+import { FileUploadInput } from '../settings/FileUploadInput.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import { NumericFormController } from '../util/TypedController.tsx';
 
@@ -456,7 +459,22 @@ export function ChannelFlexConfig() {
                 name="offline.soundtrack"
                 control={control}
                 render={({ field }) => (
-                  <TextField fullWidth label={t`Soundtrack`} {...field} />
+                  <FileUploadInput
+                    accept="audio/*"
+                    upload={uploadSoundtrack}
+                    label={t`Soundtrack`}
+                    onFormValueChange={field.onChange}
+                    onUploadError={console.error}
+                    FormControlProps={{ fullWidth: true }}
+                    value={field.value ?? ''}
+                  >
+                    <FormHelperText>
+                      <Trans>
+                        Audio file path or URL. It loops for as long as the
+                        fallback plays.
+                      </Trans>
+                    </FormHelperText>
+                  </FileUploadInput>
                 )}
               />
             </Stack>
@@ -465,4 +483,12 @@ export function ChannelFlexConfig() {
       </>
     )
   );
+}
+
+async function uploadSoundtrack(file: File) {
+  const response = await postApiUploadAudio({
+    body: { file },
+    throwOnError: true,
+  });
+  return response.data.filePath;
 }

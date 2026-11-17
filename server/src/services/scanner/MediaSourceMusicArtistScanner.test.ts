@@ -1,6 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { tag } from '@tunarr/types';
 import dayjs from 'dayjs';
+import { eq, inArray } from 'drizzle-orm';
 import tmp from 'tmp-promise';
 import { v4 } from 'uuid';
 import { test as baseTest, expect, vi } from 'vitest';
@@ -20,7 +21,11 @@ import { ProgramMetadataRepository } from '../../db/program/ProgramMetadataRepos
 import { ProgramSearchRepository } from '../../db/program/ProgramSearchRepository.ts';
 import { ProgramStateRepository } from '../../db/program/ProgramStateRepository.ts';
 import { ProgramUpsertRepository } from '../../db/program/ProgramUpsertRepository.ts';
-import { MediaSourceId, MediaSourceType } from '../../db/schema/base.ts';
+import {
+  MediaSourceId,
+  MediaSourceType,
+  type ProgramState,
+} from '../../db/schema/base.ts';
 import type { NewProgramGroupingWithRelations } from '../../db/schema/derivedTypes.ts';
 import {
   MediaSource,
@@ -30,7 +35,12 @@ import {
   MediaSourceLibrary,
   type MediaSourceLibraryOrm,
 } from '../../db/schema/MediaSourceLibrary.ts';
-import { ProgramGroupingType } from '../../db/schema/ProgramGrouping.ts';
+import { Program } from '../../db/schema/Program.ts';
+import {
+  ProgramGrouping,
+  ProgramGroupingType,
+} from '../../db/schema/ProgramGrouping.ts';
+import { ProgramGroupingExternalId } from '../../db/schema/ProgramGroupingExternalId.ts';
 import { PlexApiClient } from '../../external/plex/PlexApiClient.ts';
 import { globalOptions, setGlobalOptions } from '../../globals.ts';
 import { FileSystemService } from '../FileSystemService.ts';
@@ -358,5 +368,344 @@ describe('MediaSourceMusicArtistScanner album/artist association', () => {
     expect(albumRow?.type).toBe('album');
     expect(albumRow?.artistUuid).toBe(persistedArtistUuid);
     expect(albumRow?.artistUuid).not.toBe(ephemeralArtistUuid);
+  });
+});
+
+const artistKey = 'artist-1';
+const emptyAlbumKey = 'album-1';
+const trackKey = 'track-1';
+
+type SeededArtist = {
+  mediaSource: MediaSourceOrm;
+  library: MediaSourceLibraryOrm;
+  artistUuid: string;
+  albumUuid: string;
+  trackUuid: string;
+};
+
+async function seedArtistWithOneTrack(
+  drizzle: NonNullable<DBAccess['drizzle']>,
+  trackState: ProgramState,
+  groupingState: ProgramState,
+): Promise<SeededArtist> {
+  const { mediaSource, library } = await createTestMediaSourceLibrary(drizzle);
+
+  const grouping = {
+    sourceType: 'plex' as const,
+    mediaSourceId: mediaSource.uuid,
+    libraryId: library.uuid,
+    state: groupingState,
+  };
+
+  const artistUuid = v4();
+  await drizzle.insert(ProgramGrouping).values({
+    ...grouping,
+    uuid: artistUuid,
+    title: 'Artist',
+    type: 'artist',
+    externalKey: artistKey,
+    canonicalId: `canonical-${artistKey}`,
+  });
+
+  const albumUuid = v4();
+  await drizzle.insert(ProgramGrouping).values({
+    ...grouping,
+    uuid: albumUuid,
+    title: 'Album',
+    type: 'album',
+    externalKey: emptyAlbumKey,
+    canonicalId: `canonical-${emptyAlbumKey}`,
+    artistUuid,
+  });
+
+  const trackUuid = v4();
+  await drizzle.insert(Program).values({
+    uuid: trackUuid,
+    duration: 30000,
+    type: 'track',
+    sourceType: 'plex',
+    externalKey: trackKey,
+    externalSourceId: mediaSource.uuid,
+    mediaSourceId: mediaSource.uuid,
+    libraryId: library.uuid,
+    canonicalId: `canonical-${trackKey}`,
+    title: 'Track 1',
+    state: trackState,
+    albumUuid,
+    artistUuid,
+  });
+
+  return { mediaSource, library, artistUuid, albumUuid, trackUuid };
+}
+
+/**
+ * A server that lists one artist with one album. The album has no tracks,
+ * like an album kept around after its tracks are deleted.
+ */
+class EmptyAlbumScanner extends MediaSourceMusicArtistScanner<
+  'plex',
+  PlexArtist,
+  PlexAlbum,
+  PlexTrack,
+  PlexApiClient
+> {
+  readonly mediaSourceType = 'plex' as const;
+
+  constructor(
+    programDb: IProgramDB,
+    searchService: MeilisearchService,
+    mediaSource: MediaSourceOrm,
+    programGroupingMinter: ProgramGroupingMinter = new ProgramGroupingMinter(),
+  ) {
+    super(
+      {
+        getById: () => Promise.resolve(mediaSource),
+        setLibraryLastScannedTime: () => Promise.resolve(),
+      } as unknown as MediaSourceDB,
+      programDb,
+      programGroupingMinter,
+      {} as ProgramDaoMinter,
+      searchService,
+      {
+        scanStarted: vi.fn(),
+        scanProgress: vi.fn(),
+        scanEnded: vi.fn(),
+      } as unknown as MediaSourceProgressService,
+      {
+        execute: (uuid: string) => programDb.getProgramGrouping(uuid),
+      } as unknown as GetProgramGroupingById,
+      {} as ExternalSubtitleDownloader,
+    );
+  }
+
+  protected getApiClient(): Promise<PlexApiClient> {
+    const canonical = (externalId: string) =>
+      Promise.resolve(
+        Result.success({ externalId, canonicalId: `canonical-${externalId}` }),
+      );
+    return Promise.resolve({
+      getMusicArtist: canonical,
+      getMusicAlbum: canonical,
+    } as unknown as PlexApiClient);
+  }
+
+  protected getLibrarySize(): Promise<number> {
+    return Promise.resolve(1);
+  }
+
+  protected getSubtitles(): never {
+    throw new Error('not implemented for test');
+  }
+
+  protected async *getArtists(): AsyncIterable<PlexArtist> {
+    yield { externalId: artistKey } as PlexArtist;
+  }
+
+  protected async *getAlbums(): AsyncIterable<PlexAlbum> {
+    yield { externalId: emptyAlbumKey } as PlexAlbum;
+  }
+
+  protected async *getAlbumTracks(): AsyncIterable<PlexTrack> {}
+
+  protected getFullTrackMetadata(): Promise<Result<PlexTrack>> {
+    throw new Error('not implemented for test');
+  }
+
+  protected getFullArtistMetadata(
+    externalId: string,
+  ): Promise<Result<PlexArtist>> {
+    return Promise.resolve(
+      Result.success({
+        externalId,
+        canonicalId: `canonical-${externalId}`,
+      } as PlexArtist),
+    );
+  }
+
+  protected getEntityExternalKey(item: PlexArtist | PlexAlbum | PlexTrack) {
+    return item.externalId;
+  }
+}
+
+function makeMusicSearchService() {
+  const updatePrograms = vi.fn().mockResolvedValue(undefined);
+  const searchService = {
+    indexMusicArtist: vi.fn().mockResolvedValue(undefined),
+    indexMusicAlbum: vi.fn().mockResolvedValue(undefined),
+    updatePrograms,
+  } as unknown as MeilisearchService;
+  return { searchService, updatePrograms };
+}
+
+async function groupingStates(
+  drizzle: NonNullable<DBAccess['drizzle']>,
+  ids: string[],
+) {
+  const rows = await drizzle
+    .select({ uuid: ProgramGrouping.uuid, state: ProgramGrouping.state })
+    .from(ProgramGrouping)
+    .where(inArray(ProgramGrouping.uuid, ids));
+  return Object.fromEntries(rows.map(({ uuid, state }) => [uuid, state]));
+}
+
+describe('MediaSourceMusicArtistScanner grouping trash state', () => {
+  test('trashes an album the server still lists once its last track is gone', async ({
+    drizzle,
+    programDb,
+  }) => {
+    const seeded = await seedArtistWithOneTrack(drizzle, 'ok', 'ok');
+    const { searchService, updatePrograms } = makeMusicSearchService();
+    const scanner = new EmptyAlbumScanner(
+      programDb,
+      searchService,
+      seeded.mediaSource,
+    );
+
+    await scanner.scan({ library: seeded.library, force: false });
+
+    const track = await drizzle.query.program.findFirst({
+      where: eq(Program.uuid, seeded.trackUuid),
+    });
+    expect(track?.state).toBe('missing');
+    expect(
+      await groupingStates(drizzle, [seeded.artistUuid, seeded.albumUuid]),
+    ).toEqual({
+      [seeded.artistUuid]: 'missing',
+      [seeded.albumUuid]: 'missing',
+    });
+    expect(updatePrograms).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        { id: seeded.artistUuid, state: 'missing' },
+        { id: seeded.albumUuid, state: 'missing' },
+      ]),
+    );
+  });
+
+  test('restores a trashed album once a track under it is live again', async ({
+    drizzle,
+    programDb,
+  }) => {
+    const seeded = await seedArtistWithOneTrack(drizzle, 'ok', 'missing');
+    const { searchService, updatePrograms } = makeMusicSearchService();
+    const scanner = new EmptyAlbumScanner(
+      programDb,
+      searchService,
+      seeded.mediaSource,
+    );
+
+    // A path filter that matches no artist leaves the track pass out.
+    await scanner.scan({
+      library: seeded.library,
+      force: false,
+      pathFilter: 'no-such-artist',
+    });
+
+    expect(
+      await groupingStates(drizzle, [seeded.artistUuid, seeded.albumUuid]),
+    ).toEqual({
+      [seeded.artistUuid]: 'ok',
+      [seeded.albumUuid]: 'ok',
+    });
+    expect(updatePrograms).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        { id: seeded.artistUuid, state: 'ok' },
+        { id: seeded.albumUuid, state: 'ok' },
+      ]),
+    );
+  });
+
+  test('a single-artist rescan keeps an empty artist in the trash', async ({
+    drizzle,
+    programDb,
+  }) => {
+    const seeded = await seedArtistWithOneTrack(drizzle, 'missing', 'missing');
+    const { searchService } = makeMusicSearchService();
+
+    // A rescan upserts the artist with state 'ok', as a real one does.
+    const now = +dayjs();
+    const minter = {
+      mintForMediaSourceArtist:
+        (): NewProgramGroupingWithRelations<'artist'> => ({
+          programGrouping: {
+            uuid: seeded.artistUuid,
+            canonicalId: `canonical-${artistKey}`,
+            createdAt: now,
+            updatedAt: now,
+            title: 'Artist',
+            type: ProgramGroupingType.Artist,
+            sourceType: 'plex',
+            externalKey: artistKey,
+            mediaSourceId: seeded.mediaSource.uuid,
+            libraryId: seeded.library.uuid,
+            artistUuid: null,
+            showUuid: null,
+            state: 'ok',
+          },
+          externalIds: [],
+          artwork: [],
+          credits: [],
+          genres: [],
+          studios: [],
+          tags: [],
+        }),
+    } as unknown as ProgramGroupingMinter;
+
+    const scanner = new EmptyAlbumScanner(
+      programDb,
+      searchService,
+      seeded.mediaSource,
+      minter,
+    );
+
+    const result = await scanner.scanSingle({
+      library: seeded.library,
+      force: true,
+      externalId: artistKey,
+    });
+
+    expect(result.isSuccess()).toBe(true);
+    expect(await groupingStates(drizzle, [seeded.artistUuid])).toEqual({
+      [seeded.artistUuid]: 'missing',
+    });
+  });
+});
+
+describe('MediaSourceMusicArtistScanner single-artist rescan', () => {
+  test('skips the deep scan for an unchanged artist', async ({
+    drizzle,
+    programDb,
+  }) => {
+    const seeded = await seedArtistWithOneTrack(drizzle, 'ok', 'ok');
+
+    // A real scan writes this row, and the single-artist lookup reads it.
+    await drizzle.insert(ProgramGroupingExternalId).values({
+      uuid: v4(),
+      externalKey: artistKey,
+      sourceType: 'plex',
+      mediaSourceId: seeded.mediaSource.uuid,
+      libraryId: seeded.library.uuid,
+      groupUuid: seeded.artistUuid,
+    });
+
+    const { searchService } = makeMusicSearchService();
+    const minter = new ProgramGroupingMinter();
+    const mintArtist = vi.spyOn(minter, 'mintForMediaSourceArtist');
+
+    const scanner = new EmptyAlbumScanner(
+      programDb,
+      searchService,
+      seeded.mediaSource,
+      minter,
+    );
+
+    const result = await scanner.scanSingle({
+      library: seeded.library,
+      force: false,
+      externalId: artistKey,
+    });
+
+    expect(result.isSuccess()).toBe(true);
+    expect(mintArtist).not.toHaveBeenCalled();
+    expect(searchService.indexMusicArtist).not.toHaveBeenCalled();
   });
 });

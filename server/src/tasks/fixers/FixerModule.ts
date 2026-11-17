@@ -4,9 +4,11 @@ import { KEYS } from '@/types/inject.js';
 import { ContainerModule } from 'inversify';
 import { BackfillMediaSourceIdFixer } from './BackfillMediaSourceIdFixer.ts';
 import { BackfillProgramArtworkFixer } from './BackfillProgramArtworkFixer.ts';
+import { FixMislabeledGroupingExternalIdSourceType } from './FixMislabeledGroupingExternalIdSourceType.ts';
 import { FixSmartCollectionFilters } from './FixSmartCollectionFIlters.ts';
 import { NormalizeLanguageCodesFixer } from './NormalizeLanguageCodesFixer.ts';
 import { SweepOrphanedSubtitleCacheFixer } from './SweepOrphanedSubtitleCacheFixer.ts';
+import { MigrateLegacyStreamSelection } from './MigrateLegacyStreamSelection.ts';
 
 const FixerModule = new ContainerModule(({ bind }) => {
   bind<Fixer>(KEYS.Fixer).to(EnsureTranscodeConfigIds);
@@ -15,6 +17,8 @@ const FixerModule = new ContainerModule(({ bind }) => {
   bind<Fixer>(KEYS.Fixer).to(FixSmartCollectionFilters);
   bind<Fixer>(KEYS.Fixer).to(NormalizeLanguageCodesFixer);
   bind<Fixer>(KEYS.Fixer).to(SweepOrphanedSubtitleCacheFixer);
+  bind<Fixer>(KEYS.Fixer).to(FixMislabeledGroupingExternalIdSourceType);
+  bind<Fixer>(KEYS.Fixer).to(MigrateLegacyStreamSelection);
 });
 
 export { FixerModule };

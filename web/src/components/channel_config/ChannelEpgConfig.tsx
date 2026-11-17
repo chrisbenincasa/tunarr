@@ -30,8 +30,9 @@ export default function ChannelEpgConfig() {
                 <FormHelperText>
                   <Trans>
                     "Stealth" channels are hidden from TV guides, spoofed HDHR,
-                    m3u playlist, etc. The channel can still be streamed
-                    directly or be used as a redirect target.
+                    the m3u playlist, etc. The channel can still be streamed
+                    directly, used as a redirect target, or exported from the
+                    Channels page.
                   </Trans>
                 </FormHelperText>
               </FormControl>

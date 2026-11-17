@@ -39,6 +39,17 @@ export const ROUTES: Record<string, RouteTarget> = {
   '/settings/ffmpeg/$configId': (ids) => [
     `/settings/ffmpeg/${ids.transcodeConfigId}`,
   ],
+  '/profiles/transcode': () => ['/profiles/transcode'],
+  '/profiles/transcode/new': () => ['/profiles/transcode/new'],
+  '/profiles/transcode/$configId': (ids) => [
+    `/profiles/transcode/${ids.transcodeConfigId}`,
+  ],
+  '/profiles/stream-selection': () => ['/profiles/stream-selection'],
+  '/profiles/stream-selection/new': () => ['/profiles/stream-selection/new'],
+  // The built-in profile is seeded by migration, so every server has it.
+  '/profiles/stream-selection/$profileId': () => [
+    '/profiles/stream-selection/00000000-0000-4000-8000-000000000001',
+  ],
   '/settings/general': () => ['/settings/general'],
   '/settings/hdhr': () => ['/settings/hdhr'],
   '/settings/scanner': () => ['/settings/scanner'],
@@ -73,20 +84,24 @@ export const ROUTES: Record<string, RouteTarget> = {
   ],
 
   '/library': () => ['/library'],
+  '/library/playlists': () => ['/library/playlists'],
+  '/library/playlists/new': () => ['/library/playlists/new'],
+  '/library/playlists/new/': () => ['/library/playlists/new/'],
+  '/library/playlists/new/programming': () => [
+    '/library/playlists/new/programming',
+  ],
+  '/library/playlists/$showId': (ids) => [
+    `/library/playlists/${ids.customShowId}`,
+  ],
+  '/library/playlists/$showId/edit': (ids) => [
+    `/library/playlists/${ids.customShowId}/edit`,
+  ],
+  '/library/playlists/$showId/programming': (ids) => [
+    `/library/playlists/${ids.customShowId}/programming`,
+  ],
   '/library/custom-shows': () => ['/library/custom-shows'],
-  '/library/custom-shows/new': () => ['/library/custom-shows/new'],
-  '/library/custom-shows/new/': () => ['/library/custom-shows/new/'],
-  '/library/custom-shows/new/programming': () => [
-    '/library/custom-shows/new/programming',
-  ],
-  '/library/custom-shows/$showId': (ids) => [
-    `/library/custom-shows/${ids.customShowId}`,
-  ],
-  '/library/custom-shows/$showId/edit': (ids) => [
+  '/library/custom-shows/$': (ids) => [
     `/library/custom-shows/${ids.customShowId}/edit`,
-  ],
-  '/library/custom-shows/$showId/programming': (ids) => [
-    `/library/custom-shows/${ids.customShowId}/programming`,
   ],
   '/library/fillers': () => ['/library/fillers'],
   '/library/fillers/new': () => ['/library/fillers/new'],

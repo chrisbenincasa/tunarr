@@ -12,28 +12,28 @@ import {
 } from '@mui/material';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Paper from '@mui/material/Paper';
-import TableContainer from '@mui/material/TableContainer';
 import Typography from '@mui/material/Typography';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { type CustomShow } from '@tunarr/types';
 import { find } from 'lodash-es';
-import {
-  MaterialReactTable,
-  type MRT_ColumnDef,
-  type MRT_Row,
-  useMaterialReactTable,
-} from 'material-react-table';
 import { useSnackbar } from 'notistack';
-import React, { useCallback, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { RouterButtonLink } from '../../components/base/RouterButtonLink.tsx';
 import Breadcrumbs from '../../components/Breadcrumbs.tsx';
+import { DataTable } from '../../components/ui/table/DataTable.tsx';
+import { actionsColumn } from '../../components/ui/table/columns.tsx';
+import {
+  createAppColumnHelper,
+  useTunarrTable,
+} from '../../components/ui/table/tunarrTable.ts';
+import { useStoreBackedTableSettings } from '../../components/ui/table/useStoreBackedTableSettings.ts';
 import { deleteCustomShowMutation } from '../../generated/@tanstack/react-query.gen.ts';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { isNonEmptyString } from '../../helpers/util.ts';
 import { useCustomShows } from '../../hooks/useCustomShows.ts';
-import { useStoreBackedTableSettings } from '../../hooks/useTableSettings.ts';
+
+const columnHelper = createAppColumnHelper<CustomShow>();
 
 export default function CustomShowsPage() {
   const { t } = useLingui();
@@ -58,7 +58,7 @@ export default function CustomShowsPage() {
         message: (
           <Trans>
             <span>
-              Error deleting custom show: {e.message}
+              Error deleting playlist: {e.message}
               <br />
               Please consider opening a bug with details!
             </span>
@@ -73,14 +73,6 @@ export default function CustomShowsPage() {
     },
   });
 
-  const handleCustomShowDelete = useCallback(
-    (event: React.MouseEvent, showId: string) => {
-      event.stopPropagation();
-      setDeleteConfirmationId(showId);
-    },
-    [],
-  );
-
   const renderConfirmationDialog = () => {
     return (
       <Dialog
@@ -91,15 +83,15 @@ export default function CustomShowsPage() {
       >
         <DialogTitle id="delete-custom-show-title">
           <Trans>
-            Delete Custom Show "
+            Delete Playlist "
             {find(customShows, { id: deleteConfirmationId })?.name}"?
           </Trans>
         </DialogTitle>
         <DialogContent>
           <DialogContentText id="delete-custom-show-description">
             <Trans>
-              Deleting a Custom Show will remove its programming from channels
-              that use it. This action cannot be undone.
+              Deleting a playlist will remove its programming from channels that
+              use it. This action cannot be undone.
             </Trans>
           </DialogContentText>
         </DialogContent>
@@ -108,9 +100,13 @@ export default function CustomShowsPage() {
             <Trans>Cancel</Trans>
           </Button>
           <Button
-            onClick={() =>
-              deleteShowMutation.mutate({ path: { id: deleteConfirmationId! } })
-            }
+            onClick={() => {
+              if (isNonEmptyString(deleteConfirmationId)) {
+                deleteShowMutation.mutate({
+                  path: { id: deleteConfirmationId },
+                });
+              }
+            }}
             variant="contained"
           >
             <Trans>Delete</Trans>
@@ -120,80 +116,57 @@ export default function CustomShowsPage() {
     );
   };
 
-  const renderActionCell = useCallback(
-    ({ row: { original: show } }: { row: MRT_Row<CustomShow> }) => {
-      return (
-        <Box sx={{ display: 'flex', justifyContent: 'end', width: '100%' }}>
-          <Tooltip title={t`Edit`} placement="top">
-            <IconButton
-              to={`/library/custom-shows/${show.id}/edit`}
-              component={Link}
-            >
-              <Edit />
-            </IconButton>
-          </Tooltip>
-          <Tooltip title={t`Delete`} placement="top">
-            <IconButton onClick={(e) => handleCustomShowDelete(e, show.id)}>
-              <Delete />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      );
-    },
-    [handleCustomShowDelete, t],
-  );
-
-  const columns = useMemo<MRT_ColumnDef<CustomShow>[]>(
+  const columns = useMemo(
     () => [
-      {
-        header: t`Name`,
-        accessorKey: 'name',
-        Cell: ({ row }) => (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {row.original.name}
-            {row.original.syncMediaSourceId && (
-              <Tooltip title={t`Synced with external playlist`}>
-                <Sync fontSize="small" color="primary" />
-              </Tooltip>
-            )}
-          </Box>
+      ...columnHelper.columns([
+        columnHelper.accessor('name', {
+          header: t`Name`,
+          cell: ({ row }) => (
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              {row.original.name}
+              {row.original.syncMediaSourceId && (
+                <Tooltip title={t`Synced with external playlist`}>
+                  <Sync fontSize="small" color="primary" />
+                </Tooltip>
+              )}
+            </Box>
+          ),
+        }),
+        columnHelper.accessor('contentCount', {
+          header: t`# Programs`,
+          meta: { filterVariant: 'range', numeric: true },
+        }),
+      ]),
+      actionsColumn<CustomShow>({
+        render: ({ original: show }) => (
+          <>
+            <Tooltip title={t`Edit`} placement="top">
+              <IconButton
+                aria-label={t`Edit`}
+                to={`/library/playlists/${show.id}/edit`}
+                component={Link}
+              >
+                <Edit />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title={t`Delete`} placement="top">
+              <IconButton
+                aria-label={t`Delete`}
+                onClick={() => setDeleteConfirmationId(show.id)}
+              >
+                <Delete />
+              </IconButton>
+            </Tooltip>
+          </>
         ),
-      },
-      {
-        header: t`# Programs`,
-        accessorKey: 'contentCount',
-        filterVariant: 'range',
-      },
+      }),
     ],
     [t],
   );
 
-  const table = useMaterialReactTable({
+  const table = useTunarrTable({
     columns,
     data: customShows,
-    enableRowActions: true,
-    layoutMode: 'grid',
-    renderRowActions: renderActionCell,
-    muiTableBodyRowProps: ({ row }) => ({
-      sx: {
-        cursor: 'pointer',
-      },
-      onClick: () => {
-        navigate({
-          to: '/library/custom-shows/$showId/edit',
-          params: { showId: row.original.id },
-        }).catch(console.warn);
-      },
-    }),
-    displayColumnDefOptions: {
-      'mrt-row-actions': {
-        size: 200,
-        grow: false,
-        Header: '',
-        visibleInShowHideMenu: false,
-      },
-    },
-    positionActionsColumn: 'last',
     ...tableState,
   });
 
@@ -208,20 +181,19 @@ export default function CustomShowsPage() {
       >
         <Box flexDirection={'column'} flexGrow={1}>
           <Typography variant="h4">
-            <Trans>Custom Shows</Trans>
+            <Trans>Playlists</Trans>
           </Typography>
 
           <Typography maxWidth={'800px'}>
             <Trans>
-              Custom Shows are sequences of videos that represent a episodes of
-              a virtual TV show. When you add these shows to a channel, the
-              schedule tools will treat the videos as if they belonged to a
-              single TV show.
+              Playlists are ordered lists of videos that play like the episodes
+              of a single TV show. When you add a playlist to a channel, the
+              scheduling tools treat its videos as if they belonged to one show.
             </Trans>
           </Typography>
         </Box>
         <RouterButtonLink
-          to="/library/custom-shows/new"
+          to="/library/playlists/new"
           variant="contained"
           startIcon={<AddCircleIcon />}
           sx={{ alignSelf: 'end' }}
@@ -229,9 +201,18 @@ export default function CustomShowsPage() {
           <Trans>New</Trans>
         </RouterButtonLink>
       </Box>
-      <TableContainer component={Paper} sx={{ width: '100%' }}>
-        <MaterialReactTable table={table} />
-      </TableContainer>
+      <DataTable
+        table={table}
+        aria-label={t`Playlists`}
+        getRowProps={(row) => ({
+          onClick: () => {
+            navigate({
+              to: '/library/playlists/$showId/edit',
+              params: { showId: row.original.id },
+            }).catch(console.warn);
+          },
+        })}
+      />
       {renderConfirmationDialog()}
     </Box>
   );

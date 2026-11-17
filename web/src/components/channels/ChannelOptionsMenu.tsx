@@ -1,4 +1,5 @@
 import type { channelListOptions } from '@/types/index.ts';
+import { Trans, useLingui } from '@lingui/react/macro';
 import {
   ContentCopy,
   CopyAll,
@@ -8,7 +9,6 @@ import {
   Tv,
 } from '@mui/icons-material';
 import { ListItemIcon, ListItemText, Menu, MenuItem } from '@mui/material';
-import { Trans, useLingui } from '@lingui/react/macro';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import type { Channel } from '@tunarr/types';
@@ -30,6 +30,9 @@ type Props = {
   open: boolean;
   onClose: (e?: SyntheticEvent) => void;
   hideItems?: channelListOptions[];
+
+  // ID of the button that opens the menu, which names it for screen readers.
+  labelledBy?: string;
 };
 
 export const ChannelOptionsMenu = ({
@@ -38,6 +41,7 @@ export const ChannelOptionsMenu = ({
   open,
   onClose,
   hideItems,
+  labelledBy,
 }: Props) => {
   const { backendUri } = useSettings();
   const copyToClipboard = useCopyToClipboard();
@@ -90,7 +94,7 @@ export const ChannelOptionsMenu = ({
         }}
         slotProps={{
           list: {
-            'aria-labelledby': 'channel-options-button',
+            'aria-labelledby': labelledBy,
           },
         }}
       >

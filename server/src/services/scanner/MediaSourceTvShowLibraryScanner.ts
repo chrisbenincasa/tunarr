@@ -28,7 +28,10 @@ import { devAssert } from '../../util/debug.ts';
 import type { MeilisearchService } from '../MeilisearchService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { ScanContext, ScanSingleRequest } from './MediaSourceScanner.ts';
-import { MediaSourceScanner } from './MediaSourceScanner.ts';
+import {
+  canSkipUnchangedProgram,
+  MediaSourceScanner,
+} from './MediaSourceScanner.ts';
 
 export type GenericMediaSourceTvShowLibraryScanner<
   ShowT extends MediaSourceShow = MediaSourceShow,
@@ -124,9 +127,9 @@ export abstract class MediaSourceTvShowLibraryScanner<
       };
     }
 
-    return (await this.scanShow(incomingShow.get(), lookupResult, ctx)).map(
-      () => void 0,
-    );
+    const result = await this.scanShow(incomingShow.get(), lookupResult, ctx);
+    await this.syncGroupingStates(library.uuid);
+    return result.map(() => void 0);
   }
 
   protected async scanInternal(
@@ -244,7 +247,27 @@ export abstract class MediaSourceTvShowLibraryScanner<
       );
     }
 
+    await this.syncGroupingStates(library.uuid);
+
     this.mediaSourceProgressService.scanEnded(library.uuid);
+  }
+
+  /**
+   * Trashes each season and show with no live episode left under it, and
+   * restores each trashed one that has one again. Runs after the scan, because
+   * upserting a grouping resets its state to 'ok'.
+   */
+  protected async syncGroupingStates(libraryId: string): Promise<void> {
+    const { missingIds, restoredIds } =
+      await this.programDB.syncGroupingStatesForLibrary(libraryId, [
+        ProgramGroupingType.Season,
+        ProgramGroupingType.Show,
+      ]);
+
+    await this.searchService.updatePrograms([
+      ...missingIds.map((id) => ({ id, state: 'missing' as const })),
+      ...restoredIds.map((id) => ({ id, state: 'ok' as const })),
+    ]);
   }
 
   protected async scanShow(
@@ -557,8 +580,11 @@ export abstract class MediaSourceTvShowLibraryScanner<
         const fullEpisode = fullMetadataResult.get();
 
         if (
-          !force &&
-          existing[externalKey]?.canonicalId === fullEpisode.canonicalId
+          canSkipUnchangedProgram(
+            existing[externalKey],
+            fullEpisode.canonicalId,
+            force,
+          )
         ) {
           this.logger.debug(
             "Skipping episode key = %s because it hasn't changed",

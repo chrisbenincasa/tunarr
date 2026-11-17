@@ -28,7 +28,7 @@ const channelsPageMatcher = (path: string) =>
   entityPageMatcher('channels', path);
 
 const customShowsPageMatcher = (path: string) =>
-  entityPageMatcher('library/custom-shows', path);
+  entityPageMatcher('library/playlists', path);
 
 const useNamedRoutes = () => {
   return useMemo(
@@ -117,11 +117,11 @@ const useNamedRoutes = () => {
         name: t`Smart Collections`,
       },
       {
-        matcher: /^\/library\/custom-shows$/g,
-        name: t`Custom Shows`,
+        matcher: /^\/library\/playlists$/g,
+        name: t`Playlists`,
       },
       {
-        matcher: /^\/library\/custom-shows\/new$/g,
+        matcher: /^\/library\/playlists\/new$/g,
         name: t`New`,
       },
       {
@@ -130,7 +130,7 @@ const useNamedRoutes = () => {
       },
       {
         matcher: new RegExp(
-          `^/library/custom-shows/(new|${uuidRegexPattern})/programming/?$`,
+          `^/library/playlists/(new|${uuidRegexPattern})/programming/?$`,
         ),
         name: t`Add Programming`,
       },
@@ -139,7 +139,15 @@ const useNamedRoutes = () => {
         name: t`FFmpeg Settings`,
       },
       {
-        matcher: entityPageMatcher('settings/ffmpeg', ''),
+        matcher: /^\/profiles\/transcode$/g,
+        name: t`Transcode Configs`,
+      },
+      {
+        matcher: /^\/profiles\/transcode\/new$/g,
+        name: t`New`,
+      },
+      {
+        matcher: entityPageMatcher('profiles/transcode', ''),
         name: t`Edit Transcode Config`,
       },
       {

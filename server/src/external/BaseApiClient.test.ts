@@ -88,5 +88,7 @@ describe('doTypeCheckedGet', () => {
 
     expect(result.isFailure()).toBe(true);
     expect(result.error.type).toBe('parse_error');
+    expect(result.error.message).toContain('expected boolean, received string');
+    expect(result.error.message).toContain('at ok');
   });
 });

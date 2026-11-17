@@ -40,6 +40,7 @@ export const DefaultChannel: MarkOptional<
   streamMode: 'hls',
   subtitlesEnabled: false,
   useEtvNext: false,
+  streamSelectionProfileId: null,
 } as const;
 
 export const TranscodeResolutionOptions = [

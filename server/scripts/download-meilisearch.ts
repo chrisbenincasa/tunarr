@@ -17,12 +17,90 @@ import { fileExists } from '../src/util/fsUtil.ts';
 const meilisearchDownloadFmt =
   'https://github.com/meilisearch/meilisearch/releases/download/v%s/meilisearch-%s-%s';
 
-function getMeilisearchDownloadUrl(
+export function getMeilisearchDownloadUrl(
   version: string,
   platform: string,
   arch: string,
 ): string {
   return format(meilisearchDownloadFmt, version, platform, arch);
+}
+
+type MeilisearchAsset = {
+  meilisearchPlatform: string;
+  meilisearchArch: string;
+};
+
+export function meilisearchAssetFor(
+  platform: string,
+  arch: string,
+): Nullable<MeilisearchAsset> {
+  return match([platform, arch])
+    .returnType<Nullable<MeilisearchAsset>>()
+    .with(['linux', 'x64'], () => ({
+      meilisearchPlatform: 'linux',
+      meilisearchArch: 'amd64',
+    }))
+    .with(['linux', 'arm64'], () => ({
+      meilisearchPlatform: 'linux',
+      meilisearchArch: 'aarch64',
+    }))
+    .with(['darwin', P.union('x64', 'x86_64')], () => ({
+      meilisearchPlatform: 'macos',
+      meilisearchArch: 'amd64',
+    }))
+    .with(['darwin', 'arm64'], () => ({
+      meilisearchPlatform: 'macos',
+      meilisearchArch: 'apple-silicon',
+    }))
+    .with(['win32', 'x64'], () => ({
+      meilisearchPlatform: 'windows',
+      meilisearchArch: 'amd64.exe',
+    }))
+    .otherwise(() => null);
+}
+
+// The platforms make-bin.ts builds. Upstream has shipped releases missing one
+// of these binaries, so CI checks every entry before a version bump lands.
+export const ShippedMeilisearchPlatforms = [
+  ['linux', 'x64'],
+  ['linux', 'arm64'],
+  ['darwin', 'x64'],
+  ['darwin', 'arm64'],
+  ['win32', 'x64'],
+] as const;
+
+/**
+ * Returns the download URL of every shipped platform's binary that
+ * `assetExists` reports as missing for `version`.
+ */
+export async function findMissingMeilisearchAssets(
+  version: string,
+  assetExists: (url: string) => Promise<boolean>,
+): Promise<string[]> {
+  const urls = ShippedMeilisearchPlatforms.map(([platform, arch]) => {
+    const asset = meilisearchAssetFor(platform, arch);
+    if (!asset) {
+      throw new Error(`No Meilisearch asset mapped for ${platform}/${arch}`);
+    }
+    return getMeilisearchDownloadUrl(
+      version,
+      asset.meilisearchPlatform,
+      asset.meilisearchArch,
+    );
+  });
+  const exists = await Promise.all(urls.map((url) => assetExists(url)));
+  return urls.filter((_, i) => !exists[i]);
+}
+
+async function releaseAssetExists(url: string) {
+  const res = await fetch(url, { method: 'HEAD' });
+  if (res.ok) {
+    return true;
+  }
+  if (res.status === 404) {
+    return false;
+  }
+  throw new Error(`HEAD ${url} returned ${res.status}`);
 }
 
 const DefaultOutPath = './bin/meilisearch';
@@ -138,31 +216,7 @@ export async function grabMeilisearch(
     `Downloading meilisearch version ${wantedVersion} for ${platform} ${arch} from Github`,
   );
 
-  const meilisearchPlatformAndArch = match([platform, arch])
-    .returnType<
-      Nullable<{ meilisearchPlatform: string; meilisearchArch: string }>
-    >()
-    .with(['linux', 'x64'], () => ({
-      meilisearchPlatform: 'linux',
-      meilisearchArch: 'amd64',
-    }))
-    .with(['linux', 'arm64'], () => ({
-      meilisearchPlatform: 'linux',
-      meilisearchArch: 'aarch64',
-    }))
-    .with(['darwin', P.union('x64', 'x86_64')], () => ({
-      meilisearchPlatform: 'macos',
-      meilisearchArch: 'amd64',
-    }))
-    .with(['darwin', 'arm64'], () => ({
-      meilisearchPlatform: 'macos',
-      meilisearchArch: 'apple-silicon',
-    }))
-    .with(['win32', 'x64'], () => ({
-      meilisearchPlatform: 'windows',
-      meilisearchArch: 'amd64.exe',
-    }))
-    .otherwise(() => null);
+  const meilisearchPlatformAndArch = meilisearchAssetFor(platform, arch);
   if (!meilisearchPlatformAndArch) {
     console.error(`Unsupported platform/arch combo: ${platform} / ${arch}`);
     return;
@@ -214,7 +268,30 @@ if (process.argv[1] === import.meta.filename) {
       type: 'string',
       default: DefaultOutPath,
     })
+    .option('check-assets', {
+      type: 'boolean',
+      default: false,
+      describe:
+        'Check that the pinned version has a binary for every shipped platform, then exit',
+    })
     .parseAsync();
+
+  if (args.checkAssets) {
+    const missing = await findMissingMeilisearchAssets(
+      wantedVersion,
+      releaseAssetExists,
+    );
+    if (missing.length > 0) {
+      console.error(
+        `Meilisearch ${wantedVersion} is missing binaries:\n${missing.join('\n')}`,
+      );
+      process.exit(1);
+    }
+    console.info(
+      `Meilisearch ${wantedVersion} has a binary for every shipped platform`,
+    );
+    process.exit(0);
+  }
 
   console.info(
     'Grabbing meilisearch for platform %s and arch %s',

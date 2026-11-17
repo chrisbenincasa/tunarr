@@ -62,6 +62,7 @@ import {
   ProgramSubtitles,
 } from './schema/ProgramSubtitles.ts';
 import { NewStudio } from './schema/Studio.ts';
+import { StreamSelectionProfile } from './schema/StreamSelectionProfile.ts';
 import { NewTag } from './schema/Tag.ts';
 
 export function jsonObject<T extends SelectedFields>(shape: T) {
@@ -2588,6 +2589,107 @@ describe('ProgramDB', () => {
   });
 
   describe('upsertPrograms', () => {
+    test('preserves the assigned stream selection profile when refreshing metadata', async ({
+      programDb,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle, {
+        type: 'plex',
+      });
+      const program = createBaseProgram('episode', library.uuid, 'plex', {
+        mediaSourceId: library.mediaSourceId,
+      });
+      const request: NewProgramWithRelations = {
+        program,
+        externalIds: [],
+        versions: [],
+        artwork: [],
+        subtitles: [],
+        credits: [],
+        genres: [],
+        studios: [],
+        tags: [],
+      };
+      const inserted = await programDb.upsertPrograms(request);
+      const profileId = v4();
+      await drizzle.insert(StreamSelectionProfile).values({
+        uuid: profileId,
+        name: 'English subtitles',
+        rules: [],
+      });
+      await drizzle
+        .update(Program)
+        .set({ streamSelectionProfileId: profileId })
+        .where(eq(Program.uuid, inserted.uuid));
+
+      // Scanners mint fresh metadata without the Tunarr profile assignment.
+      const refreshed = await programDb.upsertPrograms({
+        ...request,
+        program: {
+          ...program,
+          uuid: v4(),
+          title: 'Updated episode title',
+          duration: 1800000,
+        },
+      });
+
+      expect(refreshed).toMatchObject({
+        uuid: inserted.uuid,
+        title: 'Updated episode title',
+        duration: 1800000,
+        streamSelectionProfileId: profileId,
+      });
+      const saved = await drizzle.query.program.findFirst({
+        where: eq(Program.uuid, inserted.uuid),
+      });
+      expect(saved?.streamSelectionProfileId).toBe(profileId);
+    });
+
+    test('restores a trashed program when a scan upserts it unchanged', async ({
+      programDb,
+      drizzle,
+    }) => {
+      const library = await createTestMediaSourceLibrary(drizzle, {
+        type: 'jellyfin',
+      });
+      const program = createBaseProgram('movie', library.uuid, 'jellyfin', {
+        mediaSourceId: library.mediaSourceId,
+      });
+      const request: NewProgramWithRelations = {
+        program,
+        externalIds: [],
+        versions: [],
+        artwork: [],
+        subtitles: [],
+        credits: [],
+        genres: [],
+        studios: [],
+        tags: [],
+      };
+      const inserted = await programDb.upsertPrograms(request);
+      await programDb.updateProgramsState([inserted.uuid], 'missing');
+
+      // Scanners mint each program with a fresh uuid and state 'ok'.
+      await programDb.upsertPrograms({
+        ...request,
+        program: { ...program, uuid: v4(), state: 'ok' },
+      });
+
+      const saved = await drizzle.query.program.findFirst({
+        where: eq(Program.uuid, inserted.uuid),
+      });
+      expect(saved?.state).toBe('ok');
+
+      const lookup = await programDb.getProgramInfoForMediaSourceLibrary(
+        library.uuid,
+        'movie',
+      );
+      expect(lookup[program.externalKey]).toMatchObject({
+        uuid: inserted.uuid,
+        state: 'ok',
+      });
+    });
+
     describe('program tags', () => {
       test('should save tags for a program', async ({ programDb, drizzle }) => {
         const library = await createTestMediaSourceLibrary(drizzle);

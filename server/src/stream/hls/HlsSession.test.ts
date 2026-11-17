@@ -10,12 +10,17 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import tmp from 'tmp';
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+import { GetSegmentStreamEndsTask } from '@/ffmpeg/GetSegmentStreamEnds.js';
+import { MeasureAudioEncoderLeadTask } from '@/ffmpeg/MeasureAudioEncoderLeadTask.js';
 import { ProgramStream } from '../ProgramStream.ts';
-import { HlsSession } from './HlsSession.js';
+import type { HlsSessionOptions } from './HlsSession.js';
+import { HlsSession, nextProgramPtsOffset } from './HlsSession.js';
 
 vi.mock('@/util/logging/LoggerFactory.js', () => ({
   LoggerFactory: {
     child: () => ({
+      bindings: () => ({}),
+      setBindings: vi.fn(),
       debug: vi.fn(),
       error: vi.fn(),
       info: vi.fn(),
@@ -38,14 +43,23 @@ vi.mock('@/stream/ConnectionTracker.ts', () => {
 
 const channelUuid = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 
-function makeSession(transcodeDirectory: string): HlsSession {
+type MakeSessionOverrides = {
+  streamMode?: HlsSessionOptions['streamMode'];
+  transcodeConfig?: Partial<ChannelOrmWithTranscodeConfig['transcodeConfig']>;
+  settingsDB?: ISettingsDB;
+};
+
+function makeSession(
+  transcodeDirectory: string,
+  overrides: MakeSessionOverrides = {},
+): HlsSession {
   const channel = {
     uuid: channelUuid,
-    transcodeConfig: {},
+    transcodeConfig: overrides.transcodeConfig ?? {},
   } as ChannelOrmWithTranscodeConfig;
 
   const options = {
-    streamMode: 'hls' as const,
+    streamMode: overrides.streamMode ?? 'hls',
     initialSegmentCount: 2,
     transcodeDirectory,
   };
@@ -54,7 +68,7 @@ function makeSession(transcodeDirectory: string): HlsSession {
     channel,
     options,
     {} as StreamProgramCalculator,
-    {} as ISettingsDB,
+    overrides.settingsDB ?? ({} as ISettingsDB),
     {} as OnDemandChannelService,
     (() => ({}) as unknown as ProgramStream) as (
       ctx: PlayerContext,
@@ -198,12 +212,15 @@ describe('HlsSession', () => {
 
       expect((await session.trimPlaylist()).get()?.sequence).toBe(40);
 
-      // Let the prune finish removing everything below 40.
-      await new Promise((resolve) => setTimeout(resolve, 50));
-      const onDisk = (await fs.readdir(workingDir))
-        .filter((f) => f.startsWith('data'))
-        .sort();
-      expect(onDisk[0]).toBe('data000040.ts');
+      // The prune runs in the background, so wait for it to remove everything
+      // below 40.
+      const onDisk = await vi.waitFor(async () => {
+        const files = (await fs.readdir(workingDir))
+          .filter((f) => f.startsWith('data'))
+          .sort();
+        expect(files[0]).toBe('data000040.ts');
+        return files;
+      });
 
       const playlist = (await session.trimPlaylist()).get()?.playlist ?? '';
       const listed = [...playlist.matchAll(/data\d{6}\.ts/g)]
@@ -214,6 +231,135 @@ describe('HlsSession', () => {
       for (const file of listed) {
         expect(onDisk).toContain(file);
       }
+    });
+  });
+
+  describe('audio encoder lead prefetch', () => {
+    let dir: tmp.DirResult;
+
+    const settingsDB = {
+      ffmpegSettings: () => ({ ffmpegExecutablePath: '/usr/bin/ffmpeg' }),
+    } as unknown as ISettingsDB;
+
+    const transcodeConfig = {
+      audioFormat: 'aac',
+      audioSampleRate: 48,
+      audioChannels: 2,
+    } as const;
+
+    type PrefetchInternals = {
+      startInternal(): Promise<void>;
+      getAudioEncoderLead(): Promise<number>;
+      getPtsOffset(): Promise<number>;
+    };
+
+    beforeEach(() => {
+      dir = tmp.dirSync({ unsafeCleanup: true });
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+      dir.removeCallback();
+    });
+
+    test('measures once when an hls session starts and reuses the result', async () => {
+      const run = vi
+        .spyOn(MeasureAudioEncoderLeadTask.prototype, 'run')
+        .mockResolvedValue(Result.success(1920));
+      const session = makeSession(dir.name, { settingsDB, transcodeConfig });
+      const internals = session as unknown as PrefetchInternals;
+
+      await internals.startInternal();
+
+      expect(run).toHaveBeenCalledTimes(1);
+      expect(run).toHaveBeenCalledWith({
+        encoder: 'aac',
+        sampleRateKhz: 48,
+        channels: 2,
+      });
+
+      // A program boundary reads the cached measurement.
+      await expect(internals.getAudioEncoderLead()).resolves.toBe(1920);
+      expect(run).toHaveBeenCalledTimes(1);
+    });
+
+    test('does not measure for hls_direct_v2', async () => {
+      const run = vi.spyOn(MeasureAudioEncoderLeadTask.prototype, 'run');
+      const session = makeSession(dir.name, {
+        streamMode: 'hls_direct_v2',
+        settingsDB,
+        transcodeConfig,
+      });
+
+      await (session as unknown as PrefetchInternals).startInternal();
+
+      expect(run).not.toHaveBeenCalled();
+    });
+
+    test('uses no lead and skips the probe when audio is copied', async () => {
+      const run = vi.spyOn(MeasureAudioEncoderLeadTask.prototype, 'run');
+      const session = makeSession(dir.name, {
+        settingsDB,
+        transcodeConfig: { ...transcodeConfig, audioFormat: 'copy' },
+      });
+
+      await expect(
+        (session as unknown as PrefetchInternals).getAudioEncoderLead(),
+      ).resolves.toBe(0);
+      expect(run).not.toHaveBeenCalled();
+    });
+
+    test('uses no lead when the probe reports a failure', async () => {
+      vi.spyOn(MeasureAudioEncoderLeadTask.prototype, 'run').mockResolvedValue(
+        Result.failure('unknown encoder'),
+      );
+      const session = makeSession(dir.name, { settingsDB, transcodeConfig });
+
+      await expect(
+        (session as unknown as PrefetchInternals).getAudioEncoderLead(),
+      ).resolves.toBe(0);
+    });
+
+    // The session prefetches without awaiting, so a rejected cached promise
+    // would make every later program boundary throw.
+    test('uses no lead when the probe throws, and keeps serving the cached result', async () => {
+      const run = vi
+        .spyOn(MeasureAudioEncoderLeadTask.prototype, 'run')
+        .mockRejectedValue(new Error('spawn ffmpeg ENOENT'));
+      const session = makeSession(dir.name, { settingsDB, transcodeConfig });
+      const internals = session as unknown as PrefetchInternals;
+
+      await internals.startInternal();
+
+      await expect(internals.getAudioEncoderLead()).resolves.toBe(0);
+      await expect(internals.getAudioEncoderLead()).resolves.toBe(0);
+      expect(run).toHaveBeenCalledTimes(1);
+    });
+
+    test('offsets the next program from the newest segment and the encoder lead', async () => {
+      const segmentEnds = vi
+        .spyOn(GetSegmentStreamEndsTask.prototype, 'run')
+        .mockResolvedValue(
+          Result.success({ audioEnd: 1083361, nonAudioEnd: 1083001 }),
+        );
+      vi.spyOn(MeasureAudioEncoderLeadTask.prototype, 'run').mockResolvedValue(
+        Result.success(1920),
+      );
+      const session = makeSession(dir.name, { settingsDB, transcodeConfig });
+      await fs.mkdir(session.workingDirectory, { recursive: true });
+      for (const file of ['data000001.ts', 'data000002.ts']) {
+        await fs.writeFile(path.join(session.workingDirectory, file), '');
+      }
+
+      const offset = await (
+        session as unknown as PrefetchInternals
+      ).getPtsOffset();
+
+      expect(segmentEnds).toHaveBeenCalledWith(
+        path.join(session.workingDirectory, 'data000002.ts'),
+      );
+      // Audio end plus the lead, one tick past.
+      expect(offset).toBe(1085282);
     });
   });
 
@@ -336,6 +482,70 @@ describe('HlsSession', () => {
     });
   });
 
+  describe('transcode liveness during the start wait', () => {
+    let tmpDir: tmp.DirResult;
+
+    beforeEach(() => {
+      tmpDir = tmp.dirSync({ unsafeCleanup: true });
+    });
+
+    afterEach(() => {
+      tmpDir.removeCallback();
+    });
+
+    function makeSessionWithLineup(getCurrentLineupItem: () => Promise<never>) {
+      return new HlsSession(
+        {
+          uuid: channelUuid,
+          transcodeConfig: {},
+        } as ChannelOrmWithTranscodeConfig,
+        {
+          streamMode: 'hls',
+          initialSegmentCount: 2,
+          transcodeDirectory: tmpDir.name,
+        },
+        { getCurrentLineupItem } as unknown as StreamProgramCalculator,
+        {} as ISettingsDB,
+        {
+          getLiveTimestamp: vi.fn(() => Promise.resolve(Date.now())),
+        } as unknown as OnDemandChannelService,
+        (() => ({}) as unknown as ProgramStream) as (
+          ctx: PlayerContext,
+          fmt: OutputFormat,
+        ) => ProgramStream,
+      );
+    }
+
+    test('reports the transcode running while the run loop is alive', async () => {
+      const session = makeSessionWithLineup(() => new Promise<never>(() => {}));
+      const internals = session as unknown as {
+        startInternal(): Promise<void>;
+        isTranscodeRunning(): boolean;
+      };
+
+      await internals.startInternal();
+
+      expect(internals.isTranscodeRunning()).toBe(true);
+    });
+
+    test('fails the start at once when the run loop dies before writing segments', async () => {
+      const session = makeSessionWithLineup(() =>
+        Promise.reject(new Error('lineup lookup failed')),
+      );
+      session.on('error', () => {});
+
+      const startedAt = Date.now();
+      await session.start();
+
+      expect(session.hasError).toBe(true);
+      expect(session.error).toHaveProperty(
+        'cause.message',
+        'ffmpeg exited before the stream was ready',
+      );
+      expect(Date.now() - startedAt).toBeLessThan(3_000);
+    });
+  });
+
   describe('stop during program setup', () => {
     let tmpDir: tmp.DirResult;
 
@@ -415,5 +625,50 @@ describe('HlsSession', () => {
 
       expect(start).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('nextProgramPtsOffset', () => {
+  test('starts the next audio where the previous audio ended', () => {
+    // Audio ends 360 ticks after video, and AAC places its first packet 1920
+    // ticks before the offset.
+    const offset = nextProgramPtsOffset(
+      { audioEnd: 1083361, nonAudioEnd: 1083001 },
+      1920,
+    );
+
+    expect(offset).toBe(1085282);
+    expect(offset - 1920).toBe(1083361 + 1);
+  });
+
+  test('absorbs an audio shortfall up to the encoder lead without an audio gap', () => {
+    // Audio ends 240 ticks before video. The lead still covers it.
+    const offset = nextProgramPtsOffset(
+      { audioEnd: 1082761, nonAudioEnd: 1083001 },
+      1920,
+    );
+
+    expect(offset - 1920).toBe(1082761 + 1);
+  });
+
+  test('never starts video before the previous video ended', () => {
+    // The audio shortfall is larger than the lead, so video sets the offset.
+    const offset = nextProgramPtsOffset(
+      { audioEnd: 1080000, nonAudioEnd: 1083001 },
+      480,
+    );
+
+    expect(offset).toBe(1083002);
+  });
+
+  test('uses the remaining stream when the segment has only one kind', () => {
+    expect(nextProgramPtsOffset({ nonAudioEnd: 9000 }, 1920)).toBe(9001);
+    expect(nextProgramPtsOffset({ audioEnd: 9000 }, 1920)).toBe(10921);
+  });
+
+  test('matches the old offset when there is no lead and audio ends first', () => {
+    expect(nextProgramPtsOffset({ audioEnd: 8000, nonAudioEnd: 9000 }, 0)).toBe(
+      9001,
+    );
   });
 });

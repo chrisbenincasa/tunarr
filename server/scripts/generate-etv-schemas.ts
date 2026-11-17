@@ -17,6 +17,10 @@
  * keys in silence. Strict parsing before write is the only thing that catches a
  * typo like `in_point_msec`.
  *
+ * `describe.json` is the exception. Tunarr reads that document rather than
+ * writing it, and upstream adds fields to it without a version bump, so its
+ * objects are emitted as `z.object` and drop unknown keys.
+ *
  * Run: pnpm generate-etv-schemas
  */
 import fs from 'node:fs/promises';
@@ -46,6 +50,8 @@ type JsonSchema = {
   maximum?: number;
   additionalProperties?: boolean | JsonSchema;
 };
+
+type ObjectFactory = 'z.strictObject' | 'z.object';
 
 type Document = JsonSchema & {
   title?: string;
@@ -145,7 +151,7 @@ function assertClosedSubset(node: JsonSchema, ctx: string) {
   }
 }
 
-function render(node: JsonSchema, ctx: string): string {
+function render(node: JsonSchema, ctx: string, object: ObjectFactory): string {
   assertClosedSubset(node, ctx);
 
   if (node.$ref !== undefined) {
@@ -156,13 +162,13 @@ function render(node: JsonSchema, ctx: string): string {
   if (branches !== undefined) {
     const inner = nullableBranch(branches);
     if (inner !== undefined) {
-      return `${render(inner, ctx)}.nullable()`;
+      return `${render(inner, ctx, object)}.nullable()`;
     }
     const constEnum = constBranchesAsEnum(branches);
     if (constEnum !== undefined) {
-      return render({ enum: constEnum }, ctx);
+      return render({ enum: constEnum }, ctx, object);
     }
-    const rendered = branches.map((b, i) => render(b, `${ctx}[${i}]`));
+    const rendered = branches.map((b, i) => render(b, `${ctx}[${i}]`, object));
     if (node.discriminator !== undefined) {
       return `z.discriminatedUnion('${node.discriminator.propertyName}', [\n${rendered
         .map((r) => `  ${r},`)
@@ -204,7 +210,7 @@ function render(node: JsonSchema, ctx: string): string {
         `${ctx}: unsupported type array ${JSON.stringify(node.type)}`,
       );
     }
-    return `${render({ ...node, type: nonNull[0] }, ctx)}.nullable()`;
+    return `${render({ ...node, type: nonNull[0] }, ctx, object)}.nullable()`;
   }
 
   switch (node.type) {
@@ -213,18 +219,18 @@ function render(node: JsonSchema, ctx: string): string {
       const required = new Set(node.required ?? []);
       const fields = Object.entries(props).map(([key, value]) => {
         const optional = required.has(key) ? '' : '.optional()';
-        return `  ${JSON.stringify(key)}: ${render(value, `${ctx}.${key}`)}${optional},`;
+        return `  ${JSON.stringify(key)}: ${render(value, `${ctx}.${key}`, object)}${optional},`;
       });
       if (fields.length === 0) {
-        return `z.strictObject({})`;
+        return `${object}({})`;
       }
-      return `z.strictObject({\n${fields.join('\n')}\n})`;
+      return `${object}({\n${fields.join('\n')}\n})`;
     }
     case 'array': {
       if (node.items === undefined) {
         throw new Error(`${ctx}: array without items`);
       }
-      return `z.array(${render(node.items, `${ctx}[]`)})`;
+      return `z.array(${render(node.items, `${ctx}[]`, object)})`;
     }
     case 'string': {
       // The schema cannot say "RFC3339 with an offset", but `next` parses these
@@ -306,7 +312,12 @@ function topoSort(defs: Record<string, JsonSchema>): string[] {
   return order;
 }
 
-function generate(doc: Document, rootName: string, sourceFile: string): string {
+function generate(
+  doc: Document,
+  rootName: string,
+  sourceFile: string,
+  object: ObjectFactory,
+): string {
   const defs = doc.$defs ?? doc.definitions ?? {};
   const lines: string[] = [
     `// Generated from ${sourceFile} by scripts/generate-etv-schemas.ts.`,
@@ -322,7 +333,9 @@ function generate(doc: Document, rootName: string, sourceFile: string): string {
       const summary = def.description.split('\n')[0];
       lines.push(`/** ${summary} */`);
     }
-    lines.push(`export const ${schemaConst(name)} = ${render(def, name)};`);
+    lines.push(
+      `export const ${schemaConst(name)} = ${render(def, name, object)};`,
+    );
     lines.push(`export type ${name} = z.infer<typeof ${schemaConst(name)}>;`);
     lines.push(``);
   }
@@ -331,7 +344,7 @@ function generate(doc: Document, rootName: string, sourceFile: string): string {
   delete root.$defs;
   delete root.definitions;
   lines.push(
-    `export const ${schemaConst(rootName)} = ${render(root, rootName)};`,
+    `export const ${schemaConst(rootName)} = ${render(root, rootName, object)};`,
   );
   lines.push(
     `export type ${rootName} = z.infer<typeof ${schemaConst(rootName)}>;`,
@@ -349,17 +362,35 @@ export const documents = [
     root: 'ChannelConfig',
   },
   { file: 'lineup_config.json', out: 'lineupConfig.ts', root: 'LineupConfig' },
+  {
+    file: 'describe.json',
+    out: 'describe.ts',
+    root: 'Describe',
+    strict: false,
+  },
 ];
 
 /** Renders one document exactly as the generator writes it, for the staleness test. */
-export async function renderDocument(file: string, root: string) {
+export async function renderDocument(
+  file: string,
+  root: string,
+  strict = true,
+) {
   const doc = JSON.parse(
     await fs.readFile(path.join(schemaDir, file), 'utf-8'),
   ) as Document;
-  const source = await prettier.format(generate(doc, root, `schema/${file}`), {
-    ...(await prettier.resolveConfig(outDir)),
-    parser: 'typescript',
-  });
+  const source = await prettier.format(
+    generate(
+      doc,
+      root,
+      `schema/${file}`,
+      strict ? 'z.strictObject' : 'z.object',
+    ),
+    {
+      ...(await prettier.resolveConfig(outDir)),
+      parser: 'typescript',
+    },
+  );
   return {
     source,
     defCount: Object.keys(doc.$defs ?? doc.definitions ?? {}).length,
@@ -369,8 +400,8 @@ export async function renderDocument(file: string, root: string) {
 export async function writeAll() {
   await fs.mkdir(outDir, { recursive: true });
 
-  for (const { file, out, root } of documents) {
-    const { source, defCount } = await renderDocument(file, root);
+  for (const { file, out, root, strict } of documents) {
+    const { source, defCount } = await renderDocument(file, root, strict);
     await fs.writeFile(path.join(outDir, out), source, 'utf-8');
     console.log(
       `${file} -> generated/${out} (${defCount} definitions, ${source.length} bytes)`,

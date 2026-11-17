@@ -1,5 +1,4 @@
 import type { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.ts';
-import type { IChannelDB } from '@/db/interfaces/IChannelDB.ts';
 import type {
   ISettingsDB,
   ReadableFfmpegSettings,
@@ -24,9 +23,14 @@ import type { StreamSelector } from '@/ffmpeg/StreamSelector.ts';
 import type { FeatureFlagService } from '@/services/FeatureFlagService.ts';
 import type { SessionConcatStreamMode } from '@tunarr/types/schemas';
 import type { StreamDetails, SubtitleStreamDetails } from '@/stream/types.ts';
-import { HttpStreamSource } from '@/stream/types.ts';
+import { FileStreamSource, HttpStreamSource } from '@/stream/types.ts';
 import type { SubtitlesInputSource } from '@/ffmpeg/builder/input/SubtitlesInputSource.ts';
 import type { VideoInputSource } from '@/ffmpeg/builder/input/VideoInputSource.ts';
+import {
+  AudioInputSource,
+  NullAudioInputSource,
+} from '@/ffmpeg/builder/input/AudioInputSource.ts';
+import type { FfprobeMediaInfo } from '@/types/ffmpeg.ts';
 import {
   StillImageStream,
   SubtitleMethods,
@@ -186,22 +190,25 @@ function createCapturingPipelineBuilderFactory(): {
   getCapturedHwAccel: () => string | undefined;
   getCapturedSubtitleInput: () => SubtitlesInputSource | null | undefined;
   getCapturedVideoInput: () => VideoInputSource | undefined;
+  getCapturedAudioInput: () => AudioInputSource | undefined;
 } {
   let capturedFrameState: FrameState | undefined;
   let capturedFfmpegState: FfmpegState | undefined;
   let capturedHwAccel: string | undefined;
   let capturedSubtitleInput: SubtitlesInputSource | null | undefined;
   let capturedVideoInput: VideoInputSource | undefined;
+  let capturedAudioInput: AudioInputSource | undefined;
 
   const factory: PipelineBuilderFactory = () => {
     const builderProxy: Record<string, unknown> = {};
-    for (const method of [
-      'setAudioInputSource',
-      'setWatermarkInputSource',
-      'setConcatInputSource',
-    ]) {
+    for (const method of ['setWatermarkInputSource', 'setConcatInputSource']) {
       builderProxy[method] = vi.fn().mockReturnValue(builderProxy);
     }
+
+    builderProxy.setAudioInputSource = vi.fn((input: AudioInputSource) => {
+      capturedAudioInput = input;
+      return builderProxy;
+    });
 
     builderProxy.setVideoInputSource = vi.fn((input: VideoInputSource) => {
       capturedVideoInput = input;
@@ -244,12 +251,16 @@ function createCapturingPipelineBuilderFactory(): {
     getCapturedHwAccel: () => capturedHwAccel,
     getCapturedSubtitleInput: () => capturedSubtitleInput,
     getCapturedVideoInput: () => capturedVideoInput,
+    getCapturedAudioInput: () => capturedAudioInput,
   };
 }
 
-function makeMockFfmpegInfo(): FfmpegInfo {
+function makeMockFfmpegInfo(
+  probeFile: FfmpegInfo['probeFile'] = vi.fn().mockResolvedValue(undefined),
+): FfmpegInfo {
   return {
     getVersion: vi.fn().mockResolvedValue(mockFfmpegVersion),
+    probeFile,
   } as unknown as FfmpegInfo;
 }
 
@@ -262,12 +273,6 @@ function makeMockSettingsDB(
     }),
     ffmpegSettings: vi.fn().mockReturnValue(ffmpegSettings),
   } as unknown as ISettingsDB;
-}
-
-function makeMockChannelDB(): IChannelDB {
-  return {
-    getChannelSubtitlePreferences: vi.fn().mockResolvedValue([]),
-  } as unknown as IChannelDB;
 }
 
 function makeMockFeatureFlagService(
@@ -287,6 +292,9 @@ function makeMockStreamSelector(
       audioStream: { index: 1, codec: 'aac', channels: 2 },
       subtitleStream,
     })),
+    selectSubtitleStream: vi
+      .fn()
+      .mockImplementation(async () => subtitleStream),
   } as unknown as StreamSelector;
 }
 
@@ -305,7 +313,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(ffmpegSettings),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -346,7 +353,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(ffmpegSettings),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -387,7 +393,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(ffmpegSettings),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -429,7 +434,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(ffmpegSettings),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -463,7 +467,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(ffmpegSettings),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -499,7 +502,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(ffmpegSettings),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -535,7 +537,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(makeFfmpegSettings()),
         capturing.factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         config,
@@ -788,7 +789,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(makeFfmpegSettings()),
         createCapturingPipelineBuilderFactory().factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         makeTranscodeConfig(),
@@ -891,6 +891,121 @@ describe('FfmpegStreamFactory', () => {
     });
   });
 
+  describe('offline fallback soundtrack', () => {
+    function makeProbe(streams: FfprobeMediaInfo['streams']): FfprobeMediaInfo {
+      return {
+        streams,
+        format: {
+          nb_streams: streams.length,
+          format_name: 'mp3',
+          duration: 180,
+          size: 1000,
+          bit_rate: 128000,
+        },
+      };
+    }
+
+    const coverArt = {
+      index: 0,
+      codec_type: 'video',
+      codec_name: 'mjpeg',
+      width: 500,
+      height: 500,
+      coded_width: 500,
+      coded_height: 500,
+    } as FfprobeMediaInfo['streams'][number];
+
+    const coverArtAndAudio = makeProbe([
+      coverArt,
+      {
+        index: 1,
+        codec_type: 'audio',
+        codec_name: 'mp3',
+        channels: 2,
+      } as FfprobeMediaInfo['streams'][number],
+    ]);
+
+    async function runOffline(
+      soundtrack: string | undefined,
+      probeFile: FfmpegInfo['probeFile'],
+    ) {
+      const { factory, getCapturedAudioInput, getCapturedFrameState } =
+        createCapturingPipelineBuilderFactory();
+      const sut = new FfmpegStreamFactory(
+        makeMockFfmpegInfo(probeFile),
+        makeMockSettingsDB(makeFfmpegSettings()),
+        factory,
+        makeMockFeatureFlagService(),
+        makeMockStreamSelector(),
+        makeTranscodeConfig(),
+        makeChannel({ offline: { mode: 'pic', soundtrack } }),
+      );
+
+      await sut.createPlaceholderSession({
+        kind: 'offline',
+        duration: dayjs.duration({ minutes: 30 }),
+        outputFormat: MpegTsOutputFormat,
+      });
+
+      return {
+        audioInput: getCapturedAudioInput(),
+        frameState: getCapturedFrameState(),
+      };
+    }
+
+    test('loops the soundtrack from its probed audio stream', async () => {
+      const url = 'http://localhost:8000/uploads/audio/theme.mp3';
+      const probeFile = vi.fn().mockResolvedValue(coverArtAndAudio);
+
+      const { audioInput, frameState } = await runOffline(url, probeFile);
+
+      expect(probeFile).toHaveBeenCalledWith(url, expect.any(Number));
+      expect(audioInput?.source).toBeInstanceOf(HttpStreamSource);
+      expect(audioInput?.path).toBe(`cache:${url}`);
+      expect(audioInput?.streams[0]?.index).toBe(1);
+      expect(frameState?.infiniteLoop).toBe(true);
+    });
+
+    test('reads a local path as a file source', async () => {
+      const { audioInput } = await runOffline(
+        '/media/theme.mp3',
+        vi.fn().mockResolvedValue(coverArtAndAudio),
+      );
+
+      expect(audioInput?.source).toBeInstanceOf(FileStreamSource);
+      expect(audioInput?.path).toBe('/media/theme.mp3');
+    });
+
+    test('uses placeholder audio when no soundtrack is set', async () => {
+      const probeFile = vi.fn();
+
+      const { audioInput } = await runOffline(undefined, probeFile);
+
+      expect(probeFile).not.toHaveBeenCalled();
+      expect(audioInput).toBeInstanceOf(NullAudioInputSource);
+    });
+
+    test('uses placeholder audio when the probe fails', async () => {
+      const { audioInput } = await runOffline(
+        '/media/missing.mp3',
+        vi.fn().mockRejectedValue(new Error('No such file')),
+      );
+
+      expect(audioInput).toBeInstanceOf(NullAudioInputSource);
+    });
+
+    test('uses placeholder audio when the file has no audio stream', async () => {
+      const videoOnly = makeProbe([coverArt]);
+
+      const { audioInput } = await runOffline(
+        '/media/cover.jpg',
+        vi.fn().mockResolvedValue(videoOnly),
+      );
+
+      expect(audioInput).toBeInstanceOf(NullAudioInputSource);
+    });
+  });
+
   describe('audio-only programs', () => {
     function makeAudioOnlyStreamDetails(
       placeholderImage?: HttpStreamSource,
@@ -908,7 +1023,6 @@ describe('FfmpegStreamFactory', () => {
         makeMockFfmpegInfo(),
         makeMockSettingsDB(makeFfmpegSettings()),
         factory,
-        makeMockChannelDB(),
         makeMockFeatureFlagService(),
         makeMockStreamSelector(),
         makeTranscodeConfig(),
@@ -1010,7 +1124,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
           makeMockStreamSelector(textSubtitleStream),
           config,
@@ -1053,7 +1166,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: false }),
           makeMockStreamSelector(textSubtitleStream),
           config,
@@ -1090,7 +1202,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
           makeMockStreamSelector(imageSubtitleStream),
           config,
@@ -1119,7 +1230,7 @@ describe('FfmpegStreamFactory', () => {
         expect(result!.renditions.subtitle).toBeUndefined();
       });
 
-      test('skips subtitles when channel.subtitlesEnabled is false', async () => {
+      test('applies the selected subtitle regardless of the legacy subtitlesEnabled flag', async () => {
         const config = makeTranscodeConfig();
         const capturing = createCapturingPipelineBuilderFactory();
 
@@ -1127,7 +1238,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
           makeMockStreamSelector(textSubtitleStream),
           config,
@@ -1150,9 +1260,10 @@ describe('FfmpegStreamFactory', () => {
           lineupItem: makeLineupItem(),
         });
 
+        // Stream selection profiles own subtitles; the channel flag is unused.
         const subtitleInput = capturing.getCapturedSubtitleInput();
-        expect(subtitleInput).toBeNull();
-        expect(result!.renditions.subtitle).toBeUndefined();
+        expect(subtitleInput).not.toBeNull();
+        expect(result).toBeDefined();
       });
 
       test('skips subtitles when stream selector returns no subtitle', async () => {
@@ -1163,7 +1274,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
           makeMockStreamSelector(null),
           config,
@@ -1199,7 +1309,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
           makeMockStreamSelector(externalSubtitleStream),
           config,
@@ -1264,7 +1373,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
           makeMockStreamSelector(extractedEmbeddedStream),
           config,
@@ -1311,14 +1419,14 @@ describe('FfmpegStreamFactory', () => {
         const capturing = createCapturingPipelineBuilderFactory();
         const details = makeStreamDetails();
         details.subtitleDetails = [textSubtitleStream];
+        const streamSelector = makeMockStreamSelector(textSubtitleStream);
 
         const sut = new FfmpegStreamFactory(
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService(),
-          makeMockStreamSelector(),
+          streamSelector,
           config,
           makeChannel({ subtitlesEnabled: true }),
         );
@@ -1339,6 +1447,12 @@ describe('FfmpegStreamFactory', () => {
           lineupItem: makeLineupItem(),
         });
 
+        // Passthrough muxes embedded text subs straight from the container, so
+        // it must tell the selector to skip extraction.
+        expect(streamSelector.selectSubtitleStream).toHaveBeenCalledWith(
+          expect.objectContaining({ hints: { preferTextBased: true } }),
+        );
+
         const subtitleInput = capturing.getCapturedSubtitleInput();
         expect(subtitleInput).not.toBeNull();
         expect(subtitleInput!.method).toBe(SubtitleMethods.Convert);
@@ -1351,6 +1465,44 @@ describe('FfmpegStreamFactory', () => {
         });
       });
 
+      test('still selects subtitles when the source has no audio streams', async () => {
+        const config = makeTranscodeConfig();
+        const capturing = createCapturingPipelineBuilderFactory();
+        const details = makeStreamDetails();
+        details.subtitleDetails = [textSubtitleStream];
+        details.audioDetails = undefined;
+
+        const sut = new FfmpegStreamFactory(
+          makeMockFfmpegInfo(),
+          makeMockSettingsDB(makeFfmpegSettings()),
+          capturing.factory,
+          makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
+          makeMockStreamSelector(textSubtitleStream),
+          config,
+          makeChannel({ subtitlesEnabled: true }),
+        );
+
+        await sut.createStreamSession({
+          stream: {
+            source: new HttpStreamSource('http://example.com/video.ts'),
+            details,
+          },
+          options: {
+            startTime: dayjs.duration(0),
+            duration: dayjs.duration({ seconds: 30 }),
+            outputFormat: hlsDirectV2Format,
+            ptsOffset: 0,
+            realtime: true,
+            streamMode: 'hls',
+          },
+          lineupItem: makeLineupItem(),
+        });
+
+        const subtitleInput = capturing.getCapturedSubtitleInput();
+        expect(subtitleInput).not.toBeNull();
+        expect(subtitleInput!.method).toBe(SubtitleMethods.Convert);
+      });
+
       test('skips image-based subtitles (cannot sidecar or burn)', async () => {
         const config = makeTranscodeConfig();
         const capturing = createCapturingPipelineBuilderFactory();
@@ -1361,7 +1513,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService(),
           makeMockStreamSelector(),
           config,
@@ -1389,19 +1540,20 @@ describe('FfmpegStreamFactory', () => {
         expect(result!.renditions.subtitle).toBeUndefined();
       });
 
-      test('skips subtitles when channel.subtitlesEnabled is false', async () => {
+      test('applies the selected subtitle regardless of the legacy subtitlesEnabled flag', async () => {
         const config = makeTranscodeConfig();
         const capturing = createCapturingPipelineBuilderFactory();
         const details = makeStreamDetails();
         details.subtitleDetails = [textSubtitleStream];
 
+        // The selector returns a usable subtitle, so the assertion shows
+        // whether the channel flag still suppresses it.
         const sut = new FfmpegStreamFactory(
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
-          makeMockFeatureFlagService(),
-          makeMockStreamSelector(),
+          makeMockFeatureFlagService({ webvttSidecarEnabled: true }),
+          makeMockStreamSelector(textSubtitleStream),
           config,
           makeChannel({ subtitlesEnabled: false }),
         );
@@ -1422,9 +1574,10 @@ describe('FfmpegStreamFactory', () => {
           lineupItem: makeLineupItem(),
         });
 
+        // Stream selection profiles own subtitles; the channel flag is unused.
         const subtitleInput = capturing.getCapturedSubtitleInput();
-        expect(subtitleInput).toBeNull();
-        expect(result!.renditions.subtitle).toBeUndefined();
+        expect(subtitleInput).not.toBeNull();
+        expect(result).toBeDefined();
       });
 
       test('skips subtitles when no subtitle details in stream', async () => {
@@ -1437,7 +1590,6 @@ describe('FfmpegStreamFactory', () => {
           makeMockFfmpegInfo(),
           makeMockSettingsDB(makeFfmpegSettings()),
           capturing.factory,
-          makeMockChannelDB(),
           makeMockFeatureFlagService(),
           makeMockStreamSelector(),
           config,
@@ -1525,7 +1677,6 @@ function runConcatSession(mode: SessionConcatStreamMode) {
     makeMockFfmpegInfo(),
     makeMockSettingsDB(makeFfmpegSettings()),
     factory,
-    makeMockChannelDB(),
     makeMockFeatureFlagService(),
     makeMockStreamSelector(),
     makeTranscodeConfig(),

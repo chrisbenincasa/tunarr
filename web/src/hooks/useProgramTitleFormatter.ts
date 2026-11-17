@@ -39,7 +39,7 @@ export const useProgramTitleFormatter = () => {
     (program: ChannelProgram) =>
       match(program)
         .with({ type: 'custom' }, (p) => {
-          const showName = customShows[p.customShowId]?.name ?? t`Custom Show`;
+          const showName = customShows[p.customShowId]?.name ?? t`Playlist`;
           const idx = p.index.toString().padStart(3, '0');
           return `${showName} - ${idx} - `;
         })

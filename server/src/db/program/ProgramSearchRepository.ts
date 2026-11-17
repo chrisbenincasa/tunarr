@@ -103,6 +103,7 @@ export class ProgramSearchRepository {
         externalKey: result.externalKey,
         libraryId: result.libraryId,
         uuid: result.uuid,
+        state: result.state,
       };
     }
 
@@ -120,12 +121,7 @@ export class ProgramSearchRepository {
       type,
       parentFilter,
     )) {
-      grouped[result.externalKey] = {
-        canonicalId: result.canonicalId,
-        externalKey: result.externalKey,
-        libraryId: result.libraryId,
-        uuid: result.uuid,
-      };
+      grouped[result.externalKey] = result;
     }
 
     return grouped;
@@ -163,6 +159,7 @@ export class ProgramSearchRepository {
           canonicalId: true,
           libraryId: true,
           externalKey: true,
+          state: true,
         },
         limit: 500,
       });
@@ -178,6 +175,7 @@ export class ProgramSearchRepository {
           canonicalId: item.canonicalId,
           uuid: item.uuid,
           libraryId: item.libraryId,
+          state: item.state,
         };
       }
     }

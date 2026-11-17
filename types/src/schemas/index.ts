@@ -18,5 +18,6 @@ export * from './customShowsSchema.js';
 export * from './fillerSchema.js';
 export * from './guideApiSchemas.js';
 export * from './nativePlaybackSchemas.js';
+export * from './streamSelectionPreviewSchemas.js';
 export * from './streamSelectionSchema.js';
 export * from './troubleshootSchemas.js';

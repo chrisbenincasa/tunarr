@@ -17,6 +17,7 @@ import type {
   CondensedChannelProgramming,
   CondensedContentProgram,
   ContentProgram,
+  UpdateChannelRequest,
 } from '@tunarr/types';
 import type { UpdateChannelProgrammingRequest } from '@tunarr/types/api';
 import type { CondensedFillerProgram } from '@tunarr/types/schemas';
@@ -319,6 +320,28 @@ export class LineupRepository {
     data.version = newLineup?.version ?? data.version;
 
     data.lastUpdated = dayjs().valueOf();
+  }
+
+  // A save of unrelated settings must not restart an on-demand channel, so an
+  // already-enabled config keeps its cursor and playback state. Only a
+  // transition into on-demand creates a fresh one.
+  static applyOnDemandRequest(
+    onDemand: UpdateChannelRequest['onDemand'],
+    data: Pick<Lineup, 'onDemandConfig'>,
+  ) {
+    if (isNil(onDemand)) {
+      return;
+    }
+
+    if (!onDemand.enabled) {
+      delete data['onDemandConfig'];
+      return;
+    }
+
+    data.onDemandConfig ??= {
+      state: 'paused',
+      cursor: 0,
+    };
   }
 
   private updateChannelDuration(id: string, newDur: number): Promise<number> {

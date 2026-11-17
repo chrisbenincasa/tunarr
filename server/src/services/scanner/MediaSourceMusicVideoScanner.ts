@@ -18,7 +18,10 @@ import { devAssert } from '../../util/debug.ts';
 import type { MeilisearchService } from '../MeilisearchService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { ScanContext, ScanSingleRequest } from './MediaSourceScanner.ts';
-import { MediaSourceScanner } from './MediaSourceScanner.ts';
+import {
+  canSkipUnchangedProgram,
+  MediaSourceScanner,
+} from './MediaSourceScanner.ts';
 
 export type GenericMediaSourceMusicVideoLibraryScanner<
   VideoT extends MusicVideo = MusicVideo,
@@ -183,10 +186,7 @@ export abstract class MediaSourceMusicVideoScanner<
     const fullMetadata = fullMetadataResult.get();
 
     if (
-      !force &&
-      existingVideo &&
-      existingVideo.canonicalId &&
-      existingVideo.canonicalId === fullMetadata.canonicalId
+      canSkipUnchangedProgram(existingVideo, fullMetadata.canonicalId, force)
     ) {
       this.logger.debug(
         'Found an unchanged program: rating key = %s, program ID = %s',

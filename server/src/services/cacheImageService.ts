@@ -1,7 +1,8 @@
 import type { CachedImage } from '@/db/schema/CachedImage.js';
 import { InjectLogger } from '@/util/inject.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
-import type { AxiosHeaders, AxiosRequestConfig } from 'axios';
+import { outboundRequestGuard } from '@/util/outboundRequests.js';
+import type { AxiosHeaders } from 'axios';
 import axios from 'axios';
 import type { FastifyReply } from 'fastify';
 import { inject, injectable } from 'inversify';
@@ -9,10 +10,58 @@ import type { Kysely } from 'kysely';
 import { isString, isUndefined } from 'lodash-es';
 import crypto from 'node:crypto';
 import { createWriteStream, promises as fs } from 'node:fs';
-import type stream from 'node:stream';
+import { Transform, type Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 import type { DB } from '../db/schema/db.ts';
 import { KEYS } from '../types/inject.ts';
 import { FileCacheService } from './FileCacheService.ts';
+
+const MaxImageBytes = 10 * 1024 * 1024;
+const ImageRequestTimeoutMs = 30_000;
+
+/**
+ * Downloads an image to a file and returns its content type.
+ *
+ * API callers supply these URLs without authentication, so the request goes
+ * through outboundRequestGuard and the body is capped at maxBytes. axios does
+ * not enforce maxContentLength on stream responses, so the cap is counted here.
+ * A failed download removes the partial file so the cache never serves it.
+ */
+export async function downloadImageToFile(
+  url: string,
+  path: string,
+  maxBytes: number = MaxImageBytes,
+): Promise<string | undefined> {
+  const response = await axios.request<Readable>({
+    method: 'get',
+    url,
+    responseType: 'stream',
+    timeout: ImageRequestTimeoutMs,
+    ...outboundRequestGuard,
+  });
+
+  let received = 0;
+  const limit = new Transform({
+    transform(chunk: Buffer, _encoding, callback) {
+      received += chunk.length;
+      if (received > maxBytes) {
+        callback(new Error(`Image exceeds the ${maxBytes} byte limit`));
+        return;
+      }
+      callback(null, chunk);
+    },
+  });
+
+  try {
+    await pipeline(response.data, limit, createWriteStream(path));
+  } catch (e) {
+    await fs.rm(path, { force: true });
+    throw e;
+  }
+
+  const mimeType = (response.headers as AxiosHeaders).get('content-type');
+  return isString(mimeType) ? mimeType : undefined;
+}
 
 /**
  * Manager a cache in disk for external images.
@@ -95,18 +144,12 @@ export class CacheImageService {
   private async requestImageAndStore(
     cachedImage: CachedImage,
   ): Promise<{ path: string; mimeType?: string }> {
-    const requestConfiguration: AxiosRequestConfig = {
-      method: 'get',
-      url: cachedImage.url,
-      responseType: 'stream',
-    };
-
     this.logger.debug('Requesting original image file for caching');
 
-    const response = await axios.request<stream.Readable>(requestConfiguration);
+    const path = this.getCacheFilePath(cachedImage);
+    const mimeType = await downloadImageToFile(cachedImage.url, path);
 
-    const mimeType = (response.headers as AxiosHeaders).get('content-type');
-    if (!isUndefined(mimeType) && isString(mimeType)) {
+    if (mimeType) {
       this.logger.debug('Got image file with mimeType %s', mimeType);
       await this.db
         .insertInto('cachedImage')
@@ -120,15 +163,7 @@ export class CacheImageService {
         .executeTakeFirst();
     }
 
-    const path = `${this.cacheService.cachePath}/${this.imageCacheFolder}/${cachedImage.hash}`;
-    return new Promise((resolve, reject) => {
-      response.data
-        .pipe(createWriteStream(path))
-        .on('close', () =>
-          resolve({ path, mimeType: mimeType as string | undefined }),
-        )
-        .on('error', reject);
-    });
+    return { path, mimeType };
   }
 
   /**

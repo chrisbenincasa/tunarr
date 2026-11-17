@@ -39,6 +39,7 @@ export const EditSmartCollectionDialog = (props: Props) => {
       },
     }),
     enabled: isNonEmptyString(props.id),
+    meta: { suppressErrorSnackbar: true },
   });
 
   const {

@@ -87,6 +87,20 @@ When enabled, forces the output stream to a consistent frame rate (e.g., 23.976,
 
 Applies a deinterlace filter to the output. Enable this if your source content is interlaced — common with recordings from broadcast or cable TV. The specific deinterlace filter used is configured globally in FFmpeg settings. This setting has no effect on progressive (non-interlaced) source content.
 
+### SDR color consistency with VAAPI
+
+For 8-bit SDR VAAPI encoding with hardware filters enabled, Tunarr requests a
+final `scale_vaapi` conversion to limited-range BT.709 with explicit matrix,
+primaries, transfer, and range. This keeps those output fields consistent across
+clips, including sources with incomplete color metadata. It applies with regular
+or low-power encoding and does not change frame rate or timestamps.
+
+The conversion uses the source color description provided to FFmpeg. Untagged
+input still relies on FFmpeg and the driver's interpretation; this does not
+recover missing source metadata. HDR/Dolby Vision inputs retain the existing
+handling below. Software encoders, 10-bit output, and **Disable Hardware Filters**
+are outside this SDR VAAPI conversion path.
+
 ### HDR Tonemapping
 
 !!! warning "Experimental"

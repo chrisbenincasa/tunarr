@@ -1,4 +1,6 @@
-import type { SettingsDB } from '@/db/SettingsDB.js';
+import { defaultXmlTvSettings, type SettingsDB } from '@/db/SettingsDB.js';
+import type { GlobalOptions } from '@/globals.js';
+import { resolveXmlTvOutputPath } from '@/services/xmltvOutputPath.js';
 import type { ChannelOrm } from '@/db/schema/Channel.js';
 import { KEYS } from '@/types/inject.js';
 import { getChannelId } from '@/util/channels.js';
@@ -79,7 +81,21 @@ export class XmlTvWriter {
     className: this.constructor.name,
   });
 
-  constructor(@inject(KEYS.SettingsDB) private settingsDB: SettingsDB) {}
+  constructor(
+    @inject(KEYS.SettingsDB) private settingsDB: SettingsDB,
+    @inject(KEYS.GlobalOptions) private globalOptions: GlobalOptions,
+  ) {}
+
+  /**
+   * Where the XMLTV file is written, and where the XMLTV route reads it.
+   * Falls back to the default path while the configured one is not writable.
+   */
+  async resolveOutputPath(): Promise<string> {
+    return await resolveXmlTvOutputPath(
+      this.settingsDB.xmlTvSettings().outputPath,
+      defaultXmlTvSettings(this.globalOptions.databaseDirectory).outputPath,
+    );
+  }
 
   async write(channels: MaterializedChannelPrograms[]) {
     const start = performance.now();
@@ -96,7 +112,17 @@ export class XmlTvWriter {
   private async writeInternal(channels: MaterializedChannelPrograms[]) {
     const content = await this.serialize(channels);
 
-    return await writeFile(this.settingsDB.xmlTvSettings().outputPath, content);
+    const configuredPath = this.settingsDB.xmlTvSettings().outputPath;
+    const outputPath = await this.resolveOutputPath();
+    if (outputPath !== configuredPath) {
+      this.logger.warn(
+        'Cannot write XMLTV file at %s. Writing to %s instead.',
+        configuredPath,
+        outputPath,
+      );
+    }
+
+    return await writeFile(outputPath, content);
   }
 
   /**
@@ -245,6 +271,9 @@ export class XmlTvWriter {
 
     // @iptv/xmltv emits children in property insertion order. Keep direct
     // program children in DTD order: icon before episode-num, image last.
+    //
+    // Every programme gets <previously-shown/>. Tunarr replays existing media,
+    // and without the tag some guide clients mark airings as new.
     const partial: XmltvProgramme = {
       start: new Date(guideItem.start),
       stop: new Date(guideItem.stop),
@@ -393,6 +422,8 @@ export class XmlTvWriter {
         partial.video = { present: false };
       }
 
+      partial.previouslyShown = {};
+
       const rating = firstDefined(program.rating, program.show?.rating);
       if (rating) {
         partial.rating ??= [
@@ -411,6 +442,8 @@ export class XmlTvWriter {
       if (url) {
         partial.image = [{ _value: url, size: 3, type: 'poster' }];
       }
+    } else {
+      partial.previouslyShown = {};
     }
 
     return partial;

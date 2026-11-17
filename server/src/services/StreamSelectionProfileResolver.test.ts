@@ -1,42 +1,23 @@
-import type { FfmpegSettings, StreamSelectionProfile } from '@tunarr/types';
+import type { StreamSelectionProfile } from '@tunarr/types/schemas';
+import { BuiltInStreamSelectionProfileId } from '@tunarr/types/schemas';
 import { describe, expect, it, vi } from 'vitest';
-import type { ChannelSubtitlePreferences } from '../db/schema/SubtitlePreferences.ts';
-import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
 import type { DrizzleDBAccess } from '../db/schema/index.ts';
-import { StreamSelectionProfileResolver } from './StreamSelectionProfileResolver.ts';
+import {
+  BuiltInStreamSelectionProfile,
+  StreamSelectionProfileResolver,
+} from './StreamSelectionProfileResolver.ts';
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-function makeFfmpegSettings(
-  overrides: Partial<FfmpegSettings> = {},
-): FfmpegSettings {
-  return {
-    ...overrides,
-  } as FfmpegSettings;
-}
-
-function makeSubtitlePref(
-  overrides: Partial<ChannelSubtitlePreferences>,
-): ChannelSubtitlePreferences {
-  return {
-    uuid: 'sub-pref-1',
-    channelId: 'channel-1',
-    languageCode: 'eng',
-    priority: 0,
-    allowImageBased: true,
-    allowExternal: true,
-    filterType: 'any',
-    ...overrides,
-  } as ChannelSubtitlePreferences;
-}
-
 function makeProfile(
+  uuid: string,
   overrides: Partial<StreamSelectionProfile> = {},
 ): StreamSelectionProfile {
   return {
-    uuid: 'profile-1',
-    name: 'Test Profile',
+    uuid,
+    name: `Profile ${uuid}`,
+    locked: false,
     rules: [
       {
         label: 'default rule',
@@ -49,328 +30,334 @@ function makeProfile(
   };
 }
 
-// Create a resolver with mocked dependencies, allowing private method overrides
+const builtIn = { ...BuiltInStreamSelectionProfile };
+
+// Create a resolver whose private DB lookups are replaced by the given
+// profiles, keyed by the entity they are assigned to.
 function createResolver(opts: {
-  ffmpegSettings?: FfmpegSettings;
-  subtitlePrefs?: ChannelSubtitlePreferences[];
-  programProfile?: StreamSelectionProfile | undefined;
-  fillerProfile?: StreamSelectionProfile | undefined;
-  channelProfile?: StreamSelectionProfile | undefined;
+  programProfile?: StreamSelectionProfile;
+  customShowProfile?: StreamSelectionProfile;
+  fillerProfile?: StreamSelectionProfile;
+  channelProfile?: StreamSelectionProfile;
+  defaultProfileId?: string;
+  profilesById?: Record<string, StreamSelectionProfile>;
 }) {
   const settingsDB = {
-    ffmpegSettings: vi
-      .fn()
-      .mockReturnValue(opts.ffmpegSettings ?? makeFfmpegSettings()),
+    streamSelectionSettings: vi.fn().mockReturnValue({
+      defaultProfileId:
+        opts.defaultProfileId ?? BuiltInStreamSelectionProfileId,
+    }),
   } as unknown as ISettingsDB;
 
-  const channelDB = {
-    getChannelSubtitlePreferences: vi
-      .fn()
-      .mockResolvedValue(opts.subtitlePrefs ?? []),
-  } as unknown as IChannelDB;
-
-  // Drizzle is only used in getProfileFor* methods which we override
-  const drizzle = {} as unknown as DrizzleDBAccess;
-
   const resolver = new StreamSelectionProfileResolver(
-    drizzle,
+    {} as unknown as DrizzleDBAccess,
     settingsDB,
-    channelDB,
   );
 
-  // Override the private DB-hitting methods to control test flow
-  vi.spyOn(resolver as never, 'getProfileForProgram').mockResolvedValue(
-    opts.programProfile as never,
-  );
-  vi.spyOn(resolver as never, 'getProfileForFillerList').mockResolvedValue(
-    opts.fillerProfile as never,
-  );
-  vi.spyOn(resolver as never, 'getProfileForChannel').mockResolvedValue(
-    opts.channelProfile as never,
-  );
+  const profilesById: Record<string, StreamSelectionProfile> = {
+    [BuiltInStreamSelectionProfileId]: builtIn,
+    ...opts.profilesById,
+  };
 
-  return { resolver, settingsDB, channelDB };
+  const spies = {
+    program: vi
+      .spyOn(resolver as never, 'getProfileForProgram')
+      .mockResolvedValue(opts.programProfile as never),
+    customShow: vi
+      .spyOn(resolver as never, 'getProfileForCustomShow')
+      .mockResolvedValue(opts.customShowProfile as never),
+    filler: vi
+      .spyOn(resolver as never, 'getProfileForFillerList')
+      .mockResolvedValue(opts.fillerProfile as never),
+    channel: vi
+      .spyOn(resolver as never, 'getProfileForChannel')
+      .mockResolvedValue(opts.channelProfile as never),
+    byId: vi
+      .spyOn(resolver as never, 'getProfileById')
+      .mockImplementation(((id: string) =>
+        Promise.resolve(profilesById[id])) as never),
+  };
+
+  return { resolver, spies };
 }
 
-// ── resolve() priority logic ────────────────────────────────────────────────
+// ── resolveChain() ──────────────────────────────────────────────────────────
 
 describe('StreamSelectionProfileResolver', () => {
-  describe('resolve', () => {
-    it('returns program-level profile when available', async () => {
-      const programProfile = makeProfile({
-        uuid: 'prog-profile',
-        name: 'Program Profile',
-      });
-      const channelProfile = makeProfile({
-        uuid: 'chan-profile',
-        name: 'Channel Profile',
-      });
-
+  describe('resolveChain', () => {
+    it('orders profiles from most to least specific', async () => {
+      const program = makeProfile('program');
+      const filler = makeProfile('filler');
+      const channel = makeProfile('channel');
+      const defaultProfile = makeProfile('default');
       const { resolver } = createResolver({
-        programProfile,
-        channelProfile,
+        programProfile: program,
+        fillerProfile: filler,
+        channelProfile: channel,
+        defaultProfileId: 'default',
+        profilesById: { default: defaultProfile },
       });
 
-      const result = await resolver.resolve({
-        channelId: 'channel-1',
-        programId: 'program-1',
-      });
-
-      expect(result.uuid).toBe('prog-profile');
-      expect(result.name).toBe('Program Profile');
-    });
-
-    it('falls through to filler profile when no program profile', async () => {
-      const fillerProfile = makeProfile({
-        uuid: 'filler-profile',
-        name: 'Filler Profile',
-      });
-
-      const { resolver } = createResolver({
-        programProfile: undefined,
-        fillerProfile,
-      });
-
-      const result = await resolver.resolve({
-        channelId: 'channel-1',
-        programId: 'program-1',
-        fillerListId: 'filler-1',
-      });
-
-      expect(result.uuid).toBe('filler-profile');
-    });
-
-    it('falls through to channel profile when no program or filler profile', async () => {
-      const channelProfile = makeProfile({
-        uuid: 'chan-profile',
-        name: 'Channel Profile',
-      });
-
-      const { resolver } = createResolver({
-        programProfile: undefined,
-        fillerProfile: undefined,
-        channelProfile,
-      });
-
-      const result = await resolver.resolve({
-        channelId: 'channel-1',
-        programId: 'program-1',
-        fillerListId: 'filler-1',
-      });
-
-      expect(result.uuid).toBe('chan-profile');
-    });
-
-    it('builds legacy profile when no profiles exist', async () => {
-      const { resolver } = createResolver({
-        programProfile: undefined,
-        fillerProfile: undefined,
-        channelProfile: undefined,
-        ffmpegSettings: makeFfmpegSettings(),
-        subtitlePrefs: [],
-      });
-
-      const result = await resolver.resolve({
-        channelId: 'channel-1',
-      });
-
-      expect(result.uuid).toBe('legacy-channel-1');
-      expect(result.name).toBe('Legacy Settings');
-      expect(result.rules).toHaveLength(1);
-    });
-
-    it('skips program lookup when no programId', async () => {
-      const channelProfile = makeProfile({ uuid: 'chan-profile' });
-      const { resolver } = createResolver({
-        programProfile: makeProfile({ uuid: 'should-not-be-used' }),
-        channelProfile,
-      });
-
-      const result = await resolver.resolve({
-        channelId: 'channel-1',
-        // no programId
-      });
-
-      // Should skip program lookup entirely
-      expect(result.uuid).toBe('chan-profile');
-    });
-
-    it('skips filler lookup when no fillerListId', async () => {
-      const channelProfile = makeProfile({ uuid: 'chan-profile' });
-      const { resolver } = createResolver({
-        programProfile: undefined,
-        fillerProfile: makeProfile({ uuid: 'should-not-be-used' }),
-        channelProfile,
-      });
-
-      const result = await resolver.resolve({
-        channelId: 'channel-1',
+      const chain = await resolver.resolveChain({
+        channelId: 'ch-1',
         programId: 'prog-1',
-        // no fillerListId
+        fillerListId: 'filler-1',
       });
 
-      expect(result.uuid).toBe('chan-profile');
+      expect(chain.map((c) => [c.level, c.profile.uuid, c.sourceId])).toEqual([
+        ['program', 'program', 'prog-1'],
+        ['filler', 'filler', 'filler-1'],
+        ['channel', 'channel', 'ch-1'],
+        ['default', 'default', undefined],
+        ['built_in', BuiltInStreamSelectionProfileId, undefined],
+      ]);
+    });
+
+    it('ends with only the built-in profile when nothing is assigned', async () => {
+      const { resolver } = createResolver({});
+
+      const chain = await resolver.resolveChain({ channelId: 'ch-1' });
+
+      expect(chain).toHaveLength(1);
+      expect(chain[0]?.level).toBe('built_in');
+      expect(chain[0]?.profile.uuid).toBe(BuiltInStreamSelectionProfileId);
+    });
+
+    it('uses the custom show profile at the source level', async () => {
+      const customShow = makeProfile('custom-show');
+      const { resolver, spies } = createResolver({
+        customShowProfile: customShow,
+      });
+
+      const chain = await resolver.resolveChain({
+        channelId: 'ch-1',
+        customShowId: 'cs-1',
+      });
+
+      expect(chain[0]).toMatchObject({
+        level: 'custom_show',
+        sourceId: 'cs-1',
+        profile: customShow,
+      });
+      expect(spies.filler).not.toHaveBeenCalled();
+    });
+
+    it('prefers the filler list if both source IDs are present', async () => {
+      const { resolver, spies } = createResolver({
+        fillerProfile: makeProfile('filler'),
+        customShowProfile: makeProfile('custom-show'),
+      });
+
+      const chain = await resolver.resolveChain({
+        channelId: 'ch-1',
+        fillerListId: 'filler-1',
+        customShowId: 'cs-1',
+      });
+
+      expect(chain[0]?.level).toBe('filler');
+      expect(spies.customShow).not.toHaveBeenCalled();
+    });
+
+    it('skips lookups for IDs not in the context', async () => {
+      const { resolver, spies } = createResolver({});
+
+      await resolver.resolveChain({ channelId: 'ch-1' });
+
+      expect(spies.program).not.toHaveBeenCalled();
+      expect(spies.filler).not.toHaveBeenCalled();
+      expect(spies.customShow).not.toHaveBeenCalled();
+      expect(spies.channel).toHaveBeenCalledWith('ch-1');
+    });
+
+    it('includes a profile only once, at its most specific level', async () => {
+      const shared = makeProfile('shared');
+      const { resolver } = createResolver({
+        channelProfile: shared,
+        defaultProfileId: 'shared',
+        profilesById: { shared },
+      });
+
+      const chain = await resolver.resolveChain({ channelId: 'ch-1' });
+
+      expect(chain.map((c) => c.level)).toEqual(['channel', 'built_in']);
+    });
+
+    it('skips a default pointer that targets a missing profile', async () => {
+      const { resolver } = createResolver({ defaultProfileId: 'missing' });
+
+      const chain = await resolver.resolveChain({ channelId: 'ch-1' });
+
+      expect(chain.map((c) => c.level)).toEqual(['built_in']);
+    });
+
+    it('falls back to the in-code built-in profile if the row is missing', async () => {
+      const { resolver, spies } = createResolver({});
+      spies.byId.mockResolvedValue(undefined as never);
+
+      const chain = await resolver.resolveChain({ channelId: 'ch-1' });
+
+      expect(chain).toEqual([
+        { level: 'built_in', profile: BuiltInStreamSelectionProfile },
+      ]);
     });
   });
 
-  describe('buildLegacyProfile', () => {
-    it('creates default audio and subtitle actions when no preferences', async () => {
-      const { resolver } = createResolver({
-        programProfile: undefined,
-        fillerProfile: undefined,
-        channelProfile: undefined,
-        ffmpegSettings: makeFfmpegSettings(),
-        subtitlePrefs: [],
-      });
-
-      const result = await resolver.resolve({ channelId: 'ch-1' });
-
-      expect(result.rules).toHaveLength(1);
-      const rule = result.rules[0]!;
-      expect(rule.condition).toBe('true');
-      expect(rule.audioAction).toEqual({ type: 'default' });
-      expect(rule.subtitleAction).toEqual({ type: 'default' });
-    });
-
-    it('creates by_language audio action from ffmpeg language preferences', async () => {
-      const { resolver } = createResolver({
-        programProfile: undefined,
-        fillerProfile: undefined,
-        channelProfile: undefined,
-        ffmpegSettings: makeFfmpegSettings({
-          languagePreferences: {
-            preferences: [{ iso6392: 'jpn' }, { iso6392: 'eng' }],
+  describe('mayPickSubtitles', () => {
+    const selectsSubtitles = (uuid: string) =>
+      makeProfile(uuid, {
+        rules: [
+          {
+            condition: 'program.type == "movie"',
+            audioAction: { type: 'default' },
+            subtitleAction: { type: 'default', preferTextBased: false },
           },
-        } as FfmpegSettings),
-        subtitlePrefs: [],
-      });
-
-      const result = await resolver.resolve({ channelId: 'ch-1' });
-
-      const rule = result.rules[0]!;
-      expect(rule.audioAction).toEqual({
-        type: 'by_language',
-        languages: ['jpn', 'eng'],
-      });
-    });
-
-    it('creates by_language subtitle action from channel subtitle prefs', async () => {
-      const { resolver } = createResolver({
-        programProfile: undefined,
-        fillerProfile: undefined,
-        channelProfile: undefined,
-        ffmpegSettings: makeFfmpegSettings(),
-        subtitlePrefs: [
-          makeSubtitlePref({
-            priority: 1,
-            languageCode: 'eng',
-            filterType: 'forced',
-          }),
-          makeSubtitlePref({
-            priority: 0,
-            languageCode: 'jpn',
-            filterType: 'forced',
-            allowImageBased: false,
-            allowExternal: false,
-          }),
         ],
       });
 
-      const result = await resolver.resolve({ channelId: 'ch-1' });
-
-      const rule = result.rules[0]!;
-      expect(rule.subtitleAction).toEqual({
-        type: 'by_language',
-        // Languages are in priority order (priority 0 = jpn first)
-        languages: ['jpn', 'eng'],
-        // filterType/allowImageBased/allowExternal come from highest-priority pref (priority 0 = jpn)
-        filterType: 'forced',
-        allowImageBased: false,
-        allowExternal: false,
+    it('is false when every profile in the chain disables subtitles', async () => {
+      const { resolver } = createResolver({
+        channelProfile: makeProfile('channel'),
       });
+
+      expect(await resolver.mayPickSubtitles({ channelId: 'ch-1' })).toBe(
+        false,
+      );
     });
 
-    it('sorts subtitle prefs by priority to determine top pref', async () => {
+    it('is true when a channel-wide rule can select subtitles', async () => {
       const { resolver } = createResolver({
-        programProfile: undefined,
-        fillerProfile: undefined,
-        channelProfile: undefined,
-        ffmpegSettings: makeFfmpegSettings(),
-        subtitlePrefs: [
-          makeSubtitlePref({
-            priority: 2,
-            languageCode: 'fra',
-            filterType: 'any',
-            allowImageBased: true,
-          }),
-          makeSubtitlePref({
-            priority: 0,
-            languageCode: 'eng',
-            filterType: 'default',
-            allowImageBased: false,
-          }),
-          makeSubtitlePref({
-            priority: 1,
-            languageCode: 'jpn',
-            filterType: 'forced',
-            allowImageBased: true,
-          }),
-        ],
+        channelProfile: selectsSubtitles('channel'),
       });
 
-      const result = await resolver.resolve({ channelId: 'ch-1' });
-
-      const rule = result.rules[0]!;
-      // Top pref is priority 0 (eng) so filterType and allowImageBased come from that
-      expect(rule.subtitleAction).toMatchObject({
-        type: 'by_language',
-        filterType: 'default',
-        allowImageBased: false,
-      });
+      expect(await resolver.mayPickSubtitles({ channelId: 'ch-1' })).toBe(true);
     });
 
-    it('combines both audio and subtitle preferences', async () => {
+    it('counts a program profile on a channel that disables subtitles', async () => {
       const { resolver } = createResolver({
-        programProfile: undefined,
-        fillerProfile: undefined,
-        channelProfile: undefined,
-        ffmpegSettings: makeFfmpegSettings({
-          languagePreferences: {
-            preferences: [{ iso6392: 'eng' }],
+        programProfile: selectsSubtitles('program'),
+        channelProfile: makeProfile('channel'),
+      });
+
+      expect(
+        await resolver.mayPickSubtitles({
+          channelId: 'ch-1',
+          programId: 'p-1',
+        }),
+      ).toBe(true);
+    });
+
+    it('counts a custom show profile on a channel that disables subtitles', async () => {
+      const { resolver } = createResolver({
+        customShowProfile: selectsSubtitles('custom-show'),
+        channelProfile: makeProfile('channel'),
+      });
+
+      expect(
+        await resolver.mayPickSubtitles({
+          channelId: 'ch-1',
+          customShowId: 'cs-1',
+        }),
+      ).toBe(true);
+    });
+  });
+
+  describe('fillerListMayPickSubtitles', () => {
+    const picksSubtitles = (uuid: string) =>
+      makeProfile(uuid, {
+        rules: [
+          {
+            condition: 'true',
+            audioAction: { type: 'default' },
+            subtitleAction: { type: 'default', preferTextBased: false },
           },
-        } as FfmpegSettings),
-        subtitlePrefs: [
-          makeSubtitlePref({
-            priority: 0,
-            languageCode: 'eng',
-            filterType: 'any',
-          }),
         ],
       });
 
-      const result = await resolver.resolve({ channelId: 'ch-1' });
+    it('is false when no profile in the chain can select subtitles', async () => {
+      const { resolver } = createResolver({});
 
-      const rule = result.rules[0]!;
-      expect(rule.audioAction).toEqual({
-        type: 'by_language',
-        languages: ['eng'],
-      });
-      expect(rule.subtitleAction).toMatchObject({
-        type: 'by_language',
-        languages: ['eng'],
-      });
+      expect(
+        await resolver.fillerListMayPickSubtitles('filler-1', ['ch-1']),
+      ).toBe(false);
     });
 
-    it('uses channelId in legacy profile uuid', async () => {
+    it('is true when the filler list profile can select subtitles', async () => {
       const { resolver } = createResolver({
-        programProfile: undefined,
-        fillerProfile: undefined,
-        channelProfile: undefined,
+        fillerProfile: picksSubtitles('filler'),
       });
 
-      const result = await resolver.resolve({ channelId: 'my-channel-uuid' });
+      expect(
+        await resolver.fillerListMayPickSubtitles('filler-1', ['ch-1']),
+      ).toBe(true);
+    });
 
-      expect(result.uuid).toBe('legacy-my-channel-uuid');
+    it("is true when a channel's profile can select subtitles for unassigned filler", async () => {
+      const { resolver, spies } = createResolver({
+        channelProfile: picksSubtitles('channel'),
+      });
+
+      expect(
+        await resolver.fillerListMayPickSubtitles('filler-1', ['ch-1']),
+      ).toBe(true);
+      expect(spies.channel).toHaveBeenCalledWith('ch-1');
+    });
+
+    it('is true when the default profile can select subtitles', async () => {
+      const { resolver } = createResolver({
+        defaultProfileId: 'default',
+        profilesById: { default: picksSubtitles('default') },
+      });
+
+      expect(
+        await resolver.fillerListMayPickSubtitles('filler-1', ['ch-1']),
+      ).toBe(true);
+    });
+
+    it('is false when there are no channels to play the list', async () => {
+      const { resolver } = createResolver({
+        fillerProfile: picksSubtitles('filler'),
+      });
+
+      expect(await resolver.fillerListMayPickSubtitles('filler-1', [])).toBe(
+        false,
+      );
+    });
+  });
+
+  describe('anyProfileMayPickSubtitles', () => {
+    function resolverWithStoredProfiles(profiles: StreamSelectionProfile[]) {
+      const drizzle = {
+        select: () => ({ from: () => Promise.resolve(profiles) }),
+      } as unknown as DrizzleDBAccess;
+      return new StreamSelectionProfileResolver(drizzle, {} as ISettingsDB);
+    }
+
+    it('is false when every stored profile disables subtitles', async () => {
+      const resolver = resolverWithStoredProfiles([builtIn, makeProfile('a')]);
+
+      expect(await resolver.anyProfileMayPickSubtitles()).toBe(false);
+    });
+
+    it('is true when any stored profile can select subtitles', async () => {
+      const resolver = resolverWithStoredProfiles([
+        builtIn,
+        makeProfile('a', {
+          rules: [
+            {
+              condition: 'true',
+              audioAction: { type: 'default' },
+              subtitleAction: { type: 'disable' },
+            },
+            {
+              condition: 'true',
+              audioAction: { type: 'default' },
+              subtitleAction: { type: 'default', preferTextBased: true },
+            },
+          ],
+        }),
+      ]);
+
+      expect(await resolver.anyProfileMayPickSubtitles()).toBe(true);
     });
   });
 });

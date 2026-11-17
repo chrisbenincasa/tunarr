@@ -6,12 +6,16 @@ export class VaapiFormatFilter extends FilterOption {
   constructor(
     private pixelFormat: PixelFormat,
     private extraHardwareFrames: number = 64,
+    private normalizeSdrColor: boolean = false,
   ) {
     super();
   }
 
   get filter() {
-    return `scale_vaapi=format=${this.hardarePixelFormat.name}:extra_hw_frames=${this.extraHardwareFrames}`;
+    const colorOptions = this.normalizeSdrColor
+      ? ':out_color_matrix=bt709:out_color_primaries=bt709:out_color_transfer=bt709:out_range=tv'
+      : '';
+    return `scale_vaapi=format=${this.hardarePixelFormat.name}:extra_hw_frames=${this.extraHardwareFrames}${colorOptions}`;
   }
 
   nextState(currentState: FrameState): FrameState {

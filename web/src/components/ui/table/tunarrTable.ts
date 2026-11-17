@@ -9,6 +9,7 @@ import {
   createPaginatedRowModel,
   createSortedRowModel,
   createTableHook,
+  filterFn_arrHas,
   filterFn_arrIncludes,
   filterFn_equals,
   filterFn_inNumberRange,
@@ -17,6 +18,7 @@ import {
   globalFilteringFeature,
   metaHelper,
   rowPaginationFeature,
+  rowSelectionFeature,
   rowSortingFeature,
   sortFn_alphanumeric,
   sortFn_basic,
@@ -25,15 +27,18 @@ import {
   tableFeatures,
 } from '@tanstack/react-table';
 
-export type FilterVariant = 'text' | 'range';
+export type FilterVariant = 'text' | 'range' | 'multi-select' | 'boolean';
 
 export type TunarrColumnMeta = {
   // Plain-text column name for menus and accessible labels. Defaults to the
   // header when it is a string, then to the column id.
   label?: string;
 
-  // Defaults to 'text'. 'range' needs numeric values.
+  // Defaults to 'text'. 'range' needs numeric values. 'multi-select' needs
+  // filterOptions and filterFn: 'arrHas' on the column. 'boolean' needs
+  // filterFn: 'equals'.
   filterVariant?: FilterVariant;
+  filterOptions?: readonly string[];
 
   // Right-aligns the column and sets its values in the mono face.
   numeric?: boolean;
@@ -48,6 +53,7 @@ export const tunarrFeatures = tableFeatures({
   globalFilteringFeature,
   rowSortingFeature,
   rowPaginationFeature,
+  rowSelectionFeature,
   columnVisibilityFeature,
   filteredRowModel: createFilteredRowModel(),
   sortedRowModel: createSortedRowModel(),
@@ -58,6 +64,7 @@ export const tunarrFeatures = tableFeatures({
     equals: filterFn_equals,
     weakEquals: filterFn_weakEquals,
     arrIncludes: filterFn_arrIncludes,
+    arrHas: filterFn_arrHas,
   },
   sortFns: {
     alphanumeric: sortFn_alphanumeric,
@@ -85,6 +92,7 @@ export const { useAppTable: useTunarrTable, createAppColumnHelper } =
   createTableHook({ features: tunarrFeatures });
 
 export const ActionsColumnId = 'actions';
+export const SelectColumnId = 'select';
 
 export const columnLabel = <TData extends RowData>(
   column: TunarrColumn<TData>,
@@ -99,3 +107,6 @@ export const columnLabel = <TData extends RowData>(
 // Page sizes MRT offered. Saved settings may hold any of them. Never add
 // Infinity, which JSON stores as null and the settings schema rejects.
 export const pageSizeOptions = [5, 10, 15, 20, 25, 30, 50, 100];
+
+export const lastPageIndex = (count: number, pageSize: number) =>
+  Math.max(0, Math.ceil(count / pageSize) - 1);

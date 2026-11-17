@@ -1,6 +1,6 @@
 # Architecture
 
-*Last Updated: 2026-09-29*
+*Last Updated: 2026-11-07*
 
 ## Components
 
@@ -36,10 +36,11 @@
 | Flow | Path |
 |------|------|
 | Watch a channel | `api/streamApi.ts` → `stream/SessionManager.ts` → HLS or concat session → `ProgramStream` per lineup item → `ffmpeg/FfmpegStreamFactory.ts` → `ffmpeg/builder/` |
+| Watch a channel (ErsatzTV next) | `api/streamApi.ts` → `SessionManager.getOrCreateEtvNextSession` → `stream/etv/EtvNextSession.ts` spawns `ersatztv-channel` → worker calls `api/etvApi.ts` `/etv/playout-item` per item → `EtvNextPlayoutWriter.resolveDynamicItem` |
 | Build a schedule | web slot editor → `api/channelsApi.ts` → `services/scheduling/*SchedulerService.ts` → `db/channel/LineupRepository.ts` writes the lineup JSON |
 | Scan a library | `tasks/ScanLibrariesTask.ts` → `services/scanner/MediaSourceScanCoordinator.ts` → per-source scanner → `external/*ApiClient` → `db/program/*UpsertRepository.ts` → Meilisearch index |
 | Guide / EPG | `tasks/UpdateXmlTvTask.ts` → `services/TvGuideService.ts` → `services/XmlTvWriter.ts` |
 | Search | web search bar → `shared/src/util/searchUtil.ts` (Chevrotain DSL parser) → `services/search/SearchParser.ts` → `services/MeilisearchService.ts` |
 
-See [streaming.md](./streaming.md), [scheduling-and-lineups.md](./scheduling-and-lineups.md), and
+See [streaming.md](./streaming.md), [etv-next.md](./etv-next.md), [scheduling-and-lineups.md](./scheduling-and-lineups.md), and
 [media-sources.md](./media-sources.md) for detail.

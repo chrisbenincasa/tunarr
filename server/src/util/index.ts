@@ -456,3 +456,12 @@ export function isHttpUrl(input: string): boolean {
   const parsed = URL.parse(input);
   return parsed?.protocol.startsWith('http') ?? false;
 }
+
+/**
+ * Prefixes an http(s) URL with ffmpeg's `cache:` protocol so a looping input
+ * rewinds from a local copy. Without it, a server that ignores Range requests
+ * traps ffmpeg in an endless retry at the first rewind.
+ */
+export function loopableInputLocation(location: string): string {
+  return isHttpUrl(location) ? `cache:${location}` : location;
+}

@@ -1,6 +1,6 @@
 # Scheduling and Lineups
 
-*Last Updated: 2026-10-09*
+*Last Updated: 2026-11-08*
 
 Domain terms (slot, lineup, filler, flex) are defined in `CONTEXT.md` at the repo root.
 
@@ -40,12 +40,41 @@ separately from SQL migrations.
 |------|-------|
 | Time slots | `TimeSlotSchedulerService.ts`, `TimeSlotService.ts`, `TimeSlotImpl.ts` |
 | Random slots | `RandomSlotSchedulerService.ts`, `RandomSlotsService.ts`, `RandomSlotImpl.ts` |
-| Shared | `SlotImpl.ts`, `SlotSchedulerHelper.ts`, `slotSchedulerUtil.ts`, `slotGroupValidator.ts` |
+| Shared | `SlotImpl.ts`, `SlotSchedulerHelper.ts`, `slotSchedulerUtil.ts`, `slotGroupValidator.ts`, `slotIteratorState.ts` |
 | Filler and breaks | `FillerPickerV2.ts`, `WeightedFillerProgramIterator.ts`, `midRollBreakRules.ts` |
 
 Program iterators decide the order within a slot: `ProgramOrdereredIterator.ts` (sic),
 `ShuffleProgramIterator.ts`, `ProgramChunkedShuffle.ts`, `StaticProgramIterator.ts`,
 `FlexProgramIterator.ts`.
+
+## Strict saves, lenient rebuilds
+
+- Slot schedules reference filler lists, custom shows, shows, smart collections, and redirect
+  channels by ID. Deleting any of them never rewrites schedules, so a saved schedule can hold an ID
+  that no longer resolves.
+- User saves (`channelsApi.ts` and `LineupRepository`'s lineup update) set `strictValidation: true`.
+  `SlotSchedulerHelper.assertSlotReferences` then rejects the whole save with
+  `ScheduleValidationError` (HTTP 400) for a deleted reference or an empty custom show. An empty filler
+  list passes.
+- Background rebuilds (`RegenerateChannelLineupCommand`) leave the flag off. A slot that resolves to
+  nothing is skipped and plays flex. Redirect slots are the exception, because they still emit
+  redirect items to a deleted channel (#2486).
+- The web slot editors mirror the strict check so the user fixes a dangling reference before saving.
+  The helpers live in `web/src/helpers/slotSchedulerUtil.ts` (`customShowAvailability()`,
+  `unavailableCustomShowSlotIndexes()`).
+
+## Resuming a build
+
+- `slotIteratorState.ts` defines `SlotIteratorState`, where each iterator left off. Ordered and
+  `ordered_shuffle` iterators store the last program played; shuffle iterators store the programs
+  played in the current pass. All-rerun link groups store how many slots have aired the current
+  program (`rerunPlays`). Random slots also store the next sequential slot and cooldown times.
+- `createSlotIterators` keys iterators by slot position (`slot:<n>`) or link group (`group:<id>`).
+- `scheduleTimeSlots` and `RandomSlotScheduler.generateSchedule` take optional
+  `{ iteratorState, endTime }` and return `iteratorState` next to `discardCount`. `endTime` replaces
+  the `maxDays` limit. Time slots check it only when a slot starts, so the slot it falls in fills
+  its whole window. With no state passed, output is unchanged.
+- The worker request and reply schemas (`server/src/types/worker_schemas.ts`) carry both fields.
 
 ## Related
 

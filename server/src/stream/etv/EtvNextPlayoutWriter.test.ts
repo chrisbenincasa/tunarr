@@ -122,6 +122,11 @@ function makeWriter({
             selection ?? { audioStream: { index: 1 }, subtitleStream: null },
           ),
     ),
+    selectSubtitleStream: vi.fn(() =>
+      selectionFails
+        ? Promise.reject(new Error('profile did not evaluate'))
+        : Promise.resolve(selection?.subtitleStream ?? null),
+    ),
   };
 
   const watermarkResolver = {
@@ -354,7 +359,8 @@ describe('stream selection', () => {
     });
   });
 
-  test('drops the subtitle on a channel with subtitles turned off', async () => {
+  // Profiles own subtitles, so the legacy channel toggle no longer gates them.
+  test('sends the profile subtitle on a channel with the legacy toggle off', async () => {
     const { writer } = makeWriter({
       items: [programItem(600_000)],
       streamDetails: {
@@ -370,7 +376,10 @@ describe('stream selection', () => {
       subtitlesEnabled: false,
     } as ChannelOrmWithTranscodeConfig);
 
-    expect(item.tracks).toEqual({ audio: { stream_index: 2 } });
+    expect(item.tracks).toEqual({
+      audio: { stream_index: 2 },
+      subtitle: { stream_index: 4 },
+    });
   });
 
   test('keeps the item when the profile fails, leaving tracks to the worker', async () => {
@@ -397,7 +406,40 @@ describe('stream selection', () => {
     const { item } = await resolveOne(writer);
 
     expect(streamSelector.selectAudioAndSubtitleStreams).not.toHaveBeenCalled();
+    expect(streamSelector.selectSubtitleStream).not.toHaveBeenCalled();
     expect(item.tracks?.audio).toBeUndefined();
+  });
+
+  test('selects a subtitle for a file with no audio', async () => {
+    const { writer, streamSelector } = makeWriter({
+      items: [programItem(600_000)],
+      streamDetails: { duration: tenMinutes, subtitleDetails: [pgs] },
+      selection: { audioStream: english, subtitleStream: pgs },
+    });
+
+    const { item } = await resolveOne(writer);
+
+    expect(streamSelector.selectAudioAndSubtitleStreams).not.toHaveBeenCalled();
+    expect(streamSelector.selectSubtitleStream).toHaveBeenCalledWith(
+      expect.objectContaining({ subtitleStreams: [pgs] }),
+    );
+    expect(item.tracks).toEqual({ subtitle: { stream_index: 4 } });
+  });
+
+  test('selects a subtitle for a file with no audio on a channel with the legacy toggle off', async () => {
+    const { writer, streamSelector } = makeWriter({
+      items: [programItem(600_000)],
+      streamDetails: { duration: tenMinutes, subtitleDetails: [pgs] },
+      selection: { audioStream: english, subtitleStream: pgs },
+    });
+
+    const { item } = await resolveOne(writer, {
+      ...channel,
+      subtitlesEnabled: false,
+    } as ChannelOrmWithTranscodeConfig);
+
+    expect(streamSelector.selectSubtitleStream).toHaveBeenCalled();
+    expect(item.tracks).toEqual({ subtitle: { stream_index: 4 } });
   });
 
   test('selects on the materialized path too', async () => {

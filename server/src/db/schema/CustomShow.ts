@@ -4,6 +4,7 @@ import type { Insertable, Selectable } from 'kysely';
 import { CustomShowContent } from './CustomShowContent.ts';
 import { type KyselifyBetter } from './KyselifyBetter.ts';
 import { MediaSource } from './MediaSource.ts';
+import { StreamSelectionProfile } from './StreamSelectionProfile.ts';
 
 export const CustomShow = sqliteTable('custom_show', {
   uuid: text().primaryKey(),
@@ -16,6 +17,10 @@ export const CustomShow = sqliteTable('custom_show', {
   syncMediaSourceType: text().$type<'plex'>(),
   syncExternalPlaylistId: text(),
   lastSyncedAt: integer({ mode: 'timestamp_ms' }),
+  streamSelectionProfileId: text().references(
+    () => StreamSelectionProfile.uuid,
+    { onDelete: 'set null' },
+  ),
 });
 
 export type CustomShowTable = KyselifyBetter<typeof CustomShow>;

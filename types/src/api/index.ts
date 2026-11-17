@@ -95,6 +95,8 @@ export const CreateCustomShowRequestSchema = z.object({
   syncMediaSourceId: z.string().nullable(),
   syncMediaSourceType: z.enum(['plex']).nullable(),
   syncExternalPlaylistId: z.string().nullable(),
+  // Omitted leaves the assignment unchanged; null clears it.
+  streamSelectionProfileId: z.uuid().nullish(),
 });
 
 export type CreateCustomShowRequest = z.infer<
@@ -122,6 +124,8 @@ export const CreateFillerListRequestSchema = z.object({
       z.discriminatedUnion('type', [ContentProgramSchema, CustomProgramSchema]),
     )
     .min(1, 'A filler list must have at least one program.'),
+  // Omitted leaves the assignment unchanged; null clears it.
+  streamSelectionProfileId: z.uuid().nullish(),
 });
 
 export type CreateFillerListRequest = z.infer<
@@ -589,4 +593,52 @@ export const UpdateFeatureFlagsRequestSchema = z.object({
 
 export type UpdateFeatureFlagsRequest = z.infer<
   typeof UpdateFeatureFlagsRequestSchema
+>;
+
+export const BulkAssignFillersRequestSchema = z
+  .object({
+    channelIds: z.array(z.string().uuid()).min(1).max(1_000),
+    fillers: z
+      .array(
+        z.object({
+          fillerShowId: z.string().uuid(),
+          weight: z.number().int().positive(),
+          cooldownSeconds: z.number().int().nonnegative(),
+        }),
+      )
+      .min(1)
+      .max(100),
+    mode: z.enum(['add', 'replace']),
+  })
+  .superRefine((req, ctx) => {
+    // Each (channel, filler) pair is a primary key, so repeats would fail the insert.
+
+    if (new Set(req.channelIds).size !== req.channelIds.length) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['channelIds'],
+        message: 'channelIds must not contain duplicates',
+      });
+    }
+    const fillerIds = req.fillers.map((f) => f.fillerShowId);
+    if (new Set(fillerIds).size !== fillerIds.length) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['fillers'],
+        message: 'fillers must not repeat a fillerShowId',
+      });
+    }
+  });
+
+export type BulkAssignFillersRequest = z.infer<
+  typeof BulkAssignFillersRequestSchema
+>;
+
+export const BulkAssignFillersResponseSchema = z.object({
+  added: z.number(),
+  updated: z.number(),
+});
+
+export type BulkAssignFillersResponse = z.infer<
+  typeof BulkAssignFillersResponseSchema
 >;

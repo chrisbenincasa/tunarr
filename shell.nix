@@ -2,10 +2,10 @@
 
 let
   linuxFFmpeg = pkgs.stdenv.mkDerivation {
-    name = "linux-ffmpeg-8.1.2-7";
+    name = "linux-ffmpeg-8.1.2-8";
     src = pkgs.fetchurl {
-      url = "https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/download/8.1.2-7/ffmpeg-n8.1.2-etv.7-linux64-gpl-8.1.tar.xz";
-      sha256 = "sha256-7TLLX1xwZ0INOKZOILTK8WWXylcOPQ/wyQyOoyQHZ+c=";
+      url = "https://github.com/ErsatzTV/ErsatzTV-ffmpeg/releases/download/8.1.2-8/ffmpeg-n8.1.2-etv.8-linux64-gpl-8.1.tar.xz";
+      sha256 = "sha256-ZS+LFfxLOFTU7OzTGjMARiu3QpwAIjlmkJ3iY5/V81w=";
     };
     installPhase = ''
       mkdir -p $out/bin

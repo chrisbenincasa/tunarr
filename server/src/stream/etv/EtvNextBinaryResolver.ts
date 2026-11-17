@@ -8,15 +8,17 @@ import { TUNARR_ENV_VARS, getEnvVar } from '../../util/env.ts';
 import { isNonEmptyString } from '../../util/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
+import { findContractMismatches, parseDescribe } from './EtvNextDescribe.ts';
 import {
   matchesPinnedEtvNextVersion,
   parseEtvNextVersion,
   pinnedEtvNextVersion,
 } from './EtvNextVersion.ts';
+import type { Describe } from './generated/describe.ts';
 
 export const ETV_NEXT_BINARY_NAME = 'ersatztv-channel';
 
-const VersionProbeTimeoutMs = 10_000;
+const ProbeTimeoutMs = 10_000;
 
 export class EtvNextBinaryNotFoundError extends Error {
   constructor(readonly testedPaths: string[]) {
@@ -36,6 +38,18 @@ export class EtvNextVersionMismatchError extends Error {
       `The ${ETV_NEXT_BINARY_NAME} binary at ${executablePath} reports ${version ?? 'no readable version'}, but this Tunarr build requires ${pinnedEtvNextVersion}. Reinstall Tunarr, or set TUNARR_ERSATZTV_NEXT_PATH to run a different build at your own risk.`,
     );
     this.name = 'EtvNextVersionMismatchError';
+  }
+}
+
+export class EtvNextContractMismatchError extends Error {
+  constructor(
+    readonly executablePath: string,
+    readonly mismatches: string[],
+  ) {
+    super(
+      `The ${ETV_NEXT_BINARY_NAME} binary at ${executablePath} cannot run Tunarr's channels: ${mismatches.join('; ')}.`,
+    );
+    this.name = 'EtvNextContractMismatchError';
   }
 }
 
@@ -131,14 +145,50 @@ export class EtvNextBinaryResolver {
     throw new EtvNextBinaryNotFoundError(testPaths);
   }
 
-  /** Reads the worker's own version string, e.g. `0.2.0-96aa6cb6-develop+linux-x64`. */
-  async getVersion(): Promise<string | undefined> {
+  /**
+   * Runs `ersatztv-channel describe`. Returns undefined when the worker
+   * predates the command (before 0.2.5) or prints output Tunarr cannot read.
+   */
+  async describe(): Promise<Describe | undefined> {
     const executablePath = await this.resolve();
-    // Bounded, because every session start runs this under its channel lock.
+    try {
+      // Bounded, because every session start runs this under its channel lock.
+      const stdout = await this.childProcessHelper.getStdout(
+        executablePath,
+        ['describe'],
+        { timeout: ProbeTimeoutMs, isPath: true },
+      );
+      return parseDescribe(stdout);
+    } catch (e) {
+      this.logger.debug(
+        e,
+        'Could not read `%s describe` output',
+        ETV_NEXT_BINARY_NAME,
+      );
+      return;
+    }
+  }
+
+  /** Reads the worker's own version string, e.g. `0.2.5+linux-x64`. */
+  async getVersion(): Promise<string | undefined> {
+    return this.versionOf(await this.describe());
+  }
+
+  /** The version `describe` reports, or the `--version` probe when it reports none. */
+  private async versionOf(
+    described: Describe | undefined,
+  ): Promise<string | undefined> {
+    const version = described?.binary.version;
+    return isNonEmptyString(version) ? version : await this.readVersionFlag();
+  }
+
+  /** The `--version` probe, for workers that predate `describe`. */
+  private async readVersionFlag(): Promise<string | undefined> {
+    const executablePath = await this.resolve();
     const stdout = await this.childProcessHelper.getStdout(
       executablePath,
       ['--version'],
-      { timeout: VersionProbeTimeoutMs, isPath: true },
+      { timeout: ProbeTimeoutMs, isPath: true },
     );
 
     return parseEtvNextVersion(stdout);
@@ -170,14 +220,19 @@ export class EtvNextBinaryResolver {
   }
 
   /**
-   * Resolves the binary and checks its version against the pin.
+   * Resolves the binary and checks it against the pin and Tunarr's contract.
    *
    * A bundled binary that differs from the pin, or whose version cannot be
    * read, is refused, because Tunarr's schemas describe only the pinned
-   * release. A binary found through `TUNARR_ERSATZTV_NEXT_PATH` only warns,
-   * so developers can run a local build.
+   * release. A binary found through `TUNARR_ERSATZTV_NEXT_PATH` only warns
+   * about its version, so developers can run a local build.
+   *
+   * Any binary whose `describe` contract differs from what Tunarr writes and
+   * reads is refused, wherever it came from, because its channels cannot
+   * stream. A binary from the env var that has no `describe` runs unchecked.
    *
    * @throws EtvNextVersionMismatchError for a bundled binary off the pin.
+   * @throws EtvNextContractMismatchError for a contract Tunarr cannot use.
    */
   async resolveChecked(): Promise<string> {
     if (this.#checked !== undefined) {
@@ -185,25 +240,40 @@ export class EtvNextBinaryResolver {
     }
 
     const executablePath = await this.resolve();
-    const version = await this.getVersion();
-
-    if (version && matchesPinnedEtvNextVersion(version)) {
-      this.#checked = executablePath;
-      return executablePath;
-    }
-
+    const described = await this.describe();
+    const version = await this.versionOf(described);
     const fromEnv =
       EtvNextBinaryResolver.envCandidatePaths().includes(executablePath);
-    if (!fromEnv) {
-      throw new EtvNextVersionMismatchError(executablePath, version);
+
+    if (!isNonEmptyString(version) || !matchesPinnedEtvNextVersion(version)) {
+      if (!fromEnv) {
+        throw new EtvNextVersionMismatchError(executablePath, version);
+      }
+
+      this.logger.warn(
+        'The ErsatzTV next worker at %s reports %s, but Tunarr pinned %s. Running it because TUNARR_ERSATZTV_NEXT_PATH points at it. Streams may fail in ways the schema cannot catch.',
+        executablePath,
+        version ?? 'no readable version',
+        pinnedEtvNextVersion,
+      );
     }
 
-    this.logger.warn(
-      'The ErsatzTV next worker at %s reports %s, but Tunarr pinned %s. Running it because TUNARR_ERSATZTV_NEXT_PATH points at it. Streams may fail in ways the schema cannot catch.',
-      executablePath,
-      version ?? 'no readable version',
-      pinnedEtvNextVersion,
-    );
+    if (described) {
+      const mismatches = findContractMismatches(described);
+      if (mismatches.length > 0) {
+        throw new EtvNextContractMismatchError(executablePath, mismatches);
+      }
+    } else if (fromEnv) {
+      this.logger.warn(
+        'The ErsatzTV next worker at %s does not answer `describe`, so Tunarr cannot check its contract. Running it because TUNARR_ERSATZTV_NEXT_PATH points at it.',
+        executablePath,
+      );
+    } else {
+      throw new EtvNextContractMismatchError(executablePath, [
+        '`describe` failed or printed output Tunarr cannot read',
+      ]);
+    }
+
     this.#checked = executablePath;
     return executablePath;
   }

@@ -8,7 +8,10 @@ import type {
   WorkerRequest,
   WorkerRequestToResponse,
 } from '../types/worker_schemas.ts';
-import { USE_WORKER_POOL_ENV_VAR } from '../util/env.ts';
+import {
+  USE_WORKER_POOL_ENV_VAR,
+  WORKER_POOL_SIZE_ENV_VAR,
+} from '../util/env.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { SlotSchedulerService } from './scheduling/RandomSlotSchedulerService.ts';
@@ -32,8 +35,9 @@ export class NoopWorkerPool implements IWorkerPool {
 
   start(): void {
     this.logger.debug(
-      'Running no-op worker pool. To run separate worker threads, set the %s env variable to true',
+      'Running no-op worker pool. To run separate worker threads, set %s to true and %s to 1 or more, or unset them',
       USE_WORKER_POOL_ENV_VAR,
+      WORKER_POOL_SIZE_ENV_VAR,
     );
   }
 

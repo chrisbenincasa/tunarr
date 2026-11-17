@@ -1,17 +1,17 @@
 import { renderWithProviders, screen, within } from '@/test/utils';
-import type { PaginationState } from '@tanstack/react-table';
+import type { PaginationState, RowSelectionState } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import { describe, expect, test, vi } from 'vitest';
 import { DataTable } from './DataTable.tsx';
-import { actionsColumn } from './columns.tsx';
+import { actionsColumn, selectColumn } from './columns.tsx';
 import { createAppColumnHelper, useTunarrTable } from './tunarrTable.ts';
 
-type Item = { id: string; name: string; count: number };
+type Item = { id: string; name: string; count: number; active: boolean };
 
 const items: Item[] = [
-  { id: 'b', name: 'Bravo', count: 2 },
-  { id: 'a', name: 'Alpha', count: 10 },
-  { id: 'c', name: 'Charlie', count: 5 },
+  { id: 'b', name: 'Bravo', count: 2, active: true },
+  { id: 'a', name: 'Alpha', count: 10, active: false },
+  { id: 'c', name: 'Charlie', count: 5, active: true },
 ];
 
 const columnHelper = createAppColumnHelper<Item>();
@@ -23,6 +23,9 @@ const Harness = ({
   emptyFallback,
   loading,
   initialPagination = { pageIndex: 0, pageSize: 10 },
+  selectable = false,
+  onSelectionChange,
+  onOpen,
 }: {
   data?: Item[];
   onRowClick?: (item: Item) => void;
@@ -30,15 +33,28 @@ const Harness = ({
   emptyFallback?: string;
   loading?: boolean;
   initialPagination?: PaginationState;
+  selectable?: boolean;
+  onSelectionChange?: (selection: RowSelectionState) => void;
+  onOpen?: (item: Item) => void;
 }) => {
   const [pagination, setPagination] = useState(initialPagination);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
   const columns = useMemo(
     () => [
+      ...(selectable
+        ? [selectColumn<Item>({ getLabel: (item) => item.name })]
+        : []),
       ...columnHelper.columns([
         columnHelper.accessor('name', { header: 'Name' }),
         columnHelper.accessor('count', {
           header: 'Count',
           meta: { filterVariant: 'range', numeric: true },
+        }),
+        columnHelper.accessor('active', {
+          header: 'Active',
+          filterFn: 'equals',
+          cell: ({ getValue }) => (getValue() ? 'Yes' : 'No'),
+          meta: { filterVariant: 'boolean' },
         }),
       ]),
       actionsColumn<Item>({
@@ -47,13 +63,28 @@ const Harness = ({
         ),
       }),
     ],
-    [onAction],
+    [onAction, selectable],
+  );
+  const keyboardNavigation = useMemo(
+    () =>
+      onOpen
+        ? { onOpen: (row: { original: Item }) => onOpen(row.original) }
+        : undefined,
+    [onOpen],
   );
   const table = useTunarrTable({
     columns,
     data,
-    state: { pagination },
+    getRowId: (item) => item.id,
+    state: { pagination, rowSelection },
     onPaginationChange: setPagination,
+    onRowSelectionChange: (updater) => {
+      setRowSelection((old) => {
+        const next = typeof updater === 'function' ? updater(old) : updater;
+        onSelectionChange?.(next);
+        return next;
+      });
+    },
   });
   return (
     <DataTable
@@ -61,6 +92,7 @@ const Harness = ({
       aria-label="Items"
       emptyFallback={emptyFallback}
       loading={loading}
+      keyboardNavigation={keyboardNavigation}
       getRowProps={(row) => ({
         onClick: onRowClick ? () => onRowClick(row.original) : undefined,
       })}
@@ -71,7 +103,12 @@ const Harness = ({
 const names = () =>
   within(screen.getAllByRole('rowgroup')[1])
     .getAllByRole('row')
-    .map((row) => within(row).getAllByRole('cell')[0].textContent);
+    .map(
+      (row) =>
+        within(row)
+          .getAllByRole('cell')
+          .find((cell) => !cell.querySelector('input'))?.textContent,
+    );
 
 describe('DataTable', () => {
   test('sorts by a column and labels the sort button', async () => {
@@ -114,6 +151,24 @@ describe('DataTable', () => {
     expect(names()).toHaveLength(3);
     expect(screen.getByRole('textbox', { name: 'Min Count' })).toHaveValue('');
     expect(screen.getByRole('textbox', { name: 'Max Count' })).toHaveValue('');
+  });
+
+  test('boolean filter matches yes, no or any', async () => {
+    const { user } = renderWithProviders(<Harness />);
+    await user.click(screen.getByRole('button', { name: 'Show/Hide filters' }));
+    const pick = async (option: string) => {
+      await user.click(
+        screen.getByRole('combobox', { name: 'Filter by Active' }),
+      );
+      await user.click(screen.getByRole('option', { name: option }));
+    };
+
+    await pick('Yes');
+    expect(names()).toEqual(['Bravo', 'Charlie']);
+    await pick('No');
+    expect(names()).toEqual(['Alpha']);
+    await pick('Any');
+    expect(names()).toHaveLength(3);
   });
 
   test('range filter keeps partial decimal input', async () => {
@@ -167,6 +222,7 @@ describe('DataTable', () => {
       id: String(i),
       name: `Item ${String(i + 1).padStart(2, '0')}`,
       count: i,
+      active: false,
     }));
     renderWithProviders(
       <Harness
@@ -183,6 +239,7 @@ describe('DataTable', () => {
       id: String(i),
       name: `Item ${String(i + 1).padStart(2, '0')}`,
       count: i,
+      active: false,
     }));
     renderWithProviders(
       <Harness data={many} initialPagination={{ pageIndex: 5, pageSize: 5 }} />,
@@ -266,5 +323,74 @@ describe('DataTable', () => {
       .getAllByRole('option')
       .map((o) => Number(o.textContent));
     expect(options.every(Number.isFinite)).toBe(true);
+  });
+
+  test('selects rows and the page without triggering the row click', async () => {
+    const onRowClick = vi.fn();
+    const onSelectionChange = vi.fn();
+    const { user } = renderWithProviders(
+      <Harness
+        selectable
+        onRowClick={onRowClick}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+    await user.click(screen.getByRole('checkbox', { name: 'Select Alpha' }));
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ a: true });
+    expect(onRowClick).not.toHaveBeenCalled();
+
+    const all = screen.getByRole('checkbox', {
+      name: 'Select all on this page',
+    });
+    expect(all).toHaveAttribute('data-indeterminate', 'true');
+    await user.click(all);
+    expect(onSelectionChange).toHaveBeenLastCalledWith({
+      a: true,
+      b: true,
+      c: true,
+    });
+  });
+
+  test('drops selected rows that the search hides', async () => {
+    const onSelectionChange = vi.fn();
+    const { user } = renderWithProviders(
+      <Harness selectable onSelectionChange={onSelectionChange} />,
+    );
+    await user.click(screen.getByRole('checkbox', { name: 'Select Alpha' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Select Bravo' }));
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ a: true, b: true });
+
+    await user.click(screen.getByRole('button', { name: 'Show/Hide search' }));
+    await user.type(screen.getByRole('textbox', { name: 'Search' }), 'alp');
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ a: true });
+  });
+
+  test('moves with J and K, selects with X and opens with Enter', async () => {
+    const onOpen = vi.fn();
+    const onSelectionChange = vi.fn();
+    const { user } = renderWithProviders(
+      <Harness
+        selectable
+        onOpen={onOpen}
+        onSelectionChange={onSelectionChange}
+      />,
+    );
+    await user.keyboard('jjx');
+    expect(onSelectionChange).toHaveBeenLastCalledWith({ a: true });
+
+    await user.keyboard('k{Enter}');
+    expect(onOpen).toHaveBeenCalledWith(items[0]);
+  });
+
+  test('ignores navigation keys while typing in a field', async () => {
+    const onOpen = vi.fn();
+    const { user } = renderWithProviders(
+      <Harness selectable onOpen={onOpen} />,
+    );
+    await user.click(screen.getByRole('button', { name: 'Show/Hide search' }));
+    await user.type(screen.getByRole('textbox', { name: 'Search' }), 'jk');
+    expect(screen.getByRole('textbox', { name: 'Search' })).toHaveValue('jk');
+    await user.keyboard('{Enter}');
+    expect(onOpen).not.toHaveBeenCalled();
   });
 });

@@ -14,7 +14,6 @@ import {
 } from '@mui/material';
 import { useQueryClient } from '@tanstack/react-query';
 import { getApiChannelsByIdNowPlayingQueryKey } from '@/generated/@tanstack/react-query.gen.ts';
-import type { MediaArtwork } from '@tunarr/types';
 import * as globalDayjs from 'dayjs';
 import { capitalize, isNil } from 'lodash-es';
 import { useMemo, useState } from 'react';
@@ -27,6 +26,7 @@ import { useChannelNowPlaying } from '../../hooks/useTvGuide.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
 import ProgramDetailsDialog from '../programs/ProgramDetailsDialog.tsx';
 import { NetworkIcon } from '../util/NetworkIcon.tsx';
+import { programArtworkUrl } from './channelSummary.ts';
 
 type Props = {
   channelId: string;
@@ -114,33 +114,7 @@ export const ChannelNowPlayingCard = ({ channelId }: Props) => {
       return;
     }
 
-    const [id, artworkType, fallbackTypes] = match([
-      program.program,
-      extractProgramGrandparent(program.program),
-    ])
-      .returnType<[string, MediaArtwork['type'], MediaArtwork['type'][]]>()
-      .with([{ type: 'episode' }, P.nonNullable], ([_, show]) => [
-        show.uuid,
-        'fanart',
-        ['poster'],
-      ])
-      .with([{ type: 'episode' }, P._], ([ep, _]) => [ep.uuid, 'thumbnail', []])
-      .with([{ type: 'track' }, P.nonNullable], ([_, artist]) => [
-        artist.uuid,
-        'banner',
-        ['fanart', 'poster'],
-      ])
-      .with([{ type: 'movie' }, P._], ([movie, _]) => [
-        movie.uuid,
-        'banner',
-        ['fanart', 'poster'],
-      ])
-      .otherwise(([other, _]) => [other.uuid, 'fanart', ['poster']]);
-
-    const fallbackParts =
-      fallbackTypes.length === 0 ? '' : `${fallbackTypes.join(',')}`;
-
-    return `${backendUri}/api/programs/${id}/artwork/${artworkType}?fallbackArtworkTypes=${fallbackParts}`;
+    return programArtworkUrl(backendUri, program.program);
   }, [backendUri, firstProgram, lineup.programs]);
 
   const [imageLoaded, setImageLoaded] = useState(false);

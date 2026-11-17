@@ -13,10 +13,13 @@ import {
 import { EtvNextDynamicTokenRegistry } from '../stream/etv/EtvNextDynamicTokenRegistry.ts';
 import { parseBearerToken } from '../stream/etv/EtvNextDynamicTokenRegistry.ts';
 import {
+  findHardwareSelection,
   findIgnoredSettings,
   findUnsupportedSettings,
 } from '../stream/etv/EtvNextChannelConfigMapper.ts';
 import { StreamTerminationRequestedError } from '../stream/etv/EtvNextPlayoutItemMapper.ts';
+import { findHardwareWarnings } from '../stream/etv/EtvNextHardwareCheck.ts';
+import { EtvNextHardwareProbe } from '../stream/etv/EtvNextHardwareProbe.ts';
 import { EtvNextPlayoutWriter } from '../stream/etv/EtvNextPlayoutWriter.ts';
 import { PlayoutItemSchema } from '../stream/etv/generated/playout.ts';
 import { KEYS } from '../types/inject.ts';
@@ -106,6 +109,20 @@ const TranscodeConfigCompatibilitySchema = z.object({
 });
 
 /**
+ * What this machine's hardware does to a transcode config under the ErsatzTV
+ * next backend. Empty when the config encodes in software, when the hardware
+ * can encode it, or when the probe could not run.
+ */
+const TranscodeConfigHardwareSchema = z.object({
+  warnings: z.array(
+    z.object({
+      field: z.string(),
+      reason: z.string(),
+    }),
+  ),
+});
+
+/**
  * The callback an `ersatztv-channel` worker resolves its dynamic placeholder
  * against.
  *
@@ -123,6 +140,7 @@ export class EtvNextApiController implements ApiController {
     private tokenRegistry: EtvNextDynamicTokenRegistry,
     @inject(KEYS.ChannelDB) private channelDB: IChannelDB,
     @inject(EtvNextPlayoutWriter) private playoutWriter: EtvNextPlayoutWriter,
+    @inject(EtvNextHardwareProbe) private hardwareProbe: EtvNextHardwareProbe,
   ) {}
 
   // eslint-disable-next-line @typescript-eslint/require-await
@@ -384,6 +402,47 @@ export class EtvNextApiController implements ApiController {
           supported: unsupported.length === 0,
           unsupported,
           ignored: findIgnoredSettings(transcodeConfig),
+        });
+      },
+    );
+
+    fastify.get(
+      '/etv/transcode_configs/:id/hardware',
+      {
+        schema: {
+          tags: ['Streaming', 'Transcode Configs'],
+          description:
+            "Probes whether this machine can encode a transcode config's hardware acceleration settings on the ErsatzTV next backend. The first call for a config can take several seconds.",
+          params: z.object({
+            id: z.string().uuid(),
+          }),
+          response: {
+            200: TranscodeConfigHardwareSchema,
+            404: z.void(),
+          },
+        },
+      },
+      async (req, res) => {
+        const transcodeConfig = await req.serverCtx.transcodeConfigDB.getById(
+          req.params.id,
+        );
+
+        if (!transcodeConfig) {
+          return res.status(404).send();
+        }
+
+        const selection = findHardwareSelection(transcodeConfig);
+        if (!selection) {
+          return res.send({ warnings: [] });
+        }
+
+        const runtime = await this.hardwareProbe.probe(
+          selection,
+          req.serverCtx.settings.ffmpegSettings().ffmpegExecutablePath,
+        );
+
+        return res.send({
+          warnings: runtime ? findHardwareWarnings(runtime, selection) : [],
         });
       },
     );

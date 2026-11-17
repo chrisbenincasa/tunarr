@@ -43,6 +43,8 @@ theme:
 
 nav:
   - Home: index.md
+  - Releases:
+      - blog/index.md
   - API Docs: api-docs.html
   - Getting Started:
       - Install: getting-started/installation.md
@@ -67,6 +69,7 @@ nav:
           - configure/ffmpeg/index.md
           - Transcode Configs: configure/ffmpeg/transcode_config.md
           - ErsatzTV next: configure/ffmpeg/ersatztv-next.md
+      - Stream Selection: configure/stream-selection.md
       - Search:
           - misc/search/index.md
       - Channels:
@@ -81,7 +84,7 @@ nav:
           - configure/library/index.md
           - Filler: configure/library/filler.md
           - How Filler Is Chosen: configure/library/filler-selection.md
-          - Custom Shows: configure/library/custom-shows.md
+          - Playlists: configure/library/playlists.md
           - Smart Collections: configure/library/smart-collections.md
           - Trash: configure/library/trash.md
       - Scheduling:
@@ -147,6 +150,10 @@ extra:
       name: Sponsor Tunarr on GitHub
 
 plugins:
+  - blog:
+      post_url_format: "{slug}"
+      categories_allowed:
+        - Releases
   - glightbox
   - search
 

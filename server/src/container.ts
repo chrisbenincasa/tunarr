@@ -40,7 +40,10 @@ import { NoopWorkerPool } from './services/NoopWorkerPool.ts';
 import { ServicesModule } from './services/ServicesModule.ts';
 import { StartupService } from './services/StartupService.ts';
 import { SystemDevicesService } from './services/SystemDevicesService.ts';
-import { TunarrWorkerPool } from './services/TunarrWorkerPool.ts';
+import {
+  isWorkerPoolEnabled,
+  TunarrWorkerPool,
+} from './services/TunarrWorkerPool.ts';
 import { TimeSlotSchedulerService } from './services/scheduling/TimeSlotSchedulerService.ts';
 import { SearchParser } from './services/search/SearchParser.ts';
 import { ChannelLineupMigratorStartupTask } from './services/startup/ChannelLineupMigratorStartupTask.ts';
@@ -54,7 +57,12 @@ import { SeedSystemDevicesStartupTask } from './services/startup/SeedSystemDevic
 import { FixerRunner } from './tasks/fixers/FixerRunner.ts';
 import { ChildProcessHelper } from './util/ChildProcessHelper.ts';
 import { Timer } from './util/Timer.ts';
-import { getBooleanEnvVar, USE_WORKER_POOL_ENV_VAR } from './util/env.ts';
+import {
+  getBooleanEnvVar,
+  getNumericEnvVar,
+  USE_WORKER_POOL_ENV_VAR,
+  WORKER_POOL_SIZE_ENV_VAR,
+} from './util/env.ts';
 
 const container = new Container({ autobind: true });
 
@@ -155,7 +163,12 @@ const RootModule = new ContainerModule(({ bind }) => {
   bind(KEYS.StartupTask).to(GenerateGuideStartupTask).inSingletonScope();
   bind(KEYS.StartupTask).to(RefreshLibrariesStartupTask).inSingletonScope();
 
-  if (getBooleanEnvVar(USE_WORKER_POOL_ENV_VAR, true)) {
+  if (
+    isWorkerPoolEnabled(
+      getBooleanEnvVar(USE_WORKER_POOL_ENV_VAR, true),
+      getNumericEnvVar(WORKER_POOL_SIZE_ENV_VAR),
+    )
+  ) {
     bind(KEYS.WorkerPool).toService(TunarrWorkerPool);
   } else {
     bind(KEYS.WorkerPool).to(NoopWorkerPool).inSingletonScope();

@@ -84,8 +84,9 @@ export class FfmpegState {
   softwareDeinterlaceFilter: string = 'yadif=1';
   vaapiDevice: Nullable<string> = null;
   vaapiDriver: Nullable<string> = null;
-  outputFormat: OutputFormat = MpegTsOutputFormat; // TODO: No
-  outputLocation: OutputLocation = StdoutOutputLocation;
+  // The constructor deep-merges into these objects; each state must own them.
+  outputFormat: OutputFormat = { ...MpegTsOutputFormat };
+  outputLocation: OutputLocation = { ...StdoutOutputLocation };
   ptsOffset?: number;
   /**
    * Segment/file number to continue the WebVTT subtitle sidecar's `segment`

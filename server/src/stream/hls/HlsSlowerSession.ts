@@ -174,6 +174,10 @@ export class HlsSlowerSession extends BaseHlsSession {
     this.#concatSession.start();
   }
 
+  protected override isTranscodeRunning(): boolean {
+    return this.#concatSession?.process.running ?? false;
+  }
+
   protected async stopInternal(options: StopOptions): Promise<void> {
     if (this.#concatSession) {
       this.#concatSession.kill();

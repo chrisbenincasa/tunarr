@@ -20,4 +20,6 @@ export const CustomShowSchema = z.object({
   syncExternalPlaylistId: z.string().nullish(),
   lastSyncedAt: z.number().nullish(),
   isSyncing: z.boolean().default(false),
+  // Applies when a program is scheduled from this custom show.
+  streamSelectionProfileId: z.uuid().nullish(),
 });

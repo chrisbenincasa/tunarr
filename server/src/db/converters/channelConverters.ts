@@ -62,6 +62,7 @@ export const dbChannelToApiChannel = ({
     transcodeConfigId: channel.transcodeConfigId,
     subtitlesEnabled: channel.subtitlesEnabled ?? false,
     useEtvNext: channel.useEtvNext ?? false,
+    streamSelectionProfileId: channel.streamSelectionProfileId ?? null,
     subtitlePreferences: isNonEmptyArray(subtitlePreferences)
       ? subtitlePreferences
       : undefined,
@@ -116,6 +117,7 @@ export const ormChannelToApiChannel = ({
     transcodeConfigId: channel.transcodeConfigId,
     subtitlesEnabled: channel.subtitlesEnabled ?? false,
     useEtvNext: channel.useEtvNext ?? false,
+    streamSelectionProfileId: channel.streamSelectionProfileId ?? null,
     subtitlePreferences: isNonEmptyArray(subtitlePreferences)
       ? subtitlePreferences
       : undefined,

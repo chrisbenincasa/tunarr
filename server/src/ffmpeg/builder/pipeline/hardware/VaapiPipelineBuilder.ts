@@ -299,7 +299,16 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
         }
       }
 
-      // Color params
+      // Keep SDR color signaling stable across clips, including partially tagged inputs.
+      // Use VPP conversion rather than relabeling encoded pixels.
+      const normalizeSdrColor =
+        !this.context.pipelineOptions.disableHardwareFilters &&
+        this.ffmpegState.encoderHwAccelMode ===
+          HardwareAccelerationMode.Vaapi &&
+        pixelFormat.bitDepth === 8 &&
+        isVideoPipelineContext(this.context) &&
+        !isHdrContent(this.context.videoStream);
+      let colorConverted = false;
 
       if (
         this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.None
@@ -331,7 +340,8 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
         }
 
         if (currentState.frameDataLocation === FrameDataLocation.Hardware) {
-          steps.push(new VaapiFormatFilter(pixelFormat));
+          steps.push(new VaapiFormatFilter(pixelFormat, 64, normalizeSdrColor));
+          colorConverted = normalizeSdrColor;
           needsVaapiSetFormat = false;
         } else if (
           this.ffmpegState.encoderHwAccelMode === HardwareAccelerationMode.Vaapi
@@ -349,6 +359,9 @@ export class VaapiPipelineBuilder extends SoftwarePipelineBuilder {
         currentState.frameDataLocation === FrameDataLocation.Software
       ) {
         steps.push(new HardwareUploadVaapiFilter(needsVaapiSetFormat));
+      }
+      if (normalizeSdrColor && !colorConverted) {
+        steps.push(new VaapiFormatFilter(pixelFormat, 64, true));
       }
     }
 

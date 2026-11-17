@@ -20,6 +20,10 @@ type TablePage = {
   // Set once the page uses DataTable, which adds steps MRT can't pass.
   ported?: boolean;
 
+  // Collection pages show cards at comfortable density and the table only at
+  // dense, so they run with dense density.
+  dense?: boolean;
+
   // A column whose values sort as plain text.
   sortColumn: string;
   hideColumn?: string;
@@ -125,9 +129,10 @@ const TABLES: Record<string, TableTarget> = {
   },
 
   CustomShows: {
-    url: () => '/library/custom-shows',
+    url: () => '/library/playlists',
     ready: 'E2E Reruns',
     persisted: true,
+    ported: true,
     sortColumn: 'Name',
     hideColumn: '# Programs',
     filter: async (page) => {
@@ -140,7 +145,7 @@ const TABLES: Record<string, TableTarget> = {
       clickEditLink(
         page,
         rowWith(page, 'E2E Reruns'),
-        `/library/custom-shows/${ids.customShowId}/edit`,
+        `/library/playlists/${ids.customShowId}/edit`,
       ),
   },
 
@@ -148,6 +153,7 @@ const TABLES: Record<string, TableTarget> = {
     url: () => '/library/smart_collections',
     ready: 'E2E Movies Only',
     persisted: true,
+    ported: true,
     sortColumn: 'Name',
     filter: async (page) => {
       await showFilters(page);
@@ -163,9 +169,10 @@ const TABLES: Record<string, TableTarget> = {
   },
 
   TranscodeConfigs: {
-    url: () => '/settings/ffmpeg',
+    url: () => '/profiles/transcode',
     ready: 'Default',
     persisted: true,
+    ported: true,
     sortColumn: 'Name',
     hideColumn: 'Resolution',
     filter: async (page) => {
@@ -177,7 +184,7 @@ const TABLES: Record<string, TableTarget> = {
       clickEditLink(
         page,
         rowWith(page, 'Default'),
-        `/settings/ffmpeg/${ids.transcodeConfigId}`,
+        `/profiles/transcode/${ids.transcodeConfigId}`,
       ),
   },
 
@@ -185,6 +192,7 @@ const TABLES: Record<string, TableTarget> = {
     url: () => '/settings/sources',
     ready: 'E2E Shows',
     persisted: true,
+    ported: true,
     sortColumn: 'Name',
     hideColumn: 'URL',
     filter: async (page) => {
@@ -204,6 +212,8 @@ const TABLES: Record<string, TableTarget> = {
     url: () => '/channels',
     ready: 'E2E Episodes',
     persisted: true,
+    ported: true,
+    dense: true,
     sortColumn: 'Name',
     hideColumn: 'Duration',
     filter: async (page) => {
@@ -227,6 +237,7 @@ const TABLES: Record<string, TableTarget> = {
     url: () => '/system/tasks',
     ready: 'BackupTask',
     persisted: false,
+    ported: true,
     sortColumn: 'Name',
     hideColumn: 'Description',
     filter: async (page) => {
@@ -246,6 +257,7 @@ const TABLES: Record<string, TableTarget> = {
     url: () => '/system/logs',
     ready: 'info',
     persisted: false,
+    ported: true,
     sortColumn: 'Timestamp',
     hideColumn: 'Component',
     filter: async (page) => {
@@ -262,9 +274,6 @@ const TABLES: Record<string, TableTarget> = {
   MediaSourceLibrary: {
     skip: 'Ported in Phase 2. Add its entry in that PR, green on MRT first.',
   },
-  ChannelSubtitlePreferences: {
-    skip: 'Not persisted; channelSubtitlePreferences.spec.ts covers its edits.',
-  },
   TimeSlots: { skip: 'Needs a time-slot schedule in the fixture (Phase 3).' },
   RandomSlots: {
     skip: 'Needs a random-slot schedule in the fixture (Phase 3).',
@@ -276,6 +285,23 @@ for (const [name, target] of Object.entries(TABLES)) {
     if ('skip' in target) {
       test.skip(true, target.skip);
       return;
+    }
+
+    if (target.dense) {
+      test.beforeEach(async ({ page }) => {
+        await page.addInitScript(() => {
+          type Saved = {
+            state: { theme?: Record<string, unknown> };
+            version: number;
+          };
+          const raw: unknown = JSON.parse(
+            localStorage.getItem('tunarr') ?? 'null',
+          );
+          const next = (raw ?? { state: {}, version: 0 }) as Saved;
+          next.state.theme = { ...next.state.theme, density: 'dense' };
+          localStorage.setItem('tunarr', JSON.stringify(next));
+        });
+      });
     }
 
     const open = async (page: Page) => {
@@ -359,6 +385,17 @@ for (const [name, target] of Object.entries(TABLES)) {
     }
 
     if (target.ported) {
+      test('fits the page width', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 });
+        await open(page);
+        const overflow = await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth -
+            document.documentElement.clientWidth,
+        );
+        expect(overflow).toBe(0);
+      });
+
       test('counts and clears filters', async ({ page }) => {
         await open(page);
         const rowsBefore = await bodyRows(page).count();
@@ -386,7 +423,9 @@ for (const [name, target] of Object.entries(TABLES)) {
 
 // Captured from the material-react-table build after hiding "# Programs",
 // choosing 5 rows per page and sorting by name. The extra mrt-row-actions key
-// is the kind of display-column id old builds could store.
+// is the kind of display-column id old builds could store. MRT keyed the
+// TranscodeConfigs Resolution column by its header, because it has no
+// accessor key.
 const savedByMrt = {
   state: {
     theme: {
@@ -408,6 +447,11 @@ const savedByMrt = {
             columnModel: { contentCount: false, 'mrt-row-actions': true },
             pagination: { pageIndex: 0, pageSize: 5 },
           },
+          TranscodeConfigs: {
+            sortState: [{ id: 'name', desc: true }],
+            columnModel: { Resolution: false, 'mrt-row-actions': true },
+            pagination: { pageIndex: 0, pageSize: 5 },
+          },
         },
         showAdvancedSettings: false,
       },
@@ -416,10 +460,13 @@ const savedByMrt = {
   version: 0,
 };
 
-test('table settings saved by the MRT build still load', async ({ page }) => {
-  await page.addInitScript((saved) => {
+const loadSavedByMrt = (page: Page) =>
+  page.addInitScript((saved) => {
     localStorage.setItem('tunarr', saved);
   }, JSON.stringify(savedByMrt));
+
+test('table settings saved by the MRT build still load', async ({ page }) => {
+  await loadSavedByMrt(page);
   await page.goto('/web/library/fillers');
   await expect(
     table(page).getByRole('cell', { name: 'E2E Bumpers', exact: true }),
@@ -433,4 +480,15 @@ test('table settings saved by the MRT build still load', async ({ page }) => {
 
   const stored = await page.evaluate(() => localStorage.getItem('tunarr'));
   expect(stored).toContain('"pageSize":5');
+});
+
+test('a column MRT keyed by its header stays hidden', async ({ page }) => {
+  await loadSavedByMrt(page);
+  await page.goto('/web/settings/ffmpeg');
+  await expect(
+    table(page).getByRole('cell', { name: 'Default', exact: true }),
+  ).toBeVisible();
+
+  await expect(header(page, 'Resolution')).toHaveCount(0);
+  await expect(header(page, 'Hardware Accel.')).toHaveCount(1);
 });

@@ -46,6 +46,12 @@ Click the **NEW** button to create your first channel, which will take you to th
 
 </div>
 
+## Bulk Actions
+
+In table view, the Channels page lets you select several channels with the row checkboxes. The selection bar above the table then shows bulk actions, including:
+
+- **Assign fillers**: Add or replace [filler lists](/configure/library/filler#bulk-filler-assignment) across all selected channels in one operation.
+
 ## Getting Started
 
 1. Create a new channel with [Properties](properties.md)

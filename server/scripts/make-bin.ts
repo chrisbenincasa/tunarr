@@ -21,6 +21,7 @@ import serverPackage from '../package.json' with { type: 'json' };
 import { fileExists } from '../src/util/fsUtil.ts';
 import { grabEtvNext } from './download-ersatztv-next.ts';
 import { grabMeilisearch } from './download-meilisearch.ts';
+import { releaseArchiveEntries } from './releaseArchive.ts';
 
 const NODE_VERSION = '22.23.4';
 
@@ -212,6 +213,7 @@ for (const arch of args.target) {
         execName += `-${version}`;
       }
       execName += `-${arch}`;
+      const releaseName = execName;
       if (arch.startsWith('windows')) {
         execName += '.exe';
       }
@@ -263,18 +265,17 @@ for (const arch of args.target) {
         });
 
         const outStream = createWriteStream(
-          `./bin/${execName}.${format}${targetIsWindows ? '' : '.gz'}`,
+          `./bin/${releaseName}.${format}${targetIsWindows ? '' : '.gz'}`,
         );
         archive.pipe(outStream);
-        archive.file(`./bin/${execName}`, { name: execName });
-        archive.file(`./bin/meilisearch-${arch}`, {
-          name: 'meilisearch' + (targetIsWindows ? '.exe' : ''),
+        const entries = releaseArchiveEntries(releaseName, targetIsWindows, {
+          tunarr: `./bin/${execName}`,
+          meilisearch: `./bin/meilisearch-${arch}`,
+          etvNext: etvNext.binaryPath,
+          etvNextCompanions: etvNext.companionPaths,
         });
-        archive.file(etvNext.binaryPath, {
-          name: 'ersatztv-channel' + (targetIsWindows ? '.exe' : ''),
-        });
-        for (const companionPath of etvNext.companionPaths) {
-          archive.file(companionPath, { name: path.basename(companionPath) });
+        for (const { source, name } of entries) {
+          archive.file(source, { name });
         }
         await archive.finalize();
         await finishedPromise;

@@ -2,8 +2,17 @@ import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { Theme } from '@/theme.ts';
 import { ThemeProvider } from '@mui/material';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, type RenderOptions } from '@testing-library/react';
+import {
+  QueryClient,
+  QueryClientProvider,
+  type QueryKey,
+} from '@tanstack/react-query';
+import {
+  render,
+  screen,
+  within,
+  type RenderOptions,
+} from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement, ReactNode } from 'react';
 import { DndProvider } from 'react-dnd';
@@ -81,6 +90,34 @@ export function renderWithProviders(
     user: userEvent.setup(),
     ...render(ui, { wrapper: Wrapper, ...renderOptions }),
   };
+}
+
+/**
+ * Creates a QueryClient whose cache already holds `entries`, so components
+ * that read those queries render without fetching.
+ */
+export function seededQueryClient(entries: [QueryKey, unknown][]) {
+  const client = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: Infinity, staleTime: Infinity },
+      mutations: { retry: false },
+    },
+  });
+  for (const [key, data] of entries) {
+    client.setQueryData(key, data);
+  }
+  return client;
+}
+
+/**
+ * Scopes queries to the table row that contains `text`.
+ */
+export function withinRow(text: string) {
+  const row = screen.getByText(text).closest('tr');
+  if (!row) {
+    throw new Error(`No table row contains "${text}"`);
+  }
+  return within(row);
 }
 
 // Re-export everything from @testing-library/react for convenience

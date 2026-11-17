@@ -10,6 +10,7 @@ import type z from 'zod';
 import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
+import type { ProgramStateRepository } from '../db/program/ProgramStateRepository.ts';
 import type { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import type { ProgramSearchDocument } from '../services/MeilisearchService.ts';
 import {
@@ -23,6 +24,7 @@ import { groupByUniq } from '../util/index.ts';
 import { InjectLogger } from '../util/inject.ts';
 import type { Logger } from '../util/logging/LoggerFactory.ts';
 import {
+  findDanglingSearchDocumentIds,
   isProgramGroupingDocument,
   isTerminalProgramDocument,
 } from '../util/search.ts';
@@ -34,6 +36,8 @@ export class SearchProgramsCommand {
     @inject(MeilisearchService) private searchService: MeilisearchService,
     @inject(MediaSourceDB) private mediaSourceDB: MediaSourceDB,
     @inject(KEYS.ProgramDB) private programDB: IProgramDB,
+    @inject(KEYS.ProgramStateRepository)
+    private programStateRepo: ProgramStateRepository,
   ) {}
 
   async execute(
@@ -92,6 +96,12 @@ export class SearchProgramsCommand {
       this.programDB.getProgramGroupings([...groupingIds.values()]),
       this.programDB.getProgramGroupingChildCounts([...groupingIds.values()]),
     ]);
+
+    const danglingIds = await this.pruneDanglingDocuments(
+      result.results,
+      new Set(Object.keys(programs)),
+      new Set(Object.keys(groupings)),
+    );
 
     const results = seq.collect(result.results, (searchDoc) => {
       const mediaSourceId = decodeCaseSensitiveId(searchDoc.mediaSourceId);
@@ -175,19 +185,89 @@ export class SearchProgramsCommand {
       return;
     });
 
+    const totalHits = Math.max(
+      0,
+      (result.type === 'search' ? result.totalHits : result.total) -
+        danglingIds.length,
+    );
+
     return {
       results,
       page:
         result.type === 'search'
           ? result.page
           : Math.floor((result.offset ?? 0) / (result.limit ?? 20)),
-      totalHits: result.type === 'search' ? result.totalHits : result.total,
+      totalHits,
       totalPages:
         result.type === 'search'
-          ? result.totalPages
-          : Math.ceil(result.total / limit),
+          ? danglingIds.length === 0
+            ? result.totalPages
+            : Math.ceil(totalHits / result.hitsPerPage)
+          : Math.ceil(totalHits / limit),
       facetDistribution:
         result.type === 'search' ? result.facetDistribution : undefined,
     };
+  }
+
+  /**
+   * Scanners index a row only after writing it, so a hit with no row is stale.
+   * Removes those hits from the index and returns their ids.
+   *
+   * The loaded maps can be partial when a chunked query fails, so each
+   * candidate is re-checked with lookups that throw instead. Deleting while
+   * the client pages through results shifts later pages, so the next page may
+   * skip a few items until the stale documents are gone.
+   */
+  private async pruneDanglingDocuments(
+    docs: readonly ProgramSearchDocument[],
+    loadedProgramIds: ReadonlySet<string>,
+    loadedGroupingIds: ReadonlySet<string>,
+  ): Promise<string[]> {
+    const candidateIds = new Set(
+      findDanglingSearchDocumentIds(docs, loadedProgramIds, loadedGroupingIds),
+    );
+    if (candidateIds.size === 0) {
+      return [];
+    }
+
+    let danglingIds: string[];
+    try {
+      const ids = [...candidateIds];
+      const [programIds, groupingIds] = await Promise.all([
+        this.programStateRepo.findExistingProgramIds(ids),
+        this.programStateRepo.findExistingGroupingIds(ids),
+      ]);
+      danglingIds = findDanglingSearchDocumentIds(
+        docs.filter((doc) => candidateIds.has(doc.id)),
+        programIds,
+        groupingIds,
+      );
+    } catch (e) {
+      this.logger.warn(e, 'Could not confirm stale search documents');
+      return [];
+    }
+
+    if (danglingIds.length === 0) {
+      return [];
+    }
+
+    this.logger.info(
+      'Removing %d search document(s) with no matching DB row',
+      danglingIds.length,
+    );
+    this.searchService
+      .deleteByIds(danglingIds)
+      .then((task) =>
+        task ? this.searchService.monitorTask(task.taskUid) : undefined,
+      )
+      .catch((e) => {
+        this.logger.warn(
+          e,
+          'Failed to remove %d stale document(s)',
+          danglingIds.length,
+        );
+      });
+
+    return danglingIds;
   }
 }

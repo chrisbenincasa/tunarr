@@ -2,7 +2,6 @@ import { getApiSystemFeatureFlagsOptions } from '@/generated/@tanstack/react-que
 import { useSettings } from '@/store/settings/selectors.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
 import {
-  Collapse,
   Divider,
   FormControl,
   FormControlLabel,
@@ -36,7 +35,8 @@ import {
   CheckboxFormController,
   NumericFormControllerText,
 } from '../util/TypedController.tsx';
-import { ChannelSubtitlePreferencesTable } from './ChannelSubtitlePreferencesTable.tsx';
+import { StreamSelectionProfileSelect } from '../profiles/StreamSelectionProfileSelect.tsx';
+import { WatermarkTimingFields } from './WatermarkTimingFields.tsx';
 
 const watermarkPositionOptions: {
   value: Watermark['position'];
@@ -99,18 +99,9 @@ export default function ChannelTranscodingConfig() {
   const etvNextEnabledGlobally =
     featureFlags?.flags.ersatzTvNextEnabled === true;
 
-  const [
-    watermark,
-    transcodeConfigId,
-    subtitlesEnabled,
-    fadePeriod,
-    streamMode,
-    useEtvNext,
-  ] = watch([
+  const [watermark, transcodeConfigId, streamMode, useEtvNext] = watch([
     'watermark',
     'transcodeConfigId',
-    'subtitlesEnabled',
-    'watermark.fadeConfig.0.periodMins',
     'streamMode',
     'useEtvNext',
   ]);
@@ -263,45 +254,28 @@ export default function ChannelTranscodingConfig() {
             />
           )}
         </Box>
-        <Stack gap={1}>
-          <Stack>
-            <Typography sx={{ mb: 1 }} variant="h5">
-              <Trans>Audio &amp; Subtitles</Trans>
-            </Typography>
-            <Typography variant="subtitle1">
-              <Trans>
-                Override global audio and subtitle settings for this channel.
-              </Trans>
-            </Typography>
-            <Divider sx={{ my: 2 }} />
-            <FormControlLabel
-              label={t`Enable Subtitles`}
-              sx={{
-                width: 'auto',
-              }}
-              control={
-                <Controller
-                  control={control}
-                  name="subtitlesEnabled"
-                  render={({ field }) => (
-                    <Switch {...field} checked={field.value} />
-                  )}
-                />
-              }
-            />
-            <Collapse in={subtitlesEnabled}>
-              <Divider sx={{ my: 2 }} />
-              <Typography>
-                <Trans>
-                  Configure subtitle preferences. Preferences are evaluated in
-                  order of priority. The first matching subtitle stream on a
-                  program will be used.
-                </Trans>
-              </Typography>
-              <ChannelSubtitlePreferencesTable />
-            </Collapse>
-          </Stack>
-        </Stack>
+        <Box>
+          <Typography sx={{ mb: 1 }} variant="h5">
+            <Trans>Audio &amp; Subtitles</Trans>
+          </Typography>
+          <Typography variant="subtitle1">
+            <Trans>
+              A stream selection profile chooses the audio and subtitle streams
+              for programs on this channel. Filler lists and playlists can
+              assign their own profile, which takes precedence.
+            </Trans>
+          </Typography>
+          <Controller
+            control={control}
+            name="streamSelectionProfileId"
+            render={({ field }) => (
+              <StreamSelectionProfileSelect
+                value={field.value ?? null}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        </Box>
         <Box>
           <Typography variant="h5">
             <Trans>Watermark</Trans>
@@ -330,7 +304,12 @@ export default function ChannelTranscodingConfig() {
           {watermark?.enabled &&
             streamMode !== 'hls_direct' &&
             streamMode !== 'hls_direct_v2' && (
-              <Stack direction="row" mt={2} gap={2} useFlexGap>
+              <Stack
+                direction={{ xs: 'column', md: 'row' }}
+                mt={2}
+                gap={2}
+                useFlexGap
+              >
                 <Stack sx={{ minWidth: '33%' }} spacing={2}>
                   <Box
                     sx={{
@@ -552,56 +531,7 @@ export default function ChannelTranscodingConfig() {
                       </FormHelperText>
                     </FormControl>
                   </Grid>
-
-                  <Grid size={{ xs: 12, lg: 6 }}>
-                    <NumericFormControllerText
-                      control={control}
-                      name="watermark.fadeConfig.0.periodMins"
-                      rules={{ min: 0 }}
-                      TextFieldProps={{
-                        label: 'Watermark Period (mins)',
-                        fullWidth: true,
-                        helperText:
-                          'Display/hide the watermark via a fade animation every N minutes. Set to 0 to disable.',
-                      }}
-                    />
-                  </Grid>
-                  {(fadePeriod ?? 0) > 0 && (
-                    <Grid size={{ xs: 12, lg: 6 }}>
-                      <FormControl fullWidth>
-                        <FormControlLabel
-                          control={
-                            <CheckboxFormController
-                              control={control}
-                              name="watermark.fadeConfig.0.leadingEdge"
-                            />
-                          }
-                          label={t`Display Watermark on Leading Edge`}
-                        />
-                        <FormHelperText>
-                          <Trans>
-                            When enabled, intermittent watermarks fade in
-                            immediately when a stream is initialized. When
-                            disabled, the first watermark fade-in occurs after a
-                            full period.
-                          </Trans>
-                        </FormHelperText>
-                      </FormControl>
-                    </Grid>
-                  )}
-                  <Grid size={{ xs: 12, lg: 6 }}>
-                    <NumericFormControllerText
-                      control={control}
-                      name="watermark.duration"
-                      rules={{ min: 0 }}
-                      TextFieldProps={{
-                        label: 'Total Watermark Duration (seconds)',
-                        fullWidth: true,
-                        helperText:
-                          "Sets the absolute duration of the watermark on the channel's stream. Set to 0 to make the overlay permantently visible.",
-                      }}
-                    />
-                  </Grid>
+                  <WatermarkTimingFields />
                 </Grid>
               </Stack>
             )}

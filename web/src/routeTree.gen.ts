@@ -30,6 +30,9 @@ import { Route as SettingsHdhrRouteImport } from './routes/settings/hdhr';
 import { Route as SettingsGeneralRouteImport } from './routes/settings/general';
 import { Route as SettingsFfmpegRouteImport } from './routes/settings/ffmpeg';
 import { Route as SettingsFeaturesRouteImport } from './routes/settings/features';
+import { Route as ProfilesTranscodeRouteImport } from './routes/profiles/transcode';
+import { Route as ProfilesStreamSelectionRouteImport } from './routes/profiles/stream-selection';
+import { Route as LibraryPlaylistsRouteImport } from './routes/library/playlists';
 import { Route as LibraryFillersRouteImport } from './routes/library/fillers';
 import { Route as LibraryCustomShowsRouteImport } from './routes/library/custom-shows';
 import { Route as ChannelsTestRouteImport } from './routes/channels_/test';
@@ -41,24 +44,29 @@ import { Route as LibrarySmart_collectionsIndexRouteImport } from './routes/libr
 import { Route as ChannelsChannelIdIndexRouteImport } from './routes/channels_/$channelId/index';
 import { Route as SettingsFfmpegNewRouteImport } from './routes/settings/ffmpeg_/new';
 import { Route as SettingsFfmpegConfigIdRouteImport } from './routes/settings/ffmpeg_/$configId';
+import { Route as ProfilesTranscodeNewRouteImport } from './routes/profiles/transcode_/new';
+import { Route as ProfilesTranscodeConfigIdRouteImport } from './routes/profiles/transcode_/$configId';
+import { Route as ProfilesStreamSelectionNewRouteImport } from './routes/profiles/stream-selection_/new';
+import { Route as ProfilesStreamSelectionProfileIdRouteImport } from './routes/profiles/stream-selection_/$profileId';
 import { Route as MediaProgramTypeProgramIdRouteImport } from './routes/media_/$programType.$programId';
 import { Route as LibrarySmart_collectionsIdRouteImport } from './routes/library/smart_collections/$id';
+import { Route as LibraryCustomShowsSplatRouteImport } from './routes/library/custom-shows_/$';
 import { Route as ChannelsChannelIdWatchRouteImport } from './routes/channels_/$channelId/watch';
+import { Route as LibraryPlaylistsNewRouteRouteImport } from './routes/library/playlists_/new/route';
+import { Route as LibraryPlaylistsShowIdRouteRouteImport } from './routes/library/playlists_/$showId/route';
 import { Route as LibraryFillersNewRouteRouteImport } from './routes/library/fillers_/new/route';
 import { Route as LibraryFillersFillerIdRouteRouteImport } from './routes/library/fillers_/$fillerId/route';
-import { Route as LibraryCustomShowsNewRouteRouteImport } from './routes/library/custom-shows_/new/route';
-import { Route as LibraryCustomShowsShowIdRouteRouteImport } from './routes/library/custom-shows_/$showId/route';
+import { Route as LibraryPlaylistsNewIndexRouteImport } from './routes/library/playlists_/new/index';
 import { Route as LibraryFillersNewIndexRouteImport } from './routes/library/fillers_/new/index';
-import { Route as LibraryCustomShowsNewIndexRouteImport } from './routes/library/custom-shows_/new/index';
 import { Route as ChannelsChannelIdProgrammingIndexRouteImport } from './routes/channels_/$channelId/programming/index';
 import { Route as ChannelsChannelIdEditIndexRouteImport } from './routes/channels_/$channelId/edit/index';
 import { Route as Media_sourcesMediaSourceIdLibrariesLibraryIdRouteImport } from './routes/media_sources_/$mediaSourceId/libraries_.$libraryId';
+import { Route as LibraryPlaylistsNewProgrammingRouteImport } from './routes/library/playlists_/new/programming';
+import { Route as LibraryPlaylistsShowIdProgrammingRouteImport } from './routes/library/playlists_/$showId/programming';
+import { Route as LibraryPlaylistsShowIdEditRouteImport } from './routes/library/playlists_/$showId/edit';
 import { Route as LibraryFillersNewProgrammingRouteImport } from './routes/library/fillers_/new/programming';
 import { Route as LibraryFillersFillerIdProgrammingRouteImport } from './routes/library/fillers_/$fillerId/programming';
 import { Route as LibraryFillersFillerIdEditRouteImport } from './routes/library/fillers_/$fillerId/edit';
-import { Route as LibraryCustomShowsNewProgrammingRouteImport } from './routes/library/custom-shows_/new/programming';
-import { Route as LibraryCustomShowsShowIdProgrammingRouteImport } from './routes/library/custom-shows_/$showId/programming';
-import { Route as LibraryCustomShowsShowIdEditRouteImport } from './routes/library/custom-shows_/$showId/edit';
 import { Route as ChannelsChannelIdProgrammingTimeSlotEditorRouteImport } from './routes/channels_/$channelId/programming/time-slot-editor';
 import { Route as ChannelsChannelIdProgrammingSlotEditorRouteImport } from './routes/channels_/$channelId/programming/slot-editor';
 import { Route as ChannelsChannelIdProgrammingAddRouteImport } from './routes/channels_/$channelId/programming/add';
@@ -168,6 +176,21 @@ const SettingsFeaturesRoute = SettingsFeaturesRouteImport.update({
   path: '/features',
   getParentRoute: () => SettingsRoute,
 } as any);
+const ProfilesTranscodeRoute = ProfilesTranscodeRouteImport.update({
+  id: '/profiles/transcode',
+  path: '/profiles/transcode',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ProfilesStreamSelectionRoute = ProfilesStreamSelectionRouteImport.update({
+  id: '/profiles/stream-selection',
+  path: '/profiles/stream-selection',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const LibraryPlaylistsRoute = LibraryPlaylistsRouteImport.update({
+  id: '/library/playlists',
+  path: '/library/playlists',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const LibraryFillersRoute = LibraryFillersRouteImport.update({
   id: '/library/fillers',
   path: '/library/fillers',
@@ -225,6 +248,29 @@ const SettingsFfmpegConfigIdRoute = SettingsFfmpegConfigIdRouteImport.update({
   path: '/ffmpeg/$configId',
   getParentRoute: () => SettingsRoute,
 } as any);
+const ProfilesTranscodeNewRoute = ProfilesTranscodeNewRouteImport.update({
+  id: '/profiles/transcode_/new',
+  path: '/profiles/transcode/new',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ProfilesTranscodeConfigIdRoute =
+  ProfilesTranscodeConfigIdRouteImport.update({
+    id: '/profiles/transcode_/$configId',
+    path: '/profiles/transcode/$configId',
+    getParentRoute: () => rootRouteImport,
+  } as any);
+const ProfilesStreamSelectionNewRoute =
+  ProfilesStreamSelectionNewRouteImport.update({
+    id: '/profiles/stream-selection_/new',
+    path: '/profiles/stream-selection/new',
+    getParentRoute: () => rootRouteImport,
+  } as any);
+const ProfilesStreamSelectionProfileIdRoute =
+  ProfilesStreamSelectionProfileIdRouteImport.update({
+    id: '/profiles/stream-selection_/$profileId',
+    path: '/profiles/stream-selection/$profileId',
+    getParentRoute: () => rootRouteImport,
+  } as any);
 const MediaProgramTypeProgramIdRoute =
   MediaProgramTypeProgramIdRouteImport.update({
     id: '/media_/$programType/$programId',
@@ -237,11 +283,28 @@ const LibrarySmart_collectionsIdRoute =
     path: '/library/smart_collections/$id',
     getParentRoute: () => rootRouteImport,
   } as any);
+const LibraryCustomShowsSplatRoute = LibraryCustomShowsSplatRouteImport.update({
+  id: '/library/custom-shows_/$',
+  path: '/library/custom-shows/$',
+  getParentRoute: () => rootRouteImport,
+} as any);
 const ChannelsChannelIdWatchRoute = ChannelsChannelIdWatchRouteImport.update({
   id: '/watch',
   path: '/watch',
   getParentRoute: () => ChannelsChannelIdRouteRoute,
 } as any);
+const LibraryPlaylistsNewRouteRoute =
+  LibraryPlaylistsNewRouteRouteImport.update({
+    id: '/library/playlists_/new',
+    path: '/library/playlists/new',
+    getParentRoute: () => rootRouteImport,
+  } as any);
+const LibraryPlaylistsShowIdRouteRoute =
+  LibraryPlaylistsShowIdRouteRouteImport.update({
+    id: '/library/playlists_/$showId',
+    path: '/library/playlists/$showId',
+    getParentRoute: () => rootRouteImport,
+  } as any);
 const LibraryFillersNewRouteRoute = LibraryFillersNewRouteRouteImport.update({
   id: '/library/fillers_/new',
   path: '/library/fillers/new',
@@ -253,29 +316,17 @@ const LibraryFillersFillerIdRouteRoute =
     path: '/library/fillers/$fillerId',
     getParentRoute: () => rootRouteImport,
   } as any);
-const LibraryCustomShowsNewRouteRoute =
-  LibraryCustomShowsNewRouteRouteImport.update({
-    id: '/library/custom-shows_/new',
-    path: '/library/custom-shows/new',
-    getParentRoute: () => rootRouteImport,
-  } as any);
-const LibraryCustomShowsShowIdRouteRoute =
-  LibraryCustomShowsShowIdRouteRouteImport.update({
-    id: '/library/custom-shows_/$showId',
-    path: '/library/custom-shows/$showId',
-    getParentRoute: () => rootRouteImport,
+const LibraryPlaylistsNewIndexRoute =
+  LibraryPlaylistsNewIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => LibraryPlaylistsNewRouteRoute,
   } as any);
 const LibraryFillersNewIndexRoute = LibraryFillersNewIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => LibraryFillersNewRouteRoute,
 } as any);
-const LibraryCustomShowsNewIndexRoute =
-  LibraryCustomShowsNewIndexRouteImport.update({
-    id: '/',
-    path: '/',
-    getParentRoute: () => LibraryCustomShowsNewRouteRoute,
-  } as any);
 const ChannelsChannelIdProgrammingIndexRoute =
   ChannelsChannelIdProgrammingIndexRouteImport.update({
     id: '/programming/',
@@ -294,6 +345,24 @@ const Media_sourcesMediaSourceIdLibrariesLibraryIdRoute =
     path: '/media_sources/$mediaSourceId/libraries/$libraryId',
     getParentRoute: () => rootRouteImport,
   } as any);
+const LibraryPlaylistsNewProgrammingRoute =
+  LibraryPlaylistsNewProgrammingRouteImport.update({
+    id: '/programming',
+    path: '/programming',
+    getParentRoute: () => LibraryPlaylistsNewRouteRoute,
+  } as any);
+const LibraryPlaylistsShowIdProgrammingRoute =
+  LibraryPlaylistsShowIdProgrammingRouteImport.update({
+    id: '/programming',
+    path: '/programming',
+    getParentRoute: () => LibraryPlaylistsShowIdRouteRoute,
+  } as any);
+const LibraryPlaylistsShowIdEditRoute =
+  LibraryPlaylistsShowIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => LibraryPlaylistsShowIdRouteRoute,
+  } as any);
 const LibraryFillersNewProgrammingRoute =
   LibraryFillersNewProgrammingRouteImport.update({
     id: '/programming',
@@ -311,24 +380,6 @@ const LibraryFillersFillerIdEditRoute =
     id: '/edit',
     path: '/edit',
     getParentRoute: () => LibraryFillersFillerIdRouteRoute,
-  } as any);
-const LibraryCustomShowsNewProgrammingRoute =
-  LibraryCustomShowsNewProgrammingRouteImport.update({
-    id: '/programming',
-    path: '/programming',
-    getParentRoute: () => LibraryCustomShowsNewRouteRoute,
-  } as any);
-const LibraryCustomShowsShowIdProgrammingRoute =
-  LibraryCustomShowsShowIdProgrammingRouteImport.update({
-    id: '/programming',
-    path: '/programming',
-    getParentRoute: () => LibraryCustomShowsShowIdRouteRoute,
-  } as any);
-const LibraryCustomShowsShowIdEditRoute =
-  LibraryCustomShowsShowIdEditRouteImport.update({
-    id: '/edit',
-    path: '/edit',
-    getParentRoute: () => LibraryCustomShowsShowIdRouteRoute,
   } as any);
 const ChannelsChannelIdProgrammingTimeSlotEditorRoute =
   ChannelsChannelIdProgrammingTimeSlotEditorRouteImport.update({
@@ -361,6 +412,9 @@ export interface FileRoutesByFullPath {
   '/channels/test': typeof ChannelsTestRoute;
   '/library/custom-shows': typeof LibraryCustomShowsRoute;
   '/library/fillers': typeof LibraryFillersRoute;
+  '/library/playlists': typeof LibraryPlaylistsRoute;
+  '/profiles/stream-selection': typeof ProfilesStreamSelectionRoute;
+  '/profiles/transcode': typeof ProfilesTranscodeRoute;
   '/settings/features': typeof SettingsFeaturesRoute;
   '/settings/ffmpeg': typeof SettingsFfmpegRoute;
   '/settings/general': typeof SettingsGeneralRoute;
@@ -376,13 +430,18 @@ export interface FileRoutesByFullPath {
   '/library': typeof LibraryIndexRoute;
   '/media_sources': typeof Media_sourcesIndexRoute;
   '/system/': typeof SystemIndexRoute;
-  '/library/custom-shows/$showId': typeof LibraryCustomShowsShowIdRouteRouteWithChildren;
-  '/library/custom-shows/new': typeof LibraryCustomShowsNewRouteRouteWithChildren;
   '/library/fillers/$fillerId': typeof LibraryFillersFillerIdRouteRouteWithChildren;
   '/library/fillers/new': typeof LibraryFillersNewRouteRouteWithChildren;
+  '/library/playlists/$showId': typeof LibraryPlaylistsShowIdRouteRouteWithChildren;
+  '/library/playlists/new': typeof LibraryPlaylistsNewRouteRouteWithChildren;
   '/channels/$channelId/watch': typeof ChannelsChannelIdWatchRoute;
+  '/library/custom-shows/$': typeof LibraryCustomShowsSplatRoute;
   '/library/smart_collections/$id': typeof LibrarySmart_collectionsIdRoute;
   '/media/$programType/$programId': typeof MediaProgramTypeProgramIdRoute;
+  '/profiles/stream-selection/$profileId': typeof ProfilesStreamSelectionProfileIdRoute;
+  '/profiles/stream-selection/new': typeof ProfilesStreamSelectionNewRoute;
+  '/profiles/transcode/$configId': typeof ProfilesTranscodeConfigIdRoute;
+  '/profiles/transcode/new': typeof ProfilesTranscodeNewRoute;
   '/settings/ffmpeg/$configId': typeof SettingsFfmpegConfigIdRoute;
   '/settings/ffmpeg/new': typeof SettingsFfmpegNewRoute;
   '/channels/$channelId/': typeof ChannelsChannelIdIndexRoute;
@@ -392,17 +451,17 @@ export interface FileRoutesByFullPath {
   '/channels/$channelId/programming/add': typeof ChannelsChannelIdProgrammingAddRoute;
   '/channels/$channelId/programming/slot-editor': typeof ChannelsChannelIdProgrammingSlotEditorRoute;
   '/channels/$channelId/programming/time-slot-editor': typeof ChannelsChannelIdProgrammingTimeSlotEditorRoute;
-  '/library/custom-shows/$showId/edit': typeof LibraryCustomShowsShowIdEditRoute;
-  '/library/custom-shows/$showId/programming': typeof LibraryCustomShowsShowIdProgrammingRoute;
-  '/library/custom-shows/new/programming': typeof LibraryCustomShowsNewProgrammingRoute;
   '/library/fillers/$fillerId/edit': typeof LibraryFillersFillerIdEditRoute;
   '/library/fillers/$fillerId/programming': typeof LibraryFillersFillerIdProgrammingRoute;
   '/library/fillers/new/programming': typeof LibraryFillersNewProgrammingRoute;
+  '/library/playlists/$showId/edit': typeof LibraryPlaylistsShowIdEditRoute;
+  '/library/playlists/$showId/programming': typeof LibraryPlaylistsShowIdProgrammingRoute;
+  '/library/playlists/new/programming': typeof LibraryPlaylistsNewProgrammingRoute;
   '/media_sources/$mediaSourceId/libraries/$libraryId': typeof Media_sourcesMediaSourceIdLibrariesLibraryIdRoute;
   '/channels/$channelId/edit': typeof ChannelsChannelIdEditIndexRoute;
   '/channels/$channelId/programming': typeof ChannelsChannelIdProgrammingIndexRoute;
-  '/library/custom-shows/new/': typeof LibraryCustomShowsNewIndexRoute;
   '/library/fillers/new/': typeof LibraryFillersNewIndexRoute;
+  '/library/playlists/new/': typeof LibraryPlaylistsNewIndexRoute;
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute;
@@ -414,6 +473,9 @@ export interface FileRoutesByTo {
   '/channels/test': typeof ChannelsTestRoute;
   '/library/custom-shows': typeof LibraryCustomShowsRoute;
   '/library/fillers': typeof LibraryFillersRoute;
+  '/library/playlists': typeof LibraryPlaylistsRoute;
+  '/profiles/stream-selection': typeof ProfilesStreamSelectionRoute;
+  '/profiles/transcode': typeof ProfilesTranscodeRoute;
   '/settings/features': typeof SettingsFeaturesRoute;
   '/settings/ffmpeg': typeof SettingsFfmpegRoute;
   '/settings/general': typeof SettingsGeneralRoute;
@@ -429,11 +491,16 @@ export interface FileRoutesByTo {
   '/library': typeof LibraryIndexRoute;
   '/media_sources': typeof Media_sourcesIndexRoute;
   '/system': typeof SystemIndexRoute;
-  '/library/custom-shows/$showId': typeof LibraryCustomShowsShowIdRouteRouteWithChildren;
   '/library/fillers/$fillerId': typeof LibraryFillersFillerIdRouteRouteWithChildren;
+  '/library/playlists/$showId': typeof LibraryPlaylistsShowIdRouteRouteWithChildren;
   '/channels/$channelId/watch': typeof ChannelsChannelIdWatchRoute;
+  '/library/custom-shows/$': typeof LibraryCustomShowsSplatRoute;
   '/library/smart_collections/$id': typeof LibrarySmart_collectionsIdRoute;
   '/media/$programType/$programId': typeof MediaProgramTypeProgramIdRoute;
+  '/profiles/stream-selection/$profileId': typeof ProfilesStreamSelectionProfileIdRoute;
+  '/profiles/stream-selection/new': typeof ProfilesStreamSelectionNewRoute;
+  '/profiles/transcode/$configId': typeof ProfilesTranscodeConfigIdRoute;
+  '/profiles/transcode/new': typeof ProfilesTranscodeNewRoute;
   '/settings/ffmpeg/$configId': typeof SettingsFfmpegConfigIdRoute;
   '/settings/ffmpeg/new': typeof SettingsFfmpegNewRoute;
   '/channels/$channelId': typeof ChannelsChannelIdIndexRoute;
@@ -443,17 +510,17 @@ export interface FileRoutesByTo {
   '/channels/$channelId/programming/add': typeof ChannelsChannelIdProgrammingAddRoute;
   '/channels/$channelId/programming/slot-editor': typeof ChannelsChannelIdProgrammingSlotEditorRoute;
   '/channels/$channelId/programming/time-slot-editor': typeof ChannelsChannelIdProgrammingTimeSlotEditorRoute;
-  '/library/custom-shows/$showId/edit': typeof LibraryCustomShowsShowIdEditRoute;
-  '/library/custom-shows/$showId/programming': typeof LibraryCustomShowsShowIdProgrammingRoute;
-  '/library/custom-shows/new/programming': typeof LibraryCustomShowsNewProgrammingRoute;
   '/library/fillers/$fillerId/edit': typeof LibraryFillersFillerIdEditRoute;
   '/library/fillers/$fillerId/programming': typeof LibraryFillersFillerIdProgrammingRoute;
   '/library/fillers/new/programming': typeof LibraryFillersNewProgrammingRoute;
+  '/library/playlists/$showId/edit': typeof LibraryPlaylistsShowIdEditRoute;
+  '/library/playlists/$showId/programming': typeof LibraryPlaylistsShowIdProgrammingRoute;
+  '/library/playlists/new/programming': typeof LibraryPlaylistsNewProgrammingRoute;
   '/media_sources/$mediaSourceId/libraries/$libraryId': typeof Media_sourcesMediaSourceIdLibrariesLibraryIdRoute;
   '/channels/$channelId/edit': typeof ChannelsChannelIdEditIndexRoute;
   '/channels/$channelId/programming': typeof ChannelsChannelIdProgrammingIndexRoute;
-  '/library/custom-shows/new': typeof LibraryCustomShowsNewIndexRoute;
   '/library/fillers/new': typeof LibraryFillersNewIndexRoute;
+  '/library/playlists/new': typeof LibraryPlaylistsNewIndexRoute;
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport;
@@ -468,6 +535,9 @@ export interface FileRoutesById {
   '/channels_/test': typeof ChannelsTestRoute;
   '/library/custom-shows': typeof LibraryCustomShowsRoute;
   '/library/fillers': typeof LibraryFillersRoute;
+  '/library/playlists': typeof LibraryPlaylistsRoute;
+  '/profiles/stream-selection': typeof ProfilesStreamSelectionRoute;
+  '/profiles/transcode': typeof ProfilesTranscodeRoute;
   '/settings/features': typeof SettingsFeaturesRoute;
   '/settings/ffmpeg': typeof SettingsFfmpegRoute;
   '/settings/general': typeof SettingsGeneralRoute;
@@ -483,13 +553,18 @@ export interface FileRoutesById {
   '/library/': typeof LibraryIndexRoute;
   '/media_sources_/': typeof Media_sourcesIndexRoute;
   '/system/': typeof SystemIndexRoute;
-  '/library/custom-shows_/$showId': typeof LibraryCustomShowsShowIdRouteRouteWithChildren;
-  '/library/custom-shows_/new': typeof LibraryCustomShowsNewRouteRouteWithChildren;
   '/library/fillers_/$fillerId': typeof LibraryFillersFillerIdRouteRouteWithChildren;
   '/library/fillers_/new': typeof LibraryFillersNewRouteRouteWithChildren;
+  '/library/playlists_/$showId': typeof LibraryPlaylistsShowIdRouteRouteWithChildren;
+  '/library/playlists_/new': typeof LibraryPlaylistsNewRouteRouteWithChildren;
   '/channels_/$channelId/watch': typeof ChannelsChannelIdWatchRoute;
+  '/library/custom-shows_/$': typeof LibraryCustomShowsSplatRoute;
   '/library/smart_collections/$id': typeof LibrarySmart_collectionsIdRoute;
   '/media_/$programType/$programId': typeof MediaProgramTypeProgramIdRoute;
+  '/profiles/stream-selection_/$profileId': typeof ProfilesStreamSelectionProfileIdRoute;
+  '/profiles/stream-selection_/new': typeof ProfilesStreamSelectionNewRoute;
+  '/profiles/transcode_/$configId': typeof ProfilesTranscodeConfigIdRoute;
+  '/profiles/transcode_/new': typeof ProfilesTranscodeNewRoute;
   '/settings/ffmpeg_/$configId': typeof SettingsFfmpegConfigIdRoute;
   '/settings/ffmpeg_/new': typeof SettingsFfmpegNewRoute;
   '/channels_/$channelId/': typeof ChannelsChannelIdIndexRoute;
@@ -499,17 +574,17 @@ export interface FileRoutesById {
   '/channels_/$channelId/programming/add': typeof ChannelsChannelIdProgrammingAddRoute;
   '/channels_/$channelId/programming/slot-editor': typeof ChannelsChannelIdProgrammingSlotEditorRoute;
   '/channels_/$channelId/programming/time-slot-editor': typeof ChannelsChannelIdProgrammingTimeSlotEditorRoute;
-  '/library/custom-shows_/$showId/edit': typeof LibraryCustomShowsShowIdEditRoute;
-  '/library/custom-shows_/$showId/programming': typeof LibraryCustomShowsShowIdProgrammingRoute;
-  '/library/custom-shows_/new/programming': typeof LibraryCustomShowsNewProgrammingRoute;
   '/library/fillers_/$fillerId/edit': typeof LibraryFillersFillerIdEditRoute;
   '/library/fillers_/$fillerId/programming': typeof LibraryFillersFillerIdProgrammingRoute;
   '/library/fillers_/new/programming': typeof LibraryFillersNewProgrammingRoute;
+  '/library/playlists_/$showId/edit': typeof LibraryPlaylistsShowIdEditRoute;
+  '/library/playlists_/$showId/programming': typeof LibraryPlaylistsShowIdProgrammingRoute;
+  '/library/playlists_/new/programming': typeof LibraryPlaylistsNewProgrammingRoute;
   '/media_sources_/$mediaSourceId/libraries_/$libraryId': typeof Media_sourcesMediaSourceIdLibrariesLibraryIdRoute;
   '/channels_/$channelId/edit/': typeof ChannelsChannelIdEditIndexRoute;
   '/channels_/$channelId/programming/': typeof ChannelsChannelIdProgrammingIndexRoute;
-  '/library/custom-shows_/new/': typeof LibraryCustomShowsNewIndexRoute;
   '/library/fillers_/new/': typeof LibraryFillersNewIndexRoute;
+  '/library/playlists_/new/': typeof LibraryPlaylistsNewIndexRoute;
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath;
@@ -525,6 +600,9 @@ export interface FileRouteTypes {
     | '/channels/test'
     | '/library/custom-shows'
     | '/library/fillers'
+    | '/library/playlists'
+    | '/profiles/stream-selection'
+    | '/profiles/transcode'
     | '/settings/features'
     | '/settings/ffmpeg'
     | '/settings/general'
@@ -540,13 +618,18 @@ export interface FileRouteTypes {
     | '/library'
     | '/media_sources'
     | '/system/'
-    | '/library/custom-shows/$showId'
-    | '/library/custom-shows/new'
     | '/library/fillers/$fillerId'
     | '/library/fillers/new'
+    | '/library/playlists/$showId'
+    | '/library/playlists/new'
     | '/channels/$channelId/watch'
+    | '/library/custom-shows/$'
     | '/library/smart_collections/$id'
     | '/media/$programType/$programId'
+    | '/profiles/stream-selection/$profileId'
+    | '/profiles/stream-selection/new'
+    | '/profiles/transcode/$configId'
+    | '/profiles/transcode/new'
     | '/settings/ffmpeg/$configId'
     | '/settings/ffmpeg/new'
     | '/channels/$channelId/'
@@ -556,17 +639,17 @@ export interface FileRouteTypes {
     | '/channels/$channelId/programming/add'
     | '/channels/$channelId/programming/slot-editor'
     | '/channels/$channelId/programming/time-slot-editor'
-    | '/library/custom-shows/$showId/edit'
-    | '/library/custom-shows/$showId/programming'
-    | '/library/custom-shows/new/programming'
     | '/library/fillers/$fillerId/edit'
     | '/library/fillers/$fillerId/programming'
     | '/library/fillers/new/programming'
+    | '/library/playlists/$showId/edit'
+    | '/library/playlists/$showId/programming'
+    | '/library/playlists/new/programming'
     | '/media_sources/$mediaSourceId/libraries/$libraryId'
     | '/channels/$channelId/edit'
     | '/channels/$channelId/programming'
-    | '/library/custom-shows/new/'
-    | '/library/fillers/new/';
+    | '/library/fillers/new/'
+    | '/library/playlists/new/';
   fileRoutesByTo: FileRoutesByTo;
   to:
     | '/'
@@ -578,6 +661,9 @@ export interface FileRouteTypes {
     | '/channels/test'
     | '/library/custom-shows'
     | '/library/fillers'
+    | '/library/playlists'
+    | '/profiles/stream-selection'
+    | '/profiles/transcode'
     | '/settings/features'
     | '/settings/ffmpeg'
     | '/settings/general'
@@ -593,11 +679,16 @@ export interface FileRouteTypes {
     | '/library'
     | '/media_sources'
     | '/system'
-    | '/library/custom-shows/$showId'
     | '/library/fillers/$fillerId'
+    | '/library/playlists/$showId'
     | '/channels/$channelId/watch'
+    | '/library/custom-shows/$'
     | '/library/smart_collections/$id'
     | '/media/$programType/$programId'
+    | '/profiles/stream-selection/$profileId'
+    | '/profiles/stream-selection/new'
+    | '/profiles/transcode/$configId'
+    | '/profiles/transcode/new'
     | '/settings/ffmpeg/$configId'
     | '/settings/ffmpeg/new'
     | '/channels/$channelId'
@@ -607,17 +698,17 @@ export interface FileRouteTypes {
     | '/channels/$channelId/programming/add'
     | '/channels/$channelId/programming/slot-editor'
     | '/channels/$channelId/programming/time-slot-editor'
-    | '/library/custom-shows/$showId/edit'
-    | '/library/custom-shows/$showId/programming'
-    | '/library/custom-shows/new/programming'
     | '/library/fillers/$fillerId/edit'
     | '/library/fillers/$fillerId/programming'
     | '/library/fillers/new/programming'
+    | '/library/playlists/$showId/edit'
+    | '/library/playlists/$showId/programming'
+    | '/library/playlists/new/programming'
     | '/media_sources/$mediaSourceId/libraries/$libraryId'
     | '/channels/$channelId/edit'
     | '/channels/$channelId/programming'
-    | '/library/custom-shows/new'
-    | '/library/fillers/new';
+    | '/library/fillers/new'
+    | '/library/playlists/new';
   id:
     | '__root__'
     | '/'
@@ -631,6 +722,9 @@ export interface FileRouteTypes {
     | '/channels_/test'
     | '/library/custom-shows'
     | '/library/fillers'
+    | '/library/playlists'
+    | '/profiles/stream-selection'
+    | '/profiles/transcode'
     | '/settings/features'
     | '/settings/ffmpeg'
     | '/settings/general'
@@ -646,13 +740,18 @@ export interface FileRouteTypes {
     | '/library/'
     | '/media_sources_/'
     | '/system/'
-    | '/library/custom-shows_/$showId'
-    | '/library/custom-shows_/new'
     | '/library/fillers_/$fillerId'
     | '/library/fillers_/new'
+    | '/library/playlists_/$showId'
+    | '/library/playlists_/new'
     | '/channels_/$channelId/watch'
+    | '/library/custom-shows_/$'
     | '/library/smart_collections/$id'
     | '/media_/$programType/$programId'
+    | '/profiles/stream-selection_/$profileId'
+    | '/profiles/stream-selection_/new'
+    | '/profiles/transcode_/$configId'
+    | '/profiles/transcode_/new'
     | '/settings/ffmpeg_/$configId'
     | '/settings/ffmpeg_/new'
     | '/channels_/$channelId/'
@@ -662,17 +761,17 @@ export interface FileRouteTypes {
     | '/channels_/$channelId/programming/add'
     | '/channels_/$channelId/programming/slot-editor'
     | '/channels_/$channelId/programming/time-slot-editor'
-    | '/library/custom-shows_/$showId/edit'
-    | '/library/custom-shows_/$showId/programming'
-    | '/library/custom-shows_/new/programming'
     | '/library/fillers_/$fillerId/edit'
     | '/library/fillers_/$fillerId/programming'
     | '/library/fillers_/new/programming'
+    | '/library/playlists_/$showId/edit'
+    | '/library/playlists_/$showId/programming'
+    | '/library/playlists_/new/programming'
     | '/media_sources_/$mediaSourceId/libraries_/$libraryId'
     | '/channels_/$channelId/edit/'
     | '/channels_/$channelId/programming/'
-    | '/library/custom-shows_/new/'
-    | '/library/fillers_/new/';
+    | '/library/fillers_/new/'
+    | '/library/playlists_/new/';
   fileRoutesById: FileRoutesById;
 }
 export interface RootRouteChildren {
@@ -687,15 +786,23 @@ export interface RootRouteChildren {
   ChannelsTestRoute: typeof ChannelsTestRoute;
   LibraryCustomShowsRoute: typeof LibraryCustomShowsRoute;
   LibraryFillersRoute: typeof LibraryFillersRoute;
+  LibraryPlaylistsRoute: typeof LibraryPlaylistsRoute;
+  ProfilesStreamSelectionRoute: typeof ProfilesStreamSelectionRoute;
+  ProfilesTranscodeRoute: typeof ProfilesTranscodeRoute;
   ChannelsIndexRoute: typeof ChannelsIndexRoute;
   LibraryIndexRoute: typeof LibraryIndexRoute;
   Media_sourcesIndexRoute: typeof Media_sourcesIndexRoute;
-  LibraryCustomShowsShowIdRouteRoute: typeof LibraryCustomShowsShowIdRouteRouteWithChildren;
-  LibraryCustomShowsNewRouteRoute: typeof LibraryCustomShowsNewRouteRouteWithChildren;
   LibraryFillersFillerIdRouteRoute: typeof LibraryFillersFillerIdRouteRouteWithChildren;
   LibraryFillersNewRouteRoute: typeof LibraryFillersNewRouteRouteWithChildren;
+  LibraryPlaylistsShowIdRouteRoute: typeof LibraryPlaylistsShowIdRouteRouteWithChildren;
+  LibraryPlaylistsNewRouteRoute: typeof LibraryPlaylistsNewRouteRouteWithChildren;
+  LibraryCustomShowsSplatRoute: typeof LibraryCustomShowsSplatRoute;
   LibrarySmart_collectionsIdRoute: typeof LibrarySmart_collectionsIdRoute;
   MediaProgramTypeProgramIdRoute: typeof MediaProgramTypeProgramIdRoute;
+  ProfilesStreamSelectionProfileIdRoute: typeof ProfilesStreamSelectionProfileIdRoute;
+  ProfilesStreamSelectionNewRoute: typeof ProfilesStreamSelectionNewRoute;
+  ProfilesTranscodeConfigIdRoute: typeof ProfilesTranscodeConfigIdRoute;
+  ProfilesTranscodeNewRoute: typeof ProfilesTranscodeNewRoute;
   LibrarySmart_collectionsIndexRoute: typeof LibrarySmart_collectionsIndexRoute;
   LibraryTrashIndexRoute: typeof LibraryTrashIndexRoute;
   Media_sourcesMediaSourceIdIndexRoute: typeof Media_sourcesMediaSourceIdIndexRoute;
@@ -851,6 +958,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsFeaturesRouteImport;
       parentRoute: typeof SettingsRoute;
     };
+    '/profiles/transcode': {
+      id: '/profiles/transcode';
+      path: '/profiles/transcode';
+      fullPath: '/profiles/transcode';
+      preLoaderRoute: typeof ProfilesTranscodeRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/profiles/stream-selection': {
+      id: '/profiles/stream-selection';
+      path: '/profiles/stream-selection';
+      fullPath: '/profiles/stream-selection';
+      preLoaderRoute: typeof ProfilesStreamSelectionRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/library/playlists': {
+      id: '/library/playlists';
+      path: '/library/playlists';
+      fullPath: '/library/playlists';
+      preLoaderRoute: typeof LibraryPlaylistsRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/library/fillers': {
       id: '/library/fillers';
       path: '/library/fillers';
@@ -928,6 +1056,34 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsFfmpegConfigIdRouteImport;
       parentRoute: typeof SettingsRoute;
     };
+    '/profiles/transcode_/new': {
+      id: '/profiles/transcode_/new';
+      path: '/profiles/transcode/new';
+      fullPath: '/profiles/transcode/new';
+      preLoaderRoute: typeof ProfilesTranscodeNewRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/profiles/transcode_/$configId': {
+      id: '/profiles/transcode_/$configId';
+      path: '/profiles/transcode/$configId';
+      fullPath: '/profiles/transcode/$configId';
+      preLoaderRoute: typeof ProfilesTranscodeConfigIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/profiles/stream-selection_/new': {
+      id: '/profiles/stream-selection_/new';
+      path: '/profiles/stream-selection/new';
+      fullPath: '/profiles/stream-selection/new';
+      preLoaderRoute: typeof ProfilesStreamSelectionNewRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/profiles/stream-selection_/$profileId': {
+      id: '/profiles/stream-selection_/$profileId';
+      path: '/profiles/stream-selection/$profileId';
+      fullPath: '/profiles/stream-selection/$profileId';
+      preLoaderRoute: typeof ProfilesStreamSelectionProfileIdRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/media_/$programType/$programId': {
       id: '/media_/$programType/$programId';
       path: '/media/$programType/$programId';
@@ -942,12 +1098,33 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibrarySmart_collectionsIdRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    '/library/custom-shows_/$': {
+      id: '/library/custom-shows_/$';
+      path: '/library/custom-shows/$';
+      fullPath: '/library/custom-shows/$';
+      preLoaderRoute: typeof LibraryCustomShowsSplatRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
     '/channels_/$channelId/watch': {
       id: '/channels_/$channelId/watch';
       path: '/watch';
       fullPath: '/channels/$channelId/watch';
       preLoaderRoute: typeof ChannelsChannelIdWatchRouteImport;
       parentRoute: typeof ChannelsChannelIdRouteRoute;
+    };
+    '/library/playlists_/new': {
+      id: '/library/playlists_/new';
+      path: '/library/playlists/new';
+      fullPath: '/library/playlists/new';
+      preLoaderRoute: typeof LibraryPlaylistsNewRouteRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/library/playlists_/$showId': {
+      id: '/library/playlists_/$showId';
+      path: '/library/playlists/$showId';
+      fullPath: '/library/playlists/$showId';
+      preLoaderRoute: typeof LibraryPlaylistsShowIdRouteRouteImport;
+      parentRoute: typeof rootRouteImport;
     };
     '/library/fillers_/new': {
       id: '/library/fillers_/new';
@@ -963,19 +1140,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryFillersFillerIdRouteRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    '/library/custom-shows_/new': {
-      id: '/library/custom-shows_/new';
-      path: '/library/custom-shows/new';
-      fullPath: '/library/custom-shows/new';
-      preLoaderRoute: typeof LibraryCustomShowsNewRouteRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    '/library/custom-shows_/$showId': {
-      id: '/library/custom-shows_/$showId';
-      path: '/library/custom-shows/$showId';
-      fullPath: '/library/custom-shows/$showId';
-      preLoaderRoute: typeof LibraryCustomShowsShowIdRouteRouteImport;
-      parentRoute: typeof rootRouteImport;
+    '/library/playlists_/new/': {
+      id: '/library/playlists_/new/';
+      path: '/';
+      fullPath: '/library/playlists/new/';
+      preLoaderRoute: typeof LibraryPlaylistsNewIndexRouteImport;
+      parentRoute: typeof LibraryPlaylistsNewRouteRoute;
     };
     '/library/fillers_/new/': {
       id: '/library/fillers_/new/';
@@ -983,13 +1153,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/library/fillers/new/';
       preLoaderRoute: typeof LibraryFillersNewIndexRouteImport;
       parentRoute: typeof LibraryFillersNewRouteRoute;
-    };
-    '/library/custom-shows_/new/': {
-      id: '/library/custom-shows_/new/';
-      path: '/';
-      fullPath: '/library/custom-shows/new/';
-      preLoaderRoute: typeof LibraryCustomShowsNewIndexRouteImport;
-      parentRoute: typeof LibraryCustomShowsNewRouteRoute;
     };
     '/channels_/$channelId/programming/': {
       id: '/channels_/$channelId/programming/';
@@ -1012,6 +1175,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Media_sourcesMediaSourceIdLibrariesLibraryIdRouteImport;
       parentRoute: typeof rootRouteImport;
     };
+    '/library/playlists_/new/programming': {
+      id: '/library/playlists_/new/programming';
+      path: '/programming';
+      fullPath: '/library/playlists/new/programming';
+      preLoaderRoute: typeof LibraryPlaylistsNewProgrammingRouteImport;
+      parentRoute: typeof LibraryPlaylistsNewRouteRoute;
+    };
+    '/library/playlists_/$showId/programming': {
+      id: '/library/playlists_/$showId/programming';
+      path: '/programming';
+      fullPath: '/library/playlists/$showId/programming';
+      preLoaderRoute: typeof LibraryPlaylistsShowIdProgrammingRouteImport;
+      parentRoute: typeof LibraryPlaylistsShowIdRouteRoute;
+    };
+    '/library/playlists_/$showId/edit': {
+      id: '/library/playlists_/$showId/edit';
+      path: '/edit';
+      fullPath: '/library/playlists/$showId/edit';
+      preLoaderRoute: typeof LibraryPlaylistsShowIdEditRouteImport;
+      parentRoute: typeof LibraryPlaylistsShowIdRouteRoute;
+    };
     '/library/fillers_/new/programming': {
       id: '/library/fillers_/new/programming';
       path: '/programming';
@@ -1032,27 +1216,6 @@ declare module '@tanstack/react-router' {
       fullPath: '/library/fillers/$fillerId/edit';
       preLoaderRoute: typeof LibraryFillersFillerIdEditRouteImport;
       parentRoute: typeof LibraryFillersFillerIdRouteRoute;
-    };
-    '/library/custom-shows_/new/programming': {
-      id: '/library/custom-shows_/new/programming';
-      path: '/programming';
-      fullPath: '/library/custom-shows/new/programming';
-      preLoaderRoute: typeof LibraryCustomShowsNewProgrammingRouteImport;
-      parentRoute: typeof LibraryCustomShowsNewRouteRoute;
-    };
-    '/library/custom-shows_/$showId/programming': {
-      id: '/library/custom-shows_/$showId/programming';
-      path: '/programming';
-      fullPath: '/library/custom-shows/$showId/programming';
-      preLoaderRoute: typeof LibraryCustomShowsShowIdProgrammingRouteImport;
-      parentRoute: typeof LibraryCustomShowsShowIdRouteRoute;
-    };
-    '/library/custom-shows_/$showId/edit': {
-      id: '/library/custom-shows_/$showId/edit';
-      path: '/edit';
-      fullPath: '/library/custom-shows/$showId/edit';
-      preLoaderRoute: typeof LibraryCustomShowsShowIdEditRouteImport;
-      parentRoute: typeof LibraryCustomShowsShowIdRouteRoute;
     };
     '/channels_/$channelId/programming/time-slot-editor': {
       id: '/channels_/$channelId/programming/time-slot-editor';
@@ -1154,40 +1317,6 @@ const ChannelsChannelIdRouteRouteWithChildren =
     ChannelsChannelIdRouteRouteChildren,
   );
 
-interface LibraryCustomShowsShowIdRouteRouteChildren {
-  LibraryCustomShowsShowIdEditRoute: typeof LibraryCustomShowsShowIdEditRoute;
-  LibraryCustomShowsShowIdProgrammingRoute: typeof LibraryCustomShowsShowIdProgrammingRoute;
-}
-
-const LibraryCustomShowsShowIdRouteRouteChildren: LibraryCustomShowsShowIdRouteRouteChildren =
-  {
-    LibraryCustomShowsShowIdEditRoute: LibraryCustomShowsShowIdEditRoute,
-    LibraryCustomShowsShowIdProgrammingRoute:
-      LibraryCustomShowsShowIdProgrammingRoute,
-  };
-
-const LibraryCustomShowsShowIdRouteRouteWithChildren =
-  LibraryCustomShowsShowIdRouteRoute._addFileChildren(
-    LibraryCustomShowsShowIdRouteRouteChildren,
-  );
-
-interface LibraryCustomShowsNewRouteRouteChildren {
-  LibraryCustomShowsNewProgrammingRoute: typeof LibraryCustomShowsNewProgrammingRoute;
-  LibraryCustomShowsNewIndexRoute: typeof LibraryCustomShowsNewIndexRoute;
-}
-
-const LibraryCustomShowsNewRouteRouteChildren: LibraryCustomShowsNewRouteRouteChildren =
-  {
-    LibraryCustomShowsNewProgrammingRoute:
-      LibraryCustomShowsNewProgrammingRoute,
-    LibraryCustomShowsNewIndexRoute: LibraryCustomShowsNewIndexRoute,
-  };
-
-const LibraryCustomShowsNewRouteRouteWithChildren =
-  LibraryCustomShowsNewRouteRoute._addFileChildren(
-    LibraryCustomShowsNewRouteRouteChildren,
-  );
-
 interface LibraryFillersFillerIdRouteRouteChildren {
   LibraryFillersFillerIdEditRoute: typeof LibraryFillersFillerIdEditRoute;
   LibraryFillersFillerIdProgrammingRoute: typeof LibraryFillersFillerIdProgrammingRoute;
@@ -1221,6 +1350,39 @@ const LibraryFillersNewRouteRouteWithChildren =
     LibraryFillersNewRouteRouteChildren,
   );
 
+interface LibraryPlaylistsShowIdRouteRouteChildren {
+  LibraryPlaylistsShowIdEditRoute: typeof LibraryPlaylistsShowIdEditRoute;
+  LibraryPlaylistsShowIdProgrammingRoute: typeof LibraryPlaylistsShowIdProgrammingRoute;
+}
+
+const LibraryPlaylistsShowIdRouteRouteChildren: LibraryPlaylistsShowIdRouteRouteChildren =
+  {
+    LibraryPlaylistsShowIdEditRoute: LibraryPlaylistsShowIdEditRoute,
+    LibraryPlaylistsShowIdProgrammingRoute:
+      LibraryPlaylistsShowIdProgrammingRoute,
+  };
+
+const LibraryPlaylistsShowIdRouteRouteWithChildren =
+  LibraryPlaylistsShowIdRouteRoute._addFileChildren(
+    LibraryPlaylistsShowIdRouteRouteChildren,
+  );
+
+interface LibraryPlaylistsNewRouteRouteChildren {
+  LibraryPlaylistsNewProgrammingRoute: typeof LibraryPlaylistsNewProgrammingRoute;
+  LibraryPlaylistsNewIndexRoute: typeof LibraryPlaylistsNewIndexRoute;
+}
+
+const LibraryPlaylistsNewRouteRouteChildren: LibraryPlaylistsNewRouteRouteChildren =
+  {
+    LibraryPlaylistsNewProgrammingRoute: LibraryPlaylistsNewProgrammingRoute,
+    LibraryPlaylistsNewIndexRoute: LibraryPlaylistsNewIndexRoute,
+  };
+
+const LibraryPlaylistsNewRouteRouteWithChildren =
+  LibraryPlaylistsNewRouteRoute._addFileChildren(
+    LibraryPlaylistsNewRouteRouteChildren,
+  );
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   GuideRoute: GuideRoute,
@@ -1233,17 +1395,25 @@ const rootRouteChildren: RootRouteChildren = {
   ChannelsTestRoute: ChannelsTestRoute,
   LibraryCustomShowsRoute: LibraryCustomShowsRoute,
   LibraryFillersRoute: LibraryFillersRoute,
+  LibraryPlaylistsRoute: LibraryPlaylistsRoute,
+  ProfilesStreamSelectionRoute: ProfilesStreamSelectionRoute,
+  ProfilesTranscodeRoute: ProfilesTranscodeRoute,
   ChannelsIndexRoute: ChannelsIndexRoute,
   LibraryIndexRoute: LibraryIndexRoute,
   Media_sourcesIndexRoute: Media_sourcesIndexRoute,
-  LibraryCustomShowsShowIdRouteRoute:
-    LibraryCustomShowsShowIdRouteRouteWithChildren,
-  LibraryCustomShowsNewRouteRoute: LibraryCustomShowsNewRouteRouteWithChildren,
   LibraryFillersFillerIdRouteRoute:
     LibraryFillersFillerIdRouteRouteWithChildren,
   LibraryFillersNewRouteRoute: LibraryFillersNewRouteRouteWithChildren,
+  LibraryPlaylistsShowIdRouteRoute:
+    LibraryPlaylistsShowIdRouteRouteWithChildren,
+  LibraryPlaylistsNewRouteRoute: LibraryPlaylistsNewRouteRouteWithChildren,
+  LibraryCustomShowsSplatRoute: LibraryCustomShowsSplatRoute,
   LibrarySmart_collectionsIdRoute: LibrarySmart_collectionsIdRoute,
   MediaProgramTypeProgramIdRoute: MediaProgramTypeProgramIdRoute,
+  ProfilesStreamSelectionProfileIdRoute: ProfilesStreamSelectionProfileIdRoute,
+  ProfilesStreamSelectionNewRoute: ProfilesStreamSelectionNewRoute,
+  ProfilesTranscodeConfigIdRoute: ProfilesTranscodeConfigIdRoute,
+  ProfilesTranscodeNewRoute: ProfilesTranscodeNewRoute,
   LibrarySmart_collectionsIndexRoute: LibrarySmart_collectionsIndexRoute,
   LibraryTrashIndexRoute: LibraryTrashIndexRoute,
   Media_sourcesMediaSourceIdIndexRoute: Media_sourcesMediaSourceIdIndexRoute,

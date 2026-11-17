@@ -2,6 +2,7 @@ name: Release (CalVer)
 
 # CalVer release flow. See plans/versioning-repair-plan.md for why.
 # release-comment.yml comments on shipped PRs and issues once this publishes.
+# A stable release also opens a PR that publishes the pending release post.
 #
 # Versions are YYYY.M.PATCH, unpadded, because that form is still valid semver:
 # docker/metadata-action's type=semver, the docs spec sort, and the Docker tag
@@ -25,6 +26,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
 
     steps:
       - name: Checkout
@@ -168,3 +170,13 @@ jobs:
             echo
             cat RELEASE_NOTES.md
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Propose the release post
+        if: ${{ steps.version.outputs.prerelease == 'false' }}
+        env:
+          # GITHUB_TOKEN, not RELEASE_PLEASE_TOKEN. That PAT cannot comment on
+          # issues or PRs (see release-comment.yml), so it likely cannot open
+          # one either. The cost is that CI skips the PR this opens.
+          GH_TOKEN: ${{ github.token }}
+          DRY_RUN: ${{ github.event.inputs.dry_run != 'false' }}
+        run: bash .github/scripts/promote-release-post.sh "${{ steps.version.outputs.version }}"

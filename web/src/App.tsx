@@ -8,10 +8,12 @@ import { RouterButtonLink } from './components/base/RouterButtonLink.tsx';
 import { RouterLink } from './components/base/RouterLink.tsx';
 import { NewMediaSourceLibrariesPrompt } from './components/settings/media_source/NewMediaSourceLibrariesPrompt.tsx';
 import { AppShellContainer } from './components/shell/AppShellContainer.tsx';
+import { useQueryErrorSnackbar } from './hooks/useQueryErrorSnackbar.tsx';
 import { useServerEventsSnackbar } from './hooks/useServerEvents.ts';
 import { useVersion } from './hooks/useVersion.tsx';
 export function Root({ children }: { children?: React.ReactNode }) {
   useServerEventsSnackbar();
+  useQueryErrorSnackbar();
 
   const { data: version } = useVersion();
 

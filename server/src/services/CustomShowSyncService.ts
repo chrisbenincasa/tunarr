@@ -70,7 +70,7 @@ export class CustomShowSyncService {
   async syncShow(customShowId: string): Promise<void> {
     const show = await this.customShowDB.getShow(customShowId);
     if (!show) {
-      throw new Error(`Custom show ${customShowId} not found`);
+      throw new Error(`Playlist ${customShowId} not found`);
     }
 
     if (
@@ -78,7 +78,7 @@ export class CustomShowSyncService {
       !show.syncMediaSourceType ||
       !show.syncExternalPlaylistId
     ) {
-      throw new Error(`Custom show ${show.name} is not configured for sync`);
+      throw new Error(`Playlist ${show.name} is not configured for sync`);
     }
 
     this.logger.info(

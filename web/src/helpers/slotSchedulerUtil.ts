@@ -388,7 +388,7 @@ export const ProgramOptionTypes: DropdownOption<ProgramOptionType>[] = [
   },
   {
     value: 'custom-show',
-    description: 'Custom Show',
+    description: 'Playlist',
   },
   {
     value: 'redirect',

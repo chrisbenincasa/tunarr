@@ -1,4 +1,4 @@
-import type { TvEpisodeNfo, TvShowNfo } from '@/nfo/NfoSchemas.js';
+import type { TvEpisodeNfo } from '@/nfo/NfoSchemas.js';
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import type {
   EpisodeMetadata,
@@ -54,6 +54,7 @@ import {
   extractSeasonNumberFromFolder,
   mapNfoActors,
   mapNfoToNamedEntity,
+  tvShowNfoToShowMetadata,
 } from '../local/localMetadataUtil.ts';
 import { LocalSubtitlesService } from '../local/LocalSubtitlesService.ts';
 import type { FolderAndContents } from '../LocalFolderCanonicalizer.ts';
@@ -724,7 +725,7 @@ export class LocalTvShowScanner extends FileSystemScanner {
       );
     }
 
-    const show = this.tvShowNfoToShow(metadata.get().tvshow);
+    const show = tvShowNfoToShowMetadata(metadata.get().tvshow);
 
     if (!show) {
       return Result.failure(
@@ -733,34 +734,6 @@ export class LocalTvShowScanner extends FileSystemScanner {
     }
 
     return Result.success(show);
-  }
-
-  private tvShowNfoToShow(tvShowNfo: TvShowNfo): ShowMetadata {
-    const releaseDate = parseReleaseDate(tvShowNfo.premiered);
-    return {
-      uuid: v4(),
-      summary: null,
-      plot: tvShowNfo.plot ?? null,
-      tagline: tvShowNfo.tagline ?? null,
-      sourceType: 'local',
-      identifiers: [],
-      title: tvShowNfo.title ?? '',
-      sortTitle: titleToSortTitle(tvShowNfo.title),
-      tags: [],
-      type: 'show',
-      genres: tvShowNfo.genre ? tvShowNfo.genre.map((name) => ({ name })) : [],
-      actors: mapNfoActors(tvShowNfo.actor),
-      studios: tvShowNfo.studio
-        ? tvShowNfo.studio.map((name) => ({ name }))
-        : [],
-      rating: tvShowNfo.mpaa ?? null,
-      releaseDate: releaseDate ? +releaseDate : null,
-      releaseDateString: releaseDate?.format() ?? null,
-      year: releaseDate?.year() ?? null,
-      childCount: undefined,
-      grandchildCount: undefined,
-      artwork: [], // Added later
-    };
   }
 
   private async loadEpisodeMetadata(

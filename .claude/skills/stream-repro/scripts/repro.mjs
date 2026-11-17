@@ -325,6 +325,20 @@ async function startServer() {
   return { base, stop, pid: child.pid };
 }
 
+// The endpoint is paged, so collect every page.
+async function fetchLibraryPrograms(base, libraryId) {
+  const programs = [];
+  for (;;) {
+    const page = await api(
+      base,
+      'GET',
+      `/api/media-libraries/${libraryId}/programs?limit=100&offset=${programs.length}`,
+    );
+    programs.push(...page.result);
+    if (page.result.length === 0 || programs.length >= page.total) return programs;
+  }
+}
+
 async function buildSyntheticChannel(base, clipsDir) {
   const { id: sourceId } = await api(base, 'POST', '/api/media-sources', {
     type: 'local',
@@ -344,9 +358,9 @@ async function buildSyntheticChannel(base, clipsDir) {
     180_000,
     1500,
   );
-  const programs = (
-    await api(base, 'GET', `/api/media-libraries/${source.libraries[0].id}/programs`)
-  ).sort((a, b) => String(a.program?.title).localeCompare(String(b.program?.title)));
+  const programs = (await fetchLibraryPrograms(base, source.libraries[0].id)).sort((a, b) =>
+    String(a.program?.title).localeCompare(String(b.program?.title)),
+  );
   if (programs.length === 0) throw new Error('scan finished but found no programs');
 
   const configs = await api(base, 'GET', '/api/transcode_configs');

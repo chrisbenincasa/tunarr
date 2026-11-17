@@ -12,6 +12,7 @@ import type {
 import { HlsSession } from '@/stream/hls/HlsSession.js';
 import { HlsSlowerSession } from '@/stream/hls/HlsSlowerSession.js';
 import { EtvNextBinaryResolver } from '@/stream/etv/EtvNextBinaryResolver.js';
+import { EtvNextHardwareProbe } from '@/stream/etv/EtvNextHardwareProbe.js';
 import { EtvNextDynamicTokenRegistry } from '@/stream/etv/EtvNextDynamicTokenRegistry.js';
 import { EtvNextPlayoutWriter } from '@/stream/etv/EtvNextPlayoutWriter.js';
 import type { EtvNextSessionProvider } from '@/stream/etv/EtvNextSession.js';
@@ -68,6 +69,7 @@ const configure = ({ bind }: ContainerModuleLoadOptions) => {
   });
 
   bind(EtvNextBinaryResolver).toSelf().inSingletonScope();
+  bind(EtvNextHardwareProbe).toSelf().inSingletonScope();
 
   // EtvNextPlayoutWriter is left to autobind. Its import chain reaches back
   // into container.ts, so binding it here would read the class while it is

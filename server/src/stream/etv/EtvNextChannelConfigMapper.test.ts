@@ -6,6 +6,7 @@ import {
   ChannelConfigVersion,
   FallbackDurationSeconds,
   UnsupportedTranscodeConfigError,
+  findHardwareSelection,
   findUnsupportedSettings,
   toChannelConfig,
 } from './EtvNextChannelConfigMapper.ts';
@@ -377,5 +378,102 @@ describe('unsupported transcode configs', () => {
       UnsupportedTranscodeConfigError,
     );
     expect(() => map({ audioFormat: 'mp3' })).toThrow(/audioFormat \(mp3\)/);
+  });
+});
+
+describe('findHardwareSelection', () => {
+  test('is undefined for a config that encodes in software', () => {
+    expect(findHardwareSelection(transcodeConfig())).toBeUndefined();
+  });
+
+  test('is undefined for a config the backend cannot run', () => {
+    expect(
+      findHardwareSelection(
+        transcodeConfig({
+          hardwareAccelerationMode: 'cuda',
+          audioFormat: 'mp3',
+        }),
+      ),
+    ).toBeUndefined();
+  });
+
+  test('carries the VAAPI device and driver the channel config would use', () => {
+    expect(
+      findHardwareSelection(
+        transcodeConfig({
+          hardwareAccelerationMode: 'vaapi',
+          videoFormat: 'hevc',
+          videoBitDepth: 10,
+          vaapiDevice: '/dev/dri/renderD129',
+          vaapiDriver: 'ihd',
+        }),
+      ),
+    ).toEqual({
+      accel: 'vaapi',
+      videoFormat: 'hevc',
+      bitDepth: 10,
+      bitrateKbps: 10000,
+      bufferKbps: 20000,
+      vaapiDevice: '/dev/dri/renderD129',
+      vaapiDriver: 'ihd',
+    });
+  });
+
+  test('leaves the driver to libva for the system driver', () => {
+    expect(
+      findHardwareSelection(
+        transcodeConfig({
+          hardwareAccelerationMode: 'vaapi',
+          vaapiDriver: 'system',
+        }),
+      ),
+    ).toMatchObject({ vaapiDevice: undefined, vaapiDriver: undefined });
+  });
+
+  test('drops VAAPI settings under another accel and defaults the bit depth to 8', () => {
+    expect(
+      findHardwareSelection(
+        transcodeConfig({
+          hardwareAccelerationMode: 'cuda',
+          vaapiDevice: '/dev/dri/renderD129',
+          vaapiDriver: 'ihd',
+          videoBitDepth: null,
+        }),
+      ),
+    ).toEqual({
+      accel: 'cuda',
+      videoFormat: 'h264',
+      bitDepth: 8,
+      bitrateKbps: 10000,
+      bufferKbps: 20000,
+      vaapiDevice: undefined,
+      vaapiDriver: undefined,
+    });
+  });
+
+  // The backend refuses an mpeg2video config without a bitrate.
+  test('carries the rate control the channel config would use', () => {
+    expect(
+      findHardwareSelection(
+        transcodeConfig({
+          hardwareAccelerationMode: 'vaapi',
+          videoFormat: 'mpeg2video',
+          videoBitRate: 6000,
+          videoBufferSize: 12000,
+        }),
+      ),
+    ).toMatchObject({ bitrateKbps: 6000, bufferKbps: 12000 });
+  });
+
+  test('uses 8 bits for mpeg2video, as the backend does', () => {
+    expect(
+      findHardwareSelection(
+        transcodeConfig({
+          hardwareAccelerationMode: 'vaapi',
+          videoFormat: 'mpeg2video',
+          videoBitDepth: 10,
+        }),
+      ),
+    ).toMatchObject({ videoFormat: 'mpeg2video', bitDepth: 8 });
   });
 });

@@ -18,6 +18,7 @@ import type {
   ResolvedWatermark,
 } from './EtvNextPlayoutItemMapper.ts';
 import {
+  escapeFilterGraphValue,
   MissingStreamSourceError,
   StreamTerminationRequestedError,
   UnresolvedRedirectError,
@@ -694,20 +695,31 @@ describe('offline modes', () => {
     expect(ignored).toEqual([]);
   });
 
-  test('pic mode plays the soundtrack instead of silence', () => {
+  test('pic mode loops the soundtrack instead of silence', () => {
     const { item } = map(offlineItem(), undefined, {
       offlinePicture: '/media/offline.png',
-      offlineSoundtrack: 'http://localhost:8000/media/theme.mp3',
+      offlineSoundtrack: '/media/theme.mp3',
     });
 
     expect(item.tracks).toEqual({
       video: { source: { source_type: 'local', path: '/media/offline.png' } },
       audio: {
         source: {
-          source_type: 'http',
-          uri: 'http://localhost:8000/media/theme.mp3',
+          source_type: 'lavfi',
+          params: 'amovie=filename=/media/theme.mp3:loop=0,asetpts=N/SR/TB',
         },
       },
+    });
+  });
+
+  test('a soundtrack URL loops through the cache protocol', () => {
+    const { item } = map(offlineItem(), undefined, {
+      offlineSoundtrack: 'http://localhost:8000/media/theme.mp3',
+    });
+
+    expect(item.tracks?.audio?.source).toEqual({
+      source_type: 'lavfi',
+      params: String.raw`amovie=filename=cache\\:http\\://localhost\\:8000/media/theme.mp3:loop=0,asetpts=N/SR/TB`,
     });
   });
 
@@ -876,6 +888,18 @@ describe('schema conformance of the screen variants', () => {
     for (const { item } of cases) {
       expect(PlayoutItemSchema.safeParse(item).error?.issues).toBeUndefined();
     }
+  });
+});
+
+describe('escapeFilterGraphValue', () => {
+  test.each([
+    ['/media/theme.mp3', '/media/theme.mp3'],
+    ['C:/music/a.mp3', String.raw`C\\:/music/a.mp3`],
+    ["it's", String.raw`it\\\'s`],
+    ['a, [b]; c', String.raw`a\, \[b\]\; c`],
+    [String.raw`back\slash`, String.raw`back\\\\slash`],
+  ])('escapes %j for both unescaping passes', (raw, escaped) => {
+    expect(escapeFilterGraphValue(raw)).toBe(escaped);
   });
 });
 

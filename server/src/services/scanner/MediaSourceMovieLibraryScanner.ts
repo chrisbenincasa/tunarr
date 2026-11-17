@@ -20,7 +20,10 @@ import { devAssert } from '../../util/debug.ts';
 import type { MeilisearchService } from '../MeilisearchService.ts';
 import type { MediaSourceProgressService } from './MediaSourceProgressService.ts';
 import type { ScanContext } from './MediaSourceScanner.ts';
-import { MediaSourceScanner } from './MediaSourceScanner.ts';
+import {
+  canSkipUnchangedProgram,
+  MediaSourceScanner,
+} from './MediaSourceScanner.ts';
 
 export type GenericMediaSourceMovieLibraryScanner<
   MovieT extends Movie = Movie,
@@ -207,10 +210,7 @@ export abstract class MediaSourceMovieLibraryScanner<
     const fullMovie = fullMovieResult.get();
 
     if (
-      !force &&
-      existingMovie &&
-      existingMovie.canonicalId &&
-      existingMovie.canonicalId === incomingMovie.canonicalId
+      canSkipUnchangedProgram(existingMovie, incomingMovie.canonicalId, force)
     ) {
       this.logger.debug(
         'Found an unchanged program: rating key = %s, program ID = %s',

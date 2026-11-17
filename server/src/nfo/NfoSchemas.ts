@@ -27,6 +27,8 @@ const NfoUniqueId = NfoFieldWithAttrs.extend({
   '@_default': z.stringbool().optional(),
 });
 
+export type NfoUniqueId = z.infer<typeof NfoUniqueId>;
+
 export const NfoAudioStream = z.object({
   codec: z.string(),
   language: z.string().optional(),

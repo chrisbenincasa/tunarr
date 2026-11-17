@@ -16,6 +16,8 @@ import { type ChannelSession, type CreateChannelRequest } from '@tunarr/types';
 import {
   BasicIdParamSchema,
   BasicPagingSchema,
+  BulkAssignFillersRequestSchema,
+  BulkAssignFillersResponseSchema,
   MaterializedSchedule,
   PagedResult,
   SlotScheduleWithPrograms,
@@ -67,6 +69,7 @@ import { findBadRequestError, unwrapError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
 import { PagingParams, TruthyQueryParam } from '../types/schemas.ts';
 import { GUIDE_PROGRAM_FIELDS_NOTE } from './guideApi.ts';
+import { validateStreamSelectionProfileId } from './streamSelectionApi.ts';
 
 dayjs.extend(duration);
 
@@ -232,6 +235,13 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
               error: `Transcode config with ID ${body.channel.transcodeConfigId} not found`,
             });
           }
+          const profileError = await validateStreamSelectionProfileId(
+            req.serverCtx.drizzleFactory(),
+            body.channel.streamSelectionProfileId,
+          );
+          if (profileError) {
+            return res.status(400).send({ error: profileError });
+          }
           insertResult = await Result.attemptAsync(() =>
             req.serverCtx.channelDB.saveChannel(body.channel),
           );
@@ -292,6 +302,14 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           return res.status(400).send({
             error: `Transcode config with ID ${req.body.transcodeConfigId} not found`,
           });
+        }
+
+        const profileError = await validateStreamSelectionProfileId(
+          req.serverCtx.drizzleFactory(),
+          req.body.streamSelectionProfileId,
+        );
+        if (profileError) {
+          return res.status(400).send({ error: profileError });
         }
 
         const channelUpdate = {
@@ -387,6 +405,36 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
       }
 
       return res.send();
+    },
+  );
+
+  fastify.post(
+    '/channels/bulk/fillers',
+    {
+      schema: {
+        operationId: 'bulkAssignFillers',
+        tags: ['Channels'],
+        body: BulkAssignFillersRequestSchema,
+        response: {
+          200: BulkAssignFillersResponseSchema,
+          // A string from the handler, or Fastify's own validation error object.
+
+          400: z.string().or(z.object({ message: z.string() })),
+        },
+      },
+    },
+    async (req, res) => {
+      const result = Result.attempt(() =>
+        req.serverCtx.fillerDB.bulkAssignFillers(req.body),
+      );
+      if (result.isFailure()) {
+        const badRequest = findBadRequestError(result.error);
+        if (badRequest) {
+          return res.status(400).send(badRequest.message);
+        }
+        throw unwrapError(result.error);
+      }
+      return res.send(result.get());
     },
   );
 
@@ -678,6 +726,35 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
     },
   );
 
+  fastify.delete(
+    '/channels/:id/schedule',
+    {
+      schema: {
+        params: BasicIdParamSchema,
+        operationId: 'DeleteChannelSchedule',
+        description:
+          "Removes a channel's time or random slot schedule. The current lineup is kept and the channel becomes manually programmed.",
+        tags: ['Channels'],
+        response: {
+          204: z.void(),
+          404: z.void(),
+        },
+      },
+    },
+    async (req, res) => {
+      if (!(await req.serverCtx.channelDB.channelExists(req.params.id))) {
+        return res.status(404).send();
+      }
+
+      await req.serverCtx.channelDB.saveLineup(req.params.id, {
+        schedule: null,
+        scheduleSeed: null,
+      });
+
+      return res.status(204).send();
+    },
+  );
+
   fastify.get(
     '/channels/:id/fallbacks',
     {
@@ -888,7 +965,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         }
         throw unwrapError(scheduleResult.error);
       }
-      const { result } = scheduleResult.get();
+
+      // Cycle state only matters to channel rebuilds, so previews leave it out.
+      const { iteratorState: _iteratorState, ...result } =
+        scheduleResult.get().result;
 
       const programsById = await container
         .get(MaterializeLineupCommand)
@@ -963,7 +1043,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         }
         throw unwrapError(scheduleResult.error);
       }
-      const { result } = scheduleResult.get();
+
+      // Cycle state only matters to channel rebuilds, so previews leave it out.
+      const { iteratorState: _iteratorState, ...result } =
+        scheduleResult.get().result;
 
       const programsById = await container
         .get(MaterializeLineupCommand)

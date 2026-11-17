@@ -8,7 +8,7 @@ import { bootstrapTunarr } from '../../bootstrap.ts';
 import { setGlobalOptions } from '../../globals.ts';
 import { copyPreMigratedDb } from '../../testing/testDbFactory.ts';
 import { DBAccess } from '../DBAccess.ts';
-import type { MediaSourceId } from '../schema/base.ts';
+import type { MediaSourceId, MediaSourceName } from '../schema/base.ts';
 import type { DrizzleDBAccess } from '../schema/index.ts';
 import { MediaSource } from '../schema/MediaSource.ts';
 import { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
@@ -163,5 +163,36 @@ describe('ProgramSearchRepository.getMediaSourceLibraryPrograms', () => {
 
     expect(page.total).toBe(2);
     expect(page.results.map((p) => p.uuid).sort()).toEqual([...uuids].sort());
+  });
+});
+
+describe('ProgramSearchRepository.getProgramInfoForMediaSourceLibrary', () => {
+  test('returns each program state so scanners can restore trashed ones', async ({
+    drizzle,
+    repo,
+  }) => {
+    const libraryId = await createLibrary(drizzle);
+    await drizzle.insert(Program).values(
+      (['ok', 'missing'] as const).map((state) => ({
+        uuid: v4(),
+        duration: 30000,
+        type: 'movie' as const,
+        sourceType: 'local' as const,
+        externalKey: state,
+        externalSourceId: tag<MediaSourceName>(faker.string.alphanumeric(16)),
+        canonicalId: faker.string.alphanumeric(16),
+        title: faker.word.words(3),
+        libraryId,
+        state,
+      })),
+    );
+
+    const info = await repo.getProgramInfoForMediaSourceLibrary(
+      libraryId,
+      'movie',
+    );
+
+    expect(info['ok']?.state).toBe('ok');
+    expect(info['missing']?.state).toBe('missing');
   });
 });

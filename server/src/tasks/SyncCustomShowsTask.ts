@@ -9,7 +9,7 @@ import { simpleTaskDef } from './TaskRegistry.ts';
 
 @injectable()
 @simpleTaskDef({
-  description: 'Syncs all custom shows linked to external playlists',
+  description: 'Syncs all playlists linked to media server playlists',
 })
 export class SyncCustomShowsTask extends SimpleTask {
   static KEY = Symbol.for(SyncCustomShowsTask.name);

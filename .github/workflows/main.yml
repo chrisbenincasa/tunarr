@@ -55,6 +55,9 @@ jobs:
             exit 1
           fi
 
+      - name: Check the pinned Meilisearch has a binary for every platform
+        run: pnpm --filter @tunarr/server check-meilisearch-assets
+
       - name: Build server
         run: pnpm turbo typecheck --filter=@tunarr/server
 

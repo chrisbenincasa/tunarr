@@ -130,7 +130,7 @@ export class CustomShowDB {
       const missingIds = await this.findMissingProgramIds(replacementPrograms);
       if (missingIds.length > 0) {
         throw new GenericBadRequestError(
-          `Cannot update custom show programs: ${missingIds.length} program(s) do not exist: ${missingIds.slice(0, 10).join(', ')}`,
+          `Cannot update playlist programs: ${missingIds.length} program(s) do not exist: ${missingIds.slice(0, 10).join(', ')}`,
         );
       }
     }
@@ -138,6 +138,10 @@ export class CustomShowDB {
     const updates: Partial<typeof CustomShow.$inferInsert> = {};
     if (updateRequest.name) {
       updates.name = updateRequest.name;
+    }
+
+    if (updateRequest.streamSelectionProfileId !== undefined) {
+      updates.streamSelectionProfileId = updateRequest.streamSelectionProfileId;
     }
 
     if (!updateRequest.enableSync) {
@@ -203,6 +207,7 @@ export class CustomShowDB {
       syncMediaSourceId: createRequest.syncMediaSourceId ?? null,
       syncMediaSourceType: createRequest.syncMediaSourceType ?? null,
       syncExternalPlaylistId: createRequest.syncExternalPlaylistId ?? null,
+      streamSelectionProfileId: createRequest.streamSelectionProfileId ?? null,
     } satisfies NewCustomShow;
 
     await this.db.insertInto('customShow').values(show).execute();
@@ -290,6 +295,7 @@ export class CustomShowDB {
         syncMediaSourceType: customShow.syncMediaSourceType,
         syncExternalPlaylistId: customShow.syncExternalPlaylistId,
         lastSyncedAt: customShow.lastSyncedAt,
+        streamSelectionProfileId: customShow.streamSelectionProfileId,
       }),
     );
   }

@@ -324,7 +324,8 @@ Closes-on-release: #1234
 ```
 
 - The line must start with `Closes-on-release:`. List several issues on one line: `Closes-on-release: #1234, #1240`.
-- When a stable release ships the PR, the release workflow comments on the issue and closes it. Prereleases don't count.
+- When the PR merges into `main` or `dev`, a workflow labels each open issue `pending release`. The label shows the fix is merged and waiting on a release. A manual run of the Pending Release Label workflow with no PR number labels the issues for every merged PR that no stable release has shipped yet.
+- When a stable release ships the PR, the release workflow comments on the issue, closes it, and removes the `pending release` label. Prereleases don't count.
 - When an issue needs several PRs, add the line only to the PR that finishes it.
 
 ## Testing
@@ -405,6 +406,48 @@ Any other arguments are passed to `docker compose`. The build includes uncommitt
 ### Adding a Pipeline
 
 Add `docker/test/pipelines/<name>.compose.yaml` containing only the settings that pipeline needs. `TUNARR_TEST_PIPELINE=<name>` then selects it.
+
+## Release Announcements
+
+Feature releases get a post on the docs site under **Releases**. Bug-fix releases don't need one, because GitHub Releases already lists every change.
+
+Each post lives in its own folder, with its screenshots beside it:
+
+```
+docs/blog/posts/2026.11.2/
+├── index.md
+└── profile-editor.png
+```
+
+Write the post as a draft. Start `index.md` with this front matter:
+
+```yaml
+---
+draft: true
+categories:
+  - Releases
+---
+```
+
+- Name the folder anything, such as `next`. The release fills in the rest.
+- Keep only one draft post at a time. The release workflow skips promotion when it finds more than one.
+- Everything above `<!-- more -->` is the excerpt on the Releases page.
+- Link to the full guide pages rather than repeating them. Paths are relative to the post, such as `../../../configure/stream-selection.md`.
+- Preview the site, drafts included, with `pip install mkdocs-material mkdocs-glightbox`, then `mkdocs serve` from the repo root. `mkdocs build` leaves drafts out.
+
+### Publishing
+
+Each stable release opens a PR titled `docs(blog): publish the <version> release post` from the `release-post/promote` branch. The PR:
+
+- renames the folder to the version, such as `docs/blog/posts/2026.11.2/`
+- sets `date` to the release date and `slug` to the version, so the post is published at `https://tunarr.com/blog/2026.11.2/`
+- removes `draft: true`
+
+Merge the PR if the post describes that release. Close it if the post belongs to a later release. The next release force-pushes the same branch and opens a new PR, so only one promotion PR is ever open.
+
+CI does not run on this PR, because GitHub starts no workflows for PRs opened by `GITHUB_TOKEN`. Preview the post locally if it changed since review.
+
+The docs site deploys when the PR merges. The docs workflow then puts `Read the announcement: <link>` at the top of the GitHub release notes. It skips releases that already contain the link, so a post published by hand gets linked on the next docs deploy too.
 
 ## Architecture Overview
 

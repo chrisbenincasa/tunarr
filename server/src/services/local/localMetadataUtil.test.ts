@@ -1,6 +1,10 @@
+import { TvShowNfoParser } from '../../nfo/TvShowNfoParser.ts';
+import { readTestFile } from '../../testing/util.ts';
 import {
   extractSeasonAndEpisodeNumber,
   extractSeasonNumberFromFolder,
+  mapNfoUniqueIds,
+  tvShowNfoToShowMetadata,
 } from './localMetadataUtil.ts';
 
 describe('extractSeasonAndEpisodeNumber', () => {
@@ -64,5 +68,55 @@ describe('extractSeasonNumberFromFolder', () => {
   test('parse "000091"', () => {
     const result = extractSeasonNumberFromFolder('000091');
     expect(result).toEqual(91);
+  });
+});
+
+describe('mapNfoUniqueIds', () => {
+  test('maps imdb, tmdb, and tvdb ids', () => {
+    expect(
+      mapNfoUniqueIds([
+        { '#text': 'tt5171438', '@_type': 'imdb' },
+        { '#text': '67198', '@_type': 'tmdb', '@_default': true },
+        { '#text': '328711', '@_type': 'tvdb' },
+      ]),
+    ).toEqual([
+      { id: 'tt5171438', type: 'imdb' },
+      { id: '67198', type: 'tmdb' },
+      { id: '328711', type: 'tvdb' },
+    ]);
+  });
+
+  test('normalizes type case and whitespace', () => {
+    expect(
+      mapNfoUniqueIds([{ '#text': ' 67198 ', '@_type': ' TMDB ' }]),
+    ).toEqual([{ id: '67198', type: 'tmdb' }]);
+  });
+
+  test('drops unknown types and empty ids', () => {
+    expect(
+      mapNfoUniqueIds([
+        { '#text': '12345', '@_type': 'anidb' },
+        { '#text': '  ', '@_type': 'tvdb' },
+      ]),
+    ).toEqual([]);
+  });
+
+  test('returns an empty list when there are no ids', () => {
+    expect(mapNfoUniqueIds(undefined)).toEqual([]);
+  });
+});
+
+describe('tvShowNfoToShowMetadata', () => {
+  test('keeps uniqueid tags as show identifiers', async () => {
+    const contents = (await readTestFile('tvshow.nfo')).toString('utf-8');
+    const parsed = await new TvShowNfoParser().parse(contents);
+
+    const show = tvShowNfoToShowMetadata(parsed.get().tvshow);
+
+    expect(show.identifiers).toEqual([
+      { id: 'tt5171438', type: 'imdb' },
+      { id: '67198', type: 'tmdb' },
+      { id: '328711', type: 'tvdb' },
+    ]);
   });
 });

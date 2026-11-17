@@ -1,8 +1,8 @@
 FROM mcr.microsoft.com/devcontainers/typescript-node:1-22-bookworm
 
 # Same ffmpeg build as the production image and shell.nix.
-ARG FFMPEG_TAG=8.1.2-7
-ARG FFMPEG_BUILD=ffmpeg-n8.1.2-etv.7
+ARG FFMPEG_TAG=8.1.2-8
+ARG FFMPEG_BUILD=ffmpeg-n8.1.2-etv.8
 
 RUN <<SH
 set -eu

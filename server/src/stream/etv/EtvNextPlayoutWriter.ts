@@ -808,32 +808,38 @@ export class EtvNextPlayoutWriter {
    *
    * A failure costs the selection rather than the item, so the worker falls
    * back to its own defaults instead of the slot playing an error screen.
+   *
+   * A file with no audio still gets a subtitle when the profile picks one.
    */
   private async selectTracks(
     channel: ChannelOrmWithTranscodeConfig,
     lineupItem: ContentBackedStreamLineupItem,
     details: StreamDetails,
   ): Promise<PlayoutTrackSelection | undefined> {
-    if (!details.audioDetails) {
+    const { audioDetails, subtitleDetails } = details;
+    if (!audioDetails && !subtitleDetails) {
       return;
     }
 
     try {
+      if (!audioDetails) {
+        const subtitleStream = await this.streamSelector.selectSubtitleStream({
+          channel,
+          lineupItem,
+          subtitleStreams: subtitleDetails ?? [],
+        });
+        return subtitleStream ? { subtitleStream } : undefined;
+      }
+
       const { audioStream, subtitleStream } =
         await this.streamSelector.selectAudioAndSubtitleStreams({
           channel,
           lineupItem,
-          audioStreams: details.audioDetails,
-          subtitleStreams: details.subtitleDetails ?? [],
+          audioStreams: audioDetails,
+          subtitleStreams: subtitleDetails ?? [],
         });
 
-      return {
-        audioStream,
-        subtitleStream:
-          channel.subtitlesEnabled && subtitleStream
-            ? subtitleStream
-            : undefined,
-      };
+      return { audioStream, subtitleStream: subtitleStream ?? undefined };
     } catch (e) {
       this.logger.warn(
         e,

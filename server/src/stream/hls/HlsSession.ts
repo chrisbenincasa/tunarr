@@ -1,7 +1,9 @@
 import type { ISettingsDB } from '@/db/interfaces/ISettingsDB.js';
 import type { ChannelOrmWithTranscodeConfig } from '@/db/schema/derivedTypes.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
-import { GetLastPtsDurationTask } from '@/ffmpeg/GetLastPtsDuration.js';
+import type { SegmentStreamEnds } from '@/ffmpeg/GetSegmentStreamEnds.js';
+import { GetSegmentStreamEndsTask } from '@/ffmpeg/GetSegmentStreamEnds.js';
+import { MeasureAudioEncoderLeadTask } from '@/ffmpeg/MeasureAudioEncoderLeadTask.js';
 import type { HlsOptions } from '@/ffmpeg/builder/constants.js';
 import {
   HlsDirectOutputFormat,
@@ -69,6 +71,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
   #currentSession: Maybe<FfmpegTranscodeSession>;
   #lastDelete: Dayjs = dayjs().subtract(1, 'year');
   #lastSubtitleDelete: Dayjs = dayjs().subtract(1, 'year');
+  #audioEncoderLead?: Promise<number>;
   #lastServedPlaylist: string | undefined;
 
   // Session time, in seconds, of the first entry in the on-disk stream.m3u8.
@@ -78,6 +81,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
   #cueFiles = new Map<number, Cue[]>();
   #isFirstTranscode = true;
+  #runLoopRunning = false;
   #lastDiscontinuitySequence: number | undefined;
   #currentSubtitleRendition: SubtitleRenditionInfo | undefined;
   #currentAudioRenditions: AudioRenditionInfo[] = [];
@@ -314,11 +318,37 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
     this.state = 'started';
     this.#playlistStart = this.transcodedUntil = dayjs();
+
+    // Measure while the first program transcodes, so the first program
+    // boundary does not wait on it.
+    if (this.sessionOptions.streamMode === 'hls') {
+      void this.getAudioEncoderLead();
+    }
+
     // Fire-and-forget
     this.run().catch((e) => this.logger.error(e));
   }
 
   private async run() {
+    this.#runLoopRunning = true;
+    try {
+      await this.runLoop();
+    } finally {
+      this.#runLoopRunning = false;
+    }
+
+    this.logger.debug('HLS worker ended main loop with state = %s', this.state);
+
+    // Only schedule cleanup if the session wasn't already explicitly stopped
+    // (e.g. via endSession). If the session is already stopped, its cleanup
+    // has been handled and scheduling another timer would risk deleting a
+    // replacement session that now occupies the same map key.
+    if (!this.stoppingOrStopped) {
+      this.scheduleCleanup();
+    }
+  }
+
+  private async runLoop() {
     while (this.state === 'started') {
       const transcodeBuffer = dayjs
         .duration(dayjs(this.transcodedUntil).diff())
@@ -338,16 +368,6 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
         // await this.trimPlaylistAndDeleteSegments();
         await wait(dayjs.duration({ seconds: 5 }));
       }
-    }
-
-    this.logger.debug('HLS worker ended main loop with state = %s', this.state);
-
-    // Only schedule cleanup if the session wasn't already explicitly stopped
-    // (e.g. via endSession). If the session is already stopped, its cleanup
-    // has been handled and scheduling another timer would risk deleting a
-    // replacement session that now occupies the same map key.
-    if (!this.stoppingOrStopped) {
-      this.scheduleCleanup();
     }
   }
 
@@ -476,6 +496,12 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
     this.logger.debug('Stream ended.');
   }
 
+  // The run loop spawns one ffmpeg per program, so no process runs between
+  // programs. The loop is what must stay alive.
+  protected override isTranscodeRunning(): boolean {
+    return this.#runLoopRunning;
+  }
+
   protected override getAdditionalRequiredFiles(): string[] {
     return this.#currentSubtitleRendition
       ? [this.getHlsOptions().subtitleStreamNameFormat]
@@ -527,7 +553,7 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       return 0;
     }
 
-    const result = await new GetLastPtsDurationTask(this.settingsDB).run(
+    const result = await new GetSegmentStreamEndsTask(this.settingsDB).run(
       lastSegment,
     );
 
@@ -536,9 +562,49 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
       return 0;
     }
 
-    const { pts, duration } = result.get();
+    return nextProgramPtsOffset(result.get(), await this.getAudioEncoderLead());
+  }
 
-    return pts + duration + 1;
+  private getAudioEncoderLead(): Promise<number> {
+    this.#audioEncoderLead ??= this.measureAudioEncoderLead().catch((e) => {
+      this.logger.warn(
+        e,
+        'Could not measure the audio encoder lead. Audio may overlap at program boundaries.',
+      );
+      return 0;
+    });
+    return this.#audioEncoderLead;
+  }
+
+  private async measureAudioEncoderLead(): Promise<number> {
+    const { audioFormat, audioSampleRate, audioChannels } =
+      this.channel.transcodeConfig;
+    if (audioFormat === 'copy') {
+      return 0;
+    }
+
+    const result = await new MeasureAudioEncoderLeadTask(
+      this.settingsDB.ffmpegSettings().ffmpegExecutablePath,
+    ).run({
+      encoder: audioFormat,
+      sampleRateKhz: audioSampleRate,
+      channels: audioChannels,
+    });
+
+    if (result.isFailure()) {
+      this.logger.warn(
+        result.error,
+        'Could not measure the audio encoder lead. Audio may overlap at program boundaries.',
+      );
+      return 0;
+    }
+
+    this.logger.debug(
+      'Audio encoder %s starts %d ticks before the output offset',
+      audioFormat,
+      result.get(),
+    );
+    return result.get();
   }
 
   private async getLastSegment() {
@@ -692,4 +758,24 @@ export class HlsSession extends BaseHlsSession<HlsSessionOptions> {
 
     return await this.cleanupDirectory();
   }
+}
+
+/**
+ * Where the next program starts, in 90 kHz ticks. Its video must start after
+ * every previous stream has ended. Its audio encoder places the first audio
+ * packet `audioEncoderLeadTicks` before the offset, so the offset also sits
+ * at least that far past the previous audio's end. When that is the later of
+ * the two, the new audio continues exactly where the old audio stopped and
+ * only the video timeline skips ahead.
+ */
+export function nextProgramPtsOffset(
+  previous: SegmentStreamEnds,
+  audioEncoderLeadTicks: number,
+): number {
+  const audioBound =
+    previous.audioEnd === undefined
+      ? -Infinity
+      : previous.audioEnd + audioEncoderLeadTicks;
+  const nonAudioBound = previous.nonAudioEnd ?? -Infinity;
+  return Math.max(audioBound, nonAudioBound) + 1;
 }

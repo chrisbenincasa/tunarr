@@ -22,9 +22,11 @@ This is a monorepo with four main packages:
 - Never cast types using `as any`
 - Never use inline `import()` type annotations — use top-level `import type` statements instead
 - All edits must comply with the project's oxlint rules. Run `pnpm lint-changed` to verify before considering work complete
+- All edits must also be Prettier-formatted. `pnpm lint-changed` runs oxlint only, and CI's `build` job fails on unformatted files before it reaches typecheck or tests. Run `pnpm exec prettier --write <files>` on the files you changed. Avoid `pnpm fmt`, because it rewrites the whole repo
 - **Nullability checks**: Use truthiness for objects and arrays (`if (fade && fade.periodMins > 0)`, `if (!channel)`). For strings, use `isNonEmptyString` (it narrows the type and treats `''` as missing). Compare explicitly (`=== undefined`, `=== null`) only when a falsy value is valid data, such as a number that can be `0`.
 - **Returning nothing**: Write `return;`, not `return undefined;`.
 - **No unguarded non-null assertions (`!`)**: Never use `!` to assert a value is non-null/non-undefined without first narrowing its type via a conditional check, early return, or explicit throw. If a value is optional, either guard it with an `if` check that narrows the type, or throw an explicit error explaining the invariant. The `!` operator silently crashes at runtime when the assumption is wrong.
+- **Switching over a union**: List every member as its own `case` and leave out `default`. The `typescript/switch-exhaustiveness-check` rule treats any `default` as exhaustive, so a `default` hides the missing case when the union grows. A `never` assertion inside a `default` does not fix that.
 
 ## Development Setup
 
@@ -37,6 +39,7 @@ This is a monorepo with four main packages:
 ### Version Control
 
 - Releases use CalVer (`YYYY.M.PATCH`), so the version says when a release shipped, not what changed.
+- Feature releases get an announcement post in `docs/blog/posts/<version>/`. See "Release Announcements" in `docs/dev/contributing.md`.
 - The `main` branch creates "stable" releases. It receives fixes, chores, build/CI changes, docs, refactors, and small to medium features, including those with database migrations.
 - The `dev` branch creates prereleases. It is reserved for large features that need many prerelease iterations before they reach stable, such as infinite schedules or remote streaming sources.
 

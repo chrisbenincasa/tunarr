@@ -17,6 +17,14 @@ export class ExternalCollectionRepo {
     return this.drizzleDB.insert(ExternalCollection).values(coll).execute();
   }
 
+  updateCollectionTitle(id: string, title: string) {
+    return this.drizzleDB
+      .update(ExternalCollection)
+      .set({ title })
+      .where(eq(ExternalCollection.uuid, id))
+      .execute();
+  }
+
   getById(id: string) {
     return this.drizzleDB.query.externalCollections
       .findFirst({
@@ -51,14 +59,6 @@ export class ExternalCollectionRepo {
       .findMany({
         where: (fields, operators) =>
           operators.eq(fields.mediaSourceId, mediaSourceId),
-      })
-      .execute();
-  }
-
-  getByLibraryId(libraryId: string) {
-    return this.drizzleDB.query.externalCollections
-      .findMany({
-        where: (fields, { eq }) => eq(fields.libraryId, libraryId),
       })
       .execute();
   }

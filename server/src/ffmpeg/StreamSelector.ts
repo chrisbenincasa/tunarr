@@ -8,20 +8,28 @@ import {
 import type { ChannelOrm } from '../db/schema/Channel.ts';
 import { CelEvaluationService } from '../services/CelEvaluationService.ts';
 import { StreamSelectionProfileResolver } from '../services/StreamSelectionProfileResolver.ts';
+import { StreamSelectionProgramContextLoader } from '../services/StreamSelectionProgramContextLoader.ts';
 import type {
   AudioStreamDetails,
   SubtitleStreamDetails,
 } from '../stream/types.ts';
 import {
   buildCelContext,
-  evaluateStreamSelectionProfile,
+  evaluateStreamSelectionChain,
+  evaluateSubtitleSelectionChain,
 } from './StreamSelectionEvaluator.ts';
+import type { StreamSelectionHints } from './StreamSelectionEvaluator.ts';
 
 type StreamSelectRequest = {
   channel: ChannelOrm;
   lineupItem: ContentBackedStreamLineupItem;
   audioStreams: NonEmptyArray<AudioStreamDetails>;
-  subtitleStreams: Array<SubtitleStreamDetails>;
+  subtitleStreams: SubtitleStreamDetails[];
+  hints?: StreamSelectionHints;
+};
+
+type SubtitleSelectRequest = Omit<StreamSelectRequest, 'audioStreams'> & {
+  audioStreams?: AudioStreamDetails[];
 };
 
 @injectable()
@@ -30,6 +38,8 @@ export class StreamSelector {
     @inject(StreamSelectionProfileResolver)
     private streamSelectionResolver: StreamSelectionProfileResolver,
     @inject(CelEvaluationService) private celService: CelEvaluationService,
+    @inject(StreamSelectionProgramContextLoader)
+    private programContextLoader: StreamSelectionProgramContextLoader,
   ) {}
 
   async selectAudioAndSubtitleStreams({
@@ -37,8 +47,64 @@ export class StreamSelector {
     lineupItem,
     audioStreams,
     subtitleStreams,
+    hints,
   }: StreamSelectRequest) {
-    const selectionCtx = {
+    const chain = await this.streamSelectionResolver.resolveChain(
+      this.buildSelectionContext(channel, lineupItem),
+    );
+
+    return await evaluateStreamSelectionChain(
+      chain,
+      audioStreams,
+      subtitleStreams,
+      this.celService,
+      await this.buildCelContextFor(
+        channel,
+        lineupItem,
+        audioStreams,
+        subtitleStreams,
+      ),
+      lineupItem,
+      hints,
+    );
+  }
+
+  /**
+   * Select a subtitle stream without selecting audio. Passthrough output keeps
+   * the source audio untouched, so it has no audio stream to pick and content
+   * with no audio at all must still get subtitles.
+   */
+  async selectSubtitleStream({
+    channel,
+    lineupItem,
+    audioStreams = [],
+    subtitleStreams,
+    hints,
+  }: SubtitleSelectRequest) {
+    const chain = await this.streamSelectionResolver.resolveChain(
+      this.buildSelectionContext(channel, lineupItem),
+    );
+
+    return await evaluateSubtitleSelectionChain(
+      chain,
+      subtitleStreams,
+      this.celService,
+      await this.buildCelContextFor(
+        channel,
+        lineupItem,
+        audioStreams,
+        subtitleStreams,
+      ),
+      lineupItem,
+      hints,
+    );
+  }
+
+  private buildSelectionContext(
+    channel: ChannelOrm,
+    lineupItem: ContentBackedStreamLineupItem,
+  ) {
+    return {
       channelId: channel.uuid,
       programId: lineupItem.program.uuid,
       fillerListId: isCommercialLineupItem(lineupItem)
@@ -48,22 +114,19 @@ export class StreamSelector {
         ? lineupItem.customShowId
         : undefined,
     };
+  }
 
-    const profile = await this.streamSelectionResolver.resolve(selectionCtx);
-    const celContext = buildCelContext(
+  private async buildCelContextFor(
+    channel: ChannelOrm,
+    lineupItem: ContentBackedStreamLineupItem,
+    audioStreams: readonly AudioStreamDetails[],
+    subtitleStreams: SubtitleStreamDetails[],
+  ) {
+    return buildCelContext(
       audioStreams,
       subtitleStreams,
       { name: channel.name, number: channel.number },
-      { title: lineupItem.program.title, type: lineupItem.program.type },
-    );
-
-    return await evaluateStreamSelectionProfile(
-      profile,
-      audioStreams,
-      subtitleStreams,
-      this.celService,
-      celContext,
-      lineupItem,
+      await this.programContextLoader.load(lineupItem.program),
     );
   }
 }

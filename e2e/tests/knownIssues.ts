@@ -23,14 +23,9 @@ export const KNOWN_ISSUES: KnownIssue[] = [
     match:
       /Cannot update a component \(`%s`\) while rendering a different component/,
     routes: [
-      '/channels',
       '/channels/$channelId/programming/slot-editor',
       '/library',
-      '/library/custom-shows',
-      '/library/smart_collections',
       '/media_sources',
-      '/settings/ffmpeg',
-      '/settings/sources',
     ],
     note: 'setState during render. The shared cause is likely in a table or layout component these pages use.',
   },
@@ -40,20 +35,11 @@ export const KNOWN_ISSUES: KnownIssue[] = [
       '/channels/$channelId/programming',
       '/channels/$channelId/programming/slot-editor',
       '/channels/$channelId/programming/time-slot-editor',
-      '/library/custom-shows/$showId/edit',
+      '/library/playlists/$showId/edit',
+      '/library/custom-shows/$',
       '/library/fillers/$fillerId/edit',
     ],
     note: 'Missing list keys in the lineup and programming editors.',
-  },
-  {
-    match: /Invalid prop `children` supplied to `ForwardRef\(Tooltip2?\)`/,
-    routes: ['/channels'],
-    note: 'Tooltip wraps a component that cannot hold a ref.',
-  },
-  {
-    match: /Function components cannot be given refs/,
-    routes: ['/channels'],
-    note: 'Same Tooltip child as above.',
   },
 ];
 

@@ -26,7 +26,7 @@ export const useSlotName = () => {
             find(programOptions, {
               customShowId: slot.customShowId,
             })?.description;
-          return t`Custom Show - ${showName ?? ''}`;
+          return t`Playlist - ${showName ?? ''}`;
         }
         case 'filler': {
           const showName =

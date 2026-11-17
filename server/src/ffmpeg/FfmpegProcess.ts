@@ -58,6 +58,10 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
     return this.#exited;
   }
 
+  get running() {
+    return this.#running;
+  }
+
   get stdout() {
     if (!this.initialized) {
       return;
@@ -192,11 +196,13 @@ export class FfmpegProcess extends events.EventEmitter<FfmpegEvents> {
         });
 
         if (code === 255 && !this.#processKilled) {
-          if (this.#processHandle) {
-            return;
-          }
+          // ffmpeg exits 255 on SIGTERM or SIGINT, so something outside
+          // Tunarr stopped it. Output already sent ends cleanly; a stream
+          // that never started falls back to the error screen.
 
-          if (!this.#sentData) {
+          if (this.#sentData) {
+            this.emit('end');
+          } else {
             this.emit('error', {
               code: code,
               cmd: `${this.ffmpegPath} ${argsWithTokenRedacted}`,

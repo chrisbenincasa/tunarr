@@ -238,8 +238,8 @@ importers:
         specifier: ^7.0.1
         version: 7.0.1
       meilisearch:
-        specifier: ^0.50.0
-        version: 0.50.0
+        specifier: ^0.62.0
+        version: 0.62.0
       music-metadata:
         specifier: ^11.10.5
         version: 11.10.5(supports-color@8.1.1)
@@ -6388,8 +6388,9 @@ packages:
     resolution: {integrity: sha512-aisnrDP4GNe06UcKFnV5bfMNPBUw4jsLGaWwWfnH3v02GnBuXX2MCVn5RbrWo0j3pczUilYblq7fQ7Nw2t5XKw==}
     engines: {node: '>= 0.8'}
 
-  meilisearch@0.50.0:
-    resolution: {integrity: sha512-9IzIkobvnuS18Eg4dq/eJB9W+eXqeLZjNRgq/kKMswSmVYYSQsXqGgSuCA0JkF+o5RwJlwIsieQee6rh313VhA==}
+  meilisearch@0.62.0:
+    resolution: {integrity: sha512-/ETDW7mmWI2NcSmtJdTPhbjsIbs3VcuapszX5X6JhdHB0XbszPOhqd3EB2bEylL0HK7dgwh/4Z3MdyuycWVf5A==}
+    engines: {node: ^20.19.0 || >=22.12.0}
 
   memfs@4.51.0:
     resolution: {integrity: sha512-4zngfkVM/GpIhC8YazOsM6E8hoB33NP0BCESPOA6z7qaL6umPJNqkO8CNYaLV2FB2MV6H1O3x2luHHOSqppv+A==}
@@ -13780,7 +13781,7 @@ snapshots:
 
   media-typer@1.1.0: {}
 
-  meilisearch@0.50.0: {}
+  meilisearch@0.62.0: {}
 
   memfs@4.51.0:
     dependencies:

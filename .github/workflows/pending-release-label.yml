@@ -1,0 +1,52 @@
+name: Pending Release Label
+
+# Labels the issues named by a "Closes-on-release: #N" line when the PR
+# merges, so they read as fixed and waiting on a release. release-comment.sh
+# removes the label when the release closes them. A manual run with no PR
+# number sweeps every merged PR not yet in a stable release.
+#
+# pull_request_target gives merged fork PRs a token that can label issues.
+# That is safe only because no step runs PR code. The checkout fetches the
+# base branch's .github/scripts, and the script reads the PR via the API.
+
+on:
+  pull_request_target:
+    types: [closed]
+    branches: [main, dev]
+  workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Merged PR to label issues for. Leave empty to sweep every PR not yet in a stable release.
+        required: false
+        type: number
+      dry_run:
+        description: List the issues without labeling
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  label:
+    name: Label issues pending release
+    if: github.event_name == 'workflow_dispatch' || github.event.pull_request.merged
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/scripts
+          persist-credentials: false
+
+      - name: Label
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          DRY_RUN: ${{ github.event_name == 'workflow_dispatch' && inputs.dry_run || 'false' }}
+        run: bash .github/scripts/pending-release-label.sh ${PR_NUMBER:+"${PR_NUMBER}"}

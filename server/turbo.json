@@ -42,7 +42,7 @@
     },
     "generate-env": {},
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "install-meilisearch"]
     },
     "test:local": {
       "dependsOn": ["^build"]

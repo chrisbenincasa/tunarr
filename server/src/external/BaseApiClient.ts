@@ -155,7 +155,7 @@ export abstract class BaseApiClient<
       JSON.stringify(parsed.error.issues, null, 2),
     );
 
-    return this.makeErrorResult('parse_error');
+    return this.makeErrorResult('parse_error', z.prettifyError(parsed.error));
   }
 
   // `doRequest` throws on any transport or status error, so every failure the

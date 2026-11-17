@@ -2,7 +2,9 @@
 
 Flex is an optional block of time that is used to separate two episodes of television. One reason to use Flex time is to create commercial breaks after each episode to simulate traditional television.
 
-There are a few ways to create Flex time such as Time Slots. When you have Flex time but no Filler Content configured, the Channel Fallback shown in the screenshot below will be used. You can optionally select the upload button to choose your own custom fallback image. 
+There are a few ways to create Flex time such as Time Slots. When you have Flex time but no Filler Content configured, the Channel Fallback shown in the screenshot below will be used. You can optionally select the upload button to choose your own custom fallback image.
+
+The fallback plays silence unless you set a **Soundtrack**. Enter a path or URL to an audio file, or select the upload button to store one on the Tunarr server. The soundtrack loops for as long as the fallback plays.
 
 Please see the [Filler Lists page](/configure/library/filler) for details on creating your first list. 
 
