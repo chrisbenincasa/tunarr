@@ -2,7 +2,7 @@ import { describe, expect, test } from 'vitest';
 import type { OtherVideoNfo } from '../../nfo/NfoSchemas.ts';
 import { unwrapOtherVideoNfoContainer } from '../../nfo/NfoSchemas.ts';
 import { OtherVideoNfoParser } from '../../nfo/OtherVideoNfoParser.ts';
-import { otherVideoNfoToMetadata } from './LocalOtherVideoScanner.ts';
+import { LocalOtherVideoScanner } from './LocalOtherVideoScanner.ts';
 
 async function parseNfo(input: string): Promise<OtherVideoNfo> {
   const result = await new OtherVideoNfoParser().parse(input);
@@ -19,7 +19,7 @@ async function parseNfo(input: string): Promise<OtherVideoNfo> {
   return nfo;
 }
 
-describe('otherVideoNfoToMetadata', () => {
+describe('LocalOtherVideoScanner.nfoToOtherVideo', () => {
   test('maps a movie <plot> to summary', async () => {
     const nfo = await parseNfo(`
       <?xml version="1.0" encoding="utf-8" standalone="yes"?>
@@ -29,7 +29,7 @@ describe('otherVideoNfoToMetadata', () => {
       </movie>
     `);
 
-    const metadata = otherVideoNfoToMetadata(nfo);
+    const metadata = LocalOtherVideoScanner.nfoToOtherVideo(nfo);
 
     expect(metadata.type).toBe('other_video');
     expect(metadata.summary).toBe('A commercial break from 1994.');
@@ -46,7 +46,7 @@ describe('otherVideoNfoToMetadata', () => {
       </episodedetails>
     `);
 
-    const metadata = otherVideoNfoToMetadata(nfo);
+    const metadata = LocalOtherVideoScanner.nfoToOtherVideo(nfo);
 
     expect(metadata.summary).toBe('Summer vacation, 1998.');
     expect(metadata.plot).toBeNull();
@@ -61,7 +61,7 @@ describe('otherVideoNfoToMetadata', () => {
       </movie>
     `);
 
-    const metadata = otherVideoNfoToMetadata(nfo);
+    const metadata = LocalOtherVideoScanner.nfoToOtherVideo(nfo);
 
     expect(metadata.summary).toBeNull();
     expect(metadata.plot).toBeNull();

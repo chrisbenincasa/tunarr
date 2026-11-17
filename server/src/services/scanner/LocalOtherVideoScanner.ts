@@ -413,7 +413,7 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
     }
 
     return Result.attemptAsync(() =>
-      Promise.resolve(otherVideoNfoToMetadata(extractedResult)),
+      Promise.resolve(LocalOtherVideoScanner.nfoToOtherVideo(extractedResult)),
     );
   }
 
@@ -425,6 +425,69 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
     }
     this.logger.debug('No nfo file located at %s', nfoPath);
     return;
+  }
+
+  public static nfoToOtherVideo(nfo: OtherVideoNfo): OtherVideoMetadata {
+    const identifiers: Identifier[] = seq.collect(nfo.uniqueid, (id) => {
+      const typ = id['@_type'].toLowerCase().trim();
+      switch (typ) {
+        case 'tmdb':
+        case 'imdb':
+        case 'tvdb':
+          return {
+            id: id['#text'],
+            type: typ,
+          } satisfies Identifier;
+        default:
+          return null;
+      }
+    });
+
+    const releaseDate = nfo.premiered
+      ? Result.attempt(() => dayjs(nfo.premiered, 'YYYY-MM-DD')).orNull()
+      : null;
+
+    const actors = seq.collect(nfo.actor, (actor, idx) => {
+      return {
+        name: actor.name,
+        role: actor.role ?? undefined,
+        order: actor.order ?? idx,
+        thumb: actor.thumb,
+      } satisfies Actor;
+    });
+
+    const directors = seq.collect(nfo.director, (director) => {
+      return {
+        name: typeof director === 'string' ? director : director['#text'],
+      } satisfies Director;
+    });
+
+    return {
+      identifiers,
+      originalTitle: nfo.originaltitle ?? null,
+      releaseDate: releaseDate ? +releaseDate : null,
+      releaseDateString: releaseDate?.format() ?? null,
+      sourceType: 'local',
+      title: nfo.title,
+      sortTitle: titleToSortTitle(nfo.title),
+      uuid: v4(),
+      year: releaseDate?.year() ?? null,
+      actors,
+      tags: nfo.tag ?? [],
+      type: 'other_video',
+      directors,
+      studios: nfo.studio?.map((s) => ({ name: s })) ?? [],
+      genres: nfo.genre?.map((g) => ({ name: g })) ?? [],
+      writers:
+        nfo.credits?.map((c) => ({
+          name: typeof c === 'string' ? c : c['#text'],
+        })) ?? [],
+      artwork: [], // Added later
+      state: 'ok',
+      summary: nfo.plot ?? null,
+      plot: null,
+      tagline: null,
+    };
   }
 
   private async scanVideoArtwork(
@@ -482,69 +545,4 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
 
     return scanResult;
   }
-}
-
-export function otherVideoNfoToMetadata(
-  nfo: OtherVideoNfo,
-): OtherVideoMetadata {
-  const identifiers: Identifier[] = seq.collect(nfo.uniqueid, (id) => {
-    const typ = id['@_type'].toLowerCase().trim();
-    switch (typ) {
-      case 'tmdb':
-      case 'imdb':
-      case 'tvdb':
-        return {
-          id: id['#text'],
-          type: typ,
-        } satisfies Identifier;
-      default:
-        return null;
-    }
-  });
-
-  const releaseDate = nfo.premiered
-    ? Result.attempt(() => dayjs(nfo.premiered, 'YYYY-MM-DD')).orNull()
-    : null;
-
-  const actors = seq.collect(nfo.actor, (actor, idx) => {
-    return {
-      name: actor.name,
-      role: actor.role ?? undefined,
-      order: actor.order ?? idx,
-      thumb: actor.thumb,
-    } satisfies Actor;
-  });
-
-  const directors = seq.collect(nfo.director, (director) => {
-    return {
-      name: typeof director === 'string' ? director : director['#text'],
-    } satisfies Director;
-  });
-
-  return {
-    identifiers,
-    originalTitle: nfo.originaltitle ?? null,
-    releaseDate: releaseDate ? +releaseDate : null,
-    releaseDateString: releaseDate?.format() ?? null,
-    sourceType: 'local',
-    title: nfo.title,
-    sortTitle: titleToSortTitle(nfo.title),
-    uuid: v4(),
-    year: releaseDate?.year() ?? null,
-    actors,
-    tags: nfo.tag ?? [],
-    type: 'other_video',
-    directors,
-    studios: nfo.studio?.map((s) => ({ name: s })) ?? [],
-    genres: nfo.genre?.map((g) => ({ name: g })) ?? [],
-    writers:
-      nfo.credits?.map((c) => ({
-        name: typeof c === 'string' ? c : c['#text'],
-      })) ?? [],
-    artwork: [], // Added later
-    state: 'ok',
-    summary: nfo.plot ?? null,
-    plot: null,
-    tagline: null,
-  };
 }
