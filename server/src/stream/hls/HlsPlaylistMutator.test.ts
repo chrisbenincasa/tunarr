@@ -273,6 +273,41 @@ describe('HlsPlaylistMutator', () => {
       expect(result.playlist).toContain('#EXT-X-TARGETDURATION:6');
     });
 
+    it('should raise the target duration to cover longer segments', () => {
+      // Stream copy (HLS Direct) cuts at source keyframes, so a segment can
+      // run past the nominal 4 seconds.
+      const lines = createPlaylist(3);
+      lines[lines.indexOf('#EXTINF:4.004000,', 5)] = '#EXTINF:4.755000,';
+      const start = dayjs('2024-10-18T14:00:00.000-0400');
+
+      const result = mutator.trimPlaylist(start, undefined, lines, defaultOpts);
+
+      expect(result.playlist).toContain('#EXT-X-TARGETDURATION:5');
+    });
+
+    it('should keep the nominal target duration when segments round to it', () => {
+      const lines = createPlaylist(3);
+      const start = dayjs('2024-10-18T14:00:00.000-0400');
+
+      const result = mutator.trimPlaylist(start, undefined, lines, defaultOpts);
+
+      expect(result.playlist).toContain('#EXT-X-TARGETDURATION:4');
+    });
+
+    it('should keep a raised target duration after the long segment leaves the window', () => {
+      const lines = createPlaylist(5);
+      lines[4] = '#EXTINF:4.755000,';
+      const start = dayjs('2024-10-18T14:00:00.000-0400');
+
+      const result = mutator.trimPlaylist(start, undefined, lines, {
+        ...defaultOpts,
+        maxSegmentsToKeep: 2,
+      });
+
+      expect(result.playlist).not.toContain('data000000.ts');
+      expect(result.playlist).toContain('#EXT-X-TARGETDURATION:5');
+    });
+
     it('should preserve discontinuity tags in output when relevant', () => {
       const lines = [
         '#EXTM3U',
