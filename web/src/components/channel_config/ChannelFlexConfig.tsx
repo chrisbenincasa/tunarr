@@ -1,4 +1,4 @@
-import { DefaultFallbackPicturePath } from '@/helpers/constants.ts';
+import { channelFlexImageUrl } from '@/helpers/nowPlayingImage.ts';
 import { useSettings } from '@/store/settings/selectors.ts';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { Delete } from '@mui/icons-material';
@@ -36,7 +36,7 @@ import { useCallback } from 'react';
 import { useStateFromSource } from '../../hooks/useStateFromSource.ts';
 import { Controller, useFieldArray } from 'react-hook-form';
 import { useDebounceCallback } from 'usehooks-ts';
-import { isNonEmptyString, typedProperty } from '../../helpers/util.ts';
+import { typedProperty } from '../../helpers/util.ts';
 import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
 import { useFillerLists } from '../../hooks/useFillerLists.ts';
 import useStore from '../../store/index.ts';
@@ -64,9 +64,7 @@ export function ChannelFlexConfig() {
     'offline.picture',
   ]);
 
-  const offlinePictureSrc = isNonEmptyString(offlinePicture)
-    ? offlinePicture
-    : `${backendUri}${DefaultFallbackPicturePath}`;
+  const offlinePictureSrc = channelFlexImageUrl(offlinePicture, backendUri);
 
   const [weights, setWeights] = useStateFromSource(
     channelFillerLists,

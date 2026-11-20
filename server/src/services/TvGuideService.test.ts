@@ -1200,4 +1200,59 @@ describe('TVGuideService', () => {
       }
     });
   });
+
+  describe('now playing', () => {
+    const MIN = 60_000;
+    const BASE = new Date('2024-01-01T00:00:00Z').getTime();
+
+    function makeService(channels: Record<string, unknown>) {
+      return new TVGuideService(
+        { write: vi.fn().mockResolvedValue(undefined) } as any,
+        { push: vi.fn() } as any,
+        {
+          loadAllLineups: vi.fn().mockResolvedValue(channels),
+          syncChannelDuration: vi.fn().mockResolvedValue(false),
+        } as any,
+        { getGuideProgramsByIds: vi.fn().mockResolvedValue([]) } as any,
+        {} as any,
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
+        {} as any,
+        {} as any,
+        {} as any,
+      );
+    }
+
+    // The now_playing route reads a 1 ms window of the cached guide, so
+    // during short flex it reports the program the guide melded it into.
+    it('reports the program that short flex is melded into', async () => {
+      const items: LineupItem[] = [];
+      for (let i = 0; i < 10; i++) {
+        items.push({ type: 'content', id: `ep-${i}`, durationMs: 28 * MIN });
+        items.push({ type: 'offline', durationMs: 2 * MIN });
+      }
+      const channel = makeChannelOrm({ startTime: BASE });
+      const service = makeService({
+        [channel.uuid]: { channel, lineup: makeLineup(items) },
+      });
+
+      await service.buildAllChannels(dayjs.duration({ hours: 4 }), true, BASE);
+
+      // One minute into the flex that follows the second episode.
+      const now = BASE + 59 * MIN;
+      const playing = await service.getChannelLineup(
+        channel.uuid,
+        new Date(now),
+        new Date(now + 1),
+      );
+
+      expect(playing).toHaveLength(1);
+      const [first] = playing ?? [];
+      expect(first?.lineupItem).toMatchObject({
+        type: 'content',
+        id: 'ep-1',
+        durationMs: 30 * MIN,
+      });
+      expect(first?.startTimeMs).toBe(BASE + 30 * MIN);
+    });
+  });
 });
