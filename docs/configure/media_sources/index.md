@@ -48,11 +48,11 @@ Tunarr rescans your libraries on a schedule to pick up added, changed, and remov
 | Option           | What it does                                                                                       |
 | ---------------- | -------------------------------------------------------------------------------------------------- |
 | Off              | No scheduled scans. Scan a library by hand from its media source when its contents change.          |
-| Every few hours  | Scans every 1, 2, 3, 4, 6, 8, or 12 hours, counting from midnight, at the minute you choose.       |
+| Every few hours  | Scans every 1, 2, 3, 4, 6, 8, or 12 hours, starting from the first scan time you choose.           |
 | On selected days | Scans once on each day you pick, at the time you choose. Pick one day for a weekly scan.           |
 | Custom (cron)    | Scans on a cron expression, such as `0 4 * * 0` for 4:00 AM every Sunday.                         |
 
-The default is every 6 hours at 30 minutes past the hour. The page shows when the next scan will run, and changes apply as soon as you save.
+The default is every 6 hours from 12:30 AM. Pick a first scan time to shift the whole schedule. For example, every 6 hours from 3:30 AM scans at 3:30 AM, 9:30 AM, 3:30 PM, and 9:30 PM. The page shows when the next scan will run, and changes apply as soon as you save.
 
 Media server collections and [synced playlists](../library/playlists.md) sync on the same schedule. Turning scheduled scans off also turns off their automatic sync.
 

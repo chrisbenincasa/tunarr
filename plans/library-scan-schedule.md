@@ -72,6 +72,7 @@ export const LibraryScanScheduleSchema = z.discriminatedUnion('type', [
     type: z.literal('interval'),
     hours: z.literal(LibraryScanIntervalHours),
     minute: z.int().min(0).max(59),
+    startHour: z.int().min(0).max(23).optional(),
   }),
   z.object({
     type: z.literal('days'),
@@ -92,6 +93,7 @@ export const GlobalMediaSourceSettingsSchema = z.object({
 ```
 
 - `interval` allows only divisors of 24, so gaps stay even across midnight.
+- `startHour` shifts an interval off midnight. The cron hour field becomes `startHour % hours` stepped by `hours` (`3/6` fires at 3, 9, 15, 21). Absent means midnight, so older settings and API callers need no migration.
 - `days` covers both daily (all seven days) and weekly (one day). 0 is Sunday, as in cron.
 - `cron` reuses `CronScheduleSchema` from `utilSchemas.ts`. The `types` package has no cron parser, so the server validates the expression.
 
@@ -129,7 +131,7 @@ export const GlobalMediaSourceSettingsSchema = z.object({
 
 - A "Scheduled scans" select with Off, Every few hours, On selected days, and Custom (cron).
 - Fields per choice:
-  - Every few hours: frequency select and minute field
+  - Every few hours: frequency select and a "First scan at" time picker, which sets `startHour` and `minute`
   - On selected days: weekday checkboxes, ordered by the locale's first day of the week, and a time picker
   - Custom: cron text field with an example in the help text
 - The form keeps flat state for every type (`scanScheduleForm.ts`), so switching types keeps what the user entered.

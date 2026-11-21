@@ -219,6 +219,9 @@ export const LibraryScanScheduleSchema = z.discriminatedUnion('type', [
     type: z.literal('interval'),
     hours: z.literal(LibraryScanIntervalHours),
     minute: z.int().min(0).max(59),
+
+    // Hour of one scan. The others repeat every `hours` from it. Absent means midnight.
+    startHour: z.int().min(0).max(23).optional(),
   }),
   z.object({
     type: z.literal('days'),

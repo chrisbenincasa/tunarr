@@ -12,6 +12,7 @@ export const AllDaysOfWeek = [0, 1, 2, 3, 4, 5, 6];
 export type ScanScheduleFormValues = {
   type: LibraryScanSchedule['type'];
   intervalHours: LibraryScanIntervalHour;
+  intervalStartHour: number;
   intervalMinute: number;
   daysOfWeek: number[];
   hour: number;
@@ -22,6 +23,7 @@ export type ScanScheduleFormValues = {
 const defaultFormValues: ScanScheduleFormValues = {
   type: 'interval',
   intervalHours: 6,
+  intervalStartHour: 0,
   intervalMinute: 30,
   daysOfWeek: AllDaysOfWeek,
   hour: 3,
@@ -40,6 +42,7 @@ export function scanScheduleToFormValues(
         ...defaultFormValues,
         type: 'interval',
         intervalHours: schedule.hours,
+        intervalStartHour: schedule.startHour ?? 0,
         intervalMinute: schedule.minute,
       };
     case 'days':
@@ -66,6 +69,7 @@ export function formValuesToScanSchedule(
         type: 'interval',
         hours: values.intervalHours,
         minute: values.intervalMinute,
+        startHour: values.intervalStartHour,
       };
     case 'days':
       return {

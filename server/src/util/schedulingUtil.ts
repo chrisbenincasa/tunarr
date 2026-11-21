@@ -122,8 +122,14 @@ export function libraryScanScheduleToCron(
   switch (schedule.type) {
     case 'off':
       return null;
-    case 'interval':
-      return `0 ${schedule.minute} */${schedule.hours} * * *`;
+    case 'interval': {
+      const firstHour = (schedule.startHour ?? 0) % schedule.hours;
+      const hourField =
+        firstHour === 0
+          ? `*/${schedule.hours}`
+          : `${firstHour}/${schedule.hours}`;
+      return `0 ${schedule.minute} ${hourField} * * *`;
+    }
     case 'days': {
       const days = uniq(schedule.daysOfWeek).sort((a, b) => a - b);
       const dayField = days.length === 7 ? '*' : days.join(',');

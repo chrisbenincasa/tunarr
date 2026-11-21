@@ -106,6 +106,28 @@ describe('ScannerSettingsPage', () => {
       type: 'interval',
       hours: 12,
       minute: 30,
+      startHour: 0,
+    });
+  });
+
+  test('keeps the first scan time when the frequency changes', async () => {
+    const { user } = renderPage({
+      type: 'interval',
+      hours: 6,
+      minute: 45,
+      startHour: 3,
+    });
+
+    await user.click(screen.getByRole('combobox', { name: 'Frequency' }));
+    await user.click(screen.getByRole('option', { name: 'Every 8 hours' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(mocks.save).toHaveBeenCalledOnce());
+    expect(savedSchedule()).toEqual({
+      type: 'interval',
+      hours: 8,
+      minute: 45,
+      startHour: 3,
     });
   });
 

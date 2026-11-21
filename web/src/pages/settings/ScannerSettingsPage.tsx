@@ -1,4 +1,3 @@
-import { NumericFormControllerText } from '@/components/util/TypedController.tsx';
 import {
   getApiSettingsMediaSourceOptions,
   getApiSettingsMediaSourceQueryKey,
@@ -216,15 +215,37 @@ export const ScannerSettingsPage = () => {
                   )}
                 />
               </FormControl>
-              <NumericFormControllerText
+              <Controller
                 control={control}
-                name="intervalMinute"
-                prettyFieldName={t`Minute`}
-                rules={{ min: 0, max: 59, required: true }}
-                TextFieldProps={{
-                  label: t`Minute`,
-                  helperText: t`Minute past the hour, 0 to 59. Hours count from midnight.`,
-                }}
+                name="intervalStartHour"
+                render={({ field }) => (
+                  <TimePicker
+                    label={t`First scan at`}
+                    value={dayjs()
+                      .startOf('day')
+                      .hour(field.value)
+                      .minute(watch('intervalMinute'))}
+                    onChange={(value) => {
+                      if (!value || !value.isValid()) {
+                        return;
+                      }
+                      field.onChange(value.hour());
+                      setValue('intervalMinute', value.minute(), {
+                        shouldDirty: true,
+                      });
+                    }}
+                    slotProps={{
+                      textField: {
+                        helperText: plural(watch('intervalHours'), {
+                          one: 'Scans run at this minute every hour.',
+                          other:
+                            'Scans run at this time and every # hours after it, around the clock.',
+                        }),
+                      },
+                    }}
+                    sx={{ maxWidth: 260 }}
+                  />
+                )}
               />
             </Stack>
           )}

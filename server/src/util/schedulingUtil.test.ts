@@ -1,4 +1,6 @@
 import { EverySchedule } from '@tunarr/types/schemas';
+import parser from 'cron-parser';
+import { range } from 'lodash-es';
 import { describe, expect, test } from 'vitest';
 import dayjs from './dayjs.ts';
 import {
@@ -28,6 +30,54 @@ describe('libraryScanScheduleToCron', () => {
     expect(
       libraryScanScheduleToCron({ type: 'interval', hours: 6, minute: 30 }),
     ).toBe('0 30 */6 * * *');
+  });
+
+  test('offsets an interval from midnight by the start hour', () => {
+    expect(
+      libraryScanScheduleToCron({
+        type: 'interval',
+        hours: 6,
+        minute: 30,
+        startHour: 3,
+      }),
+    ).toBe('0 30 3/6 * * *');
+  });
+
+  test('reduces a start hour past the interval to its first hour of the day', () => {
+    expect(
+      libraryScanScheduleToCron({
+        type: 'interval',
+        hours: 8,
+        minute: 0,
+        startHour: 21,
+      }),
+    ).toBe('0 0 5/8 * * *');
+    expect(
+      libraryScanScheduleToCron({
+        type: 'interval',
+        hours: 6,
+        minute: 0,
+        startHour: 12,
+      }),
+    ).toBe('0 0 */6 * * *');
+  });
+
+  test('an offset interval fires at the start hour and every interval after it', () => {
+    const cron = libraryScanScheduleToCron({
+      type: 'interval',
+      hours: 6,
+      minute: 15,
+      startHour: 9,
+    });
+    expect(cron).not.toBeNull();
+
+    const it = parser.parseExpression(cron ?? '', {
+      currentDate: new Date(2026, 10, 21, 0, 0, 0),
+    });
+    const times = range(0, 5).map(() =>
+      dayjs(it.next().toDate()).format('HH:mm'),
+    );
+    expect(times).toEqual(['03:15', '09:15', '15:15', '21:15', '03:15']);
   });
 
   test('builds a weekly schedule on sorted, unique days', () => {

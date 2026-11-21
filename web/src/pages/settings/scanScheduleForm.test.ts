@@ -8,7 +8,7 @@ import {
 describe('scan schedule form values', () => {
   test.each<LibraryScanSchedule>([
     { type: 'off' },
-    { type: 'interval', hours: 12, minute: 5 },
+    { type: 'interval', hours: 12, minute: 5, startHour: 7 },
     { type: 'days', daysOfWeek: [1, 3], hour: 4, minute: 45 },
     { type: 'cron', cron: '0 4 * * 0' },
   ])('round-trips $type', (schedule) => {
@@ -27,7 +27,14 @@ describe('scan schedule form values', () => {
       type: 'interval',
       hours: 6,
       minute: 30,
+      startHour: 0,
     });
+  });
+
+  test('treats a saved interval without a start hour as midnight', () => {
+    expect(
+      scanScheduleToFormValues({ type: 'interval', hours: 6, minute: 30 }),
+    ).toMatchObject({ intervalStartHour: 0 });
   });
 
   test('sorts days and trims cron input', () => {
