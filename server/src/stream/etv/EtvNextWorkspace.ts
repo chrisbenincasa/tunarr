@@ -11,7 +11,7 @@ import type { PlayoutItem } from './generated/playout.ts';
  */
 export const PlayoutVersion = 'https://ersatztv.org/playout/version/0.0.8';
 
-/** Upstream's `.ready` deadline. The worker publishes it after four segments. */
+/** Upstream's `.ready` deadline. The worker publishes it after three segments. */
 export const ReadyTimeoutMs = 30_000;
 const ReadyPollIntervalMs = 200;
 
