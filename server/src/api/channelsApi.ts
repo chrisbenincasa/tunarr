@@ -787,10 +787,14 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(404).send();
       }
 
-      await req.serverCtx.channelDB.saveLineup(req.params.id, {
-        schedule: null,
-        scheduleSeed: null,
-      });
+      await container
+        .get<ChannelLineupLock>(KEYS.ChannelLineupLock)
+        .run(req.params.id, () =>
+          req.serverCtx.channelDB.saveLineup(req.params.id, {
+            schedule: null,
+            scheduleSeed: null,
+          }),
+        );
 
       return res.status(204).send();
     },

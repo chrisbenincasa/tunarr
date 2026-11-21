@@ -366,11 +366,12 @@ export type CreateChannelOptions = {
   number: number;
   name?: string;
   transcodeConfigId: string;
+  onDemand?: boolean;
 };
 
 export async function createChannelViaApi(
   app: FastifyInstance,
-  { number, name, transcodeConfigId }: CreateChannelOptions,
+  { number, name, transcodeConfigId, onDemand }: CreateChannelOptions,
 ): Promise<string> {
   const res = await app.inject({
     method: 'POST',
@@ -392,6 +393,7 @@ export async function createChannelViaApi(
         transcodeConfigId,
         disableFillerOverlay: false,
         subtitlesEnabled: false,
+        ...(onDemand ? { onDemand: { enabled: true } } : {}),
       },
     },
   });
