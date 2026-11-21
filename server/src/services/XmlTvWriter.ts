@@ -19,7 +19,7 @@ import { Mutex } from 'async-mutex';
 import { inject, injectable } from 'inversify';
 import throttle from '@/util/throttle.js';
 import { chunk, compact, escape, flatMap, isNil, map, round } from 'lodash-es';
-import { writeFile } from 'node:fs/promises';
+import { copyFile, open, rm } from 'node:fs/promises';
 import { match } from 'ts-pattern';
 import { type ArtworkType } from '../db/schema/Artwork.ts';
 import type { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
@@ -68,6 +68,40 @@ function isDerivableArtworkSource(
   );
 }
 
+/**
+ * Writes each chunk to disk as it arrives, so the whole document is never
+ * held in memory at once.
+ *
+ * The chunks go to a scratch file first, so a slow or failed serialize never
+ * leaves a partial guide at `outputPath`. The scratch file is then copied,
+ * not renamed, over the destination. A copy writes into the existing file,
+ * which keeps working when the configured path is a symlink or a
+ * bind-mounted file, and keeps the file's permissions.
+ */
+async function writeChunksInPlace(
+  outputPath: string,
+  chunks: AsyncIterable<string>,
+) {
+  // A fixed name, so a write after a crash overwrites the leftover file. The
+  // module lock keeps writes from overlapping.
+  const tempPath = `${outputPath}.tmp`;
+  try {
+    const file = await open(tempPath, 'w');
+    try {
+      // writeFile on an open handle writes from the current position, so
+      // each chunk appends.
+      for await (const chunk of chunks) {
+        await file.writeFile(chunk);
+      }
+    } finally {
+      await file.close();
+    }
+    await copyFile(tempPath, outputPath);
+  } finally {
+    await rm(tempPath, { force: true });
+  }
+}
+
 export type MaterializedChannelPrograms = {
   channel: ChannelOrm;
   programs: MaterializedGuideItem[];
@@ -110,8 +144,6 @@ export class XmlTvWriter {
   }
 
   private async writeInternal(channels: MaterializedChannelPrograms[]) {
-    const content = await this.serialize(channels);
-
     const configuredPath = this.settingsDB.xmlTvSettings().outputPath;
     const outputPath = await this.resolveOutputPath();
     if (outputPath !== configuredPath) {
@@ -122,19 +154,29 @@ export class XmlTvWriter {
       );
     }
 
-    return await writeFile(outputPath, content);
+    return await writeChunksInPlace(outputPath, this.serializeChunks(channels));
+  }
+
+  async serialize(channels: MaterializedChannelPrograms[]): Promise<string> {
+    const parts: string[] = [];
+    for await (const part of this.serializeChunks(channels)) {
+      parts.push(part);
+    }
+    return parts.join('');
   }
 
   /**
-   * Serializes the same document as `writeXmltv(generateXmltv(channels))`,
-   * yielding to the event loop between batches of programmes.
+   * Yields the same document as `writeXmltv(generateXmltv(channels))` in
+   * pieces, yielding to the event loop between batches of programmes.
    *
    * A full guide is thousands of programmes, and building and serializing
    * them in one call blocks every other request, HLS segments included, for
    * hundreds of milliseconds. Each batch serializes as its own document, and
    * its programmes are spliced between the shared header and `</tv>`.
    */
-  async serialize(channels: MaterializedChannelPrograms[]): Promise<string> {
+  async *serializeChunks(
+    channels: MaterializedChannelPrograms[],
+  ): AsyncGenerator<string> {
     const header = writeXmltv(
       this.generateXmltv(channels.map((c) => ({ ...c, programs: [] }))),
     );
@@ -142,7 +184,7 @@ export class XmlTvWriter {
       throw new Error('Unexpected XMLTV header shape from @iptv/xmltv');
     }
 
-    const parts = [header.slice(0, -TvClose.length)];
+    yield header.slice(0, -TvClose.length);
     for (const { channel, programs } of channels) {
       const xmlChannelId = getChannelId(channel.number);
       for (const batch of chunk(programs, SerializeBatchSize)) {
@@ -157,12 +199,10 @@ export class XmlTvWriter {
         if (open === -1 || !body.endsWith(TvClose)) {
           throw new Error('Unexpected XMLTV batch shape from @iptv/xmltv');
         }
-        parts.push(body.slice(open + TvOpen.length, -TvClose.length));
+        yield body.slice(open + TvOpen.length, -TvClose.length);
       }
     }
-    parts.push(TvClose);
-
-    return parts.join('');
+    yield TvClose;
   }
 
   generateXmltv(channels: MaterializedChannelPrograms[]) {

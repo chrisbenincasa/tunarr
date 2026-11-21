@@ -142,6 +142,86 @@ describe('XmlTvWriter', () => {
       await expect(fs.stat(path.dirname(configured))).rejects.toThrow();
       await expect(writer.resolveOutputPath()).resolves.toBe(fallback);
     });
+
+    test('writes the same document as serialize', async () => {
+      vi.useFakeTimers({ toFake: ['Date'] });
+      vi.setSystemTime(Date.parse('2026-09-22T00:00:00Z'));
+      try {
+        const outputPath = path.join(tmpDir, 'xmltv.xml');
+        const writer = makeWriter(outputPath);
+        // Enough programmes to span several serialize batches.
+        const channels: MaterializedChannelPrograms[] = [
+          {
+            channel: createChannelOrm({ number: 1, name: 'Channel 1' }),
+            programs: Array.from({ length: 250 }, (_, i) => {
+              const program = makeProgram({ title: `Program ${i}` });
+              return {
+                programming: { type: 'program' as const, program },
+                title: program.title,
+                start: i * 1_800_000,
+                stop: (i + 1) * 1_800_000,
+                durationMs: 1_800_000,
+              };
+            }),
+          },
+        ];
+
+        await writer.write(channels);
+
+        await expect(fs.readFile(outputPath, 'utf8')).resolves.toEqual(
+          await writer.serialize(channels),
+        );
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    test('writes through a symlinked output path', async () => {
+      const target = path.join(tmpDir, 'target.xml');
+      const link = path.join(tmpDir, 'xmltv.xml');
+      await fs.writeFile(target, 'previous guide');
+      await fs.symlink(target, link);
+      const writer = makeWriter(link);
+
+      await writer.write([]);
+
+      expect((await fs.lstat(link)).isSymbolicLink()).toBe(true);
+      await expect(fs.readFile(target, 'utf8')).resolves.toContain('<tv');
+      expect((await fs.readdir(tmpDir)).sort()).toEqual([
+        'target.xml',
+        'xmltv.xml',
+      ]);
+    });
+
+    test('replaces a scratch file left by a crashed write', async () => {
+      const outputPath = path.join(tmpDir, 'xmltv.xml');
+      await fs.writeFile(`${outputPath}.tmp`, 'partial guide from a crash');
+      const writer = makeWriter(outputPath);
+
+      await writer.write([]);
+
+      await expect(fs.readFile(outputPath, 'utf8')).resolves.toContain('<tv');
+      await expect(fs.readdir(tmpDir)).resolves.toEqual(['xmltv.xml']);
+    });
+
+    test('keeps the previous file when serializing fails', async () => {
+      const outputPath = path.join(tmpDir, 'xmltv.xml');
+      await fs.writeFile(outputPath, 'previous guide');
+      const writer = makeWriter(outputPath);
+      vi.spyOn(writer, 'serializeChunks').mockImplementation(
+        async function* () {
+          yield '<tv>';
+          throw new Error('serialize failed');
+        },
+      );
+
+      await expect(writer.write([])).rejects.toThrow('serialize failed');
+
+      await expect(fs.readFile(outputPath, 'utf8')).resolves.toEqual(
+        'previous guide',
+      );
+      await expect(fs.readdir(tmpDir)).resolves.toEqual(['xmltv.xml']);
+    });
   });
 
   describe('serialize', () => {
