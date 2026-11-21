@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (11/14/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` and `/library/fillers` are in review together in PR #2507, because PR #2511 merged the fillers work into its branch. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next are the remaining collection routes. The forms/settings mock is still due and gates Phase 4.
+> **Status (11/14/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows` and `/library/fillers` are in review together in PR #2507, because PR #2511 merged the fillers work into its branch. `/library/smart_collections` is stacked on it in PR #2514. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next are the remaining collection routes. The forms/settings mock is still due and gates Phase 4.
 
 ## Why
 
@@ -174,6 +174,14 @@ Built on `feat/fillers-collection` and merged into `feat/custom-shows-collection
 - `/library/fillers` splits the same way, into `FillerListsView` and `FillerListCard` in `web/src/components/fillers/` and `FillerListsPage` (data).
 - A filler list has only a name and a program count, so its card shows those plus Edit, Assign and Delete.
 - `AssignFillerToChannelsDialog` fetches channels itself, so it stays in the page. The view reports which list to assign.
+
+Built on `feat/smart-collections-collection`, stacked on `feat/fillers-collection` (11/09/2026):
+
+- `/library/smart_collections` splits into `SmartCollectionsView` and `SmartCollectionCard` in `web/src/components/smart_collections/` and `SmartCollectionsPage` (data). `SmartCollectionsTable` is gone.
+- A smart collection has no item count, so its card shows the name and its query. Keywords show in quotes and the filter in mono. The table gains a Query column to match.
+- `EditSmartCollectionDialog` fetches the collection itself, so it stays in the page.
+- Rows now open the collection on click, like every other collection page. The old table only opened it from the View button.
+- The e2e table spec runs CustomShows, FillerLists and SmartCollections at dense density, because Comfortable shows cards. The saved-MRT-settings test stores dense density for the same reason.
 
 ### Phase 4. Forms and settings
 
