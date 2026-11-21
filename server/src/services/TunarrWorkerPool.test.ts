@@ -11,6 +11,7 @@ import {
   TunarrWorkerPool,
 } from './TunarrWorkerPool.ts';
 import type { TunarrSubprocessService } from './TunarrSubprocessService.ts';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 
 class FakeWorker extends EventEmitter {
   // Replies to every request unless told to hang, which stands in for a worker
@@ -140,6 +141,29 @@ describe('TunarrWorkerPool', () => {
     expect(consoleError).not.toHaveBeenCalled();
 
     consoleError.mockRestore();
+    await pool.shutdown(100);
+  });
+
+  test('logs how long each worker took to become ready', async () => {
+    const subprocess = makeSubprocessService();
+    subprocess.spawnHealthy = false;
+    const pool = new TunarrWorkerPool(subprocess.service);
+    const info = vi.spyOn(LoggerFactory.root, 'info');
+
+    pool.start();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    subprocess.created.forEach((worker) => worker.announceReady());
+    await pool.allReady();
+
+    const readyLogs = info.mock.calls.filter(
+      ([msg]) => msg === 'Worker %d ready in %d ms',
+    );
+    expect(readyLogs).toHaveLength(subprocess.created.length);
+    for (const [, , ms] of readyLogs) {
+      expect(ms).toBeGreaterThanOrEqual(25);
+    }
+
+    info.mockRestore();
     await pool.shutdown(100);
   });
 });

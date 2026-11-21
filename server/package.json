@@ -11,6 +11,7 @@
   "scripts": {
     "bench:worker-boundary": "cross-env NODE_ENV=development tsx scripts/worker-boundary-bench.ts",
     "bench:worker-pool": "cross-env NODE_ENV=development tsx scripts/worker-pool-ab.ts",
+    "bench:worker-startup": "cross-env NODE_ENV=development tsx scripts/worker-startup.ts",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json",
     "build-dev": "cross-env NODE_ENV=development NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --noEmit --watch",
     "bundle": "dotenvx run -- tsx scripts/bundle.ts",
