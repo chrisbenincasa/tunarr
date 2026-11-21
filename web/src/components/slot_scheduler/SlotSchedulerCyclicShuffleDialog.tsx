@@ -194,7 +194,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
               {selectedCustomShows.map((cs) => (
                 <Chip
                   key={`custom-show.${cs.customShowId}`}
-                  label={t`Custom Show: ${cs.description}`}
+                  label={t`Playlist: ${cs.description}`}
                   onDelete={() =>
                     setSelectedCustomShows((prev) =>
                       reject(prev, { customShowId: cs.customShowId }),
@@ -232,7 +232,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
                 (opt) => opt.type === 'custom-show',
               ) && (
                 <MenuItem value="custom-show">
-                  <Trans>Custom Show</Trans>
+                  <Trans>Playlist</Trans>
                 </MenuItem>
               )}
               {programOptions.dropdownOpts.some(
@@ -272,7 +272,7 @@ const SlotSchedulerCyclicShuffleDialogContent = ({ onClose }: Props) => {
                   : void 0
               }
               renderInput={(params) => (
-                <TextField {...params} label={t`Custom Show`} />
+                <TextField {...params} label={t`Playlist`} />
               )}
             />
           )}

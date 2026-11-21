@@ -244,7 +244,10 @@ describe('isMovieFolder', () => {
   test('is named after its movie, even with extras next to it', () => {
     expect(
       isMovieFolder(
-        folder('Movie (2020)', ['Movie (2020).mkv', 'Movie (2020)-featurette.mkv']),
+        folder('Movie (2020)', [
+          'Movie (2020).mkv',
+          'Movie (2020)-featurette.mkv',
+        ]),
       ),
     ).toBe(true);
   });
@@ -297,16 +300,12 @@ describe('isMovieFolder', () => {
     // limit. Plain cd1/cd2 names do not carry the folder's name either, so
     // the name arm does not rescue them.
     expect(
-      isMovieFolder(
-        folder('The Matrix (1999)', ['cd1.mkv', 'cd2.mkv']),
-      ),
+      isMovieFolder(folder('The Matrix (1999)', ['cd1.mkv', 'cd2.mkv'])),
     ).toBe(false);
   });
 
   test('does not count a poster as a movie', () => {
-    expect(isMovieFolder(folder('Movies', ['A.mkv', 'poster.jpg']))).toBe(
-      true,
-    );
+    expect(isMovieFolder(folder('Movies', ['A.mkv', 'poster.jpg']))).toBe(true);
   });
 
   test('counts a loose track, because the scanner counts it', () => {

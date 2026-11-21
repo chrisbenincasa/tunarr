@@ -1,8 +1,22 @@
 # Tunarr
 
-Domain language for Tunarr. It covers the channel-programming editor in `@tunarr/web` and the media library lifecycle in `@tunarr/server`; extend it as other areas are documented.
+Domain language for Tunarr. It covers the channel-programming editor in `@tunarr/web`, the media library lifecycle in `@tunarr/server`, and streaming backends; extend it as other areas are documented.
 
 ## Language
+
+### Streaming
+
+**Streaming backend**:
+The part of Tunarr that turns a channel's lineup into a stream. Each channel uses exactly one.
+_Avoid_: pipeline (when you mean the choice of backend), stream mode (a separate channel setting)
+
+**Built-in pipeline**:
+The default **Streaming backend**, in which Tunarr builds and runs its own FFmpeg commands.
+_Avoid_: legacy backend, legacy pipeline, Tunarr's own pipeline
+
+**ErsatzTV next**:
+The opt-in **Streaming backend**, in which Tunarr hands a channel to the `ersatztv-channel` worker.
+_Avoid_: ETV, etv_next (both fine in code, not in prose)
 
 ### Media library lifecycle
 
@@ -25,8 +39,12 @@ _Avoid_: target, filter
 ### Channel programming
 
 **Lineup**:
-The ordered list of programs being edited for a channel, custom show, or filler list. Each entry carries a `uiIndex`, an `originalIndex`, and a cumulative `startTimeOffset`; the list tracks a `dirty` flag (modified since load) and keeps an `original` copy for reset. A pure domain module — no React or store dependencies.
-_Avoid_: playlist, schedule (when you mean this editable ordered structure)
+The ordered list of programs being edited for a channel, **Playlist**, or filler list. Each entry carries a `uiIndex`, an `originalIndex`, and a cumulative `startTimeOffset`; the list tracks a `dirty` flag (modified since load) and keeps an `original` copy for reset. A pure domain module — no React or store dependencies.
+_Avoid_: playlist (a **Playlist** is a library entity), schedule (when you mean this editable ordered structure)
+
+**Playlist**:
+An ordered library list of programs that scheduling tools treat as one show. Code, the API, and the database still call it a custom show (`CustomShow`, `/api/custom-shows`, `custom_show`). A playlist can sync from a Plex playlist.
+_Avoid_: custom show (in user-facing text)
 
 **LineupSchedule**:
 A scheduling rule — time slots or random slots — that the server evaluates to produce a channel's programming. Distinct from a **Lineup**: the schedule is a rule, the lineup is the resulting editable program list.
@@ -37,7 +55,7 @@ A `Record<id, ContentProgram>` cache used to materialize condensed program refer
 _Avoid_: program map, content map
 
 **Editor**:
-The client working state for one editable entity (channel, custom show, or filler list): the entity's metadata plus its **Lineup**.
+The client working state for one editable entity (channel, **Playlist**, or filler list): the entity's metadata plus its **Lineup**.
 _Avoid_: form, page state
 
 ### Infinite schedules

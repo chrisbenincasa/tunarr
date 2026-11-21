@@ -235,9 +235,9 @@ export default function RandomSlotEditorPage() {
         {unavailableSlotCount > 0 && (
           <Alert severity="error">
             {plural(unavailableSlotCount, {
-              one: '# slot uses a custom show that is empty or deleted. Fix or remove it before saving.',
+              one: '# slot uses a playlist that is empty or deleted. Fix or remove it before saving.',
               other:
-                '# slots use a custom show that is empty or deleted. Fix or remove them before saving.',
+                '# slots use a playlist that is empty or deleted. Fix or remove them before saving.',
             })}
           </Alert>
         )}

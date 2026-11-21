@@ -22,16 +22,16 @@ A profile can be assigned to:
 
 - a **channel**, under **Channels > Edit > Streaming > Audio & Subtitles**
 - a **filler list**, on the filler list's edit page
-- a **custom show**, on the custom show's edit page
+- a **playlist**, on the playlist's edit page
 
 When a program plays, Tunarr looks for a profile in this order:
 
-1. **Source** — the custom show the program was scheduled from, or the filler list it is playing from. A filler list's profile applies only when the program plays *as filler*. The same episode scheduled normally uses the channel's profile.
+1. **Source** — the playlist the program was scheduled from, or the filler list it is playing from. A filler list's profile applies only when the program plays *as filler*. The same episode scheduled normally uses the channel's profile.
 2. **Channel** — the channel's profile.
 3. **Default** — the profile marked as the default.
 4. **Built-in** — the locked *Tunarr Default* profile.
 
-If a profile has **no rule whose condition matches**, Tunarr moves on to the next profile in the list. This lets a filler list or custom show profile hold only a few special cases, while the channel's profile handles everything else.
+If a profile has **no rule whose condition matches**, Tunarr moves on to the next profile in the list. This lets a filler list or playlist profile hold only a few special cases, while the channel's profile handles everything else.
 
 A channel's fallback clip (see [Flex](channels/flex.md)) always uses the channel's profile.
 

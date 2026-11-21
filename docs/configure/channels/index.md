@@ -4,7 +4,7 @@ Channels are the core of Tunarr. Each channel acts like a virtual TV station wit
 
 ![Creating a new channel](../../assets/channels-new.png)
 
-Click the **NEW** button to create your first channel, which will take you to the [Channel Properties](properties.md) page.
+Click the **NEW** button to create your first channel, which will take you to the [Channel Properties](properties.md) page. To build a channel from a preset instead, use [Auto Create](auto-create.md).
 
 <div class="grid cards" markdown>
 

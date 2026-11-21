@@ -21,6 +21,7 @@
     "generate-env": "tsx scripts/generateEnvModule.ts",
     "generate-etv-schemas": "tsx scripts/generate-etv-schemas.ts",
     "generate-openapi": "tsx src/index.ts generate-openapi",
+    "check-meilisearch-assets": "tsx scripts/download-meilisearch.ts --check-assets",
     "install-meilisearch": "tsx scripts/download-meilisearch.ts",
     "kysely": "dotenv -e .env.development -- kysely",
     "lint": "oxlint src/ --report-unused-disable-directives --max-warnings 0",
@@ -78,7 +79,7 @@
     "kysely": "^0.27.6",
     "lodash-es": "^4.17.21",
     "lowdb": "^7.0.1",
-    "meilisearch": "^0.50.0",
+    "meilisearch": "^0.62.0",
     "music-metadata": "^11.10.5",
     "node-cache": "^5.1.2",
     "node-schedule": "^2.1.1",
@@ -144,7 +145,7 @@
     "vitest": "catalog:vitest"
   },
   "meilisearch": {
-    "version": "1.30.0"
+    "version": "1.56.1"
   },
   "ersatztvNext": {
     "releaseRepo": "ErsatzTV/next",

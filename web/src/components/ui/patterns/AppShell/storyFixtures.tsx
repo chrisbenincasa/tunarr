@@ -17,7 +17,7 @@ const library: ShellNavSection = {
   icon: <VideoLibrary />,
   pages: [
     { id: 'libraries', label: 'Libraries', to: '/library', exact: true },
-    { id: 'custom-shows', label: 'Custom Shows', to: '/library/custom-shows' },
+    { id: 'custom-shows', label: 'Playlists', to: '/library/playlists' },
     { id: 'fillers', label: 'Filler Lists', to: '/library/fillers' },
     {
       id: 'smart-collections',

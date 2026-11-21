@@ -75,6 +75,9 @@ class TestHlsSession extends BaseHlsSession {
 
   protected async startInternal(): Promise<void> {}
   protected async stopInternal(): Promise<void> {}
+  protected isTranscodeRunning() {
+    return true;
+  }
 }
 
 function makeChannel(): ChannelOrmWithTranscodeConfig {

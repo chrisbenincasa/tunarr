@@ -19,6 +19,8 @@ import { HlsSession, nextProgramPtsOffset } from './HlsSession.js';
 vi.mock('@/util/logging/LoggerFactory.js', () => ({
   LoggerFactory: {
     child: () => ({
+      bindings: () => ({}),
+      setBindings: vi.fn(),
       debug: vi.fn(),
       error: vi.fn(),
       info: vi.fn(),
@@ -477,6 +479,70 @@ describe('HlsSession', () => {
 
       const remaining = await fs.readdir(workingDir);
       expect(remaining.sort()).toEqual(['data000000.ts']);
+    });
+  });
+
+  describe('transcode liveness during the start wait', () => {
+    let tmpDir: tmp.DirResult;
+
+    beforeEach(() => {
+      tmpDir = tmp.dirSync({ unsafeCleanup: true });
+    });
+
+    afterEach(() => {
+      tmpDir.removeCallback();
+    });
+
+    function makeSessionWithLineup(getCurrentLineupItem: () => Promise<never>) {
+      return new HlsSession(
+        {
+          uuid: channelUuid,
+          transcodeConfig: {},
+        } as ChannelOrmWithTranscodeConfig,
+        {
+          streamMode: 'hls',
+          initialSegmentCount: 2,
+          transcodeDirectory: tmpDir.name,
+        },
+        { getCurrentLineupItem } as unknown as StreamProgramCalculator,
+        {} as ISettingsDB,
+        {
+          getLiveTimestamp: vi.fn(() => Promise.resolve(Date.now())),
+        } as unknown as OnDemandChannelService,
+        (() => ({}) as unknown as ProgramStream) as (
+          ctx: PlayerContext,
+          fmt: OutputFormat,
+        ) => ProgramStream,
+      );
+    }
+
+    test('reports the transcode running while the run loop is alive', async () => {
+      const session = makeSessionWithLineup(() => new Promise<never>(() => {}));
+      const internals = session as unknown as {
+        startInternal(): Promise<void>;
+        isTranscodeRunning(): boolean;
+      };
+
+      await internals.startInternal();
+
+      expect(internals.isTranscodeRunning()).toBe(true);
+    });
+
+    test('fails the start at once when the run loop dies before writing segments', async () => {
+      const session = makeSessionWithLineup(() =>
+        Promise.reject(new Error('lineup lookup failed')),
+      );
+      session.on('error', () => {});
+
+      const startedAt = Date.now();
+      await session.start();
+
+      expect(session.hasError).toBe(true);
+      expect(session.error).toHaveProperty(
+        'cause.message',
+        'ffmpeg exited before the stream was ready',
+      );
+      expect(Date.now() - startedAt).toBeLessThan(3_000);
     });
   });
 

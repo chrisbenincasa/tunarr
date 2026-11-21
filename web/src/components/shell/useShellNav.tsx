@@ -81,8 +81,8 @@ export const useShellNav = (): ShellNav => {
             },
             {
               id: 'custom-shows',
-              label: t`Custom Shows`,
-              to: '/library/custom-shows',
+              label: t`Playlists`,
+              to: '/library/playlists',
             },
             { id: 'fillers', label: t`Filler Lists`, to: '/library/fillers' },
             {

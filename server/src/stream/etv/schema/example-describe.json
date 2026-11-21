@@ -1,0 +1,67 @@
+{
+  "describe_version": 1,
+  "binary": {
+    "version": "0.2.5+linux-x64",
+    "commit": "c5cb065f9f35dbbcb7c05845f0f92c70f576a480"
+  },
+  "contract": {
+    "playout_schema": {
+      "uri": "https://ersatztv.org/playout/version/0.0.8",
+      "breaking": 0,
+      "compatible": 8
+    },
+    "channel_config_schema": {
+      "uri": "https://ersatztv.org/channel/version/0.1.3",
+      "breaking": 1,
+      "compatible": 3
+    },
+    "output_files": {
+      "playlist": "live.m3u8",
+      "subtitle_playlist": "live_sub.m3u8",
+      "segment_template": "live%06d.ts",
+      "ready": ".ready",
+      "heartbeat": ".heartbeat"
+    },
+    "segment_seconds": 4,
+    "keyframe_seconds": 2,
+    "dynamic_callback_headers": [
+      "x-etv-dynamic-id",
+      "x-etv-channel",
+      "x-etv-now",
+      "x-etv-until",
+      "x-etv-playout-schema"
+    ]
+  },
+  "schema_capability": {
+    "video_formats": [
+      "h264",
+      "hevc",
+      "mpeg2video"
+    ],
+    "audio_formats": [
+      "aac",
+      "ac3"
+    ],
+    "audio_copy_formats": [
+      "aac",
+      "ac3",
+      "eac3",
+      "mp2",
+      "mp3"
+    ],
+    "accels": [
+      "amf",
+      "cuda",
+      "qsv",
+      "rkmpp",
+      "vaapi",
+      "videotoolbox",
+      "vulkan"
+    ],
+    "subtitle_modes": [
+      "burn",
+      "convert"
+    ]
+  },
+  "runtime_capability": null
+}

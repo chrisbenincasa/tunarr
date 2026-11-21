@@ -123,9 +123,7 @@ const AddBlockShuffleModalContent = ({
               <Trans>Movies are grouped altogether</Trans>
             </li>
             <li>
-              <Trans>
-                Custom show programs are grouped by their parent show
-              </Trans>
+              <Trans>Playlist programs are grouped by their playlist</Trans>
             </li>
           </ul>
         </DialogContentText>

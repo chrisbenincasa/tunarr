@@ -1,5 +1,6 @@
 import {
   getApiEtvTranscodeConfigsByIdCompatibilityOptions,
+  getApiEtvTranscodeConfigsByIdHardwareOptions,
   getApiSystemFeatureFlagsOptions,
   getChannelsOptions,
 } from '@/generated/@tanstack/react-query.gen';
@@ -22,6 +23,9 @@ type Props = {
  * to start, because the backend is only handed the config at spawn time.
  * Shown when the global flag is on or when a channel on this config opted in
  * by itself. Otherwise nothing reads the config differently.
+ *
+ * Hardware warnings come from a separate probe of this machine, which can
+ * take seconds, so they load on their own and appear after the rest.
  */
 export const EtvNextCompatibilityNotice = ({
   configId,
@@ -43,12 +47,24 @@ export const EtvNextCompatibilityNotice = ({
     enabled,
   });
 
+  const { data: hardware } = useQuery({
+    ...getApiEtvTranscodeConfigsByIdHardwareOptions({
+      path: { id: configId },
+    }),
+    enabled: enabled && data?.supported === true,
+  });
+
   if (!enabled || data === undefined) {
     return null;
   }
 
   const { unsupported, ignored } = data;
-  if (unsupported.length === 0 && ignored.length === 0) {
+  const hardwareWarnings = hardware?.warnings ?? [];
+  if (
+    unsupported.length === 0 &&
+    ignored.length === 0 &&
+    hardwareWarnings.length === 0
+  ) {
     return null;
   }
 
@@ -66,6 +82,23 @@ export const EtvNextCompatibilityNotice = ({
             {unsupported.map(({ field, value, reason }) => (
               <li key={field}>
                 <strong>{field}</strong> ({value}) {reason}
+              </li>
+            ))}
+          </ul>
+        </Alert>
+      )}
+      {hardwareWarnings.length > 0 && (
+        <Alert severity="warning" sx={{ mb: ignored.length > 0 ? 2 : 0 }}>
+          <AlertTitle>
+            <Trans>
+              This machine cannot encode this config in hardware on the ErsatzTV
+              next backend
+            </Trans>
+          </AlertTitle>
+          <ul>
+            {hardwareWarnings.map(({ field, reason }) => (
+              <li key={field}>
+                <strong>{field}</strong> &mdash; {reason}
               </li>
             ))}
           </ul>

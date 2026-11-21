@@ -39,7 +39,11 @@ import { LocalSubtitlesService } from '../local/LocalSubtitlesService.ts';
 import type { LocalScanContext } from './FileSystemScanner.ts';
 import { FileSystemScanner } from './FileSystemScanner.ts';
 import { MediaSourceProgressService } from './MediaSourceProgressService.ts';
-import { isMovieFolder, isMovieVideoFile, locateMovieArtwork } from './imageFileLookup.ts';
+import {
+  isMovieFolder,
+  isMovieVideoFile,
+  locateMovieArtwork,
+} from './imageFileLookup.ts';
 
 @injectable()
 export class LocalMovieScanner extends FileSystemScanner {

@@ -81,7 +81,7 @@ describe('CustomShowsPage', () => {
     const { user } = renderPage();
     await user.click(screen.getByText('Shorts'));
     expect(navigateMock).toHaveBeenCalledWith({
-      to: '/library/custom-shows/$showId/edit',
+      to: '/library/playlists/$showId/edit',
       params: { showId: 'show-small' },
     });
   });
@@ -90,10 +90,10 @@ describe('CustomShowsPage', () => {
     renderPage();
     expect(
       withinRow('Marathon').getByRole('link', { name: 'Edit' }),
-    ).toHaveAttribute('href', '/library/custom-shows/show-big/edit');
+    ).toHaveAttribute('href', '/library/playlists/show-big/edit');
     expect(screen.getByRole('link', { name: 'New' })).toHaveAttribute(
       'href',
-      '/library/custom-shows/new',
+      '/library/playlists/new',
     );
   });
 
@@ -106,7 +106,7 @@ describe('CustomShowsPage', () => {
 
     const dialog = screen.getByRole('dialog');
     expect(
-      within(dialog).getByText(/Delete Custom Show "Marathon"/),
+      within(dialog).getByText(/Delete Playlist "Marathon"/),
     ).toBeVisible();
     expect(mocks.remove).not.toHaveBeenCalled();
 

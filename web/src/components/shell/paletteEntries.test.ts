@@ -12,8 +12,8 @@ const labels: PaletteLabels = {
   page: 'Page',
   channels: 'Channels',
   channel: 'Channel',
-  customShows: 'Custom Shows',
-  customShow: 'Custom show',
+  customShows: 'Playlists',
+  customShow: 'Playlist',
   fillerLists: 'Filler Lists',
   fillerList: 'Filler list',
   smartCollections: 'Smart Collections',
@@ -113,7 +113,7 @@ describe('paletteGroups', () => {
   test('entities appear once a query is typed', () => {
     expect(paletteGroups(entries, 'movie').map((g) => g.name)).toEqual([
       'Channels',
-      'Custom Shows',
+      'Playlists',
       'Filler Lists',
       'Smart Collections',
     ]);

@@ -190,7 +190,7 @@ export class SlotSchedulerHelper {
         case 'custom-show':
           if (!schedulableShowIds.has(slot.customShowId)) {
             slotProblems.push(
-              `Slot ${index} references custom show ${slot.customShowId}, which has no content to schedule`,
+              `Slot ${index} references playlist ${slot.customShowId}, which has no content to schedule`,
             );
           }
           break;

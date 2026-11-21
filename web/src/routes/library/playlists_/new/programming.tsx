@@ -1,29 +1,21 @@
-import { preloadCustomShowAndProgramming } from '@/helpers/routeLoaders.ts';
-import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage.tsx';
-import { addMediaToCurrentCustomShow } from '@/store/customShowEditor/actions.ts';
+import ProgrammingSelectorPage from '@/pages/channels/ProgrammingSelectorPage';
+import { addMediaToCurrentCustomShow } from '@/store/customShowEditor/actions';
 import { createFileRoute } from '@tanstack/react-router';
-import { noop } from 'ts-essentials';
+import { noop } from 'lodash-es';
 import { ProgrammingSelectionContext } from '../../../../context/ProgrammingSelectionContext.ts';
 
-export const Route = createFileRoute(
-  '/library/custom-shows_/$showId/programming',
-)({
-  loader: preloadCustomShowAndProgramming,
+export const Route = createFileRoute('/library/playlists_/new/programming')({
   component: CustomShowProgrammingSelectorPage,
 });
 
 function CustomShowProgrammingSelectorPage() {
   const navigate = Route.useNavigate();
-  const { showId } = Route.useParams();
   return (
     <ProgrammingSelectionContext.Provider
       value={{
         onAddSelectedMedia: addMediaToCurrentCustomShow,
         onAddMediaSuccess: () => {
-          navigate({
-            to: '/library/custom-shows/$showId/edit',
-            params: { showId },
-          }).catch(console.error);
+          navigate({ to: '..' }).catch(console.error);
         },
         entityType: 'custom-show',
         onSourceChange: noop,

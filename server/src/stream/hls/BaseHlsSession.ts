@@ -3,11 +3,10 @@ import type { SessionOptions, StopOptions } from '@/stream/Session.js';
 import { Session } from '@/stream/Session.js';
 import { Result } from '@/types/result.js';
 import type { FfmpegTranscodeSession } from '@/ffmpeg/FfmpegTrancodeSession.js';
-import { isNonEmptyString, timeoutPromise } from '@/util/index.js';
-import retry from 'async-retry';
+import { isNonEmptyString, timeoutPromise, wait } from '@/util/index.js';
 import type { Dayjs } from 'dayjs';
 import dayjs from 'dayjs';
-import { filter, isError, isString, some } from 'lodash-es';
+import { filter, some } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, extname } from 'node:path';
 import type { DeepRequired } from 'ts-essentials';
@@ -20,6 +19,11 @@ export const SegmentNameRegex = /\D+(\d+)\.(ts|mp4|vtt)/;
 // FfmpegProcess escalates to SIGKILL after 15s, so this leaves room for the
 // kill to land.
 const ExitWaitTimeoutMs = 30_000;
+
+// Upper bound on the start wait while ffmpeg stays alive. NAS disks often
+// take 9-15s to spin up before ffmpeg can read the source.
+export const StartWaitCapMs = 60_000;
+const StartWaitPollMs = 1000;
 
 export abstract class BaseHlsSession<
   HlsSessionOptsT extends BaseHlsSessionOptions = BaseHlsSessionOptions,
@@ -135,89 +139,111 @@ export abstract class BaseHlsSession<
     }
   }
 
+  /**
+   * Reports whether the transcode feeding this session can still produce
+   * output. The start wait fails as soon as this returns false.
+   */
+  protected abstract isTranscodeRunning(): boolean;
+
+  /**
+   * Polls until the first segments exist. Polling continues while the
+   * transcode runs, because a source on a waking disk can stall ffmpeg for
+   * several seconds before it writes anything.
+   */
   protected override async waitForStreamReady(): Promise<Result<void>> {
-    // Wait for the stream to become ready
-    try {
-      this.logger.debug('Waiting for HLS stream session to be ready...');
-      await retry(
-        async (bail) => {
-          if (this.hasError) {
-            this.logger.error(
-              this.error,
-              'Bailing on stream start, had error!',
-            );
-            bail(
-              this.error ??
-                new Error(
-                  'Received error while waiting for stream to be ready',
-                ),
-            );
-            return;
-          }
+    this.logger.debug('Waiting for HLS stream session to be ready...');
+    const deadline = Date.now() + StartWaitCapMs;
 
-          const workingDirectoryFiles = await Result.attemptAsync(() =>
-            fs.readdir(this._workingDirectory),
-          );
+    for (;;) {
+      if (this.hasError) {
+        this.logger.error(this.error, 'Bailing on stream start, had error!');
+        return this.failStart(
+          this.error ??
+            new Error('Received error while waiting for stream to be ready'),
+        );
+      }
 
-          if (workingDirectoryFiles.isFailure()) {
-            const e = workingDirectoryFiles.error;
-            if (e.nodeErrorCode() === 'ENOENT') {
-              this.logger.debug("Session working directory doesn't exist yet!");
-              throw e; // Retry
-            } else if (this.state === 'error') {
-              bail(e);
-            }
-          }
+      if (await this.isStreamReady()) {
+        this.logger.debug('Stream successfully started!');
+        return Result.success(void 0);
+      }
 
-          const numSegments = filter(workingDirectoryFiles.get(), (f) => {
-            const ext = extname(f);
-            return ext === '.ts' || ext === '.mp4';
-          }).length;
+      if (!this.isTranscodeRunning()) {
+        this.logger.error(
+          'Stream failed to start because ffmpeg exited before the first segments were ready',
+        );
+        return this.failStart(
+          new Error('ffmpeg exited before the stream was ready'),
+        );
+      }
 
-          const playlistExists = some(
-            workingDirectoryFiles.get(),
-            (f) => f === basename(this._m3u8PlaylistPath),
-          );
+      if (Date.now() >= deadline) {
+        this.logger.error(
+          'Stream failed to start because ffmpeg wrote no usable segments within %dms',
+          StartWaitCapMs,
+        );
+        return this.failStart(
+          new Error(`Stream was not ready after ${StartWaitCapMs}ms`),
+        );
+      }
 
-          const additionalRequired = this.getAdditionalRequiredFiles();
-          const additionalExist = additionalRequired.every((f) =>
-            some(workingDirectoryFiles.get(), (wf) => wf === f),
-          );
-
-          if (
-            numSegments < this.sessionOptions.initialSegmentCount ||
-            !playlistExists ||
-            !additionalExist
-          ) {
-            this.logger.debug(
-              'Still waiting for stream session to start. (num segments=%d < %d, playlist exists? %s, additional=%j)',
-              numSegments,
-              this.sessionOptions.initialSegmentCount,
-              playlistExists,
-              additionalRequired,
-            );
-            throw new Error('Stream not ready yet. Retry');
-          }
-        },
-        {
-          retries: 15,
-          factor: 1,
-          minTimeout: 1000,
-          maxTimeout: 1000,
-          randomize: false,
-        },
-      );
-
-      this.logger.debug('Stream successfully started!');
-
-      return Result.success(void 0);
-    } catch (e) {
-      this.logger.error(e, 'Error starting stream after retrying');
-      this.state = 'error';
-      return Result.forError(
-        isError(e) ? e : new Error(isString(e) ? e : 'Unknown error'),
-      );
+      await wait(StartWaitPollMs);
     }
+  }
+
+  private failStart(error: Error): Result<void> {
+    this.state = 'error';
+    return Result.forError(error);
+  }
+
+  private async isStreamReady() {
+    const workingDirectoryFiles = await Result.attemptAsync(() =>
+      fs.readdir(this._workingDirectory),
+    );
+
+    if (workingDirectoryFiles.isFailure()) {
+      const e = workingDirectoryFiles.error;
+      if (e.nodeErrorCode() === 'ENOENT') {
+        this.logger.debug("Session working directory doesn't exist yet!");
+      } else {
+        this.logger.debug(e, 'Could not read session working directory');
+      }
+      return false;
+    }
+
+    const files = workingDirectoryFiles.get();
+
+    const numSegments = filter(files, (f) => {
+      const ext = extname(f);
+      return ext === '.ts' || ext === '.mp4';
+    }).length;
+
+    const playlistExists = some(
+      files,
+      (f) => f === basename(this._m3u8PlaylistPath),
+    );
+
+    const additionalRequired = this.getAdditionalRequiredFiles();
+    const additionalExist = additionalRequired.every((f) =>
+      some(files, (wf) => wf === f),
+    );
+
+    if (
+      numSegments < this.sessionOptions.initialSegmentCount ||
+      !playlistExists ||
+      !additionalExist
+    ) {
+      this.logger.debug(
+        'Still waiting for stream session to start. (num segments=%d < %d, playlist exists? %s, additional=%j)',
+        numSegments,
+        this.sessionOptions.initialSegmentCount,
+        playlistExists,
+        additionalRequired,
+      );
+      return false;
+    }
+
+    return true;
   }
 
   get m3uPlaylistPath() {

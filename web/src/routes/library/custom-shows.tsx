@@ -1,9 +1,8 @@
-import { customShowsQuery } from '@/hooks/useCustomShows';
-import CustomShowsPage from '@/pages/library/CustomShowsPage';
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
 
+// Custom shows were renamed to playlists. This keeps old links and bookmarks working.
 export const Route = createFileRoute('/library/custom-shows')({
-  loader: ({ context: { queryClient } }) =>
-    queryClient.ensureQueryData(customShowsQuery()),
-  component: CustomShowsPage,
+  beforeLoad: () => {
+    throw redirect({ to: '/library/playlists', replace: true });
+  },
 });

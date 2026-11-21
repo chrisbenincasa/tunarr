@@ -65,6 +65,7 @@ export const ROUTES: Record<string, RouteTarget> = {
 
   '/channels': () => ['/channels'],
   '/channels/new': () => ['/channels/new'],
+  '/channels/auto-create': () => ['/channels/auto-create'],
   '/channels/test': { skip: 'Placeholder route that renders static text' },
   '/channels/$channelId': eachChannel(''),
   '/channels/$channelId/': eachChannel('/'),
@@ -84,20 +85,24 @@ export const ROUTES: Record<string, RouteTarget> = {
   ],
 
   '/library': () => ['/library'],
+  '/library/playlists': () => ['/library/playlists'],
+  '/library/playlists/new': () => ['/library/playlists/new'],
+  '/library/playlists/new/': () => ['/library/playlists/new/'],
+  '/library/playlists/new/programming': () => [
+    '/library/playlists/new/programming',
+  ],
+  '/library/playlists/$showId': (ids) => [
+    `/library/playlists/${ids.customShowId}`,
+  ],
+  '/library/playlists/$showId/edit': (ids) => [
+    `/library/playlists/${ids.customShowId}/edit`,
+  ],
+  '/library/playlists/$showId/programming': (ids) => [
+    `/library/playlists/${ids.customShowId}/programming`,
+  ],
   '/library/custom-shows': () => ['/library/custom-shows'],
-  '/library/custom-shows/new': () => ['/library/custom-shows/new'],
-  '/library/custom-shows/new/': () => ['/library/custom-shows/new/'],
-  '/library/custom-shows/new/programming': () => [
-    '/library/custom-shows/new/programming',
-  ],
-  '/library/custom-shows/$showId': (ids) => [
-    `/library/custom-shows/${ids.customShowId}`,
-  ],
-  '/library/custom-shows/$showId/edit': (ids) => [
+  '/library/custom-shows/$': (ids) => [
     `/library/custom-shows/${ids.customShowId}/edit`,
-  ],
-  '/library/custom-shows/$showId/programming': (ids) => [
-    `/library/custom-shows/${ids.customShowId}/programming`,
   ],
   '/library/fillers': () => ['/library/fillers'],
   '/library/fillers/new': () => ['/library/fillers/new'],

@@ -94,7 +94,7 @@ function CustomShowListItem({
         <Tooltip
           title={
             !open
-              ? t`Click to preview the items in this Custom Show. Note that only the whole show can be added at once.`
+              ? t`Click to preview the items in this playlist. Only the whole playlist can be added at once.`
               : ''
           }
           placement="top"

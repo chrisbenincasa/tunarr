@@ -129,7 +129,7 @@ const TABLES: Record<string, TableTarget> = {
   },
 
   CustomShows: {
-    url: () => '/library/custom-shows',
+    url: () => '/library/playlists',
     ready: 'E2E Reruns',
     persisted: true,
     ported: true,
@@ -145,7 +145,7 @@ const TABLES: Record<string, TableTarget> = {
       clickEditLink(
         page,
         rowWith(page, 'E2E Reruns'),
-        `/library/custom-shows/${ids.customShowId}/edit`,
+        `/library/playlists/${ids.customShowId}/edit`,
       ),
   },
 

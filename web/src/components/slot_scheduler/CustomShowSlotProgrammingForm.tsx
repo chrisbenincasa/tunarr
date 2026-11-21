@@ -46,7 +46,7 @@ export const CustomShowSlotProgrammingForm = () => {
                   customShowId: field.value,
                   schedulableProgramCount: 0,
                   value: `custom-show.${field.value}`,
-                  description: t`Deleted custom show`,
+                  description: t`Deleted playlist`,
                 }
               : null);
 
@@ -58,9 +58,9 @@ export const CustomShowSlotProgrammingForm = () => {
 
           const helperText =
             availability === 'empty'
-              ? t`This custom show has no programs. Add programs to it or choose another show.`
+              ? t`This playlist has no programs. Add programs to it or choose another playlist.`
               : availability === 'missing'
-                ? t`This custom show was deleted. Choose another show.`
+                ? t`This playlist was deleted. Choose another playlist.`
                 : undefined;
 
           return (
@@ -78,7 +78,7 @@ export const CustomShowSlotProgrammingForm = () => {
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label={t`Custom Show`}
+                  label={t`Playlist`}
                   error={
                     availability !== undefined && availability !== 'available'
                   }

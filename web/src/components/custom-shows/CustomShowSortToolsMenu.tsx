@@ -250,7 +250,7 @@ export const CustomShowSortToolsMenu = () => {
           <Trans>Delete</Trans>
         </MenuItem>
         <ElevatedTooltip
-          title={t`Removes all programs from custom show`}
+          title={t`Removes all programs from playlist`}
           placement="right"
           elevation={10}
         >

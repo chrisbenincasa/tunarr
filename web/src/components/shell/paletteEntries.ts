@@ -105,7 +105,7 @@ export function buildPaletteEntries(
       show.name,
       labels.customShow,
       {
-        to: '/library/custom-shows/$showId/edit',
+        to: '/library/playlists/$showId/edit',
         params: { showId: show.id },
       },
       false,

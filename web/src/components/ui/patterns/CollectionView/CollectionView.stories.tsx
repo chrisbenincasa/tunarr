@@ -19,7 +19,7 @@ const items: Item[] = [
   { id: 'c', name: 'Station Idents', count: 9 },
   {
     id: 'd',
-    name: 'An Extremely Long Custom Show Name That Has To Wrap Somewhere',
+    name: 'An Extremely Long Playlist Name That Has To Wrap Somewhere',
     count: 12_480,
   },
 ];
@@ -49,7 +49,7 @@ const Demo = ({
 
   return (
     <CollectionView
-      aria-label="Custom shows"
+      aria-label="Playlists"
       layout={layout}
       items={data}
       getItemKey={(item) => item.id}
@@ -73,11 +73,7 @@ const Demo = ({
         </Box>
       )}
       table={
-        <DataTable
-          table={table}
-          aria-label="Custom shows"
-          emptyFallback={empty}
-        />
+        <DataTable table={table} aria-label="Playlists" emptyFallback={empty} />
       }
     />
   );
