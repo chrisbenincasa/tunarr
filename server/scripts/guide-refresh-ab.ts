@@ -30,12 +30,17 @@ import { parseArgs } from 'node:util';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import * as schema from '../src/db/schema/index.ts';
 import { MediaSource } from '../src/db/schema/MediaSource.ts';
+import { CustomShow } from '../src/db/schema/CustomShow.ts';
+import { CustomShowContent } from '../src/db/schema/CustomShowContent.ts';
 import { MediaSourceLibrary } from '../src/db/schema/MediaSourceLibrary.ts';
 import { Program } from '../src/db/schema/Program.ts';
 import type { ProbeSummary } from '../src/util/probeStats.ts';
 import { summarizeProbes } from '../src/util/probeStats.ts';
 
 const { values } = parseArgs({
+  // pnpm forwards a literal `--`, after which parseArgs reads every flag as a
+  // positional and silently ignores it.
+  args: process.argv.slice(2).filter((arg) => arg !== '--'),
   options: {
     channels: { type: 'string', default: '12' },
     programs: { type: 'string', default: '1000' },
@@ -101,7 +106,9 @@ async function waitFor(
   return predicate();
 }
 
-function seedPrograms(dbPath: string, count: number): string[] {
+type Seed = { programIds: string[]; customShowId: string };
+
+function seedPrograms(dbPath: string, count: number): Seed {
   const sqlite = new Sqlite(dbPath);
   sqlite.pragma('journal_mode = WAL');
   sqlite.pragma('foreign_keys = ON');
@@ -159,16 +166,37 @@ function seedPrograms(dbPath: string, count: number): string[] {
 
   const perRow = 20;
   const chunkSize = Math.floor(1000 / perRow);
+  const customShowId = randomUUID();
+  const content = rows.map((r, index) => ({
+    contentUuid: r.uuid,
+    customShowUuid: customShowId,
+    index,
+  }));
   db.transaction((tx) => {
     for (let i = 0; i < rows.length; i += chunkSize) {
       tx.insert(Program)
         .values(rows.slice(i, i + chunkSize))
         .run();
     }
+
+    // Time slots schedule movies through a custom show (#2235).
+    tx.insert(CustomShow)
+      .values({
+        uuid: customShowId,
+        name: 'Bench Show',
+        createdAt: now,
+        updatedAt: now,
+      })
+      .run();
+    for (let i = 0; i < content.length; i += chunkSize) {
+      tx.insert(CustomShowContent)
+        .values(content.slice(i, i + chunkSize))
+        .run();
+    }
   });
 
   sqlite.close();
-  return rows.map((r) => r.uuid);
+  return { programIds: rows.map((r) => r.uuid), customShowId };
 }
 
 function startServer(
@@ -252,7 +280,7 @@ async function api(
   return { status: res.status, text: await res.text() };
 }
 
-function makeSchedule() {
+function makeSchedule(customShowId: string) {
   const dayMs = 24 * 60 * 60 * 1000;
   return {
     type: 'time' as const,
@@ -263,7 +291,8 @@ function makeSchedule() {
     period: 'day' as const,
     timeZoneOffset: new Date().getTimezoneOffset(),
     slots: Array.from({ length: SLOTS_PER_DAY }, (_, i) => ({
-      type: 'movie' as const,
+      type: 'custom-show' as const,
+      customShowId,
       startTime: Math.floor((dayMs / SLOTS_PER_DAY) * i),
       order: 'shuffle' as const,
       direction: 'asc' as const,
@@ -493,10 +522,7 @@ async function prepareTemplate(): Promise<string> {
   }
 
   log(`Seeding ${PROGRAM_COUNT} programs...`);
-  const programIds = seedPrograms(
-    path.join(templateDir, 'db.db'),
-    PROGRAM_COUNT,
-  );
+  const seed = seedPrograms(path.join(templateDir, 'db.db'), PROGRAM_COUNT);
 
   log(`Creating ${CHANNEL_COUNT} channels with schedules...`);
   {
@@ -559,9 +585,9 @@ async function prepareTemplate(): Promise<string> {
           `/channels/${channelId}/programming`,
           {
             type: 'time',
-            programs: programIds,
+            programs: seed.programIds,
             seed: [1, 2, 3, 4],
-            schedule: makeSchedule(),
+            schedule: makeSchedule(seed.customShowId),
           },
           SAVE_TIMEOUT_MS,
         );
@@ -570,20 +596,17 @@ async function prepareTemplate(): Promise<string> {
             `channel ${i} schedule save failed: ${saveRes.status} ${saveRes.text.slice(0, 300)}`,
           );
         }
-        const body = JSON.parse(saveRes.text) as {
-          lineup?: { type: string }[];
-        };
-        const content = (body.lineup ?? []).filter(
-          (it) => it.type === 'content',
-        ).length;
-        // An all-flex lineup means the seeded programs were never scheduled.
+        const totalPrograms =
+          (JSON.parse(saveRes.text) as { totalPrograms?: number })
+            .totalPrograms ?? 0;
+        // No scheduled programs means the seed never reached the schedule.
         // The guide would still build, and would be measuring nothing.
-        if (content === 0) {
+        if (totalPrograms === 0) {
           throw new Error(
-            `channel ${i} lineup has no content programs — seeded programs were not scheduled.`,
+            `channel ${i} schedule has no programs — seeded programs were not scheduled.`,
           );
         }
-        log(`  channel ${i + 1}/${CHANNEL_COUNT}: ${content} content items`);
+        log(`  channel ${i + 1}/${CHANNEL_COUNT}: ${totalPrograms} programs`);
       }
     } finally {
       await stopServer(child);

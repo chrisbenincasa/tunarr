@@ -30,14 +30,14 @@ const WORKER_GRACE_MS = 30_000;
 const REQUEST_TIMEOUT_MS = 60_000;
 
 const { values } = parseArgs({
+  // pnpm forwards a literal `--`, after which parseArgs reads every flag as a
+  // positional and silently ignores it.
+  args: process.argv.slice(2).filter((arg) => arg !== '--'),
   options: {
     binary: { type: 'string' },
     port: { type: 'string', default: '18094' },
     'keep-logs': { type: 'boolean', default: false },
   },
-  // pnpm forwards the `--` separator itself, which parseArgs otherwise treats
-  // as an unexpected positional and throws on.
-  allowPositionals: true,
 });
 
 const port = Number.parseInt(values.port, 10);
@@ -405,10 +405,8 @@ async function checkTimeSlotDispatch() {
           timeZoneOffset: new Date().getTimezoneOffset(),
           slots: [
             {
-              type: 'movie',
+              type: 'flex',
               startTime: 0,
-              order: 'shuffle',
-              direction: 'asc',
               id: '11111111-1111-4111-8111-111111111111',
             },
           ],

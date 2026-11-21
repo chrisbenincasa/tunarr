@@ -17,9 +17,11 @@ import { fileTypeFromStream } from 'file-type';
 import { randomUUID } from 'node:crypto';
 import { createReadStream, promises as fsPromises } from 'node:fs';
 import path from 'node:path';
+import { pipeline } from 'node:stream';
 import { z } from 'zod/v4';
 import { container } from '../container.ts';
 import { TruthyQueryParam } from '../types/schemas.ts';
+import { ReplaceAllTransform } from '../util/streams.ts';
 import { getBooleanEnvVar, TUNARR_ENV_VARS } from '../util/env.ts';
 import { basicAuthConfigFromEnv, isAuthorized } from '../util/basicAuth.js';
 import { isDev, isNonEmptyString, run } from '../util/index.js';
@@ -27,8 +29,8 @@ import {
   ChannelNumbersParamPattern,
   parseChannelNumbersParam,
 } from '../services/M3UService.js';
+import { AutoChannelApiController } from './autoChannelApi.ts';
 import { channelsApi } from './channelsApi.js';
-import { nativePlaybackApi } from './nativePlaybackApi.js';
 import { CreditsApiController } from './creditsApi.ts';
 import { customShowsApiV2 } from './customShowsApi.js';
 import { debugApi } from './debugApi.js';
@@ -40,6 +42,7 @@ import { guideRouter } from './guideApi.js';
 import { hdhrSettingsRouter } from './hdhrSettingsApi.js';
 import { jellyfinApiRouter } from './jellyfinApi.js';
 import { mediaSourceRouter } from './mediaSourceApi.js';
+import { nativePlaybackApi } from './nativePlaybackApi.js';
 import { plexApiRouter } from './plexApi.ts';
 import { plexSettingsRouter } from './plexSettingsApi.js';
 import { ProgramGroupingApiController } from './programGroupingApi.ts';
@@ -47,10 +50,10 @@ import { programmingApi } from './programmingApi.js';
 import { sessionApiRouter } from './sessionApi.js';
 import { settingsApi } from './settingsApi.ts';
 import { SmartCollectionsApiController } from './smartCollectionsApi.ts';
+import { streamSelectionRouter } from './streamSelectionApi.ts';
 import { systemApiRouter } from './systemApi.js';
 import { tasksApiRouter } from './tasksApi.js';
 import { trashApi } from './trashApi.ts';
-import { streamSelectionRouter } from './streamSelectionApi.ts';
 import { troubleshootApiRouter } from './troubleshootApi.js';
 import { xmlTvSettingsRouter } from './xmltvSettingsApi.js';
 
@@ -96,7 +99,8 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
     .register(container.get(SmartCollectionsApiController).mount)
     .register(container.get(EtvNextApiController).mount)
     .register(container.get(CreditsApiController).mount)
-    .register(container.get(ProgramGroupingApiController).mount);
+    .register(container.get(ProgramGroupingApiController).mount)
+    .register(container.get(AutoChannelApiController).mount);
 
   if (isDev || getBooleanEnvVar(TUNARR_ENV_VARS.MOUNT_DEBUG_ENDPOINTS, false)) {
     await fastify.register(debugApi);
@@ -263,12 +267,22 @@ export const apiRouter: RouterPluginAsyncCallback = async (fastify) => {
         const host = `${req.protocol}://${req.host}`;
 
         const outputPath = await container.get(XmlTvWriter).resolveOutputPath();
-        const fileContent = await fsPromises.readFile(outputPath, 'utf8');
-        const fileFinal = fileContent.replace(/\{\{host\}\}/g, host);
+        // Opened before streaming so a missing file still returns a 500.
+        const file = await fsPromises.open(outputPath, 'r');
+        const body = pipeline(
+          file.createReadStream({ encoding: 'utf8' }),
+          new ReplaceAllTransform('{{host}}', host),
+          (err) => {
+            // A client that disconnects early is not an error worth logging.
+            if (err && err.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
+              logger.warn(err, 'Failed to stream the XMLTV file');
+            }
+          },
+        );
         return res
           .header('Cache-Control', 'no-store')
           .header('Content-Type', 'application/xml')
-          .send(fileFinal);
+          .send(body);
       } catch (err) {
         logger.error(err);
         return res.status(500).send('error');

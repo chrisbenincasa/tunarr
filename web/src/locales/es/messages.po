@@ -121,8 +121,11 @@ msgid "{0, plural, one {Path} other {Paths}}"
 msgstr ""
 
 #. placeholder {0}: channel.programCount
-#. placeholder {0}: slot.programCount
+#. placeholder {0}: filler.contentCount
+#. placeholder {0}: show.contentCount
 #: src/components/channels/ChannelCard.tsx
+#: src/components/custom-shows/CustomShowCard.tsx
+#: src/components/fillers/FillerListCard.tsx
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "{0, plural, one {program} other {programs}}"
 msgstr ""
@@ -345,13 +348,25 @@ msgid "# of Programs"
 msgstr ""
 
 #: src/components/channels/ChannelsView.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/fillers/FillerListsView.tsx
 msgid "# Programs"
 msgstr ""
 
 #: src/components/channels/ChannelsView.tsx
 msgid "<0>{channelCount}</0> {channelCount, plural, one {channel} other {channels}} · <1>{streaming}</1> streaming"
+msgstr ""
+
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "<0>{collectionCount}</0> {collectionCount, plural, one {smart collection} other {smart collections}}"
+msgstr ""
+
+#: src/components/fillers/FillerListsView.tsx
+msgid "<0>{fillerCount}</0> {fillerCount, plural, one {filler list} other {filler lists}}"
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+msgid "<0>{showCount}</0> {showCount, plural, one {playlist} other {playlists}}"
 msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -402,8 +417,20 @@ msgstr ""
 msgid "24-hour"
 msgstr ""
 
+#: src/components/fillers/FillerListsView.tsx
+msgid "A filler list holds videos that play during flex time, the parts of a channel with no program scheduled."
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+msgid "A playlist is an ordered list of videos that channels schedule as if they were episodes of one TV show."
+msgstr ""
+
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "A root path to scan for media. Local sources can search many different paths."
+msgstr ""
+
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "A smart collection saves a library search. It picks up new items that match as your library grows, but it doesn't change programming already on a channel."
 msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
@@ -777,8 +804,8 @@ msgstr ""
 msgid "Archive Format"
 msgstr ""
 
-#. placeholder {0}: deletingSmartCollection?.name
-#: src/components/smart_collections/SmartCollectionsTable.tsx
+#. placeholder {0}: pendingDelete?.name
+#: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Are you sure you want to delete Smart Collection \"{0}\"?"
 msgstr ""
 
@@ -794,8 +821,17 @@ msgstr ""
 msgid "Ascending"
 msgstr ""
 
+#: src/components/fillers/FillerListCard.tsx
+msgid "Assign"
+msgstr ""
+
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 msgid "Assign \"{fillerName}\" to Channels"
+msgstr ""
+
+#. placeholder {0}: filler.name
+#: src/components/fillers/FillerListCard.tsx
+msgid "Assign {0} to channels"
 msgstr ""
 
 #: src/components/channels/ChannelsView.tsx
@@ -807,8 +843,8 @@ msgstr ""
 msgid "Assign Fillers to {0, plural, one {# Channel} other {# Channels}}"
 msgstr ""
 
-#: src/pages/library/FillerListsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/fillers/FillerListsView.tsx
 msgid "Assign to Channels"
 msgstr ""
 
@@ -911,6 +947,10 @@ msgstr ""
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Auto"
+msgstr ""
+
+#: src/components/channels/ChannelsView.tsx
+msgid "Auto Create"
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
@@ -1071,8 +1111,10 @@ msgstr ""
 #: src/components/channels/BulkAssignFillersDialog.tsx
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/components/channels/ChannelsDeleteDialog.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
+#: src/components/fillers/FillerListsView.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
 #: src/components/programming_controls/AddFlexModal.tsx
@@ -1097,8 +1139,6 @@ msgstr ""
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/TrashPage.tsx
 msgid "Cancel"
 msgstr ""
@@ -1265,6 +1305,12 @@ msgstr ""
 #: src/components/filler/EditFillerListForm.tsx
 #: src/components/slot_scheduler/ClearSlotsButton.tsx
 msgid "Clear All"
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "Clear filter"
 msgstr ""
 
 #: src/components/ui/table/DataTable.tsx
@@ -1513,7 +1559,7 @@ msgstr ""
 #~ msgid "Counted from the start of each program. Set to 0 for no limit."
 #~ msgstr ""
 
-#: src/components/smart_collections/SmartCollectionsTable.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Create"
 msgstr ""
 
@@ -1526,8 +1572,16 @@ msgstr ""
 msgid "Create a Channel"
 msgstr ""
 
+#: src/components/fillers/FillerListsView.tsx
+msgid "Create a Filler List"
+msgstr ""
+
 #: src/components/profiles/StreamSelectionProfileSelect.tsx
 msgid "Create a new profile"
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+msgid "Create a Playlist"
 msgstr ""
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
@@ -1668,27 +1722,39 @@ msgstr ""
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/components/channels/ChannelsDeleteDialog.tsx
 #: src/components/channels/ChannelsView.tsx
+#: src/components/custom-shows/CustomShowCard.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/DeleteConfirmationDialog.tsx
+#: src/components/fillers/FillerListCard.tsx
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/fillers/FillerListsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
+#: src/components/smart_collections/SmartCollectionCard.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Delete"
 msgstr ""
 
-#. placeholder {0}: deletingSmartCollection?.name
-#: src/components/smart_collections/SmartCollectionsTable.tsx
+#. placeholder {0}: pendingDelete?.name
+#: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Delete \"{0}\""
+msgstr ""
+
+#. placeholder {0}: collection.name
+#. placeholder {0}: filler.name
+#. placeholder {0}: show.name
+#: src/components/custom-shows/CustomShowCard.tsx
+#: src/components/fillers/FillerListCard.tsx
+#: src/components/smart_collections/SmartCollectionCard.tsx
+msgid "Delete {0}"
 msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx
@@ -1704,8 +1770,8 @@ msgstr ""
 #~ msgid "Delete Custom Show \"{0}\"?"
 #~ msgstr ""
 
-#. placeholder {0}: find(fillerLists, { id: deleteConfirmationId })?.name
-#: src/pages/library/FillerListsPage.tsx
+#. placeholder {0}: pendingDelete?.name
+#: src/components/fillers/FillerListsView.tsx
 msgid "Delete Filler List \"{0}\"?"
 msgstr ""
 
@@ -1718,8 +1784,8 @@ msgstr ""
 #~ msgid "Delete Media Source?"
 #~ msgstr ""
 
-#. placeholder {0}: find(customShows, { id: deleteConfirmationId })?.name
-#: src/pages/library/CustomShowsPage.tsx
+#. placeholder {0}: pendingDelete?.name
+#: src/components/custom-shows/CustomShowsView.tsx
 msgid "Delete Playlist \"{0}\"?"
 msgstr ""
 
@@ -1760,7 +1826,7 @@ msgstr ""
 #~ msgid "Deleting a Custom Show will remove its programming from channels that use it. This action cannot be undone."
 #~ msgstr ""
 
-#: src/pages/library/FillerListsPage.tsx
+#: src/components/fillers/FillerListsView.tsx
 msgid "Deleting a Filler will remove all programming from the channel. This action cannot be undone."
 msgstr ""
 
@@ -1768,7 +1834,7 @@ msgstr ""
 msgid "Deleting a media source will remove all of its associated programs from Tunarr."
 msgstr ""
 
-#: src/pages/library/CustomShowsPage.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 msgid "Deleting a playlist will remove its programming from channels that use it. This action cannot be undone."
 msgstr ""
 
@@ -1927,6 +1993,7 @@ msgid "Duplicates"
 msgstr ""
 
 #: src/components/channels/ChannelsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/programming_controls/BalanceProgrammingModal.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
@@ -1959,21 +2026,29 @@ msgstr ""
 msgid "Eager"
 msgstr ""
 
+#: src/components/custom-shows/CustomShowCard.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/fillers/FillerListCard.tsx
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/fillers/FillerListsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
+#: src/components/smart_collections/SmartCollectionCard.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
 msgid "Edit"
+msgstr ""
+
+#. placeholder {0}: collection.name
+#: src/components/smart_collections/SmartCollectionCard.tsx
+msgid "Edit {0}"
 msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx
@@ -2551,18 +2626,19 @@ msgstr ""
 msgid "Filler List: {0}"
 msgstr ""
 
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/fillers/FillerListsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
-#: src/pages/library/FillerListsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
 msgid "Filler Lists"
 msgstr ""
 
 #: src/pages/library/FillerListsPage.tsx
-msgid "Filler lists are collections of videos that you may want to play during 'flex' time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding)."
-msgstr ""
+#~ msgid "Filler lists are collections of videos that you may want to play during 'flex' time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding)."
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Filler Options"
@@ -3453,8 +3529,10 @@ msgid "Must use a valid URL, or empty."
 msgstr ""
 
 #: src/components/channels/ChannelsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
+#: src/components/fillers/FillerListsView.tsx
 #: src/components/MediaSourceLibraryTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ConnectMediaSources.tsx
@@ -3466,9 +3544,7 @@ msgstr ""
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 #: src/pages/settings/TaskSettingsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -3490,14 +3566,14 @@ msgstr ""
 msgid "never"
 msgstr ""
 
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/fillers/FillerListsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
 msgid "New"
 msgstr ""
 
@@ -3588,6 +3664,10 @@ msgstr ""
 msgid "No filler lists found. Create a filler list first."
 msgstr ""
 
+#: src/components/fillers/FillerListsView.tsx
+msgid "No filler lists match this filter."
+msgstr ""
+
 #: src/pages/welcome/WelcomePage.tsx
 msgid "No libraries are enabled yet. Tunarr only syncs content from enabled libraries, so choose at least one below."
 msgstr ""
@@ -3606,6 +3686,10 @@ msgstr ""
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
 msgid "No pages or lists match."
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+msgid "No playlists match this filter."
 msgstr ""
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
@@ -3647,6 +3731,10 @@ msgstr ""
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "No rule matched. On a real stream, Tunarr would move on to the next profile: the source, then the channel, then the default profile, then the built-in profile."
+msgstr ""
+
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "No smart collections match this filter."
 msgstr ""
 
 #: src/components/channels/ChannelStatusPill.tsx
@@ -3984,18 +4072,19 @@ msgid "Playlist: {0}"
 msgstr ""
 
 #: src/components/channel_config/ProgrammingSelector.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/CustomShowsPage.tsx
 msgid "Playlists"
 msgstr ""
 
 #: src/pages/library/CustomShowsPage.tsx
-msgid "Playlists are ordered lists of videos that play like the episodes of a single TV show. When you add a playlist to a channel, the scheduling tools treat its videos as if they belonged to one show."
-msgstr ""
+#~ msgid "Playlists are ordered lists of videos that play like the episodes of a single TV show. When you add a playlist to a channel, the scheduling tools treat its videos as if they belonged to one show."
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #~ msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Each show starts at a random episode. Use Block Shuffle to start every show at its first episode or to loop shorter shows."
@@ -4190,6 +4279,10 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "QSV Device"
+msgstr ""
+
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "Query"
 msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx
@@ -4704,6 +4797,10 @@ msgstr ""
 msgid "Search Server URL:"
 msgstr ""
 
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "Search the Library"
+msgstr ""
+
 #: src/components/TopBar.tsx
 #~ msgid "Search…"
 #~ msgstr ""
@@ -4977,15 +5074,16 @@ msgstr ""
 
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/hooks/useRouteName.ts
-#: src/routes/library/smart_collections/index.tsx
 msgid "Smart Collections"
 msgstr ""
 
 #: src/routes/library/smart_collections/index.tsx
-msgid "Smart Collections are self-updating content lists. You set the query and the collection automatically adds any new content from your library that fits those rules. Any newly added content matching query will not modify existing channel programming at this time."
-msgstr ""
+#~ msgid "Smart Collections are self-updating content lists. You set the query and the collection automatically adds any new content from your library that fits those rules. Any newly added content matching query will not modify existing channel programming at this time."
+#~ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 msgid "Software (No GPU)"
@@ -5262,8 +5360,17 @@ msgstr ""
 msgid "Sync with external playlist"
 msgstr ""
 
-#: src/pages/library/CustomShowsPage.tsx
+#: src/components/custom-shows/CustomShowCard.tsx
+msgid "Synced"
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 msgid "Synced with external playlist"
+msgstr ""
+
+#: src/components/custom-shows/CustomShowCard.tsx
+msgid "Syncing"
 msgstr ""
 
 #: src/components/settings/DarkModeButton.tsx
@@ -5952,11 +6059,12 @@ msgstr ""
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
+#: src/components/smart_collections/SmartCollectionCard.tsx
 msgid "View"
 msgstr ""
 
-#: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "View Collection"
 msgstr ""
 
@@ -6120,12 +6228,12 @@ msgid "You can change any setting below before shuffling."
 msgstr ""
 
 #: src/pages/library/FillerListsPage.tsx
-msgid "You have no Filler Lists. Create your first Filler List <0>here.</0>"
-msgstr ""
+#~ msgid "You have no Filler Lists. Create your first Filler List <0>here.</0>"
+#~ msgstr ""
 
 #: src/components/smart_collections/SmartCollectionsTable.tsx
-msgid "You have no smart collections. Smart collections can be created on the <0>search</0> page."
-msgstr ""
+#~ msgid "You have no smart collections. Smart collections can be created on the <0>search</0> page."
+#~ msgstr ""
 
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "You have unsaved changes!"
@@ -6138,6 +6246,18 @@ msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "You haven't created any filler lists yet! Go to the <0>Filler Lists</0> page to create one."
+msgstr ""
+
+#: src/components/fillers/FillerListsView.tsx
+msgid "You haven't created any filler lists yet."
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+msgid "You haven't created any playlists yet."
+msgstr ""
+
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "You haven't created any smart collections yet."
 msgstr ""
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx

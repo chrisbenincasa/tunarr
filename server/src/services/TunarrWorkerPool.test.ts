@@ -5,11 +5,13 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 // to bind it, so the container has to be the entry point.
 import '../container.ts';
 import {
+  isWorkerPoolEnabled,
   MAX_WORKERS,
   resolveWorkerPoolSize,
   TunarrWorkerPool,
 } from './TunarrWorkerPool.ts';
 import type { TunarrSubprocessService } from './TunarrSubprocessService.ts';
+import { LoggerFactory } from '../util/logging/LoggerFactory.ts';
 
 class FakeWorker extends EventEmitter {
   // Replies to every request unless told to hang, which stands in for a worker
@@ -141,6 +143,29 @@ describe('TunarrWorkerPool', () => {
     consoleError.mockRestore();
     await pool.shutdown(100);
   });
+
+  test('logs how long each worker took to become ready', async () => {
+    const subprocess = makeSubprocessService();
+    subprocess.spawnHealthy = false;
+    const pool = new TunarrWorkerPool(subprocess.service);
+    const info = vi.spyOn(LoggerFactory.root, 'info');
+
+    pool.start();
+    await new Promise((resolve) => setTimeout(resolve, 30));
+    subprocess.created.forEach((worker) => worker.announceReady());
+    await pool.allReady();
+
+    const readyLogs = info.mock.calls.filter(
+      ([msg]) => msg === 'Worker %d ready in %d ms',
+    );
+    expect(readyLogs).toHaveLength(subprocess.created.length);
+    for (const [, , ms] of readyLogs) {
+      expect(ms).toBeGreaterThanOrEqual(25);
+    }
+
+    info.mockRestore();
+    await pool.shutdown(100);
+  });
 });
 
 describe('TunarrWorkerPool task timeouts', () => {
@@ -228,9 +253,8 @@ describe('TunarrWorkerPool task timeouts', () => {
 });
 
 describe('resolveWorkerPoolSize', () => {
-  test('caps the default size at 4 workers', () => {
-    expect(MAX_WORKERS).toBe(4);
-    expect(resolveWorkerPoolSize(16, null)).toBe(4);
+  test('caps the default size at MAX_WORKERS', () => {
+    expect(resolveWorkerPoolSize(16, null)).toBe(MAX_WORKERS);
   });
 
   test('uses one worker per CPU below the cap', () => {
@@ -240,5 +264,32 @@ describe('resolveWorkerPoolSize', () => {
   test('lets the env var override the cap', () => {
     expect(resolveWorkerPoolSize(16, 8)).toBe(8);
     expect(resolveWorkerPoolSize(16, 1)).toBe(1);
+  });
+
+  test('ignores a negative env var setting', () => {
+    expect(resolveWorkerPoolSize(2, -1)).toBe(2);
+  });
+
+  test('uses one worker when no CPUs are reported', () => {
+    expect(resolveWorkerPoolSize(0, null)).toBe(1);
+  });
+});
+
+describe('isWorkerPoolEnabled', () => {
+  test('is on by default', () => {
+    expect(isWorkerPoolEnabled(true, null)).toBe(true);
+  });
+
+  test('is off when the pool size is set to 0', () => {
+    expect(isWorkerPoolEnabled(true, 0)).toBe(false);
+  });
+
+  test('is off when TUNARR_USE_WORKER_POOL is false', () => {
+    expect(isWorkerPoolEnabled(false, null)).toBe(false);
+    expect(isWorkerPoolEnabled(false, 4)).toBe(false);
+  });
+
+  test('stays on for a negative pool size, which is ignored', () => {
+    expect(isWorkerPoolEnabled(true, -1)).toBe(true);
   });
 });

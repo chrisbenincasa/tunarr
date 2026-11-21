@@ -21,6 +21,30 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
+function makeTask(settingsDB = inMemorySettingsDB()) {
+  return new UpdateXmlTvTask(
+    settingsDB,
+    {
+      buildAllChannels: vi.fn().mockResolvedValue(undefined),
+    } as unknown as TVGuideService,
+    { findByType: vi.fn().mockResolvedValue([]) } as unknown as MediaSourceDB,
+    {} as MediaSourceApiFactory,
+    { push: vi.fn() } as unknown as EventService,
+    {
+      getAllChannels: vi.fn().mockResolvedValue([]),
+    } as unknown as IChannelDB,
+  );
+}
+
+function mockSubtitleJob(running: boolean) {
+  const runNow = vi.fn().mockResolvedValue(undefined);
+  vi.spyOn(GlobalScheduler, 'getScheduledJob').mockReturnValue({
+    running,
+    runNow,
+  } as unknown as ScheduledTask);
+  return runNow;
+}
+
 describe('UpdateXmlTvTask', () => {
   test('keeps a configured output path whose file does not exist yet', async () => {
     const outputPath = path.join('/nonexistent', 'guides', 'xmltv.xml');
@@ -28,27 +52,27 @@ describe('UpdateXmlTvTask', () => {
       settings: { xmltv: { outputPath } },
     });
     const updateSettings = vi.spyOn(settingsDB, 'updateSettings');
+    mockSubtitleJob(false);
 
-    vi.spyOn(GlobalScheduler, 'getScheduledJob').mockReturnValue({
-      runNow: vi.fn().mockResolvedValue(undefined),
-    } as unknown as ScheduledTask);
-
-    const task = new UpdateXmlTvTask(
-      settingsDB,
-      {
-        buildAllChannels: vi.fn().mockResolvedValue(undefined),
-      } as unknown as TVGuideService,
-      { findByType: vi.fn().mockResolvedValue([]) } as unknown as MediaSourceDB,
-      {} as MediaSourceApiFactory,
-      { push: vi.fn() } as unknown as EventService,
-      {
-        getAllChannels: vi.fn().mockResolvedValue([]),
-      } as unknown as IChannelDB,
-    );
-
-    await task.run(undefined);
+    await makeTask(settingsDB).run(undefined);
 
     expect(updateSettings).not.toHaveBeenCalled();
     expect(settingsDB.xmlTvSettings().outputPath).toBe(outputPath);
+  });
+
+  test('starts subtitle extraction after updating the guide', async () => {
+    const runNow = mockSubtitleJob(false);
+
+    await makeTask().run(undefined);
+
+    expect(runNow).toHaveBeenCalledOnce();
+  });
+
+  test('does not start a second subtitle extraction run', async () => {
+    const runNow = mockSubtitleJob(true);
+
+    await makeTask().run(undefined);
+
+    expect(runNow).not.toHaveBeenCalled();
   });
 });

@@ -65,6 +65,10 @@ class StubHlsSession extends BaseHlsSession<HlsSessionOptions> {
     this.state = 'stopped';
   }
 
+  protected override isTranscodeRunning() {
+    return true;
+  }
+
   // Skip waiting for stream files
   protected override async waitForStreamReady() {
     const { Result } = await import('@/types/result.js');

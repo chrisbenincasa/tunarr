@@ -448,6 +448,9 @@ importers:
       tslib:
         specifier: ^2.6.2
         version: 2.6.2
+      uuid:
+        specifier: ^9.0.1
+        version: 9.0.1
       zod:
         specifier: 'catalog:'
         version: 4.6.5
@@ -461,6 +464,9 @@ importers:
       '@types/node':
         specifier: 22.10.7
         version: 22.10.7
+      '@types/uuid':
+        specifier: ^9.0.8
+        version: 9.0.8
       '@vitest/coverage-v8':
         specifier: catalog:vitest
         version: 4.1.5(@vitest/browser@4.1.5)(vitest@4.1.5)

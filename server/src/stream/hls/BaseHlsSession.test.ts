@@ -9,7 +9,7 @@ import type { FfmpegTranscodeSession } from '../../ffmpeg/FfmpegTrancodeSession.
 import type { HlsOptions } from '../../ffmpeg/builder/constants.ts';
 import type { StopOptions } from '../Session.ts';
 import type { BaseHlsSessionOptions } from './BaseHlsSession.ts';
-import { BaseHlsSession } from './BaseHlsSession.ts';
+import { BaseHlsSession, StartWaitCapMs } from './BaseHlsSession.ts';
 
 // Minimal concrete subclass for testing
 class TestHlsSession extends BaseHlsSession {
@@ -32,6 +32,17 @@ class TestHlsSession extends BaseHlsSession {
 
   protected async startInternal(): Promise<void> {}
   protected async stopInternal(): Promise<void> {}
+  protected isTranscodeRunning() {
+    return true;
+  }
+}
+
+class StartWaitHlsSession extends TestHlsSession {
+  transcodeRunning = true;
+
+  protected override isTranscodeRunning() {
+    return this.transcodeRunning;
+  }
 }
 
 // Mirrors HlsSession.stopStream: kill, wait for exit, then remove the directory.
@@ -141,6 +152,80 @@ describe('BaseHlsSession', () => {
       vi.advanceTimersByTime(20_000);
 
       expect(session.removeStaleConnections()).toHaveLength(2);
+    });
+  });
+
+  describe('start wait', () => {
+    const readyFiles = ['stream.m3u8', 'data000000.ts', 'data000001.ts'];
+    let files: string[];
+    let readdir: ReturnType<typeof vi.spyOn>;
+    let starting: StartWaitHlsSession;
+
+    beforeEach(() => {
+      files = [];
+      readdir = vi
+        .spyOn(fs, 'readdir')
+        .mockImplementation(
+          (async () => files) as unknown as typeof fs.readdir,
+        );
+      starting = new StartWaitHlsSession(makeChannel(), baseOptions);
+      // EventEmitter throws an unhandled 'error' event.
+      starting.on('error', () => {});
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it('starts on the first poll when segments already exist', async () => {
+      files = readyFiles;
+
+      void starting.start();
+      await vi.advanceTimersByTimeAsync(999);
+
+      expect(starting.started).toBe(true);
+      expect(readdir).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps waiting while ffmpeg runs and starts when segments appear after 20s', async () => {
+      void starting.start();
+      await vi.advanceTimersByTimeAsync(20_000);
+
+      expect(starting.state).toBe('starting');
+
+      files = readyFiles;
+      await vi.advanceTimersByTimeAsync(1_000);
+
+      expect(starting.started).toBe(true);
+    });
+
+    it('fails within a second when ffmpeg exits before writing segments', async () => {
+      void starting.start();
+      await vi.advanceTimersByTimeAsync(2_000);
+
+      starting.transcodeRunning = false;
+      await vi.advanceTimersByTimeAsync(1_000);
+
+      expect(starting.hasError).toBe(true);
+      expect(starting.error).toHaveProperty(
+        'cause.message',
+        'ffmpeg exited before the stream was ready',
+      );
+    });
+
+    it('fails at the cap when ffmpeg runs but never writes segments', async () => {
+      void starting.start();
+      await vi.advanceTimersByTimeAsync(StartWaitCapMs - 1_000);
+
+      expect(starting.state).toBe('starting');
+
+      await vi.advanceTimersByTimeAsync(1_000);
+
+      expect(starting.hasError).toBe(true);
+      expect(starting.error).toHaveProperty(
+        'cause.message',
+        `Stream was not ready after ${StartWaitCapMs}ms`,
+      );
     });
   });
 

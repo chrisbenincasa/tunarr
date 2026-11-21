@@ -37,6 +37,7 @@ import { Route as LibraryFillersRouteImport } from './routes/library/fillers';
 import { Route as LibraryCustomShowsRouteImport } from './routes/library/custom-shows';
 import { Route as ChannelsTestRouteImport } from './routes/channels_/test';
 import { Route as ChannelsNewRouteImport } from './routes/channels_/new';
+import { Route as ChannelsAutoCreateRouteImport } from './routes/channels_/auto-create';
 import { Route as ChannelsChannelIdRouteRouteImport } from './routes/channels_/$channelId/route';
 import { Route as Media_sourcesMediaSourceIdIndexRouteImport } from './routes/media_sources_/$mediaSourceId/index';
 import { Route as LibraryTrashIndexRouteImport } from './routes/library/trash_/index';
@@ -209,6 +210,11 @@ const ChannelsTestRoute = ChannelsTestRouteImport.update({
 const ChannelsNewRoute = ChannelsNewRouteImport.update({
   id: '/channels_/new',
   path: '/channels/new',
+  getParentRoute: () => rootRouteImport,
+} as any);
+const ChannelsAutoCreateRoute = ChannelsAutoCreateRouteImport.update({
+  id: '/channels_/auto-create',
+  path: '/channels/auto-create',
   getParentRoute: () => rootRouteImport,
 } as any);
 const ChannelsChannelIdRouteRoute = ChannelsChannelIdRouteRouteImport.update({
@@ -408,6 +414,7 @@ export interface FileRoutesByFullPath {
   '/system': typeof SystemRouteWithChildren;
   '/welcome': typeof WelcomeRoute;
   '/channels/$channelId': typeof ChannelsChannelIdRouteRouteWithChildren;
+  '/channels/auto-create': typeof ChannelsAutoCreateRoute;
   '/channels/new': typeof ChannelsNewRoute;
   '/channels/test': typeof ChannelsTestRoute;
   '/library/custom-shows': typeof LibraryCustomShowsRoute;
@@ -469,6 +476,7 @@ export interface FileRoutesByTo {
   '/search': typeof SearchRoute;
   '/settings': typeof SettingsRouteWithChildren;
   '/welcome': typeof WelcomeRoute;
+  '/channels/auto-create': typeof ChannelsAutoCreateRoute;
   '/channels/new': typeof ChannelsNewRoute;
   '/channels/test': typeof ChannelsTestRoute;
   '/library/custom-shows': typeof LibraryCustomShowsRoute;
@@ -531,6 +539,7 @@ export interface FileRoutesById {
   '/system': typeof SystemRouteWithChildren;
   '/welcome': typeof WelcomeRoute;
   '/channels_/$channelId': typeof ChannelsChannelIdRouteRouteWithChildren;
+  '/channels_/auto-create': typeof ChannelsAutoCreateRoute;
   '/channels_/new': typeof ChannelsNewRoute;
   '/channels_/test': typeof ChannelsTestRoute;
   '/library/custom-shows': typeof LibraryCustomShowsRoute;
@@ -596,6 +605,7 @@ export interface FileRouteTypes {
     | '/system'
     | '/welcome'
     | '/channels/$channelId'
+    | '/channels/auto-create'
     | '/channels/new'
     | '/channels/test'
     | '/library/custom-shows'
@@ -657,6 +667,7 @@ export interface FileRouteTypes {
     | '/search'
     | '/settings'
     | '/welcome'
+    | '/channels/auto-create'
     | '/channels/new'
     | '/channels/test'
     | '/library/custom-shows'
@@ -718,6 +729,7 @@ export interface FileRouteTypes {
     | '/system'
     | '/welcome'
     | '/channels_/$channelId'
+    | '/channels_/auto-create'
     | '/channels_/new'
     | '/channels_/test'
     | '/library/custom-shows'
@@ -782,6 +794,7 @@ export interface RootRouteChildren {
   SystemRoute: typeof SystemRouteWithChildren;
   WelcomeRoute: typeof WelcomeRoute;
   ChannelsChannelIdRouteRoute: typeof ChannelsChannelIdRouteRouteWithChildren;
+  ChannelsAutoCreateRoute: typeof ChannelsAutoCreateRoute;
   ChannelsNewRoute: typeof ChannelsNewRoute;
   ChannelsTestRoute: typeof ChannelsTestRoute;
   LibraryCustomShowsRoute: typeof LibraryCustomShowsRoute;
@@ -1005,6 +1018,13 @@ declare module '@tanstack/react-router' {
       path: '/channels/new';
       fullPath: '/channels/new';
       preLoaderRoute: typeof ChannelsNewRouteImport;
+      parentRoute: typeof rootRouteImport;
+    };
+    '/channels_/auto-create': {
+      id: '/channels_/auto-create';
+      path: '/channels/auto-create';
+      fullPath: '/channels/auto-create';
+      preLoaderRoute: typeof ChannelsAutoCreateRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     '/channels_/$channelId': {
@@ -1391,6 +1411,7 @@ const rootRouteChildren: RootRouteChildren = {
   SystemRoute: SystemRouteWithChildren,
   WelcomeRoute: WelcomeRoute,
   ChannelsChannelIdRouteRoute: ChannelsChannelIdRouteRouteWithChildren,
+  ChannelsAutoCreateRoute: ChannelsAutoCreateRoute,
   ChannelsNewRoute: ChannelsNewRoute,
   ChannelsTestRoute: ChannelsTestRoute,
   LibraryCustomShowsRoute: LibraryCustomShowsRoute,

@@ -1,8 +1,22 @@
 # Tunarr
 
-Domain language for Tunarr. It covers the channel-programming editor in `@tunarr/web` and the media library lifecycle in `@tunarr/server`; extend it as other areas are documented.
+Domain language for Tunarr. It covers the channel-programming editor in `@tunarr/web`, the media library lifecycle in `@tunarr/server`, and streaming backends; extend it as other areas are documented.
 
 ## Language
+
+### Streaming
+
+**Streaming backend**:
+The part of Tunarr that turns a channel's lineup into a stream. Each channel uses exactly one.
+_Avoid_: pipeline (when you mean the choice of backend), stream mode (a separate channel setting)
+
+**Built-in pipeline**:
+The default **Streaming backend**, in which Tunarr builds and runs its own FFmpeg commands.
+_Avoid_: legacy backend, legacy pipeline, Tunarr's own pipeline
+
+**ErsatzTV next**:
+The opt-in **Streaming backend**, in which Tunarr hands a channel to the `ersatztv-channel` worker.
+_Avoid_: ETV, etv_next (both fine in code, not in prose)
 
 ### Media library lifecycle
 

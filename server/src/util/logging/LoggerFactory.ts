@@ -33,9 +33,12 @@ import type { SerializedLogger } from './LoggerWrapper.ts';
 import { RootLoggerWrapper } from './LoggerWrapper.ts';
 import { RollingLogDestination } from './RollingDestination.ts';
 
-export function getEnvironmentLogLevel(envVar?: string): Maybe<LogLevels> {
+export function getEnvironmentLogLevel(
+  envVar?: string,
+  env: NodeJS.ProcessEnv = process.env,
+): Maybe<LogLevels> {
   const envLevel = trim(
-    toLower(process.env[envVar ?? TUNARR_ENV_VARS.LOG_LEVEL_ENV_VAR]),
+    toLower(env[envVar ?? TUNARR_ENV_VARS.LOG_LEVEL_ENV_VAR]),
   );
   if (isNonEmptyString(envLevel)) {
     if (ValidLogLevels.includes(envLevel)) {
@@ -52,10 +55,44 @@ export function getEnvironmentLogLevel(envVar?: string): Maybe<LogLevels> {
 
 const ExtraLogLevels = ['http', 'http_out'] as const;
 
+const CustomLogLevels: Record<ExtraLogLevels, number> = {
+  http: 25, // Finer than info but not as fine as debug
+  http_out: 15, // Finer than debug but not as fine as trace
+};
+
 export const ValidLogLevels = [
   ...Object.keys(levels.values),
   ...ExtraLogLevels,
 ];
+
+const ClassLogLevelEnvPrefix = `${TUNARR_ENV_VARS.LOG_LEVEL_ENV_VAR}_`;
+
+function logLevelValue(level: LogLevels): number {
+  return (
+    levels.values[level] ??
+    CustomLogLevels[level as ExtraLogLevels] ??
+    Number.POSITIVE_INFINITY
+  );
+}
+
+/**
+ * Returns the finest level set by any `TUNARR_LOG_LEVEL_<CLASSNAME>` env var.
+ */
+export function lowestClassLogLevelOverride(
+  env: NodeJS.ProcessEnv = process.env,
+): Maybe<LogLevels> {
+  let lowest: Maybe<LogLevels>;
+  for (const envVar of Object.keys(env)) {
+    if (!envVar.startsWith(ClassLogLevelEnvPrefix)) {
+      continue;
+    }
+    const level = getEnvironmentLogLevel(envVar, env);
+    if (level && (!lowest || logLevelValue(level) < logLevelValue(lowest))) {
+      lowest = level;
+    }
+  }
+  return lowest;
+}
 
 export type ExtraLogLevels = TupleToUnion<typeof ExtraLogLevels>;
 
@@ -191,16 +228,7 @@ class LoggerFactoryImpl {
     args: GetChildLoggerArgs,
     opts?: ChildLoggerOptions<LogLevels>,
   ): Logger {
-    const { className } = args;
-    opts ??= {};
-    const levelOverride = getEnvironmentLogLevel(
-      `TUNARR_LOG_LEVEL_${className.toUpperCase()}`,
-    );
-    const child = this.rootLogger.child(args, opts);
-    if (levelOverride) {
-      child.updateStreams(multistream(this.createStreams(levelOverride)));
-    }
-    return child.logger;
+    return this.rootLogger.child(args, opts ?? {}).logger;
   }
 
   private createLogStreams(level?: LogLevels) {
@@ -216,10 +244,7 @@ class LoggerFactoryImpl {
     const root = pino(
       {
         level,
-        customLevels: {
-          http: 25, // Finer than info but not as fine as debug
-          http_out: 15, // Finder than debug but not as fine as trace
-        },
+        customLevels: CustomLogLevels,
       },
       this.createLogStreams(),
     );
@@ -286,7 +311,15 @@ class LoggerFactoryImpl {
     this.rootLogger.updateLevel(newLevel, this.createLogStreams(newLevel));
   }
 
-  private createStreams(logLevel: LogLevels): StreamEntry<LogLevels>[] {
+  private createStreams(baseLevel: LogLevels): StreamEntry<LogLevels>[] {
+    // Every logger shares these streams. They must pass the finest level any
+    // class override asks for. Each logger's own level filters the rest.
+    const classOverride = lowestClassLogLevelOverride();
+    const logLevel =
+      classOverride && logLevelValue(classOverride) < logLevelValue(baseLevel)
+        ? classOverride
+        : baseLevel;
+
     const streams: StreamEntry<LogLevels>[] = [
       {
         stream: pretty(getPrettyStreamOpts()),
