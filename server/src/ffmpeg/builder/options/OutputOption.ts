@@ -64,9 +64,14 @@ export const MapAllStreamsOutputOption = () =>
  * Maps all video, audio, and data streams from the first input but excludes
  * subtitle streams. Subtitle codecs like SRT/ASS cannot be muxed directly
  * into HLS/mpegts — they must be handled via separate WebVTT sidecar files.
+ *
+ * `0:V` (capital V) skips attached pictures such as embedded cover art. Those
+ * are reported as a video stream with a single frame. Copying one into the
+ * output also breaks `-readrate` pacing: ffmpeg then writes segments much
+ * faster than real time.
  */
 export const MapAllNonSubtitleStreamsOutputOption = () =>
-  makeConstantOutputOption(['-map', '0:v', '-map', '0:a', '-map', '0:d?']);
+  makeConstantOutputOption(['-map', '0:V', '-map', '0:a', '-map', '0:d?']);
 
 export const NoSceneDetectOutputOption = (
   value: number,
