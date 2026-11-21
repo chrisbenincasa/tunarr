@@ -1,7 +1,7 @@
 import { faker } from '@faker-js/faker';
 import { tag } from '@tunarr/types';
 import dayjs from 'dayjs';
-import { inArray } from 'drizzle-orm';
+import { inArray, sql } from 'drizzle-orm';
 import tmp from 'tmp-promise';
 import { v4 } from 'uuid';
 import { test as baseTest, describe, expect } from 'vitest';
@@ -16,7 +16,10 @@ import { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
 import { Program } from '../schema/Program.ts';
 import type { ProgramGroupingType } from '../schema/ProgramGrouping.ts';
 import { ProgramGrouping } from '../schema/ProgramGrouping.ts';
-import { ProgramStateRepository } from './ProgramStateRepository.ts';
+import {
+  groupingHasLiveProgram,
+  ProgramStateRepository,
+} from './ProgramStateRepository.ts';
 
 type Fixture = {
   db: string;
@@ -328,6 +331,36 @@ describe('ProgramStateRepository.syncGroupingStatesForLibrary', () => {
       [otherSeason]: 'ok',
       [album]: 'ok',
     });
+  });
+});
+
+describe('groupingHasLiveProgram', () => {
+  // On the state index the subquery scans every 'ok' program per grouping,
+  // which blocked a library scan for 13 s on a 25k-episode library.
+  test('probes the parent indexes instead of the program state index', async ({
+    drizzle,
+  }) => {
+    const query = drizzle
+      .select({ uuid: ProgramGrouping.uuid })
+      .from(ProgramGrouping)
+      .where(groupingHasLiveProgram);
+
+    const plan = await drizzle.all<{ detail: string }>(
+      sql`EXPLAIN QUERY PLAN ${query.getSQL()}`,
+    );
+    const details = plan.map(({ detail }) => detail);
+
+    expect(details).not.toContainEqual(
+      expect.stringContaining('program_state_index'),
+    );
+    for (const index of [
+      'program_season_uuid_index',
+      'program_album_uuid_index',
+      'program_tv_show_uuid_index',
+      'program_artist_uuid_index',
+    ]) {
+      expect(details).toContainEqual(expect.stringContaining(index));
+    }
   });
 });
 
