@@ -33,4 +33,6 @@ export const defaultNewTranscodeConfig: TranscodeConfig = {
   disableHardwareEncoding: false,
   disableHardwareFilters: false,
   audioLoudnormConfig: null,
+  fillerAudioVolumePercent: null,
+  fillerAudioLoudnormConfig: null,
 };

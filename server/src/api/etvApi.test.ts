@@ -63,6 +63,8 @@ const supportedTranscodeConfig = {
   videoPreset: null,
   videoProfile: null,
   audioVolumePercent: 100,
+  fillerAudioVolumePercent: null,
+  fillerAudioLoudnormConfig: null,
   normalizeFrameRate: false,
 } as unknown as TranscodeConfigOrm;
 

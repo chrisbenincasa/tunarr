@@ -89,6 +89,45 @@ export const TranscodeConfigAudioSettingsForm = ({
     });
   }, [ffmpegInfo.data?.audioEncoders, ffmpegInfo.isSuccess]);
 
+  const [fillerLevelsEnabled, setFillerLevelsEnabled] = useState(
+    !isNil(form.getFieldValue('fillerAudioVolumePercent')) ||
+      !isNil(form.getFieldValue('fillerAudioLoudnormConfig')),
+  );
+  const [fillerLoudnormEnabled, setFillerLoudnormEnabled] = useState(
+    !isNil(form.getFieldValue('fillerAudioLoudnormConfig')),
+  );
+
+  const onFillerLevelsChange = useCallback(
+    (enabled: boolean) => {
+      setFillerLevelsEnabled(enabled);
+      setFillerLoudnormEnabled(false);
+
+      // The pipeline skips the volume filter at 0 or below, so that plays
+      // at 100%. Filler volume must be at least 1.
+      const mainVolume = Number(form.getFieldValue('audioVolumePercent'));
+      form.setFieldValue(
+        'fillerAudioVolumePercent',
+        enabled ? (mainVolume > 0 ? mainVolume : 100) : null,
+      );
+      form.setFieldValue('fillerAudioLoudnormConfig', null);
+    },
+    [form],
+  );
+
+  const onFillerLoudnormChange = useCallback(
+    (enabled: boolean) => {
+      setFillerLoudnormEnabled(enabled);
+      form.setFieldValue(
+        'fillerAudioLoudnormConfig',
+        enabled
+          ? (form.getFieldValue('audioLoudnormConfig') ??
+              LoudnormConfigSchema.decode({}))
+          : null,
+      );
+    },
+    [form],
+  );
+
   const onLoudnormChange = useCallback(
     (enabled: boolean) => {
       setLoudnormEnabled(enabled);
@@ -275,6 +314,123 @@ export const TranscodeConfigAudioSettingsForm = ({
           </FormControl>
         </Grid>
       </Grid>
+      <Stack spacing={2}>
+        <Typography component="h6" variant="h6">
+          <Trans>Filler Audio</Trans>
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormControl fullWidth>
+              <InputLabel>
+                <Trans>Filler Audio Levels</Trans>
+              </InputLabel>
+              <Select
+                label={t`Filler Audio Levels`}
+                value={fillerLevelsEnabled ? 'custom' : 'default'}
+                onChange={() => onFillerLevelsChange(!fillerLevelsEnabled)}
+              >
+                <MenuItem value={'default'}>
+                  <Trans>Default</Trans>
+                </MenuItem>
+                <MenuItem value={'custom'}>
+                  <Trans>Custom</Trans>
+                </MenuItem>
+              </Select>
+              <FormHelperText>
+                <Trans>
+                  Default uses the Audio Volume and Audio Loudness Normalization
+                  settings above. Custom sets separate levels for filler and
+                  channel fallback content.
+                </Trans>
+              </FormHelperText>
+            </FormControl>
+          </Grid>
+          {fillerLevelsEnabled && (
+            <>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <form.AppField
+                  name="fillerAudioVolumePercent"
+                  children={(field) => (
+                    <field.BasicTextInput
+                      fullWidth
+                      label={t`Filler Audio Volume`}
+                      helperText={t`Has no effect while loudness normalization applies to filler. Set a lower filler loudness target instead.`}
+                      slotProps={{
+                        input: {
+                          endAdornment: (
+                            <InputAdornment position="end">%</InputAdornment>
+                          ),
+                        },
+                      }}
+                    />
+                  )}
+                />
+              </Grid>
+              <Grid size={{ xs: 12, md: 6 }}>
+                <FormControl fullWidth>
+                  <InputLabel>
+                    <Trans>Filler Loudness Normalization</Trans>
+                  </InputLabel>
+                  <Select
+                    label={t`Filler Loudness Normalization`}
+                    value={fillerLoudnormEnabled ? 'custom' : 'default'}
+                    onChange={() =>
+                      onFillerLoudnormChange(!fillerLoudnormEnabled)
+                    }
+                  >
+                    <MenuItem value={'default'}>
+                      <Trans>Default</Trans>
+                    </MenuItem>
+                    <MenuItem value={'custom'}>
+                      <Trans>Custom (loudnorm)</Trans>
+                    </MenuItem>
+                  </Select>
+                  <FormHelperText>
+                    <Trans>
+                      Default uses the Audio Loudness Normalization setting
+                      above.
+                    </Trans>
+                  </FormHelperText>
+                </FormControl>
+              </Grid>
+            </>
+          )}
+        </Grid>
+        {fillerLevelsEnabled && fillerLoudnormEnabled && (
+          <Stack direction={{ sm: 'column', md: 'row' }} spacing={2}>
+            <form.AppField
+              name="fillerAudioLoudnormConfig.i"
+              children={(field) => (
+                <field.BasicTextInput
+                  fullWidth
+                  label={t`Filler Loudness Target`}
+                  helperText="[-70.0, -5.0]"
+                />
+              )}
+            />
+            <form.AppField
+              name="fillerAudioLoudnormConfig.lra"
+              children={(field) => (
+                <field.BasicTextInput
+                  fullWidth
+                  label={t`Filler Loudness Range Target`}
+                  helperText="[1.0, 50.0]"
+                />
+              )}
+            />
+            <form.AppField
+              name="fillerAudioLoudnormConfig.tp"
+              children={(field) => (
+                <field.BasicTextInput
+                  fullWidth
+                  label={t`Filler Max True Peak`}
+                  helperText="[-9.0, 0.0]"
+                />
+              )}
+            />
+          </Stack>
+        )}
+      </Stack>
       {showAdvancedSettings && (
         <form.Subscribe
           children={(state) => {

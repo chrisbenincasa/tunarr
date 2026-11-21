@@ -36,6 +36,8 @@ const transcodeConfig = (
   audioSampleRate: 48,
   audioVolumePercent: 100,
   audioLoudnormConfig: null,
+  fillerAudioVolumePercent: null,
+  fillerAudioLoudnormConfig: null,
   normalizeFrameRate: false,
   deinterlaceVideo: true,
   disableChannelOverlay: false,
@@ -275,6 +277,18 @@ describe('toChannelConfig', () => {
       'threadCount',
       'videoPreset',
       'videoProfile',
+    ]);
+  });
+
+  test('names the filler audio levels it cannot apply per item', () => {
+    const { ignored } = map({
+      fillerAudioVolumePercent: 50,
+      fillerAudioLoudnormConfig: { i: -30, lra: 7, tp: -2 },
+    });
+
+    expect(ignored.map((i) => i.field).sort()).toEqual([
+      'fillerAudioLoudnormConfig',
+      'fillerAudioVolumePercent',
     ]);
   });
 
