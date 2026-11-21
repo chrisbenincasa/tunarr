@@ -283,4 +283,24 @@ describe('FillerListsView cards', () => {
     await user.click(screen.getByRole('button', { name: 'Clear filter' }));
     expect(screen.getAllByRole('article')).toHaveLength(2);
   });
+
+  test('clears the table search from the empty state', async () => {
+    const { user, rerender, onOpenFiller, onAssignChannels, onDeleteFiller } =
+      renderView('table');
+    await user.click(screen.getByRole('button', { name: 'Show/Hide search' }));
+    await user.type(screen.getByRole('textbox', { name: 'Search' }), 'zzz');
+    rerender(
+      <FillerListsView
+        fillers={fillers}
+        layout="cards"
+        onOpenFiller={onOpenFiller}
+        onAssignChannels={onAssignChannels}
+        onDeleteFiller={onDeleteFiller}
+      />,
+    );
+    expect(screen.queryAllByRole('article')).toHaveLength(0);
+
+    await user.click(screen.getByRole('button', { name: 'Clear filter' }));
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+  });
 });

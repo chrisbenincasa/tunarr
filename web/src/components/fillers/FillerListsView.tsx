@@ -143,7 +143,13 @@ export const FillerListsView = ({
       icon={<QueueMusic />}
       title={<Trans>No filler lists match this filter.</Trans>}
       actions={
-        <Button variant="outlined" onClick={() => table.resetColumnFilters()}>
+        <Button
+          variant="outlined"
+          onClick={() => {
+            table.resetColumnFilters();
+            table.resetGlobalFilter();
+          }}
+        >
           <Trans>Clear filter</Trans>
         </Button>
       }

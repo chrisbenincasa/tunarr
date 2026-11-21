@@ -280,4 +280,22 @@ describe('CustomShowsView cards', () => {
     await user.click(screen.getByRole('button', { name: 'Clear filter' }));
     expect(screen.getAllByRole('article')).toHaveLength(2);
   });
+
+  test('clears the table search from the empty state', async () => {
+    const { user, rerender, onOpenShow, onDeleteShow } = renderView('table');
+    await user.click(screen.getByRole('button', { name: 'Show/Hide search' }));
+    await user.type(screen.getByRole('textbox', { name: 'Search' }), 'zzz');
+    rerender(
+      <CustomShowsView
+        shows={shows}
+        layout="cards"
+        onOpenShow={onOpenShow}
+        onDeleteShow={onDeleteShow}
+      />,
+    );
+    expect(screen.queryAllByRole('article')).toHaveLength(0);
+
+    await user.click(screen.getByRole('button', { name: 'Clear filter' }));
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+  });
 });
