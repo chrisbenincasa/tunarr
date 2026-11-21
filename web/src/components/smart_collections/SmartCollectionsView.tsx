@@ -1,7 +1,7 @@
 import { isNonEmptyString } from '@/helpers/util.ts';
 import { Plural, Trans, useLingui } from '@lingui/react/macro';
 import { Delete, Edit, Search, Visibility } from '@mui/icons-material';
-import { Box, IconButton, Tooltip } from '@mui/material';
+import { Box, Button, IconButton, Tooltip } from '@mui/material';
 import type { SmartCollection } from '@tunarr/types';
 import { useMemo, useState } from 'react';
 import type { RootSearchQueryParams } from '../../routes/__root.tsx';
@@ -133,6 +133,29 @@ export const SmartCollectionsView = ({
 
   const collectionCount = collections.length;
 
+  // Cards show the rows that pass every table filter, so both layouts agree.
+  const visibleCollections = table
+    .getFilteredRowModel()
+    .rows.map((row) => row.original);
+
+  const noMatches = (
+    <EmptyState
+      icon={<Search />}
+      title={<Trans>No smart collections match this filter.</Trans>}
+      actions={
+        <Button
+          variant="outlined"
+          onClick={() => {
+            table.resetColumnFilters();
+            table.resetGlobalFilter();
+          }}
+        >
+          <Trans>Clear filter</Trans>
+        </Button>
+      }
+    />
+  );
+
   const createButton = (
     <RouterButtonLink
       to="/search"
@@ -186,9 +209,9 @@ export const SmartCollectionsView = ({
       <CollectionView
         aria-label={t`Smart Collections`}
         layout={layout}
-        items={collections}
+        items={visibleCollections}
         getItemKey={(collection) => collection.uuid}
-        empty={empty}
+        empty={collectionCount === 0 ? empty : noMatches}
         minCardWidth={280}
         pagination={{
           state: tableState.state.pagination,

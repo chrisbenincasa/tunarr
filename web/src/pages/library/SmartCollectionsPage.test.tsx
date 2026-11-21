@@ -1,6 +1,7 @@
 import { getApiSmartCollectionsQueryKey } from '@/generated/@tanstack/react-query.gen.ts';
 import type * as Gen from '@/generated/@tanstack/react-query.gen.ts';
 import useStore from '@/store/index.ts';
+import { navigateMock } from '@/test/routerMock.tsx';
 import {
   renderWithProviders,
   screen,
@@ -8,6 +9,8 @@ import {
   waitFor,
   within,
 } from '@/test/utils';
+import { createTunarrTheme } from '@/theme.ts';
+import { ThemeProvider } from '@mui/material';
 import type { SmartCollection } from '@tunarr/types';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import SmartCollectionsPage from './SmartCollectionsPage.tsx';
@@ -33,12 +36,18 @@ const collections: SmartCollection[] = [
   { uuid: 'uuid-cartoons', name: 'Cartoons', keywords: '' },
 ];
 
-const renderPage = () =>
-  renderWithProviders(<SmartCollectionsPage />, {
-    queryClient: seededQueryClient([
-      [getApiSmartCollectionsQueryKey(), collections],
-    ]),
-  });
+// Dense density shows the table, so rows can be clicked.
+const renderPage = (dense = false) =>
+  renderWithProviders(
+    <ThemeProvider theme={createTunarrTheme(dense ? 'dense' : 'comfortable')}>
+      <SmartCollectionsPage />
+    </ThemeProvider>,
+    {
+      queryClient: seededQueryClient([
+        [getApiSmartCollectionsQueryKey(), collections],
+      ]),
+    },
+  );
 
 describe('SmartCollectionsPage', () => {
   beforeEach(() => {
@@ -78,5 +87,14 @@ describe('SmartCollectionsPage', () => {
         path: { id: 'uuid-cartoons' },
       }),
     );
+  });
+
+  test('opens a collection when its table row is clicked', async () => {
+    const { user } = renderPage(true);
+    await user.click(screen.getByText('Cartoons'));
+    expect(navigateMock).toHaveBeenCalledWith({
+      to: '/library/smart_collections/$id',
+      params: { id: 'uuid-cartoons' },
+    });
   });
 });

@@ -164,4 +164,60 @@ describe('SmartCollectionsView cards', () => {
       screen.getByRole('link', { name: 'Search the Library' }),
     ).toHaveAttribute('href', '/search');
   });
+
+  test('applies the table search to the cards and clears it from the empty state', async () => {
+    const {
+      user,
+      rerender,
+      onOpenCollection,
+      onEditCollection,
+      onDeleteCollection,
+    } = renderView('table');
+    await user.click(screen.getByRole('button', { name: 'Show/Hide search' }));
+    await user.type(screen.getByRole('textbox', { name: 'Search' }), 'zzz');
+    rerender(
+      <SmartCollectionsView
+        collections={collections}
+        layout="cards"
+        onOpenCollection={onOpenCollection}
+        onEditCollection={onEditCollection}
+        onDeleteCollection={onDeleteCollection}
+      />,
+    );
+    expect(screen.queryAllByRole('article')).toHaveLength(0);
+    expect(
+      screen.getByText('No smart collections match this filter.'),
+    ).toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: 'Clear filter' }));
+    expect(screen.getAllByRole('article')).toHaveLength(2);
+  });
+
+  test('applies a Query filter set in the table to the cards', async () => {
+    const {
+      user,
+      rerender,
+      onOpenCollection,
+      onEditCollection,
+      onDeleteCollection,
+    } = renderView('table');
+    await user.click(screen.getByRole('button', { name: 'Show/Hide filters' }));
+    await user.type(
+      screen.getByRole('textbox', { name: 'Filter by Query' }),
+      'animated',
+    );
+    rerender(
+      <SmartCollectionsView
+        collections={collections}
+        layout="cards"
+        onOpenCollection={onOpenCollection}
+        onEditCollection={onEditCollection}
+        onDeleteCollection={onDeleteCollection}
+      />,
+    );
+    expect(screen.getAllByRole('article')).toHaveLength(1);
+    expect(
+      screen.getByRole('article', { name: 'Cartoons' }),
+    ).toBeInTheDocument();
+  });
 });
