@@ -1,4 +1,7 @@
 import type Sqlite from 'better-sqlite3';
+import { QueryPromise } from 'drizzle-orm/query-promise';
+import { SQLiteCountBuilder } from 'drizzle-orm/sqlite-core/query-builders/count';
+import { SQLiteSelectBase } from 'drizzle-orm/sqlite-core/query-builders/select';
 import { performance } from 'node:perf_hooks';
 
 export type SlowQuery = {
@@ -31,6 +34,7 @@ export function withSlowQueryLog(
   db: Sqlite.Database,
   opts: SlowQueryLogOptions,
 ): Sqlite.Database {
+  traceDrizzleCallers();
   const now = opts.now ?? (() => performance.now());
 
   function finish(sql: string, durationMs: number, caller?: AnyFunction) {
@@ -146,4 +150,47 @@ function captureCaller(above?: AnyFunction): string[] {
     .split('\n')
     .slice(1)
     .map((frame) => frame.trim());
+}
+
+let drizzleCallersTraced = false;
+
+/**
+ * `await builder` makes V8 call a Drizzle builder's `then` from a microtask
+ * that has no link to the awaiting function, so a query run there has no
+ * caller frames. Starting the query one promise hop later lets V8's async
+ * stack traces walk back through the functions awaiting it.
+ *
+ * Drizzle copies `then` onto its select builder, and its count builder defines
+ * its own, so each prototype needs the change.
+ */
+function traceDrizzleCallers() {
+  if (drizzleCallersTraced) {
+    return;
+  }
+  drizzleCallersTraced = true;
+
+  const prototypes: object[] = [
+    QueryPromise.prototype,
+    SQLiteSelectBase.prototype,
+    SQLiteCountBuilder.prototype,
+  ];
+  for (const prototype of prototypes) {
+    const then: unknown = Reflect.get(prototype, 'then');
+    if (typeof then !== 'function') {
+      throw new Error('Expected a Drizzle query builder to define then()');
+    }
+    Object.defineProperty(prototype, 'then', {
+      configurable: true,
+      writable: true,
+      value: function deferredThen(
+        this: unknown,
+        onFulfilled?: ((value: unknown) => unknown) | null,
+        onRejected?: ((reason: unknown) => unknown) | null,
+      ) {
+        return Promise.resolve()
+          .then((): unknown => Reflect.apply(then, this, []))
+          .then(onFulfilled, onRejected);
+      },
+    });
+  }
 }

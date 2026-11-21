@@ -1,6 +1,7 @@
 import Sqlite from 'better-sqlite3';
 import { sql as drizzleSql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
+import { integer, sqliteTable } from 'drizzle-orm/sqlite-core';
 import { Kysely, sql as kyselySql, SqliteDialect } from 'kysely';
 import { describe, expect, test } from 'vitest';
 import type { SlowQuery } from './slowQueryLog.ts';
@@ -125,5 +126,94 @@ describe('withSlowQueryLog', () => {
     await kysely.destroy();
 
     expect(reports.map((r) => r.durationMs)).toEqual([600, 700]);
+  });
+
+  describe('names the code that awaited the query', () => {
+    // Each statement calls advance(600), so the query itself is slow.
+    const Slow = sqliteTable('slow', { n: integer('n') });
+
+    function setupSlowTable() {
+      const { db, reports } = setup();
+      db.exec('CREATE TABLE slow (n INTEGER)');
+      db.exec('INSERT INTO slow (n) VALUES (1)');
+      return { db, reports };
+    }
+
+    function frameNamed(reports: SlowQuery[], name: string) {
+      expect(reports).toHaveLength(1);
+      return reports[0]?.callStack.find((frame) => frame.includes(name));
+    }
+
+    test('an awaited Drizzle insert', async () => {
+      const { db, reports } = setupSlowTable();
+      const d = drizzle({ client: db });
+
+      async function insertSlowRow() {
+        await d.insert(Slow).values({ n: drizzleSql`advance(600)` });
+      }
+      await insertSlowRow();
+
+      expect(frameNamed(reports, 'insertSlowRow')).toBeDefined();
+    });
+
+    test('an awaited Drizzle select', async () => {
+      const { db, reports } = setupSlowTable();
+      const d = drizzle({ client: db });
+
+      async function selectSlowRows() {
+        return await d
+          .select()
+          .from(Slow)
+          .where(drizzleSql`advance(600) > 0`);
+      }
+      await selectSlowRows();
+
+      expect(frameNamed(reports, 'selectSlowRows')).toBeDefined();
+    });
+
+    test('an awaited Drizzle relational query', async () => {
+      const { db, reports } = setupSlowTable();
+      const d = drizzle({ client: db, schema: { Slow } });
+
+      async function findSlowRows() {
+        return await d.query.Slow.findMany({
+          where: drizzleSql`advance(600) > 0`,
+        });
+      }
+      await findSlowRows();
+
+      expect(frameNamed(reports, 'findSlowRows')).toBeDefined();
+    });
+
+    test('an awaited Drizzle $count', async () => {
+      const { db, reports } = setupSlowTable();
+      const d = drizzle({ client: db });
+
+      async function countSlowRows() {
+        return await d.$count(Slow, drizzleSql`advance(600) > 0`);
+      }
+      await countSlowRows();
+
+      expect(frameNamed(reports, 'countSlowRows')).toBeDefined();
+    });
+
+    test('a Kysely query', async () => {
+      const { db, reports } = setupSlowTable();
+      const kysely = new Kysely<{ slow: { n: number } }>({
+        dialect: new SqliteDialect({ database: db }),
+      });
+
+      async function selectSlowRowsWithKysely() {
+        return await kysely
+          .selectFrom('slow')
+          .selectAll()
+          .where(kyselySql<boolean>`advance(600) > 0`)
+          .execute();
+      }
+      await selectSlowRowsWithKysely();
+      await kysely.destroy();
+
+      expect(frameNamed(reports, 'selectSlowRowsWithKysely')).toBeDefined();
+    });
   });
 });

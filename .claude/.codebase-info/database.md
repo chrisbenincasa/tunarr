@@ -1,6 +1,6 @@
 # Database
 
-*Last Updated: 2026-11-14*
+*Last Updated: 2026-11-21*
 
 ## Stores
 
@@ -35,6 +35,9 @@
 - `db/slowQueryLog.ts` wraps each better-sqlite3 connection in `DBAccess`, so it times queries from
   both ORMs. A query that runs at least `TUNARR_SLOW_QUERY_THRESHOLD_MS` (default 500, `0` turns it off)
   logs a warning with its SQL, duration, and call stack. Parameters are left out.
+- To give awaited Drizzle queries a call stack, the same file patches Drizzle's `then` so each awaited
+  query starts one microtask later. V8's async stack traces can then reach the caller. Kysely queries
+  get theirs without help.
 - Backups: `db/backup/`.
 
 Known quirk: `program.duration` and `channel.duration` are `INTEGER` columns, but Jellyfin and Emby
