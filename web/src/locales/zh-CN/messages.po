@@ -121,8 +121,11 @@ msgid "{0, plural, one {Path} other {Paths}}"
 msgstr "{0, plural, other {条路径}}"
 
 #. placeholder {0}: channel.programCount
-#. placeholder {0}: slot.programCount
+#. placeholder {0}: filler.contentCount
+#. placeholder {0}: show.contentCount
 #: src/components/channels/ChannelCard.tsx
+#: src/components/custom-shows/CustomShowCard.tsx
+#: src/components/fillers/FillerListCard.tsx
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "{0, plural, one {program} other {programs}}"
 msgstr "{0, plural, other {个节目}}"
@@ -345,13 +348,25 @@ msgid "# of Programs"
 msgstr "节目数量"
 
 #: src/components/channels/ChannelsView.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/fillers/FillerListsView.tsx
 msgid "# Programs"
 msgstr "节目数"
 
 #: src/components/channels/ChannelsView.tsx
 msgid "<0>{channelCount}</0> {channelCount, plural, one {channel} other {channels}} · <1>{streaming}</1> streaming"
+msgstr ""
+
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "<0>{collectionCount}</0> {collectionCount, plural, one {smart collection} other {smart collections}}"
+msgstr ""
+
+#: src/components/fillers/FillerListsView.tsx
+msgid "<0>{fillerCount}</0> {fillerCount, plural, one {filler list} other {filler lists}}"
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+msgid "<0>{showCount}</0> {showCount, plural, one {playlist} other {playlists}}"
 msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -402,9 +417,21 @@ msgstr "12 小时制"
 msgid "24-hour"
 msgstr "24 小时制"
 
+#: src/components/fillers/FillerListsView.tsx
+msgid "A filler list holds videos that play during flex time, the parts of a channel with no program scheduled."
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+msgid "A playlist is an ordered list of videos that channels schedule as if they were episodes of one TV show."
+msgstr ""
+
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "A root path to scan for media. Local sources can search many different paths."
 msgstr "要扫描媒体文件的根路径。本地媒体源可以配置多个路径。"
+
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "A smart collection saves a library search. It picks up new items that match as your library grows, but it doesn't change programming already on a channel."
+msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 #~ msgid "A stream selection profile chooses the audio and subtitle streams for programs on this channel. Filler lists and custom shows can assign their own profile, which takes precedence."
@@ -777,8 +804,8 @@ msgstr "应用于节目类型（留空表示全部）"
 msgid "Archive Format"
 msgstr "归档格式"
 
-#. placeholder {0}: deletingSmartCollection?.name
-#: src/components/smart_collections/SmartCollectionsTable.tsx
+#. placeholder {0}: pendingDelete?.name
+#: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Are you sure you want to delete Smart Collection \"{0}\"?"
 msgstr "确定要删除智能合集「{0}」吗？"
 
@@ -794,8 +821,17 @@ msgstr "升序"
 msgid "Ascending"
 msgstr "升序"
 
+#: src/components/fillers/FillerListCard.tsx
+msgid "Assign"
+msgstr ""
+
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 msgid "Assign \"{fillerName}\" to Channels"
+msgstr ""
+
+#. placeholder {0}: filler.name
+#: src/components/fillers/FillerListCard.tsx
+msgid "Assign {0} to channels"
 msgstr ""
 
 #: src/components/channels/ChannelsView.tsx
@@ -807,8 +843,8 @@ msgstr ""
 msgid "Assign Fillers to {0, plural, one {# Channel} other {# Channels}}"
 msgstr ""
 
-#: src/pages/library/FillerListsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/fillers/FillerListsView.tsx
 msgid "Assign to Channels"
 msgstr ""
 
@@ -1075,8 +1111,10 @@ msgstr "正在计算时段…"
 #: src/components/channels/BulkAssignFillersDialog.tsx
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/components/channels/ChannelsDeleteDialog.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
+#: src/components/fillers/FillerListsView.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
 #: src/components/programming_controls/AddFlexModal.tsx
@@ -1101,8 +1139,6 @@ msgstr "正在计算时段…"
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
 #: src/pages/library/TrashPage.tsx
 msgid "Cancel"
 msgstr "取消"
@@ -1270,6 +1306,12 @@ msgstr "清除"
 #: src/components/slot_scheduler/ClearSlotsButton.tsx
 msgid "Clear All"
 msgstr "全部清除"
+
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "Clear filter"
+msgstr ""
 
 #: src/components/ui/table/DataTable.tsx
 msgid "Clear filters"
@@ -1517,7 +1559,7 @@ msgstr ""
 #~ msgid "Counted from the start of each program. Set to 0 for no limit."
 #~ msgstr ""
 
-#: src/components/smart_collections/SmartCollectionsTable.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Create"
 msgstr "创建"
 
@@ -1530,8 +1572,16 @@ msgstr ""
 msgid "Create a Channel"
 msgstr "创建频道"
 
+#: src/components/fillers/FillerListsView.tsx
+msgid "Create a Filler List"
+msgstr ""
+
 #: src/components/profiles/StreamSelectionProfileSelect.tsx
 msgid "Create a new profile"
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+msgid "Create a Playlist"
 msgstr ""
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
@@ -1672,28 +1722,40 @@ msgstr ""
 #: src/components/channels/ChannelDeleteDialog.tsx
 #: src/components/channels/ChannelsDeleteDialog.tsx
 #: src/components/channels/ChannelsView.tsx
+#: src/components/custom-shows/CustomShowCard.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/DeleteConfirmationDialog.tsx
+#: src/components/fillers/FillerListCard.tsx
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/fillers/FillerListsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
+#: src/components/smart_collections/SmartCollectionCard.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Delete"
 msgstr "删除"
 
-#. placeholder {0}: deletingSmartCollection?.name
-#: src/components/smart_collections/SmartCollectionsTable.tsx
+#. placeholder {0}: pendingDelete?.name
+#: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Delete \"{0}\""
 msgstr "删除「{0}」"
+
+#. placeholder {0}: collection.name
+#. placeholder {0}: filler.name
+#. placeholder {0}: show.name
+#: src/components/custom-shows/CustomShowCard.tsx
+#: src/components/fillers/FillerListCard.tsx
+#: src/components/smart_collections/SmartCollectionCard.tsx
+msgid "Delete {0}"
+msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Delete Channel"
@@ -1708,8 +1770,8 @@ msgstr "删除频道「{0}」？"
 #~ msgid "Delete Custom Show \"{0}\"?"
 #~ msgstr "删除自定义剧集「{0}」？"
 
-#. placeholder {0}: find(fillerLists, { id: deleteConfirmationId })?.name
-#: src/pages/library/FillerListsPage.tsx
+#. placeholder {0}: pendingDelete?.name
+#: src/components/fillers/FillerListsView.tsx
 msgid "Delete Filler List \"{0}\"?"
 msgstr "删除垫片列表「{0}」？"
 
@@ -1722,8 +1784,8 @@ msgstr "删除媒体源「{0}」？"
 #~ msgid "Delete Media Source?"
 #~ msgstr "Delete Media Source?"
 
-#. placeholder {0}: find(customShows, { id: deleteConfirmationId })?.name
-#: src/pages/library/CustomShowsPage.tsx
+#. placeholder {0}: pendingDelete?.name
+#: src/components/custom-shows/CustomShowsView.tsx
 msgid "Delete Playlist \"{0}\"?"
 msgstr "删除播放列表「{0}」？"
 
@@ -1764,7 +1826,7 @@ msgstr "删除频道将移除该频道的所有节目编排，此操作无法撤
 #~ msgid "Deleting a Custom Show will remove its programming from channels that use it. This action cannot be undone."
 #~ msgstr "删除自定义剧集将从使用它的频道中移除其节目，此操作无法撤销。"
 
-#: src/pages/library/FillerListsPage.tsx
+#: src/components/fillers/FillerListsView.tsx
 msgid "Deleting a Filler will remove all programming from the channel. This action cannot be undone."
 msgstr "删除垫片将移除该频道的所有节目编排，此操作无法撤销。"
 
@@ -1772,7 +1834,7 @@ msgstr "删除垫片将移除该频道的所有节目编排，此操作无法撤
 msgid "Deleting a media source will remove all of its associated programs from Tunarr."
 msgstr "删除媒体源将从 Tunarr 中移除其关联的所有节目。"
 
-#: src/pages/library/CustomShowsPage.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 msgid "Deleting a playlist will remove its programming from channels that use it. This action cannot be undone."
 msgstr "删除播放列表将从使用它的频道中移除其节目，此操作无法撤销。"
 
@@ -1931,6 +1993,7 @@ msgid "Duplicates"
 msgstr "重复项"
 
 #: src/components/channels/ChannelsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/programming_controls/BalanceProgrammingModal.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
@@ -1963,22 +2026,30 @@ msgstr ""
 msgid "Eager"
 msgstr "即时"
 
+#: src/components/custom-shows/CustomShowCard.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/fillers/FillerListCard.tsx
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/fillers/FillerListsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
+#: src/components/smart_collections/SmartCollectionCard.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
 msgid "Edit"
 msgstr "编辑"
+
+#. placeholder {0}: collection.name
+#: src/components/smart_collections/SmartCollectionCard.tsx
+msgid "Edit {0}"
+msgstr ""
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Edit Channel"
@@ -2555,18 +2626,19 @@ msgstr "垫片列表冷却时间（秒）"
 msgid "Filler List: {0}"
 msgstr "垫片列表：{0}"
 
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/fillers/FillerListsView.tsx
+#: src/components/fillers/FillerListsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
-#: src/pages/library/FillerListsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
 msgid "Filler Lists"
 msgstr "垫片列表"
 
 #: src/pages/library/FillerListsPage.tsx
-msgid "Filler lists are collections of videos that you may want to play during 'flex' time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding)."
-msgstr "垫片列表是你希望在「弹性时间」内播放的视频集合。弹性时间指频道中没有安排正式节目的时段，通常用于填充时长。"
+#~ msgid "Filler lists are collections of videos that you may want to play during 'flex' time segments. Flex is time within a channel that does not have a program scheduled (usually used for padding)."
+#~ msgstr "垫片列表是你希望在「弹性时间」内播放的视频集合。弹性时间指频道中没有安排正式节目的时段，通常用于填充时长。"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Filler Options"
@@ -3457,8 +3529,10 @@ msgid "Must use a valid URL, or empty."
 msgstr "必须填写有效的 URL，或留空。"
 
 #: src/components/channels/ChannelsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
+#: src/components/fillers/FillerListsView.tsx
 #: src/components/MediaSourceLibraryTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ConnectMediaSources.tsx
@@ -3470,9 +3544,7 @@ msgstr "必须填写有效的 URL，或留空。"
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/pages/settings/MediaSourceSettingsPage.tsx
 #: src/pages/settings/TaskSettingsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -3494,14 +3566,14 @@ msgstr "至少需要一个路径"
 msgid "never"
 msgstr "从未"
 
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/fillers/FillerListsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/FillerListsPage.tsx
 msgid "New"
 msgstr "新建"
 
@@ -3592,6 +3664,10 @@ msgstr ""
 msgid "No filler lists found. Create a filler list first."
 msgstr ""
 
+#: src/components/fillers/FillerListsView.tsx
+msgid "No filler lists match this filter."
+msgstr ""
+
 #: src/pages/welcome/WelcomePage.tsx
 msgid "No libraries are enabled yet. Tunarr only syncs content from enabled libraries, so choose at least one below."
 msgstr ""
@@ -3610,6 +3686,10 @@ msgstr "未检测到媒体源。"
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
 msgid "No pages or lists match."
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+msgid "No playlists match this filter."
 msgstr ""
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
@@ -3651,6 +3731,10 @@ msgstr ""
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "No rule matched. On a real stream, Tunarr would move on to the next profile: the source, then the channel, then the default profile, then the built-in profile."
+msgstr ""
+
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "No smart collections match this filter."
 msgstr ""
 
 #: src/components/channels/ChannelStatusPill.tsx
@@ -3988,18 +4072,19 @@ msgid "Playlist: {0}"
 msgstr "播放列表：{0}"
 
 #: src/components/channel_config/ProgrammingSelector.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
-#: src/pages/library/CustomShowsPage.tsx
-#: src/pages/library/CustomShowsPage.tsx
 msgid "Playlists"
 msgstr "播放列表"
 
 #: src/pages/library/CustomShowsPage.tsx
-msgid "Playlists are ordered lists of videos that play like the episodes of a single TV show. When you add a playlist to a channel, the scheduling tools treat its videos as if they belonged to one show."
-msgstr "播放列表是一组有序的视频，会像同一部电视剧的分集一样播放。当你把播放列表添加到频道后，排期工具会将其中的视频视为属于同一部剧集。"
+#~ msgid "Playlists are ordered lists of videos that play like the episodes of a single TV show. When you add a playlist to a channel, the scheduling tools treat its videos as if they belonged to one show."
+#~ msgstr "播放列表是一组有序的视频，会像同一部电视剧的分集一样播放。当你把播放列表添加到频道后，排期工具会将其中的视频视为属于同一部剧集。"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #~ msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Each show starts at a random episode. Use Block Shuffle to start every show at its first episode or to loop shorter shows."
@@ -4197,6 +4282,10 @@ msgstr "协议必须是 HTTP 或 HTTPS"
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "QSV Device"
 msgstr "QSV 设备"
+
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "Query"
+msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx
 #: src/components/MediaSourceLibraryTable.tsx
@@ -4710,6 +4799,10 @@ msgstr ""
 msgid "Search Server URL:"
 msgstr "搜索服务器地址："
 
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "Search the Library"
+msgstr ""
+
 #: src/components/TopBar.tsx
 #~ msgid "Search…"
 #~ msgstr "搜索…"
@@ -4983,15 +5076,16 @@ msgstr "智能合集：{0}"
 
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/hooks/useRouteName.ts
-#: src/routes/library/smart_collections/index.tsx
 msgid "Smart Collections"
 msgstr "智能合集"
 
 #: src/routes/library/smart_collections/index.tsx
-msgid "Smart Collections are self-updating content lists. You set the query and the collection automatically adds any new content from your library that fits those rules. Any newly added content matching query will not modify existing channel programming at this time."
-msgstr "智能合集是会自动更新的内容列表。你只需设置查询条件，合集就会自动把媒体库中符合规则的新内容加入进来。目前，新加入的匹配内容不会修改频道已有的节目编排。"
+#~ msgid "Smart Collections are self-updating content lists. You set the query and the collection automatically adds any new content from your library that fits those rules. Any newly added content matching query will not modify existing channel programming at this time."
+#~ msgstr "智能合集是会自动更新的内容列表。你只需设置查询条件，合集就会自动把媒体库中符合规则的新内容加入进来。目前，新加入的匹配内容不会修改频道已有的节目编排。"
 
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 msgid "Software (No GPU)"
@@ -5268,9 +5362,18 @@ msgstr ""
 msgid "Sync with external playlist"
 msgstr "与外部播放列表同步"
 
-#: src/pages/library/CustomShowsPage.tsx
+#: src/components/custom-shows/CustomShowCard.tsx
+msgid "Synced"
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+#: src/components/custom-shows/CustomShowsView.tsx
 msgid "Synced with external playlist"
 msgstr "已与外部播放列表同步"
+
+#: src/components/custom-shows/CustomShowCard.tsx
+msgid "Syncing"
+msgstr ""
 
 #: src/components/settings/DarkModeButton.tsx
 #: src/components/shell/useShellNav.tsx
@@ -5958,11 +6061,12 @@ msgstr "垫片列表中的视频会被随机选取播放，除非存在冷却时
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
+#: src/components/smart_collections/SmartCollectionCard.tsx
 msgid "View"
 msgstr ""
 
-#: src/components/smart_collections/SmartCollectionsTable.tsx
-#: src/components/smart_collections/SmartCollectionsTable.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
+#: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "View Collection"
 msgstr "查看合集"
 
@@ -6126,12 +6230,12 @@ msgid "You can change any setting below before shuffling."
 msgstr ""
 
 #: src/pages/library/FillerListsPage.tsx
-msgid "You have no Filler Lists. Create your first Filler List <0>here.</0>"
-msgstr "你还没有任何垫片列表。<0>点击此处</0>创建第一个垫片列表。"
+#~ msgid "You have no Filler Lists. Create your first Filler List <0>here.</0>"
+#~ msgstr "你还没有任何垫片列表。<0>点击此处</0>创建第一个垫片列表。"
 
 #: src/components/smart_collections/SmartCollectionsTable.tsx
-msgid "You have no smart collections. Smart collections can be created on the <0>search</0> page."
-msgstr "你还没有智能合集。可以在<0>搜索</0>页面创建智能合集。"
+#~ msgid "You have no smart collections. Smart collections can be created on the <0>search</0> page."
+#~ msgstr "你还没有智能合集。可以在<0>搜索</0>页面创建智能合集。"
 
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "You have unsaved changes!"
@@ -6145,6 +6249,18 @@ msgstr "你还没有创建任何频道。"
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "You haven't created any filler lists yet! Go to the <0>Filler Lists</0> page to create one."
 msgstr "你还没有创建任何垫片列表！请前往<0>垫片列表</0>页面创建。"
+
+#: src/components/fillers/FillerListsView.tsx
+msgid "You haven't created any filler lists yet."
+msgstr ""
+
+#: src/components/custom-shows/CustomShowsView.tsx
+msgid "You haven't created any playlists yet."
+msgstr ""
+
+#: src/components/smart_collections/SmartCollectionsView.tsx
+msgid "You haven't created any smart collections yet."
+msgstr ""
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 msgid "You must create at least one <0>filler list</0> before assigning filler to a lot."
