@@ -542,12 +542,20 @@ export abstract class BasePipelineBuilder implements PipelineBuilder {
     // Per-stream audio codec overrides for incompatible codecs
     // (e.g. DTS/TrueHD cannot be muxed into MPEG-TS).
     for (const override of this.ffmpegState.audioCodecOverrides) {
-      this.pipelineSteps.push(
-        makeConstantOutputOption([
-          `-c:a:${override.outputIndex}`,
-          override.codec,
-        ]),
-      );
+      const options = [`-c:a:${override.outputIndex}`, override.codec];
+      if (override.bitrateKbps !== undefined) {
+        options.push(
+          `-b:a:${override.outputIndex}`,
+          `${override.bitrateKbps}k`,
+        );
+      }
+      if (override.channels !== undefined) {
+        options.push(
+          `-ac:a:${override.outputIndex}`,
+          String(override.channels),
+        );
+      }
+      this.pipelineSteps.push(makeConstantOutputOption(options));
     }
 
     this.setRealtime();

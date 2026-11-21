@@ -392,7 +392,7 @@ export class FfmpegStreamFactory {
 
     // Build per-stream audio codec overrides for copy-all mode.
     const audioCodecOverrides = isPassthrough
-      ? this.buildAudioCodecOverrides(streamDetails)
+      ? this.buildAudioCodecOverrides(streamDetails, outputFormat)
       : [];
 
     const effectiveHwAccel = isPassthrough
@@ -486,6 +486,7 @@ export class FfmpegStreamFactory {
         streamDetails,
         subtitleRendition,
         isPassthrough,
+        audioCodecOverrides,
       ),
     };
   }
@@ -700,22 +701,35 @@ export class FfmpegStreamFactory {
     return { subtitleSource, subtitleRendition };
   }
 
-  /**
-   * Builds per-stream audio codec overrides for passthrough (copy-all) mode.
-   * DTS and TrueHD cannot be muxed into MPEG-TS and are unsupported by
-   * AVPlayer on Apple devices — transcode those to AC-3.
-   */
   private buildAudioCodecOverrides(
     streamDetails: StreamDetails,
+    outputFormat: OutputFormat,
   ): AudioCodecOverride[] {
     const overrides: AudioCodecOverride[] = [];
-    if (streamDetails.audioDetails) {
-      for (let i = 0; i < streamDetails.audioDetails.length; i++) {
-        const codec = streamDetails.audioDetails[i]!.codec;
-        if (codec === AudioFormats.Dca || codec === AudioFormats.TrueHd) {
-          overrides.push({ outputIndex: i, codec: AudioFormats.Ac3 });
-        }
+    const isHls =
+      outputFormat.type === OutputFormatTypes.Hls ||
+      outputFormat.type === OutputFormatTypes.HlsDirectV2;
+    for (const [outputIndex, audio] of (
+      streamDetails.audioDetails ?? []
+    ).entries()) {
+      const isHlsFlac = isHls && audio.codec === AudioFormats.Flac;
+      if (
+        !isHlsFlac &&
+        audio.codec !== AudioFormats.Dca &&
+        audio.codec !== AudioFormats.TrueHd
+      ) {
+        continue;
       }
+      const channels = audio.channels ?? 2;
+      const override: AudioCodecOverride = {
+        outputIndex,
+        codec: AudioFormats.Ac3,
+        channels: channels > 6 ? 6 : undefined,
+      };
+      if (isHlsFlac) {
+        override.bitrateKbps = channels <= 2 ? 192 : 640;
+      }
+      overrides.push(override);
     }
     return overrides;
   }
@@ -727,6 +741,7 @@ export class FfmpegStreamFactory {
     streamDetails: StreamDetails,
     subtitleRendition: SubtitleRenditionInfo | undefined,
     isPassthrough: boolean,
+    audioCodecOverrides: AudioCodecOverride[],
   ): StreamRenditions {
     // Transcode mode muxes only the selected audio track into the variant,
     // so there are no alternate audio renditions to advertise.
@@ -740,11 +755,12 @@ export class FfmpegStreamFactory {
       const defaultIndex = flaggedDefault === -1 ? 0 : flaggedDefault;
 
       audioDetails.forEach((audio, i) => {
+        const override = audioCodecOverrides.find((o) => o.outputIndex === i);
         audioRenditions.push({
           language: audio.languageCodeISO6392 ?? audio.language ?? 'und',
           languageName: audio.language,
           title: audio.title,
-          channels: audio.channels,
+          channels: override?.channels ?? audio.channels,
           default: i === defaultIndex,
         });
       });
