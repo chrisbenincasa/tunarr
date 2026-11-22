@@ -8,16 +8,10 @@ import {
   Tv,
   Videocam,
 } from '@mui/icons-material';
-import {
-  Box,
-  Button,
-  Chip,
-  LinearProgress,
-  Stack,
-  Typography,
-} from '@mui/material';
+import { Box, Button, LinearProgress, Stack, Typography } from '@mui/material';
 import type { ContentProgramType } from '@tunarr/types/schemas';
 import type { ReactElement, ReactNode } from 'react';
+import { FilterChip } from '../ui/FilterChip.tsx';
 import { MonoText } from '../ui/MonoText.tsx';
 import { PageHeader } from '../ui/PageHeader.tsx';
 
@@ -39,39 +33,6 @@ export type TrashViewProps = {
 
   // The program grid.
   children: ReactNode;
-};
-
-type FilterChipProps = {
-  label: ReactNode;
-  icon?: ReactElement;
-  selected: boolean;
-  onClick: () => void;
-};
-
-const FilterChip = ({ label, icon, selected, onClick }: FilterChipProps) => {
-  const { theme, tokens, dense } = useThemeTokens();
-
-  return (
-    <Chip
-      label={label}
-      icon={icon}
-      variant="outlined"
-      onClick={onClick}
-      aria-pressed={selected}
-      sx={{
-        height: theme.sizes.controlHeightSmall,
-        paddingInline: 0.5,
-        fontSize: dense ? 12 : 13,
-        color: selected ? tokens.accent : tokens.textMuted,
-        borderColor: selected ? tokens.accent : tokens.borderStrong,
-        backgroundColor: selected ? tokens.accentSoft : 'transparent',
-        '& .MuiChip-icon': { color: 'inherit', fontSize: dense ? 16 : 18 },
-        '&.MuiChip-clickable:hover': {
-          backgroundColor: selected ? tokens.accentSoft : tokens.surfaceRaised,
-        },
-      }}
-    />
-  );
 };
 
 type DrainProgressProps = {
