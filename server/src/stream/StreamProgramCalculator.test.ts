@@ -896,9 +896,9 @@ describe('StreamProgramCalculator', () => {
     },
   );
 
-  baseTest(
-    'uses redirected lineup when resolving coming up next metadata',
-    async () => {
+  baseTest.each([44, 22, 1])(
+    'only announces the next target program if the redirect continues (%i minute redirect)',
+    async (redirectMinutes) => {
       const fillerDB = mock<IFillerListDB>();
       const channelDB = mock<IChannelDB>();
       const programDB = mock<IProgramDB>();
@@ -914,7 +914,7 @@ describe('StreamProgramCalculator', () => {
       const sourceLineupItems: LineupItem[] = [
         {
           type: 'redirect',
-          durationMs: +dayjs.duration({ minutes: 44 }),
+          durationMs: +dayjs.duration({ minutes: redirectMinutes }),
           channel: targetChannelId,
         },
       ];
@@ -934,13 +934,13 @@ describe('StreamProgramCalculator', () => {
       const sourceChannel = createChannelOrm({
         uuid: sourceChannelId,
         number: 1,
-        startTime: +startTime.subtract(1, 'hour'),
+        startTime: +startTime,
         duration: sumBy(sourceLineupItems, ({ durationMs }) => durationMs),
       });
       const targetChannel = createChannelOrm({
         uuid: targetChannelId,
         number: 2,
-        startTime: +startTime.subtract(1, 'hour'),
+        startTime: +startTime,
         duration: sumBy(targetLineupItems, ({ durationMs }) => durationMs),
         transcoding: {
           nowPlayingOverlay: {
@@ -1023,12 +1023,15 @@ describe('StreamProgramCalculator', () => {
         })
       ).get();
 
-      expect(out.lineupItem).toMatchObject<DeepPartial<StreamLineupItem>>({
-        nextProgramMetadata: {
+      if (redirectMinutes > 22) {
+        expect(out.lineupItem.nextProgramMetadata).toMatchObject({
           title: 'Next Redirected Song',
           artist: 'Next Artist',
-        },
-      });
+        });
+      } else {
+        expect(out.lineupItem.nextProgramMetadata).toBeUndefined();
+        verify(programDB.getProgramById(targetProgram2)).never();
+      }
     },
   );
 

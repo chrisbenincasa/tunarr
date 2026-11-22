@@ -3,6 +3,27 @@ import { isWindows } from '@/util/index.js';
 import { NowPlayingOverlayFilter } from './NowPlayingOverlayFilter.ts';
 
 describe('NowPlayingOverlayFilter', () => {
+  test('uses elapsed time for later windows and fades with copied timestamps', () => {
+    const filter = new NowPlayingOverlayFilter(
+      FrameSize.SevenTwenty,
+      {
+        title: 'Song',
+        windows: [{ startSeconds: 5, endSeconds: 8 }],
+        comingUpNextWindows: [],
+        fadeDurationSeconds: 1,
+      },
+      true,
+    ).filter.replaceAll('\\', '');
+
+    expect(filter).toContain(
+      "enable='if(eq(n,0),st(0,t),0);gte((t-ld(0)),5)*lt((t-ld(0)),8)'",
+    );
+    expect(filter).toContain("gte((t-ld(0)),5)*lt((t-ld(0)),8)+not(n)'");
+    expect(filter).toContain(
+      "alpha='if(eq(n,0),st(0,t),0);if(gte((t-ld(0)),5)*lt((t-ld(0)),8)",
+    );
+  });
+
   test('renders a full-width lower-third with title and subtitle', () => {
     const filter = new NowPlayingOverlayFilter(FrameSize.SevenTwenty, {
       title: 'Song Title',
@@ -13,7 +34,7 @@ describe('NowPlayingOverlayFilter', () => {
     });
 
     expect(filter.filter).toContain(
-      "drawbox=x=0:y=624:w=1280:h=96:color=black@0.58:t=fill:enable='between(t\\,0\\,8)'",
+      "drawbox=x=0:y=624:w=1280:h=96:color=black@0.58:t=fill:enable='gte(t\\,0)*lt(t\\,8)'",
     );
     expect(filter.filter).toContain('expansion=none:text=Song Title');
     expect(filter.filter).toContain('text=Artist - Album');
@@ -94,7 +115,7 @@ describe('NowPlayingOverlayFilter', () => {
     });
 
     expect(filter.filter).toContain(
-      "alpha='if(between(t\\,2\\,10)\\,min(1\\,(t-2)/0.5)*min(1\\,(10-t)/0.5)\\,0)'",
+      "alpha='if(gte(t\\,2)*lt(t\\,10)\\,min(1\\,(t-2)/0.5)*min(1\\,(10-t)/0.5)\\,0)'",
     );
   });
 
@@ -123,7 +144,7 @@ describe('NowPlayingOverlayFilter', () => {
     expect(filter.filter).toContain('text=Current Song');
     expect(filter.filter).toContain('text=Coming Up Next');
     expect(filter.filter).toContain('text=Next Song - Next Artist');
-    expect(filter.filter).toContain("enable='between(t\\,150\\,156)'");
+    expect(filter.filter).toContain("enable='gte(t\\,150)*lt(t\\,156)'");
   });
 
   test('escapes commas in text values', () => {
@@ -161,7 +182,7 @@ describe('NowPlayingOverlayFilter', () => {
     });
 
     expect(filter.filter).toContain(
-      "enable='between(t\\,0\\,6)+between(t\\,172\\,180)'",
+      "enable='gte(t\\,0)*lt(t\\,6)+gte(t\\,172)*lt(t\\,180)'",
     );
   });
 });

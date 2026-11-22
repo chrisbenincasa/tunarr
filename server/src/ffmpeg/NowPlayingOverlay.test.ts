@@ -46,6 +46,29 @@ describe('NowPlayingOverlay', () => {
   });
 
   describe('getNowPlayingMetadataFromFfprobe', () => {
+    test('keeps the library title when only individual tracks have titles', () => {
+      const probe = {
+        format: {
+          nb_streams: 1,
+          format_name: 'matroska',
+          duration: 180,
+          size: 1024,
+          bit_rate: 44100,
+        },
+        streams: [
+          {
+            index: 0,
+            codec_type: 'attachment' as const,
+            tags: { title: 'Cover Art' },
+          },
+        ],
+      };
+      expect(
+        getNowPlayingMetadataFromFfprobe(probe, 'Library Title').title,
+      ).toBe('Library Title');
+      expect(getNowPlayingMetadataFromFfprobe(probe).title).toBeUndefined();
+    });
+
     test('reads case-insensitive ffprobe tags and extracts a year', () => {
       const metadata = getNowPlayingMetadataFromFfprobe({
         format: {

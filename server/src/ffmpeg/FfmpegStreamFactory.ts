@@ -1,6 +1,6 @@
 import { globalOptions } from '@/globals.js';
 import {
-  filenameToNowPlayingTitle,
+  type NowPlayingMetadata,
   getNowPlayingMetadata,
   getNowPlayingMetadataFromFfprobe,
   type NowPlayingOverlayPayload,
@@ -33,6 +33,7 @@ import {
   isLinux,
   isNonEmptyString,
   loopableInputLocation,
+  timeoutPromise,
 } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
@@ -119,6 +120,7 @@ import { ConcatStreamModeRemuxes } from './types.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
 
 const SoundtrackProbeTimeoutMs = 10_000;
+const OverlayProbeTimeoutMs = 1_000;
 
 @injectable()
 @loggingDef({ category: 'streaming' })
@@ -530,139 +532,70 @@ export class FfmpegStreamFactory {
       return null;
     }
 
-    const capabilities = await this.ffmpegInfo.getCapabilities();
-    if (!capabilities.hasFilter('drawtext')) {
-      this.logger.warn(
-        'Skipping now playing overlay because drawtext is not available in this FFmpeg build',
-      );
-      return null;
-    }
-
-    let metadata = getNowPlayingMetadata(lineupItem);
-    if (streamSource.type === 'file') {
-      try {
-        this.logger.debug(
-          { path: streamSource.path },
-          'Probing current program file for now playing overlay metadata',
-        );
-        const probe = await this.ffmpegInfo.probeFileWithCache(
-          streamSource.path,
-        );
-        if (probe) {
-          const fileMetadata = getNowPlayingMetadataFromFfprobe(probe);
-          this.logger.debug(
-            { path: streamSource.path, fileMetadata },
-            'Resolved current program file metadata for now playing overlay',
-          );
-          metadata = {
-            title: fileMetadata.title ?? metadata.title,
-            artist: fileMetadata.artist ?? metadata.artist,
-            album: fileMetadata.album ?? metadata.album,
-            year: fileMetadata.year ?? metadata.year,
-          };
-        }
-      } catch (error) {
-        this.logger.debug(
-          { err: error, path: streamSource.path },
-          'Unable to probe local file metadata for now playing overlay',
-        );
-      }
-    }
-
-    let nextMetadata = lineupItem.nextProgramMetadata;
-    if (isNonEmptyString(nextMetadata?.filePath)) {
-      try {
-        this.logger.debug(
-          { path: nextMetadata.filePath },
-          'Probing next program file for now playing overlay metadata',
-        );
-        const probe = await this.ffmpegInfo.probeFileWithCache(
-          nextMetadata.filePath,
-        );
-        if (probe) {
-          const fileMetadata = getNowPlayingMetadataFromFfprobe(probe);
-          this.logger.debug(
-            { path: nextMetadata.filePath, fileMetadata },
-            'Resolved next program file metadata for now playing overlay',
-          );
-          nextMetadata = {
-            title: fileMetadata.title ?? nextMetadata.title,
-            artist: fileMetadata.artist ?? nextMetadata.artist,
-            album: fileMetadata.album ?? nextMetadata.album,
-            year: fileMetadata.year ?? nextMetadata.year,
-            filePath: nextMetadata.filePath,
-          };
-        }
-      } catch (error) {
-        this.logger.debug(
-          { err: error, path: nextMetadata.filePath },
-          'Unable to probe next local file metadata for now playing overlay',
-        );
-      }
-    }
-
-    const overlay = resolveNowPlayingOverlay({
-      metadata,
-      nextMetadata,
-      filePath: streamSource.type === 'file' ? streamSource.path : undefined,
-      fontFile: this.resolveNowPlayingOverlayFontFile(),
-      showForSeconds: config.showForSeconds,
-      showAtEndForSeconds: config.showAtEndForSeconds,
-      startPaddingSeconds: config.startPaddingSeconds,
-      endPaddingSeconds: config.endPaddingSeconds,
-      comingUpNextForSeconds: config.comingUpNextForSeconds,
-      comingUpNextOffsetSeconds: config.comingUpNextOffsetSeconds,
-      fadeDurationSeconds: config.fadeDurationSeconds,
+    const metadata = getNowPlayingMetadata(lineupItem);
+    const nextMetadata = lineupItem.nextProgramMetadata;
+    const filePath =
+      streamSource.type === 'file' ? streamSource.path : undefined;
+    const options = {
+      ...config,
+      filePath,
       startOffsetSeconds: startTime.asSeconds(),
       remainingDurationSeconds: lineupItem.streamDuration / 1000,
+    };
+    const scheduled = resolveNowPlayingOverlay({
+      ...options,
+      metadata,
+      nextMetadata,
     });
-    const resolvedNextTitle =
-      nextMetadata?.title ?? filenameToNowPlayingTitle(nextMetadata?.filePath);
+    if (!scheduled) return null;
 
-    if ((config.comingUpNextForSeconds ?? 0) <= 0) {
-      this.logger.debug(
-        {
-          comingUpNextForSeconds: config.comingUpNextForSeconds ?? 0,
-        },
-        'Skipping coming up next overlay because duration is disabled',
+    const capabilities = await this.ffmpegInfo.getCapabilities();
+    if (!capabilities.hasFilter('drawtext')) return null;
+
+    const [current, next] = await Promise.all([
+      scheduled.windows.length && filePath
+        ? this.enrichOverlayMetadata(metadata, filePath)
+        : metadata,
+      scheduled.comingUpNextWindows.length && nextMetadata?.filePath
+        ? this.enrichOverlayMetadata(nextMetadata, nextMetadata.filePath)
+        : nextMetadata,
+    ]);
+    return (
+      resolveNowPlayingOverlay({
+        ...options,
+        metadata: current,
+        nextMetadata: next,
+        fontFile: this.resolveNowPlayingOverlayFontFile(),
+      }) ?? null
+    );
+  }
+
+  private async enrichOverlayMetadata(
+    metadata: NowPlayingMetadata,
+    filePath: string,
+  ): Promise<NowPlayingMetadata> {
+    try {
+      const probe = await timeoutPromise(
+        this.ffmpegInfo.probeFileWithCache(filePath, OverlayProbeTimeoutMs),
+        OverlayProbeTimeoutMs,
       );
-    } else if (!nextMetadata) {
+      if (probe) {
+        const tags = getNowPlayingMetadataFromFfprobe(probe, metadata.title);
+        return {
+          ...metadata,
+          title: tags.title ?? metadata.title,
+          artist: tags.artist ?? metadata.artist,
+          album: tags.album ?? metadata.album,
+          year: tags.year ?? metadata.year,
+        };
+      }
+    } catch (error) {
       this.logger.debug(
-        'Skipping coming up next overlay because no next program metadata was available',
-      );
-    } else if (!resolvedNextTitle) {
-      this.logger.debug(
-        {
-          nextMetadata,
-        },
-        'Skipping coming up next overlay because next title could not be resolved from metadata or filename',
-      );
-    } else if ((overlay?.comingUpNextWindows?.length ?? 0) === 0) {
-      this.logger.debug(
-        {
-          openingWindows: overlay?.windows ?? [],
-          nextMetadata,
-          showAtEndForSeconds: config.showAtEndForSeconds ?? 0,
-          comingUpNextForSeconds: config.comingUpNextForSeconds ?? 0,
-          comingUpNextOffsetSeconds: config.comingUpNextOffsetSeconds ?? 0,
-          remainingDurationSeconds: lineupItem.streamDuration / 1000,
-        },
-        'Skipping coming up next overlay because timing constraints eliminated its window',
+        { err: error, path: filePath },
+        'Using library metadata after overlay probe failed',
       );
     }
-
-    this.logger.debug(
-      {
-        metadata,
-        nextMetadata,
-        hasOverlay: !!overlay,
-        windows: overlay?.windows,
-        comingUpNextWindows: overlay?.comingUpNextWindows,
-      },
-      'Resolved now playing overlay payload',
-    );
-
-    return overlay ?? null;
+    return metadata;
   }
 
   private resolveNowPlayingOverlayFontFile(): string | undefined {

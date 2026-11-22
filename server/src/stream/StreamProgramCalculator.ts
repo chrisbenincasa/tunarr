@@ -136,7 +136,6 @@ export class StreamProgramCalculator {
     // on the channel.
     const maxDuration =
       currentProgram.program.duration - currentProgram.timeElapsed;
-    const endTimeMs = req.startTime + maxDuration;
     let streamDuration = maxDuration;
 
     while (currentProgram.program.type === 'redirect') {
@@ -181,11 +180,8 @@ export class StreamProgramCalculator {
 
       const timeLeft =
         currentProgram.program.duration - currentProgram.timeElapsed;
-      const newEndTime = req.startTime + timeLeft;
-      if (newEndTime < endTimeMs) {
-        streamDuration = newEndTime - req.startTime;
-        currentProgram.program.streamDuration = streamDuration;
-      }
+      streamDuration = Math.min(streamDuration, timeLeft);
+      currentProgram.program.streamDuration = streamDuration;
     }
 
     if (!lineupItem) {
@@ -323,7 +319,10 @@ export class StreamProgramCalculator {
 
     if (
       shouldLoadNextProgramMetadata &&
-      lineupItem &&
+      isContentBackedLineupItem(lineupItem) &&
+      lineupItem.streamDuration ===
+        currentProgram.program.duration - currentProgram.timeElapsed &&
+      upperBounds.every((remaining) => remaining > lineupItem.streamDuration) &&
       currentProgram.programIndex >= 0 &&
       lineup.items.length > 0
     ) {

@@ -2,6 +2,7 @@ import type { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLin
 import type { FfprobeMediaInfo } from '@/types/ffmpeg.js';
 import { isNonEmptyString } from '@/util/index.js';
 import path from 'node:path';
+import { timeRangesOverlap } from '@tunarr/shared/util';
 
 export type NowPlayingOverlayPayload = {
   title: string;
@@ -41,13 +42,27 @@ export function getNowPlayingMetadata(
 
 export function getNowPlayingMetadataFromFfprobe(
   probe: FfprobeMediaInfo,
+  libraryTitle?: string,
 ): NowPlayingMetadata {
+  const streamTags = probe.streams.map((stream) =>
+    'tags' in stream ? stream.tags : undefined,
+  );
+  const tags = [probe.format.tags, ...streamTags];
+  const audioTracks = probe.streams.filter(
+    (stream) => stream.codec_type === 'audio',
+  );
   return {
-    title: findAnyTag(probe, ['title']),
-    artist: findAnyTag(probe, ['artist', 'album_artist', 'composer']),
-    album: findAnyTag(probe, ['album']),
+    title:
+      findAnyTag([probe.format.tags], ['title']) ??
+      normalizeText(libraryTitle) ??
+      (audioTracks.length === 1 &&
+      !probe.streams.some((s) => s.codec_type === 'video')
+        ? findAnyTag([audioTracks[0]?.tags], ['title'])
+        : undefined),
+    artist: findAnyTag(tags, ['artist', 'album_artist', 'composer']),
+    album: findAnyTag(tags, ['album']),
     year: extractYear(
-      findAnyTag(probe, ['year', 'date', 'creation_time', 'releasedate']),
+      findAnyTag(tags, ['year', 'date', 'creation_time', 'releasedate']),
     ),
   };
 }
@@ -140,16 +155,9 @@ export function filenameToNowPlayingTitle(
 }
 
 function findAnyTag(
-  probe: FfprobeMediaInfo,
+  tagSets: (Record<string, string> | undefined)[],
   keys: readonly string[],
 ): string | undefined {
-  const tagSets = [
-    probe.format.tags,
-    ...probe.streams.map((stream) =>
-      'tags' in stream ? stream.tags : undefined,
-    ),
-  ];
-
   for (const tags of tagSets) {
     if (!tags) {
       continue;
@@ -282,7 +290,9 @@ function buildComingUpNextWindow(args: {
   }
 
   if (
-    args.windows.some((w) => cuStart < w.endSeconds && cuEnd > w.startSeconds)
+    args.windows.some((w) =>
+      timeRangesOverlap(cuStart, cuEnd, w.startSeconds, w.endSeconds),
+    )
   ) {
     return [];
   }

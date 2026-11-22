@@ -304,9 +304,10 @@ function makeMockStreamSelector(
 }
 
 describe('FfmpegStreamFactory', () => {
-  test.each(['transcode', 'remux'] as const)(
-    'resolves overlay metadata and font only for transcoded video (%s)',
-    async (mode) => {
+  test.each(['transcode', 'remux', 'probe timeout'] as const)(
+    'uses the available overlay metadata and font (%s)',
+    async (scenario) => {
+      const mode = scenario === 'remux' ? 'remux' : 'transcode';
       const { databaseDirectory } = await setTestGlobalOptions();
       const fontFile = path.join(databaseDirectory, 'font.ttf');
       await writeFile(fontFile, '');
@@ -326,6 +327,9 @@ describe('FfmpegStreamFactory', () => {
         format: { tags: { TITLE: 'Tagged Song' } },
         streams: [],
       });
+      if (scenario === 'probe timeout') {
+        info.probeFileWithCache = vi.fn(() => new Promise<never>(() => {}));
+      }
       const { factory, getCapturedFfmpegState } =
         createCapturingPipelineBuilderFactory();
       const sut = new FfmpegStreamFactory(
@@ -338,6 +342,7 @@ describe('FfmpegStreamFactory', () => {
         makeChannel(),
       );
       const lineupItem = makeLineupItem();
+      lineupItem.program.title = 'Library Title';
       lineupItem.program.artistName = 'Library Artist';
       await sut.createStreamSession({
         stream: { source, details: makeStreamDetails() },
@@ -355,9 +360,9 @@ describe('FfmpegStreamFactory', () => {
       });
       const overlay = getCapturedFfmpegState()?.nowPlayingOverlay;
       if (mode === 'transcode') {
-        expect(info.probeFileWithCache).toHaveBeenCalledWith(source.path);
+        expect(info.probeFileWithCache).toHaveBeenCalledWith(source.path, 1000);
         expect(overlay).toMatchObject({
-          title: 'Tagged Song',
+          title: scenario === 'probe timeout' ? 'Library Title' : 'Tagged Song',
           subtitle: 'Library Artist',
           fontFile,
         });

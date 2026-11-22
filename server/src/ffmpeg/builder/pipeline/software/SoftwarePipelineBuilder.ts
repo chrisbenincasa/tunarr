@@ -190,6 +190,7 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       new NowPlayingOverlayFilter(
         this.context.desiredState.paddedSize,
         overlay,
+        this.videoInputSource.hasInputOption(CopyTimestampInputOption),
       ),
     );
 

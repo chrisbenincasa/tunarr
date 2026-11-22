@@ -10,6 +10,7 @@ export class NowPlayingOverlayFilter extends FilterOption {
   constructor(
     private readonly size: FrameSize,
     private readonly overlay: NowPlayingOverlayPayload,
+    private readonly copiedTimestamps = false,
   ) {
     super();
   }
@@ -63,10 +64,22 @@ export class NowPlayingOverlayFilter extends FilterOption {
     const textX = 20;
     const fade = this.overlay.fadeDurationSeconds;
 
-    const enable = buildEnableExpr(windows);
-    const alpha = buildAlphaExpr(windows, fade);
+    // Each FFmpeg expression has its own registers. With -copyts the first
+    // frame can have any PTS; record it once without retiming the video.
+    const clock = this.copiedTimestamps ? '(t-ld(0))' : 't';
+    const init = this.copiedTimestamps ? 'if(eq(n,0),st(0,t),0);' : '';
+    const enable = init + buildEnableExpr(windows, clock);
+    const alpha = buildAlphaExpr(windows, fade, clock);
     const escapedEnable = escapeFilterExpression(enable);
-    const escapedAlpha = alpha ? escapeFilterExpression(alpha) : undefined;
+    // Run drawtext on the first frame even for a later window, so alpha
+    // can initialize its own clock. Its value outside the window is zero.
+    const textEnable =
+      this.copiedTimestamps && alpha
+        ? escapedEnable + '+not(n)'
+        : escapedEnable;
+    const escapedAlpha = alpha
+      ? escapeFilterExpression(init + alpha)
+      : undefined;
 
     const filters: string[] = [];
 
@@ -83,7 +96,7 @@ export class NowPlayingOverlayFilter extends FilterOption {
         x: textX,
         y: titleY,
         fontSize: titleFontSize,
-        enable: escapedEnable,
+        enable: textEnable,
         alpha: escapedAlpha,
       }),
     );
@@ -97,7 +110,7 @@ export class NowPlayingOverlayFilter extends FilterOption {
           x: textX,
           y: subtitleY,
           fontSize: subtitleFontSize,
-          enable: escapedEnable,
+          enable: textEnable,
           alpha: escapedAlpha,
         }),
       );
@@ -107,18 +120,29 @@ export class NowPlayingOverlayFilter extends FilterOption {
   }
 }
 
-function buildEnableExpr(windows: NowPlayingOverlayWindow[]): string {
+function buildEnableExpr(
+  windows: NowPlayingOverlayWindow[],
+  clock: string,
+): string {
   return windows
-    .map(
-      (w) =>
-        `between(t,${formatSeconds(w.startSeconds)},${formatSeconds(w.endSeconds)})`,
+    .map((w) =>
+      windowExpression(
+        clock,
+        formatSeconds(w.startSeconds),
+        formatSeconds(w.endSeconds),
+      ),
     )
     .join('+');
+}
+
+function windowExpression(clock: string, start: string, end: string) {
+  return `gte(${clock},${start})*lt(${clock},${end})`;
 }
 
 function buildAlphaExpr(
   windows: NowPlayingOverlayWindow[],
   fadeDuration: number,
+  clock: string,
 ): string | undefined {
   if (fadeDuration <= 0) {
     return;
@@ -128,7 +152,7 @@ function buildAlphaExpr(
   const parts = windows.map((w) => {
     const s = formatSeconds(w.startSeconds);
     const e = formatSeconds(w.endSeconds);
-    return `if(between(t,${s},${e}),min(1,(t-${s})/${f})*min(1,(${e}-t)/${f}),0)`;
+    return `if(${windowExpression(clock, s, e)},min(1,(${clock}-${s})/${f})*min(1,(${e}-${clock})/${f}),0)`;
   });
 
   // For multiple windows, sum the parts (only one is active at a time)

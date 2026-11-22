@@ -19,7 +19,7 @@ import Box from '@mui/material/Box';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import { useQuery } from '@tanstack/react-query';
-import { isNonEmptyString } from '@tunarr/shared/util';
+import { isNonEmptyString, timeRangesOverlap } from '@tunarr/shared/util';
 import type { ChannelStreamMode, Watermark } from '@tunarr/types';
 import { find, map, range, round } from 'lodash-es';
 import { useMemo, useState } from 'react';
@@ -122,12 +122,14 @@ export default function ChannelTranscodingConfig() {
     'transcoding.nowPlayingOverlay.comingUpNextOffsetSeconds',
   ]);
 
-  const comingUpNextWouldOverlap =
-    (comingUpNextForSeconds ?? 0) > 0 &&
-    (comingUpNextOffsetSeconds ?? 0) <=
-      (showAtEndForSeconds ?? 0) +
-        (endPaddingSeconds ?? 0) +
-        (comingUpNextForSeconds ?? 0);
+  const nextStart = -(comingUpNextOffsetSeconds ?? 30);
+  const closingEnd = -(endPaddingSeconds ?? 0);
+  const comingUpNextWouldOverlap = timeRangesOverlap(
+    nextStart,
+    Math.min(0, nextStart + (comingUpNextForSeconds ?? 0)),
+    closingEnd - (showAtEndForSeconds ?? 0),
+    closingEnd,
+  );
 
   const transcodeConfig = useMemo(
     () => find(transcodeConfigs.data, (conf) => conf.id === transcodeConfigId)!,
