@@ -387,7 +387,7 @@ function collectEtvNextWorkspaces() {
   return {
     workspaces: workspaces.map((ws) => path.relative(out, path.join(dest, ws))),
     workerLog: fs.existsSync(path.join(out, 'etv-next-worker.log')) ? 'etv-next-worker.log' : null,
-    dossiers: fs.existsSync(dossiers) ? fs.readdirSync(dossiers, { recursive: true }).filter((d) => d.split(/[\\/]/).length === 2) : [],
+    dossiers: fs.existsSync(dossiers) ? fs.readdirSync(dossiers, { recursive: true }).filter((d) => d.split(/[\\/]/).length === 2 && !path.basename(d).startsWith('.in-flight-')) : [],
   };
 }
 

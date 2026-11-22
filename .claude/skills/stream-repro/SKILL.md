@@ -74,6 +74,7 @@ A worker run adds this to the output:
 - `etv-next/etv_<channel>_<session>/`: the worker's `channel.json` (Tunarr's settings after
   `EtvNextChannelConfigMapper` translated them) and the playout windows it played from.
 - `report.etvNext.dossiers`: diagnostics the worker wrote under `db/etv-diagnostics/`, mostly on failures.
+  Reports from ffmpeg runs still in flight (`.in-flight-*`) are left out.
 
 The pipeline that builds worker commands lives in the ErsatzTV next repo, not in
 `server/src/ffmpeg/builder/`. To tie a finding to Tunarr code, compare `channel.json` and the playout
