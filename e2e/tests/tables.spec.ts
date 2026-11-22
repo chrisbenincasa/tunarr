@@ -239,8 +239,11 @@ const TABLES: Record<string, TableTarget> = {
 
   Tasks: {
     url: () => '/system/tasks',
-    ready: 'BackupTask',
-    persisted: false,
+    // Stays on the first page unsorted at 5 rows and sorted by name
+    // descending at 10.
+    ready: 'ScanLibrariesTask',
+    dense: true,
+    persisted: true,
     ported: true,
     sortColumn: 'Name',
     hideColumn: 'Description',
@@ -252,8 +255,12 @@ const TABLES: Record<string, TableTarget> = {
       await expectOnlyRow(page, 'BackupTask');
     },
     rowAction: async (page) => {
-      await rowWith(page, 'BackupTask').getByRole('button').first().click();
-      await expect(page.getByRole('menuitem', { name: 'Run' })).toBeVisible();
+      await rowWith(page, 'BackupTask')
+        .getByRole('button', { name: 'Run now' })
+        .click();
+      await expect(
+        page.getByText('Successfully scheduled BackupTask', { exact: false }),
+      ).toBeVisible();
     },
   },
 
