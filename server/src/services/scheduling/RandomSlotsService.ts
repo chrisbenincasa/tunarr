@@ -86,6 +86,7 @@ class ScheduleContext {
     seed: number[] = createEntropy(),
     discardCount: number = 0,
     iteratorState?: SlotIteratorState,
+    stableShuffle?: boolean,
   ) {
     this.#seed = seed;
     this.#engine = MersenneTwister19937.seedWithArray(this.#seed).discard(
@@ -108,6 +109,7 @@ class ScheduleContext {
       programMap,
       this.#random,
       iteratorState,
+      { stable: stableShuffle },
     );
     this.#snapshotIterators = snapshotIterators;
     this.#startTime = this.#timeCursor = startTime;
@@ -272,6 +274,7 @@ export class RandomSlotScheduler {
       seed,
       discardCount,
       cycle.iteratorState,
+      cycle.stableShuffle,
     );
 
     const { maxDays, padMs, padStyle, flexPreference, randomDistribution } =

@@ -109,6 +109,54 @@ describe('SlotCheckpointRecorder', () => {
     );
   });
 
+  test('keeps the seed and pass of a stable shuffle, and stores them on a new pass', () => {
+    const start: SlotIteratorState = {
+      iterators: {
+        'slot:0': { type: 'shuffle', playedIds: ['a'], seed: 9, pass: 2 },
+      },
+    };
+    const states: SlotIteratorState[] = [
+      {
+        iterators: {
+          'slot:0': {
+            type: 'shuffle',
+            playedIds: ['a', 'b'],
+            seed: 9,
+            pass: 2,
+          },
+        },
+      },
+      {
+        iterators: {
+          'slot:0': { type: 'shuffle', playedIds: ['a'], seed: 9, pass: 3 },
+        },
+      },
+    ];
+
+    const recorder = new SlotCheckpointRecorder(start);
+    recorder.record(oneHour, 1, states[0]!);
+    recorder.record(2 * oneHour, 2, states[1]!);
+
+    expect(recorder.checkpoints.map((c) => c.iterators)).toEqual([
+      { 'slot:0': { type: 'shuffle', added: ['b'] } },
+      {
+        'slot:0': {
+          type: 'shuffle',
+          added: ['a'],
+          restart: true,
+          seed: 9,
+          pass: 3,
+        },
+      },
+    ]);
+    expect(stateAtCheckpoint(start, recorder.checkpoints, 0)).toEqual(
+      states[0],
+    );
+    expect(stateAtCheckpoint(start, recorder.checkpoints, 1)).toEqual(
+      states[1],
+    );
+  });
+
   test('skips the build start and repeated passes at the same time', () => {
     const recorder = new SlotCheckpointRecorder(undefined);
     recorder.record(0, 0, { iterators: {} });

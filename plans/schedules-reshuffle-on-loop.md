@@ -98,7 +98,8 @@ Each cycle stores a snapshot of the state it started from:
 - `discardCount`, the RNG skip count into the channel's `scheduleSeed`.
 - Ordered iterators, including `ordered_shuffle`: `lastProgramId`. A rotation keeps the sorted
   list's cyclic order, so `ordered_shuffle` needs no stored offset.
-- Shuffle iterators: the IDs played in the current pass.
+- Shuffle iterators: the IDs played in the current pass, plus the iterator's own seed and pass
+  number (stable shuffle, below).
 - Random slots: the next slot for sequential distribution, and each slot's last-played time for
   cooldowns.
 - All-rerun groups: how many of the group's slots have aired the current program, so a pair split
@@ -120,13 +121,18 @@ start for time slots and every cursor advance for random slots. A checkpoint sto
 changed since the one before it, so the state at any checkpoint is the cycle's start snapshot with
 the changes replayed (`slotCheckpoints.ts`).
 
-What a snapshot leaves out:
+Rebuilding channels use a stable shuffle (`stableShuffle`, set only by `BuildSlotCycleCommand`):
 
-- A shuffle's remaining order. A restored shuffle reshuffles the rest of its pass.
-- Filler weights and cooldowns.
+- Each shuffle iterator draws its own seed once and stores it with a pass number.
+- A pass orders programs by a hash of seed, pass and program ID. The rest of a pass is every
+  unplayed program in that order, so a restore continues the exact order.
+- Each program's rank depends only on its own ID. Adding or removing programs leaves the rest in
+  order. A program added behind the pass's cursor plays at the end of the pass.
+- The seed carries through saves with the slot's place, so a save doesn't reshuffle.
+- Classic slot channels keep the shared-RNG shuffle, so their output is unchanged.
 
-So a rebuild from a checkpoint keeps every show's place but can pick different shuffle and filler
-items after its first build.
+A snapshot leaves out filler weights and cooldowns. So a rebuild from a checkpoint airs the same
+programs but can pick different filler after its first build.
 
 ### Changes cut over after the program on air
 
@@ -173,8 +179,9 @@ New optional fields need no `ChannelLineupMigrator` step.
 - Ordered iterators resume just after `lastProgramId` in sort order. A missing program means
   starting at 0.
 - `ordered_shuffle` resumes after `lastProgramId` in sorted order, skipping its random rotation.
-- Shuffle iterators shuffle only unplayed programs. When those run out, a new pass starts. New
-  library programs join the unplayed pool, and deleted ones drop out.
+- Shuffle iterators play only unplayed programs. When those run out, a new pass starts. New
+  library programs join the unplayed pool, and deleted ones drop out. Stable shuffles keep the
+  pass's order; classic ones reshuffle the remainder.
 
 ### Regeneration
 
@@ -211,6 +218,7 @@ New optional fields need no `ChannelLineupMigrator` step.
 - A mixed link group resumed between its continue and rerun slots replays the same programs.
 - Ordered shows continue across cycles. `ordered_shuffle` keeps its place.
 - Shuffled programs do not repeat within a pass across cycles.
+- A stable shuffle restored at any point continues the same order, and a save keeps it.
 - Catch-up starts from the last snapshot at the period start (time slots) or `now` (random slots).
 - Same seed and library give the same sequence of cycles.
 

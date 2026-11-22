@@ -229,6 +229,19 @@ function toBuiltCycle(result: {
 }
 
 // Builds fixed-length chunks with checkpoints, as BuildSlotCycleCommand does.
+// When each program that isn't filler starts.
+function programTimeline(state: CycleState): [number, string][] {
+  const out: [number, string][] = [];
+  let cursor = state.startTime;
+  for (const item of state.items) {
+    if (item.type === 'content' && !item.fillerType) {
+      out.push([cursor, item.id]);
+    }
+    cursor += item.durationMs;
+  }
+  return out;
+}
+
 function timeSlotBuilder(
   schedule: TimeSlotSchedule,
   programs: () => SlotSchedulerProgram[],
@@ -247,6 +260,7 @@ function timeSlotBuilder(
           iteratorState: snapshot?.iteratorState,
           endTime: dayjs.utc(startTime + chunkMs),
           checkpoints: true,
+          stableShuffle: true,
         },
       ),
     );
@@ -270,6 +284,7 @@ function randomSlotBuilder(
             iteratorState: snapshot?.iteratorState,
             endTime: dayjs.utc(startTime + chunkMs),
             checkpoints: true,
+            stableShuffle: true,
           },
         ),
       ),
@@ -821,11 +836,10 @@ describe('rebuildAfterAiring', () => {
     expect(rebuilt).toBeUndefined();
   });
 
-  // A restart restores every show's place and the RNG position, so an
-  // unchanged library airs the same programs until a shuffle starts a new
-  // build. A restored shuffle reshuffles the rest of its pass, and filler
-  // weights start over, so picks after that differ.
-  test('a schedule rebuilt mid-chunk airs the same programs for the rest of the day', async () => {
+  // A restart restores every show's place, every shuffle's order and the RNG
+  // position, so an unchanged library airs the same programs. Filler weights
+  // start over, so filler picks can differ after the first rebuilt chunk.
+  test('a schedule rebuilt mid-chunk airs the same programs', async () => {
     const schedule = fixtureTimeSlotSchedule();
     const build = timeSlotBuilder(schedule, fixturePrograms, [7], 12 * oneHour);
     const start = +day1;
@@ -865,6 +879,46 @@ describe('rebuildAfterAiring', () => {
       return kept;
     };
     expect(upTo(rebuilt)).toEqual(upTo(state));
+
+    expect(programTimeline(rebuilt).length).toBeGreaterThan(40);
+    const shared = Math.min(contentEnd(state), contentEnd(rebuilt));
+    const before = (s: CycleState) =>
+      programTimeline(s).filter(([timeMs]) => timeMs < shared);
+    expect(before(rebuilt)).toEqual(before(state));
+  });
+
+  test('a save keeps every shuffled show in the same order', async () => {
+    const schedule = fixtureTimeSlotSchedule();
+    const start = +day1;
+    const opts = (now: number, seed: number[]): CycleOptions => ({
+      now,
+      horizonMs: 2 * oneDay,
+      build: timeSlotBuilder(schedule, fixturePrograms, seed, 12 * oneHour),
+    });
+    const state = await initializeCycles(start, opts(start, [7]));
+
+    // A save writes a new seed and restarts the RNG. Places carry over.
+    const now = start + 17 * oneHour + 7 * oneMinute;
+    const saved = await rebuildAfterAiring(
+      state,
+      opts(now, [8]),
+      (snapshot) => ({ ...snapshot, discardCount: 0 }),
+    );
+    if (!saved) {
+      throw new Error('expected a rebuild');
+    }
+
+    // The fixture shuffles show A at 04:00 and custom shows at 06:00 and
+    // 08:00.
+    const shuffled = (s: CycleState) =>
+      programTimeline(s).filter(([timeMs]) =>
+        [4, 6, 8].includes(((timeMs - start) % oneDay) / oneHour),
+      );
+    const shared = Math.min(contentEnd(state), contentEnd(saved));
+    const before = (s: CycleState) =>
+      shuffled(s).filter(([timeMs]) => timeMs < shared);
+    expect(before(saved).length).toBeGreaterThan(2);
+    expect(before(saved)).toEqual(before(state));
   });
 
   test('an ordered show continues across a rebuild', async () => {

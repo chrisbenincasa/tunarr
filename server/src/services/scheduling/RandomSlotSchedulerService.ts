@@ -25,6 +25,8 @@ export const ChannelSlotScheduleRequest = z.object({
   endTime: z.number().int().optional(),
   // Return restart points inside the build. See SlotCycleOptions.
   checkpoints: z.boolean().optional(),
+  // Shuffle slots keep their own seed. See SlotCycleOptions.
+  stableShuffle: z.boolean().optional(),
 });
 
 export type ChannelSlotScheduleRequest = z.infer<
@@ -47,6 +49,8 @@ export const ProgramsSlotScheduleRequest = z.object({
   endTime: z.number().int().optional(),
   // Return restart points inside the build. See SlotCycleOptions.
   checkpoints: z.boolean().optional(),
+  // Shuffle slots keep their own seed. See SlotCycleOptions.
+  stableShuffle: z.boolean().optional(),
 });
 
 export type ProgramsSlotScheduleRequest = z.infer<
@@ -94,6 +98,7 @@ export class SlotSchedulerService {
         endTime:
           request.endTime !== undefined ? dayjs(request.endTime) : undefined,
         checkpoints: request.checkpoints,
+        stableShuffle: request.stableShuffle,
       },
     );
   }

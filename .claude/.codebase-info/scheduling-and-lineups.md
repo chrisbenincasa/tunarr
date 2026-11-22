@@ -70,7 +70,9 @@ Program iterators decide the order within a slot: `ProgramOrdereredIterator.ts` 
 
 - `slotIteratorState.ts` defines `SlotIteratorState`, where each iterator left off. Ordered and
   `ordered_shuffle` iterators store the last program played; shuffle iterators store the programs
-  played in the current pass. All-rerun link groups store how many slots have aired the current
+  played in the current pass. With `stableShuffle` (rebuilding channels only), a shuffle iterator
+  also stores its own seed and pass number and orders each pass by a hash of seed, pass and
+  program ID, so a restore continues the exact order (`ShuffleProgramIterator.ts`). All-rerun link groups store how many slots have aired the current
   program (`rerunPlays`). Mixed link groups store the programs their rerun slots have yet to replay
   (`periodPlays`). Random slots also store the next sequential slot and cooldown times.
 - `createSlotIterators` keys iterators by slot position (`slot:<n>`) or link group (`group:<id>`).

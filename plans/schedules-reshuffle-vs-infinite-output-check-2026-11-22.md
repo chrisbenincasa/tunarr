@@ -138,15 +138,19 @@ change from a point at or after the airing program.
 | Empty trash and media source deletes rebuild each rebuilding channel that lost a program                                       | D12 purge, from the next program |
 | Mixed link group recordings join the snapshot (`periodPlays`), so a rerun slot after a restart replays what it should          | Bug found during the rework      |
 | Mid-period builds measure DST from the period start                                                                            | Bug found during the rework      |
+| Shuffle slots on rebuilding channels store their own seed and pass, and rank each pass by a hash                               | Exact shuffle restore, D9        |
 
 Notes:
 
 - The restart point after the program on air is usually the next slot start, at most one slot away.
   A cycle start or the end of the built content also counts.
-- A restored shuffle reshuffles the rest of its pass, and filler weights start over. So after a
-  rebuild, shuffles and filler can pick different items than the old guide showed, though no show
-  loses its place and no shuffle repeats early. Storing shuffle orders and filler state would make
-  rebuilds exact. That's deferred.
+- A restored shuffle continues its exact order, through rebuilds and saves. Infinite schedules
+  store the whole order and patch it on library changes. Hash ranks give the same result without
+  storing the order. A program added mid-pass plays at the end of the pass here, and at a random
+  later spot in infinite.
+- Filler weights start over, so filler picks after a rebuild can differ from the old guide.
+  Storing filler state is deferred.
+- Infinite's shuffle repeats one order every pass on its branch, which looks like a bug there.
 - A rescan still rewrites the guide after the program on air. D11 would leave buffered items alone.
 - A purged program before the restart point stays flex. That's at most the rest of one slot.
 - Programs in the kept part keep their old durations until they air.
@@ -165,7 +169,7 @@ Chunks match `programmingHours` (XMLTV setting, default 12 h), capped at 24 h.
 - Changes cut over after the program on air. G is fixed at 0 and is not configurable.
 - Edits that change a slot's content, order, direction or season filters restart that slot. That
   matches D9. A slot's place does not follow it across a content change.
-- Shuffle and filler picks after a rebuild can differ from the old guide.
+- Filler picks after a rebuild can differ from the old guide.
 - Rescans rewrite the guide after the program on air.
 - Deletes of referenced entities are not refused. This is classic-wide, and slice 6 handles it for
   infinite.
@@ -174,4 +178,4 @@ Chunks match `programmingHours` (XMLTV setting, default 12 h), capped at 24 h.
 
 - Infinite: what happens to buffered items whose program duration changed?
 - Infinite: what happens after downtime? The PR's catch-up rule is a candidate to adopt.
-- Store shuffle orders and filler state in snapshots, so rebuilds reproduce the old guide exactly?
+- Store filler state in snapshots, so rebuilds reproduce the old guide exactly?

@@ -8,7 +8,8 @@ import { PeriodPlaysSchema } from './slotIteratorState.ts';
 
 // How one iterator changed since the previous checkpoint. A shuffle stores
 // only the programs it played since then. `restart` means a pass ended in
-// between, so the earlier played IDs no longer count.
+// between, so the earlier played IDs no longer count. A restart also carries
+// a stable shuffle's seed and pass.
 export const IteratorChangeSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('ordered'),
@@ -18,6 +19,8 @@ export const IteratorChangeSchema = z.discriminatedUnion('type', [
     type: z.literal('shuffle'),
     added: z.string().array(),
     restart: z.boolean().optional(),
+    seed: z.number().int().nonnegative().optional(),
+    pass: z.number().int().nonnegative().optional(),
   }),
   z.object({
     type: z.literal('cleared'),
@@ -62,13 +65,20 @@ function iteratorChange(
         ? undefined
         : next;
     case 'shuffle': {
-      if (previous?.type !== 'shuffle') {
-        return { type: 'shuffle', added: [...next.playedIds], restart: true };
-      }
-
       const nextIds = new Set(next.playedIds);
-      if (previous.playedIds.some((id) => !nextIds.has(id))) {
-        return { type: 'shuffle', added: [...next.playedIds], restart: true };
+      if (
+        previous?.type !== 'shuffle' ||
+        previous.seed !== next.seed ||
+        previous.pass !== next.pass ||
+        previous.playedIds.some((id) => !nextIds.has(id))
+      ) {
+        return {
+          type: 'shuffle',
+          added: [...next.playedIds],
+          restart: true,
+          ...(next.seed !== undefined ? { seed: next.seed } : {}),
+          ...(next.pass !== undefined ? { pass: next.pass } : {}),
+        };
       }
 
       const previousIds = new Set(previous.playedIds);
@@ -153,7 +163,7 @@ function cloneState(state: SlotIteratorState): SlotIteratorState {
   for (const [key, snapshot] of Object.entries(state.iterators)) {
     iterators[key] =
       snapshot.type === 'shuffle'
-        ? { type: 'shuffle', playedIds: [...snapshot.playedIds] }
+        ? { ...snapshot, playedIds: [...snapshot.playedIds] }
         : { ...snapshot };
   }
   return {
@@ -186,14 +196,17 @@ export function applyCheckpoint(
         iterators[key] = change;
         break;
       case 'shuffle': {
-        const current = iterators[key];
-        const kept =
-          !change.restart && current?.type === 'shuffle'
-            ? current.playedIds
-            : [];
+        const current =
+          iterators[key]?.type === 'shuffle' ? iterators[key] : undefined;
+        const { seed, pass } = change.restart ? change : (current ?? {});
         iterators[key] = {
           type: 'shuffle',
-          playedIds: [...kept, ...change.added],
+          playedIds: [
+            ...(change.restart ? [] : (current?.playedIds ?? [])),
+            ...change.added,
+          ],
+          ...(seed !== undefined ? { seed } : {}),
+          ...(pass !== undefined ? { pass } : {}),
         };
         break;
       }

@@ -146,6 +146,7 @@ export async function scheduleTimeSlots(
     programMap,
     random,
     cycle.iteratorState,
+    { stable: cycle.stableShuffle },
   );
 
   const periodDuration = dayjs.duration(1, schedule.period);

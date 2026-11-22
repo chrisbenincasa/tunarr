@@ -9,7 +9,8 @@ import { z } from 'zod/v4';
 // sorted list, so resuming after a program needs no rotation offset.
 //
 // Shuffle iterators store the programs played in the current pass, so a pass
-// plays every program once before any repeats.
+// plays every program once before any repeats. Stable shuffles also store the
+// seed and pass number that rank each pass, which makes a restore exact.
 export const ProgramIteratorSnapshotSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('ordered'),
@@ -18,6 +19,8 @@ export const ProgramIteratorSnapshotSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('shuffle'),
     playedIds: z.string().array(),
+    seed: z.number().int().nonnegative().optional(),
+    pass: z.number().int().nonnegative().optional(),
   }),
 ]);
 
@@ -70,4 +73,7 @@ export type SlotCycleOptions = {
   endTime?: Dayjs;
   // Record a checkpoint at each point the scheduler could restart from.
   checkpoints?: boolean;
+  // Shuffle slots rank each pass by their own stored seed instead of the
+  // shared RNG. See ShuffleOptions.
+  stableShuffle?: boolean;
 };

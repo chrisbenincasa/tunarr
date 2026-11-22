@@ -66,6 +66,7 @@ export class BuildSlotCycleCommand {
       iteratorState: snapshot?.iteratorState,
       endTime: startTime + chunkMs,
       checkpoints: true,
+      stableShuffle: true,
     };
 
     const { result } =

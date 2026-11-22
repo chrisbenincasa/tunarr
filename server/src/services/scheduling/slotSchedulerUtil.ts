@@ -84,6 +84,7 @@ import {
   ContentProgramShuffleIterator,
   CustomProgramShuffleIterator,
   ProgramShuffleIteratorImpl,
+  type ShuffleOptions,
 } from './ShuffleProgramIterator.ts';
 import type { SlotImpl } from './SlotImpl.ts';
 import type {
@@ -377,6 +378,7 @@ export function createSlotProgramIterator(
   programBySlotType: ProgramMapping,
   random: Random,
   resume?: ProgramIteratorSnapshot,
+  shuffle?: ShuffleOptions,
 ): ProgramIterator {
   return match(slot)
     .with(
@@ -414,6 +416,7 @@ export function createSlotProgramIterator(
           programBySlotType.custom[customShowSlotId(slot.customShowId)] ?? [],
           random,
           resume,
+          shuffle,
         ),
     )
     .with({ type: 'custom-show', order: 'ordered_shuffle' }, (slot) => {
@@ -462,7 +465,7 @@ export function createSlotProgramIterator(
       return createFillerShuffleIterator(programs, slot.fillerListId, random);
     })
     .with({ type: 'show' }, (slot) =>
-      getShowProgramIterator(programBySlotType, slot, random, resume),
+      getShowProgramIterator(programBySlotType, slot, random, resume, shuffle),
     )
     .with({ type: 'smart-collection' }, (slot) => {
       const programs =
@@ -480,7 +483,12 @@ export function createSlotProgramIterator(
             resume,
           );
         case 'shuffle':
-          return new ContentProgramShuffleIterator(programs, random, resume);
+          return new ContentProgramShuffleIterator(
+            programs,
+            random,
+            resume,
+            shuffle,
+          );
         case 'ordered_shuffle':
           return new ContentProgramChunkedShuffle(
             programs,
@@ -619,6 +627,7 @@ export function createSlotIterators(
   programBySlotType: ProgramMapping,
   random: Random,
   resumeFrom: SlotIteratorResumeState = { iterators: {} },
+  shuffle?: ShuffleOptions,
 ): SlotIteratorResult {
   const result = new Map<string, ProgramIterator>();
   const resetPeriodCallbacks: (() => void)[] = [];
@@ -634,6 +643,7 @@ export function createSlotIterators(
       programBySlotType,
       random,
       resumeFrom.iterators[key],
+      shuffle,
     );
     keyedIterators.set(key, iterator);
     return iterator;
@@ -846,6 +856,7 @@ function getShowProgramIterator(
   slot: BaseShowProgrammingSlot,
   random: Random,
   resume?: ProgramIteratorSnapshot,
+  shuffle?: ShuffleOptions,
 ) {
   let programs = uniqBy(
     programBySlotType.content[`show.${slot.showId}`] ?? [],
@@ -876,7 +887,12 @@ function getShowProgramIterator(
         resume,
       );
     case 'shuffle':
-      return new ContentProgramShuffleIterator(programs, random, resume);
+      return new ContentProgramShuffleIterator(
+        programs,
+        random,
+        resume,
+        shuffle,
+      );
     case 'ordered_shuffle':
       return new ContentProgramChunkedShuffle(
         programs,
