@@ -11,14 +11,15 @@ import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import type { ChannelLineupLock } from '../ChannelLineupLock.ts';
 import { TVGuideService } from '../TvGuideService.ts';
-import type { CycleOptions, CycleState } from './slotCycles.ts';
+import type { CycleOptions, CycleSnapshot, CycleState } from './slotCycles.ts';
 import {
   advanceCycles,
-  cascadeCycles,
+  chunkLengthMs,
   cycleStartTime,
   initializeCycles,
-  trimAiredCycles,
+  rebuildAfterAiring,
 } from './slotCycles.ts';
+import { remapIteratorState } from './slotIteratorRemap.ts';
 
 const OneHourMs = 60 * 60 * 1000;
 
@@ -91,8 +92,8 @@ export class SlotCycleBoundaryService {
   }
 
   /**
-   * Restarts the channel on a fresh schedule. Used by a slot save, which
-   * resets the seed and clears the cycles that came from the old schedule.
+   * Starts a channel's cycles from scratch. Used by a slot save on a channel
+   * that was not rebuilding before.
    */
   async initializeChannel(channelId: string, now: number = Date.now()) {
     await this.lineupLock.run(channelId, async () => {
@@ -112,9 +113,82 @@ export class SlotCycleBoundaryService {
   }
 
   /**
-   * Rebuilds every cycle in place after the library changed, keeping the
-   * channel's start time and its place in the schedule. A channel whose
-   * cycles have all aired catches up instead, as `advanceChannel` does.
+   * Applies a slot save to a channel that was already rebuilding.
+   *
+   * The program on air and everything before the next restart point stay.
+   * The edited schedule takes over from there, and each slot keeps its place
+   * when the edit left its content, order and direction alone. A channel
+   * whose cycles have all aired catches up on the edited schedule with the
+   * same carried places.
+   *
+   * `previous` is the channel's start time and lineup from before the save.
+   */
+  async applyScheduleEdit(
+    channelId: string,
+    previous: { startTime: number; lineup: Lineup },
+    now: number = Date.now(),
+  ) {
+    await this.lineupLock.run(channelId, async () => {
+      const loaded = await this.loadRebuildingChannel(channelId);
+      if (!loaded) {
+        return;
+      }
+
+      const { lineup, schedule, state } = loaded;
+      const previousSchedule = previous.lineup.schedule;
+      const previousCycles = previous.lineup.cycles ?? [];
+      if (
+        !previous.lineup.rebuildEachCycle ||
+        !previousSchedule ||
+        isDefined(previous.lineup.onDemandConfig) ||
+        previousCycles.length === 0
+      ) {
+        await this.initializeChannel(channelId, now);
+        return;
+      }
+
+      // The save wrote a new seed, so the RNG starts over. The places carry.
+      const carry = (snapshot: CycleSnapshot): CycleSnapshot => ({
+        discardCount: 0,
+        iteratorState: remapIteratorState(
+          snapshot.iteratorState,
+          previousSchedule,
+          schedule,
+        ),
+      });
+
+      const previousState: CycleState = {
+        startTime: previous.startTime,
+        items: [...previous.lineup.items],
+        cycles: previousCycles,
+        nextSnapshot: previous.lineup.nextCycleSnapshot,
+      };
+      const opts = this.cycleOptions(channelId, lineup, now);
+
+      const edited =
+        (await rebuildAfterAiring(previousState, opts, carry)) ??
+        (
+          await advanceCycles(
+            {
+              ...previousState,
+              nextSnapshot: previousState.nextSnapshot
+                ? carry(previousState.nextSnapshot)
+                : undefined,
+            },
+            cycleStartTime(schedule, now),
+            opts,
+          )
+        ).state;
+
+      await this.persist(channelId, state, edited);
+    });
+  }
+
+  /**
+   * Rebuilds what follows the program on air after the library changed. The
+   * program on air, the channel's start time and its place in the schedule
+   * stay. A channel whose cycles have all aired catches up instead, as
+   * `advanceChannel` does.
    */
   async regenerateChannel(channelId: string, now: number = Date.now()) {
     await this.lineupLock.run(channelId, async () => {
@@ -126,24 +200,20 @@ export class SlotCycleBoundaryService {
       const { lineup, schedule, state } = loaded;
       const opts = this.cycleOptions(channelId, lineup, now);
 
-      // Once every built cycle has aired there is nothing to cascade from.
-      // Rebuilding from the old start time would run a scheduling pass per
-      // cycle between then and now and produce content nobody can see. Catch
-      // up instead, which starts at the current period and continues from the
-      // last end snapshot.
-      if (trimAiredCycles(state, now).cycles.length === 0) {
-        const { state: caughtUp, changed } = await advanceCycles(
-          state,
-          cycleStartTime(schedule, now),
-          opts,
-        );
-        if (changed) {
-          await this.persist(channelId, state, caughtUp);
-        }
+      const rebuilt = await rebuildAfterAiring(state, opts);
+      if (rebuilt) {
+        await this.persist(channelId, state, rebuilt);
         return;
       }
 
-      await this.persist(channelId, state, await cascadeCycles(state, opts));
+      const { state: caughtUp, changed } = await advanceCycles(
+        state,
+        cycleStartTime(schedule, now),
+        opts,
+      );
+      if (changed) {
+        await this.persist(channelId, state, caughtUp);
+      }
     });
   }
 
@@ -225,11 +295,20 @@ export class SlotCycleBoundaryService {
     lineup: Lineup,
     now: number,
   ): CycleOptions {
+    const horizonMs =
+      this.settingsDB.xmlTvSettings().programmingHours * OneHourMs;
+    const chunkMs = chunkLengthMs(horizonMs);
     return {
       now,
-      horizonMs: this.settingsDB.xmlTvSettings().programmingHours * OneHourMs,
+      horizonMs,
       build: (startTime, snapshot) =>
-        this.buildCycle.execute({ channelId, lineup, startTime, snapshot }),
+        this.buildCycle.execute({
+          channelId,
+          lineup,
+          startTime,
+          snapshot,
+          chunkMs,
+        }),
     };
   }
 

@@ -1040,7 +1040,7 @@ describe('ChannelDB', () => {
         new Set([trashedId]),
       );
 
-      expect(changed).toBe(1);
+      expect(changed).toEqual([target.channel.uuid]);
 
       const lineup = await channelDb.loadLineup(target.channel.uuid, true);
       expect(lineup.items).toHaveLength(4);
@@ -1084,7 +1084,7 @@ describe('ChannelDB', () => {
 
       const changed = await channelDb.removeProgramsFromAllLineups([trashedId]);
 
-      expect(changed).toBe(1);
+      expect(changed).toEqual([affected.channel.uuid]);
 
       const after = await channelDb.loadLineup(untouched.channel.uuid, true);
       expect(after.items).toEqual(before.items);
@@ -1092,8 +1092,10 @@ describe('ChannelDB', () => {
     });
 
     test('is a no-op for an empty id set', async ({ channelDb }) => {
-      expect(await channelDb.removeProgramsFromAllLineups([])).toBe(0);
-      expect(await channelDb.removeProgramsFromAllLineups(new Set())).toBe(0);
+      expect(await channelDb.removeProgramsFromAllLineups([])).toEqual([]);
+      expect(await channelDb.removeProgramsFromAllLineups(new Set())).toEqual(
+        [],
+      );
     });
   });
 

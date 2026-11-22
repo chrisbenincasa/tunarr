@@ -1,6 +1,6 @@
 # Scheduling and Lineups
 
-*Last Updated: 2026-11-08*
+*Last Updated: 2026-11-22*
 
 Domain terms (slot, lineup, filler, flex) are defined in `CONTEXT.md` at the repo root.
 
@@ -26,7 +26,7 @@ separately from SQL migrations.
   The command replays the seed from the channel's `startTime`, so time slots stay on the clock and
   shuffles repeat. New or changed programs in a slot can still change what airs. For a lineup with
   `rebuildEachCycle` on, the command delegates to `SlotCycleBoundaryService.regenerateChannel`
-  instead, which cascades the rebuild through every built-ahead cycle (see "Cycles" below).
+  instead, which rebuilds everything after the program on air (see "Cycles" below).
 - Slot saves write `scheduleSeed` to the lineup file; manual saves clear it, along with the cycle
   fields described below. Lineups saved before the field existed have no seed and are patched
   until the next slot save or regeneration.
@@ -71,12 +71,19 @@ Program iterators decide the order within a slot: `ProgramOrdereredIterator.ts` 
 - `slotIteratorState.ts` defines `SlotIteratorState`, where each iterator left off. Ordered and
   `ordered_shuffle` iterators store the last program played; shuffle iterators store the programs
   played in the current pass. All-rerun link groups store how many slots have aired the current
-  program (`rerunPlays`). Random slots also store the next sequential slot and cooldown times.
+  program (`rerunPlays`). Mixed link groups store the programs their rerun slots have yet to replay
+  (`periodPlays`). Random slots also store the next sequential slot and cooldown times.
 - `createSlotIterators` keys iterators by slot position (`slot:<n>`) or link group (`group:<id>`).
+  `assignIteratorKeys` returns the same keys without building iterators.
 - `scheduleTimeSlots` and `RandomSlotScheduler.generateSchedule` take optional
-  `{ iteratorState, endTime }` and return `iteratorState` next to `discardCount`. `endTime` replaces
+  `{ iteratorState, endTime, checkpoints }` and return `iteratorState` next to `discardCount`. `endTime` replaces
   the `maxDays` limit. Time slots check it only when a slot starts, so the slot it falls in fills
   its whole window. With no state passed, output is unchanged.
+- `checkpoints: true` records the state at every point the scheduler can restart from (each slot
+  start, or each random-slot cursor advance), stored as changes from the previous one
+  (`slotCheckpoints.ts`, `stateAtCheckpoint`).
+- A time-slot build measures DST from the start of the period it starts in, so a mid-period start
+  lays slots out like a build from the period start.
 - The worker request and reply schemas (`server/src/types/worker_schemas.ts`) carry both fields.
 
 ## Cycles
@@ -85,15 +92,24 @@ Opt-in reshuffle-on-loop for slot channels (design in `plans/schedules-reshuffle
 
 - A lineup with `rebuildEachCycle: true` holds one cycle's worth of content at a time and the
   server extends it as time passes, instead of building the whole schedule up front.
+- A cycle is a chunk of `programmingHours`, capped at 24 h (`chunkLengthMs`).
 - The lineup JSON carries three extra fields: `rebuildEachCycle`, `cycles` (each cycle's item
-  count, duration, and start snapshot), and `nextCycleSnapshot` (the end snapshot of the last
+  count, duration, start snapshot, and checkpoints), and `nextCycleSnapshot` (the end snapshot of the last
   built cycle). All three are optional, so no `ChannelLineupMigrator` step was needed.
-- `server/src/services/scheduling/slotCycles.ts` holds the pure cycle math: `cycleStartTime`,
-  `cycleEndTime`, `initializeCycles`, `advanceCycles`, `cascadeCycles`.
+- `server/src/services/scheduling/slotCycles.ts` holds the pure cycle math: `chunkLengthMs`,
+  `cycleStartTime` (start of day for time slots, the minute for random slots), `initializeCycles`,
+  `advanceCycles`, and the cut-over trio `firstRestartAfterAiring`, `truncateAt`,
+  `rebuildAfterAiring`. A cut-over keeps everything before the first restart point after the
+  program on air and builds from the state recorded there.
 - `server/src/services/scheduling/SlotCycleBoundaryService.ts` is the stateful layer. It builds
   ahead to the `xmlTvSettings().programmingHours` horizon, trims cycles that have fully aired
-  (writing `channel.startTime` exactly), cascades a rebuild through every built-ahead cycle when
-  the schedule changes, and catches up after downtime by starting fresh from the last snapshot.
+  (writing `channel.startTime` exactly), and catches up after downtime from the last snapshot.
+  `regenerateChannel` cuts over after the program on air. `applyScheduleEdit`, called by the slot
+  save in `channelsApi.ts` with the lineup from before the save, does the same on the edited
+  schedule. `slotIteratorRemap.ts` moves each slot's state to the edited slot with the same
+  content, order, direction and season filters.
+- `EmptyTrashService` and `DeleteMediaSourceCommand` regenerate each rebuilding channel that
+  `removeProgramsFromAllLineups` changed (it returns their IDs).
   `server/src/commands/BuildSlotCycleCommand.ts` builds one cycle through the worker pool without
   writing anything.
 - `server/src/tasks/SlotCycleBoundaryTask.ts` runs `advanceAll` on a schedule (every 5 minutes,
@@ -106,8 +122,10 @@ Opt-in reshuffle-on-loop for slot channels (design in `plans/schedules-reshuffle
   into another lock-taking operation (e.g. regenerate) without deadlocking.
 - Save rules: a slot save keeps `rebuildEachCycle` at its request value, falling back to the
   lineup's existing value, falling back to off — the server never defaults it on, since slice 4's
-  web toggle doesn't exist yet. Turning it on assigns a new `scheduleSeed`, clears `cycles`, and
-  writes `startTime` to `cycleStartTime(now)` exactly before building the first cycle. A manual
+  web toggle doesn't exist yet. Every slot save assigns a new `scheduleSeed` and clears `cycles`.
+  Turning it on writes `startTime` to `cycleStartTime(now)` exactly before building the first
+  cycle. On a channel already rebuilding, `applyScheduleEdit` keeps `startTime` and the program on
+  air. A manual
   save clears `rebuildEachCycle`, `cycles`, and `nextCycleSnapshot`.
 - Lineups with `onDemandConfig` never rebuild. `PUT /channels/:id` takes the lock and ignores an
   incoming `startTime` on rebuilding channels, because the server owns it. Each pass builds a capped

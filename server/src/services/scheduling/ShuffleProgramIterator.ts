@@ -47,6 +47,10 @@ abstract class ShuffleProgramIterator<
     }
   }
 
+  protected allPrograms(): SlotSchedulerProgram[] {
+    return this.#allPrograms;
+  }
+
   next() {
     const curr = this.programs[this.position];
     if (curr) {

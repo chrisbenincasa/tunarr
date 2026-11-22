@@ -690,6 +690,12 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         container
           .get<ChannelLineupLock>(KEYS.ChannelLineupLock)
           .run(req.params.id, async () => {
+            // A rebuilding channel carries its place in the schedule across
+            // the save, which needs the lineup from before it.
+            const previous = await req.serverCtx.channelDB.loadChannelAndLineup(
+              req.params.id,
+            );
+
             const saved = await req.serverCtx.channelDB.updateLineup(
               req.params.id,
               programmingRequest,
@@ -700,11 +706,19 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             }
 
             // What the save wrote is a single pass of the schedule. Replace
-            // it with the channel's first cycles, which also moves its start
-            // time to the start of the cycle.
-            await container
-              .get<SlotCycleBoundaryService>(SlotCycleBoundaryService)
-              .initializeChannel(req.params.id);
+            // it with cycles of the edited schedule, starting after the
+            // program on air.
+            const boundaryService = container.get<SlotCycleBoundaryService>(
+              SlotCycleBoundaryService,
+            );
+            if (previous) {
+              await boundaryService.applyScheduleEdit(req.params.id, {
+                startTime: previous.channel.startTime,
+                lineup: previous.lineup,
+              });
+            } else {
+              await boundaryService.initializeChannel(req.params.id);
+            }
 
             // Those programs cover only the replaced pass, and the cycles can
             // air programs outside it, so the response reloads the lineup.

@@ -3,6 +3,7 @@ import { FillerType, OfflineFillerConfigSchema } from '@tunarr/types/schemas';
 import { first } from 'lodash-es';
 import type { DeepReadonly } from 'ts-essentials';
 import { z } from 'zod/v4';
+import { SlotCheckpointSchema } from '../../services/scheduling/slotCheckpoints.ts';
 import { SlotIteratorStateSchema } from '../../services/scheduling/slotIteratorState.ts';
 
 const BaseLineupItemSchema = z.object({
@@ -94,12 +95,14 @@ export const CycleSnapshotSchema = z.object({
 export type CycleSnapshot = z.infer<typeof CycleSnapshotSchema>;
 
 // One built cycle of a rebuilding channel. `itemCount` items of the lineup
-// belong to it, and `snapshot` is the state it was built from, so it can be
-// rebuilt without replaying the cycles before it.
+// belong to it, and `snapshot` is the state it was built from. `checkpoints`
+// are the points inside it where the schedule can restart, so a change can
+// take effect right after the program on air instead of at the cycle start.
 export const LineupCycleSchema = z.object({
   itemCount: z.number().int().nonnegative(),
   durationMs: z.number(),
   snapshot: CycleSnapshotSchema,
+  checkpoints: SlotCheckpointSchema.array().optional(),
 });
 
 export type LineupCycle = z.infer<typeof LineupCycleSchema>;

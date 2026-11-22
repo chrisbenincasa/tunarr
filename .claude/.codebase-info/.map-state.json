@@ -2,8 +2,8 @@
   "schemaVersion": 1,
   "tool": "codebase-mapper",
   "version": "2.15.10",
-  "mappedAt": "2026-11-07",
-  "gitCommit": "d22da9c19efaddd954dcf675dbfcf7c1e18d2ef2",
+  "mappedAt": "2026-11-22",
+  "gitCommit": "64c015ae5dbaf3684dff6896c2cb64df0565ea97",
   "documents": [
     "architecture.md",
     "database.md",
@@ -21,7 +21,7 @@
     "entry-points.md": "dd37b0485826e016fe7d762cbf2791cd2e6a20355d3594cf8ba85994831dda09",
     "etv-next.md": "8066fb850be4a1a485001879b83b380eb0614a79e8d4d6f02b5ef9ff60805d67",
     "media-sources.md": "0ad4fc758833e4790d7c8e5ddcc054fe391d1b7fb12a98eb076166d6c4646862",
-    "scheduling-and-lineups.md": "e6c9a04a20445326209e34e8051575ff8225ad11efe300de9108be2575506f4f",
+    "scheduling-and-lineups.md": "985cbbf7aec2325c6431217579f68a7082da4fa5deea89132ab04a93f0dc06c2",
     "streaming.md": "d98d4de47623d339921093d551b514c6f506635198ccbf0889480b8cc1f7887a",
     "testing.md": "c9648ebefaddd02570ea10bfbfd3ec60100f1bb58d320e5e4c4f1b676edfd82e"
   }

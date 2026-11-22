@@ -6,7 +6,10 @@ import type {
   LineupItem,
 } from '../../db/derived_types/Lineup.ts';
 import dayjs from '../../util/dayjs.ts';
+import { isNonEmptyArray } from '../../util/index.ts';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
+import type { SlotCheckpoint } from './slotCheckpoints.ts';
+import { stateAtCheckpoint } from './slotCheckpoints.ts';
 
 export type { CycleSnapshot, LineupCycle };
 
@@ -26,6 +29,7 @@ export type BuiltCycle = {
   items: LineupItem[];
   durationMs: number;
   endSnapshot: CycleSnapshot;
+  checkpoints?: SlotCheckpoint[];
 };
 
 // Builds one cycle starting at `startTime`. An undefined snapshot means a
@@ -61,42 +65,38 @@ const freshSnapshot = (): CycleSnapshot => ({
 const contentEnd = (state: CycleState) =>
   state.startTime + sumBy(state.cycles, (cycle) => cycle.durationMs);
 
+// Longest chunk a build produces, whatever the guide horizon. A purged
+// program in the airing chunk stays flex until the chunk ends.
+export const MaxChunkMs = 24 * 60 * 60 * 1000;
+
 /**
- * Exclusive end of a cycle that starts at `startTime`.
+ * How much schedule one build covers: the guide horizon, capped at a day.
  *
- * Time slots run one `schedule.period`, so `maxDays` is ignored. Random slots
- * run `maxDays` days. The scheduler stops at the first program that crosses
- * this time, so the cycle's real end is at or past it.
- *
- * The arithmetic uses the server's local timezone, which is the timezone the
- * schedulers lay slots out in -- they derive the period start from the `Dayjs`
- * they are handed, and the worker builds it with `dayjs(startTime)`. The
- * schedule's own `timeZoneOffset` is recorded by the editor but never read.
+ * The cap is never longer than a time-slot period or a random schedule's
+ * `maxDays`, so a chunk never needs a second limit.
  */
-export function cycleEndTime(
-  schedule: TimeSlotSchedule | RandomSlotSchedule,
-  startTime: number,
-): number {
-  return schedule.type === 'time'
-    ? +dayjs(startTime).add(1, schedule.period)
-    : +dayjs(startTime).add(schedule.maxDays, 'day');
+export function chunkLengthMs(horizonMs: number): number {
+  return Math.min(horizonMs, MaxChunkMs);
 }
 
 /**
  * Where a channel's first (or catch-up) cycle starts.
  *
- * Time slots start at the beginning of the period containing `now`, so slot
- * offsets line up with the clock. Random slots have no period, so they start
- * at `now` floored to the minute.
+ * Time slots start at the beginning of the current day, so a viewer joins the
+ * slot airing now partway through, as if the schedule had been running. The
+ * scheduler finds each slot from its offset into the period, so the start
+ * does not need to be a period start, and the build up to `now` stays short.
+ * Random slots have no clock to line up with, so they start at `now` floored
+ * to the minute.
  *
- * See {@link cycleEndTime} on the timezone used.
+ * Uses the server's local timezone, the one the schedulers lay slots out in.
  */
 export function cycleStartTime(
   schedule: TimeSlotSchedule | RandomSlotSchedule,
   now: number,
 ): number {
   return schedule.type === 'time'
-    ? +dayjs(now).startOf(schedule.period)
+    ? +dayjs(now).startOf('day')
     : +dayjs(now).startOf('minute');
 }
 
@@ -139,6 +139,9 @@ async function buildFrom(
         itemCount: built.items.length,
         durationMs: built.durationMs,
         snapshot: startSnapshot ?? freshSnapshot(),
+        ...(isNonEmptyArray(built.checkpoints)
+          ? { checkpoints: built.checkpoints }
+          : {}),
       },
     ];
     state.nextSnapshot = built.endSnapshot;
@@ -238,17 +241,182 @@ export function trimAiredCycles(state: CycleState, now: number): CycleState {
   };
 }
 
+// A point where the schedule can restart, and the state to restart from.
+export type RestartPoint = {
+  timeMs: number;
+  // Cycles before this one stay whole. Equal to the cycle count for the end
+  // of the built content.
+  cycleIndex: number;
+  // How far into that cycle the point falls.
+  offsetMs: number;
+  snapshot: CycleSnapshot;
+};
+
 /**
- * Rebuilds every cycle after the library changed.
+ * The first restart point at or after the end of the item airing at `now`.
  *
- * The airing cycle is rebuilt from the snapshot it originally started from, so
- * the channel keeps its start time and its place in the schedule, and each
- * later cycle is rebuilt from the new end state before it.
+ * Restart points are cycle starts, the checkpoints inside each cycle, and the
+ * end of the built content. A change that restarts the schedule here leaves
+ * the program on air alone. Undefined when nothing is airing, so the caller
+ * catches up instead.
  */
-export function cascadeCycles(
+export function firstRestartAfterAiring(
+  state: CycleState,
+  now: number,
+): RestartPoint | undefined {
+  if (state.cycles.length === 0 || contentEnd(state) <= now) {
+    return;
+  }
+
+  let airingEnd = state.startTime;
+  for (const item of state.items) {
+    airingEnd += item.durationMs;
+    if (airingEnd > now) {
+      break;
+    }
+  }
+
+  let cycleStart = state.startTime;
+  for (const [cycleIndex, cycle] of state.cycles.entries()) {
+    if (cycleStart >= airingEnd) {
+      return {
+        timeMs: cycleStart,
+        cycleIndex,
+        offsetMs: 0,
+        snapshot: cycle.snapshot,
+      };
+    }
+
+    const checkpoints = cycle.checkpoints ?? [];
+    const index = checkpoints.findIndex(
+      (checkpoint) => cycleStart + checkpoint.offsetMs >= airingEnd,
+    );
+    const checkpoint = checkpoints[index];
+    if (checkpoint) {
+      return {
+        timeMs: cycleStart + checkpoint.offsetMs,
+        cycleIndex,
+        offsetMs: checkpoint.offsetMs,
+        snapshot: {
+          discardCount: checkpoint.discardCount,
+          iteratorState: stateAtCheckpoint(
+            cycle.snapshot.iteratorState,
+            checkpoints,
+            index,
+          ),
+        },
+      };
+    }
+
+    cycleStart += cycle.durationMs;
+  }
+
+  if (!state.nextSnapshot) {
+    return;
+  }
+  return {
+    timeMs: cycleStart,
+    cycleIndex: state.cycles.length,
+    offsetMs: 0,
+    snapshot: state.nextSnapshot,
+  };
+}
+
+// The items that air before `offsetMs`. Checkpoints sit between programs, so
+// the only item that can cross one is flex that a later pass extended.
+function itemsBefore(
+  items: readonly LineupItem[],
+  offsetMs: number,
+): LineupItem[] {
+  const kept: LineupItem[] = [];
+  let cursorMs = 0;
+  for (const item of items) {
+    if (cursorMs >= offsetMs) {
+      break;
+    }
+    const endMs = cursorMs + item.durationMs;
+    if (endMs <= offsetMs) {
+      kept.push(item);
+    } else if (item.type === 'offline') {
+      kept.push({ ...item, durationMs: offsetMs - cursorMs });
+    } else {
+      throw new Error(
+        `A ${item.type} lineup item crosses a schedule checkpoint at ${offsetMs} ms`,
+      );
+    }
+    cursorMs = endMs;
+  }
+  return kept;
+}
+
+/**
+ * Keeps everything before `point` and drops the rest. The next build starts
+ * from `point`'s snapshot.
+ */
+export function truncateAt(state: CycleState, point: RestartPoint): CycleState {
+  const cycles = state.cycles.slice(0, point.cycleIndex);
+  const keptItemCount = sumBy(cycles, (cycle) => cycle.itemCount);
+  const items = state.items.slice(0, keptItemCount);
+
+  const partial = state.cycles[point.cycleIndex];
+  if (partial && point.offsetMs > 0) {
+    const partialItems = itemsBefore(
+      state.items.slice(keptItemCount, keptItemCount + partial.itemCount),
+      point.offsetMs,
+    );
+    const checkpoints = (partial.checkpoints ?? []).filter(
+      (checkpoint) => checkpoint.offsetMs < point.offsetMs,
+    );
+    items.push(...partialItems);
+    cycles.push({
+      itemCount: partialItems.length,
+      durationMs: point.offsetMs,
+      snapshot: partial.snapshot,
+      ...(isNonEmptyArray(checkpoints) ? { checkpoints } : {}),
+    });
+  }
+
+  return {
+    startTime: state.startTime,
+    items,
+    cycles,
+    nextSnapshot: point.snapshot,
+  };
+}
+
+/**
+ * Rebuilds everything after the program on air, from the exact state the
+ * schedule had at the first restart point after it. The program on air and
+ * everything before it stay, and so does `startTime`.
+ *
+ * `carry` adjusts the restart state, which a schedule edit uses to move each
+ * slot's place onto the edited slots. Undefined when nothing is airing.
+ *
+ * The cycles kept before the restart point hold state for the schedule that
+ * built them. Nothing reads it again, because every later restart point lies
+ * after a later airing program, past the cycles kept here.
+ */
+export async function rebuildAfterAiring(
   state: CycleState,
   opts: CycleOptions,
-): Promise<CycleState> {
-  const firstSnapshot = state.cycles[0]?.snapshot ?? state.nextSnapshot;
-  return buildFrom(state.startTime, firstSnapshot, opts);
+  carry: (snapshot: CycleSnapshot) => CycleSnapshot = (snapshot) => snapshot,
+): Promise<CycleState | undefined> {
+  const point = firstRestartAfterAiring(state, opts.now);
+  if (!point) {
+    return;
+  }
+
+  const snapshot = carry(point.snapshot);
+  const kept = truncateAt(state, { ...point, snapshot });
+  const built = await buildFrom(point.timeMs, snapshot, opts);
+  if (built.cycles.length === 0) {
+    return kept;
+  }
+
+  return {
+    startTime: kept.startTime,
+    items: [...kept.items, ...built.items],
+    cycles: [...kept.cycles, ...built.cycles],
+    nextSnapshot: built.nextSnapshot,
+  };
 }

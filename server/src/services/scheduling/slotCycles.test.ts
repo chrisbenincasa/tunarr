@@ -24,12 +24,16 @@ import type {
   CycleSnapshot,
   CycleState,
 } from './slotCycles.ts';
+import type { SlotCheckpoint } from './slotCheckpoints.ts';
 import {
   advanceCycles,
-  cascadeCycles,
-  cycleEndTime,
+  chunkLengthMs,
   cycleStartTime,
+  firstRestartAfterAiring,
   initializeCycles,
+  MaxChunkMs,
+  rebuildAfterAiring,
+  truncateAt,
 } from './slotCycles.ts';
 import type { SlotSchedulerProgram } from './slotSchedulerUtil.ts';
 import { scheduleTimeSlots } from './TimeSlotService.ts';
@@ -136,10 +140,14 @@ type FakeBuilder = {
 // Fixed-length cycles with content that names the library version and the
 // start time it was built for, so a rebuilt cycle is distinguishable from the
 // cycle it replaced.
+//
+// With `checkpoints`, every item boundary is a restart point whose state names
+// the item that just ended.
 function fakeBuilder(opts: {
   cycleMs: number;
   itemMs?: number;
   library?: string;
+  checkpoints?: boolean;
 }): FakeBuilder {
   const itemMs = opts.itemMs ?? oneHour;
   const count = Math.round(opts.cycleMs / itemMs);
@@ -158,9 +166,24 @@ function fakeBuilder(opts: {
       durationMs: itemMs,
     }));
 
+    const baseDiscard = snapshot?.discardCount ?? 0;
+    const checkpoints: SlotCheckpoint[] = opts.checkpoints
+      ? Array.from({ length: count - 1 }, (_, i) => ({
+          offsetMs: (i + 1) * itemMs,
+          discardCount: baseDiscard + i + 1,
+          iterators: {
+            main: {
+              type: 'ordered',
+              lastProgramId: `${library}@${startTime}#${i}`,
+            },
+          },
+        }))
+      : [];
+
     const result: BuiltCycle = {
       items,
       durationMs: opts.cycleMs,
+      ...(checkpoints.length > 0 ? { checkpoints } : {}),
       endSnapshot: {
         discardCount: (snapshot?.discardCount ?? 0) + count,
         iteratorState: {
@@ -191,11 +214,13 @@ function toBuiltCycle(result: {
   lineup: CondensedChannelProgram[];
   discardCount: number;
   iteratorState: CycleSnapshot['iteratorState'];
+  checkpoints?: SlotCheckpoint[];
 }): BuiltCycle {
   const items = map(result.lineup, condensedProgramToLineupItem);
   return {
     items,
     durationMs: totalDurationMs(items),
+    ...(result.checkpoints ? { checkpoints: result.checkpoints } : {}),
     endSnapshot: {
       discardCount: result.discardCount,
       iteratorState: result.iteratorState,
@@ -203,10 +228,12 @@ function toBuiltCycle(result: {
   };
 }
 
+// Builds fixed-length chunks with checkpoints, as BuildSlotCycleCommand does.
 function timeSlotBuilder(
   schedule: TimeSlotSchedule,
   programs: () => SlotSchedulerProgram[],
   seed: number[] = [42],
+  chunkMs: number = oneDay,
 ): BuildCycleFn {
   return async (startTime, snapshot) =>
     toBuiltCycle(
@@ -218,7 +245,8 @@ function timeSlotBuilder(
         dayjs.utc(startTime),
         {
           iteratorState: snapshot?.iteratorState,
-          endTime: dayjs.utc(cycleEndTime(schedule, startTime)),
+          endTime: dayjs.utc(startTime + chunkMs),
+          checkpoints: true,
         },
       ),
     );
@@ -228,6 +256,7 @@ function randomSlotBuilder(
   schedule: RandomSlotSchedule,
   programs: () => SlotSchedulerProgram[],
   seed: number[] = [42],
+  chunkMs: number = oneDay,
 ): BuildCycleFn {
   return (startTime, snapshot) =>
     Promise.resolve(
@@ -239,7 +268,8 @@ function randomSlotBuilder(
           dayjs.utc(startTime),
           {
             iteratorState: snapshot?.iteratorState,
-            endTime: dayjs.utc(cycleEndTime(schedule, startTime)),
+            endTime: dayjs.utc(startTime + chunkMs),
+            checkpoints: true,
           },
         ),
       ),
@@ -273,39 +303,30 @@ function singleSlotDaySchedule(
 const episodeIds = (count: number) =>
   map(fixtureEpisodes('show', count, oneHour), (program) => program.uuid);
 
-describe('cycleEndTime', () => {
-  test('a time slot cycle is one period, ignoring maxDays', () => {
-    const daily = fixtureTimeSlotSchedule({ period: 'day', maxDays: 6 });
-    expect(cycleEndTime(daily, oddStart)).toBe(+dayjs(oddStart).add(1, 'day'));
-    expect(cycleEndTime(daily, oddStart)).toBe(oddStart + oneDay);
-
-    const weekly = fixtureTimeSlotSchedule({ period: 'week', maxDays: 2 });
-    expect(cycleEndTime(weekly, oddStart)).toBe(
-      +dayjs(oddStart).add(1, 'week'),
-    );
+describe('chunkLengthMs', () => {
+  test('a chunk covers the guide horizon', () => {
+    expect(chunkLengthMs(12 * oneHour)).toBe(12 * oneHour);
   });
 
-  test('a random slot cycle is maxDays long', () => {
-    const schedule = fixtureRandomSlotSchedule({ maxDays: 3 });
-    expect(cycleEndTime(schedule, oddStart)).toBe(
-      +dayjs(oddStart).add(3, 'day'),
-    );
+  test('a chunk is never longer than a day', () => {
+    expect(MaxChunkMs).toBe(oneDay);
+    expect(chunkLengthMs(168 * oneHour)).toBe(oneDay);
   });
 });
 
 describe('cycleStartTime', () => {
   const now = +dayjs.utc('2024-03-06T13:47:19.531Z');
 
-  test('time slots start at the period start', () => {
+  test('time slots start at the start of the day, whatever the period', () => {
     const daily = fixtureTimeSlotSchedule({ period: 'day' });
     const start = cycleStartTime(daily, now);
     expect(start).toBe(+dayjs(now).startOf('day'));
     expect(start).toBeLessThanOrEqual(now);
-    // A period start maps to itself.
+    // A day start maps to itself.
     expect(cycleStartTime(daily, start)).toBe(start);
 
     const weekly = fixtureTimeSlotSchedule({ period: 'week' });
-    expect(cycleStartTime(weekly, now)).toBe(+dayjs(now).startOf('week'));
+    expect(cycleStartTime(weekly, now)).toBe(+dayjs(now).startOf('day'));
   });
 
   test('random slots start at now, floored to the minute', () => {
@@ -572,11 +593,151 @@ describe('catch-up', () => {
   });
 });
 
-describe('cascadeCycles', () => {
-  test('rebuilds later cycles from the new end state and keeps startTime', async () => {
+describe('firstRestartAfterAiring', () => {
+  const cycleMs = 4 * oneHour;
+  const build = (checkpoints: boolean) =>
+    initializeCycles(oddStart, {
+      now: oddStart,
+      horizonMs: 6 * oneHour,
+      build: fakeBuilder({ cycleMs, checkpoints }).build,
+    });
+
+  test('picks the first checkpoint after the airing item ends', async () => {
+    const state = await build(true);
+    const cycle1 = state.cycles[1];
+    const cycle1Start = oddStart + cycleMs;
+
+    const point = firstRestartAfterAiring(state, cycle1Start + 30 * oneMinute);
+
+    expect(point).toEqual({
+      timeMs: cycle1Start + oneHour,
+      cycleIndex: 1,
+      offsetMs: oneHour,
+      snapshot: {
+        discardCount: (cycle1?.snapshot.discardCount ?? 0) + 1,
+        iteratorState: {
+          iterators: {
+            main: { type: 'ordered', lastProgramId: `v1@${cycle1Start}#0` },
+          },
+        },
+      },
+    });
+  });
+
+  test('uses the next cycle start when a cycle has no checkpoints', async () => {
+    const state = await build(false);
+    const point = firstRestartAfterAiring(state, oddStart + oneHour + 1);
+
+    expect(point?.timeMs).toBe(oddStart + cycleMs);
+    expect(point?.cycleIndex).toBe(1);
+    expect(point?.offsetMs).toBe(0);
+    expect(point?.snapshot).toEqual(state.cycles[1]?.snapshot);
+  });
+
+  test('an item that ends on a cycle boundary restarts at that cycle', async () => {
+    const state = await build(true);
+    const point = firstRestartAfterAiring(state, oddStart + cycleMs - 1);
+
+    expect(point?.timeMs).toBe(oddStart + cycleMs);
+    expect(point?.cycleIndex).toBe(1);
+    expect(point?.snapshot).toEqual(state.cycles[1]?.snapshot);
+  });
+
+  test('the last airing item restarts at the end of the built content', async () => {
+    const state = await build(true);
+    const point = firstRestartAfterAiring(state, contentEnd(state) - 1);
+
+    expect(point?.timeMs).toBe(contentEnd(state));
+    expect(point?.cycleIndex).toBe(state.cycles.length);
+    expect(point?.snapshot).toEqual(state.nextSnapshot);
+  });
+
+  test('nothing restarts when everything has aired', async () => {
+    const state = await build(true);
+    expect(firstRestartAfterAiring(state, contentEnd(state))).toBeUndefined();
+  });
+});
+
+describe('truncateAt', () => {
+  const snapshot: CycleSnapshot = {
+    discardCount: 0,
+    iteratorState: { iterators: {} },
+  };
+  const restart: CycleSnapshot = {
+    discardCount: 3,
+    iteratorState: { iterators: {} },
+  };
+
+  function stateWith(items: LineupItem[]): CycleState {
+    return {
+      startTime: oddStart,
+      items,
+      cycles: [
+        {
+          itemCount: items.length,
+          durationMs: totalDurationMs(items),
+          snapshot,
+          checkpoints: [
+            { offsetMs: oneHour, discardCount: 1 },
+            { offsetMs: 2 * oneHour, discardCount: 3 },
+          ],
+        },
+      ],
+      nextSnapshot: snapshot,
+    };
+  }
+
+  test('cuts flex that crosses the restart point', () => {
+    const state = stateWith([
+      { type: 'content', id: 'a', durationMs: oneHour },
+      { type: 'offline', durationMs: 2 * oneHour },
+    ]);
+
+    const kept = truncateAt(state, {
+      timeMs: oddStart + 2 * oneHour,
+      cycleIndex: 0,
+      offsetMs: 2 * oneHour,
+      snapshot: restart,
+    });
+
+    expect(kept.items).toEqual([
+      { type: 'content', id: 'a', durationMs: oneHour },
+      { type: 'offline', durationMs: oneHour },
+    ]);
+    expect(kept.cycles).toEqual([
+      {
+        itemCount: 2,
+        durationMs: 2 * oneHour,
+        snapshot,
+        checkpoints: [{ offsetMs: oneHour, discardCount: 1 }],
+      },
+    ]);
+    expect(kept.nextSnapshot).toEqual(restart);
+    expect(kept.startTime).toBe(oddStart);
+  });
+
+  test('refuses to cut a program in two', () => {
+    const state = stateWith([
+      { type: 'content', id: 'a', durationMs: oneHour },
+      { type: 'content', id: 'b', durationMs: 2 * oneHour },
+    ]);
+
+    expect(() =>
+      truncateAt(state, {
+        timeMs: oddStart + 2 * oneHour,
+        cycleIndex: 0,
+        offsetMs: 2 * oneHour,
+        snapshot: restart,
+      }),
+    ).toThrow(/crosses a schedule checkpoint/);
+  });
+});
+
+describe('rebuildAfterAiring', () => {
+  test('keeps the airing item and rebuilds the rest from the next restart point', async () => {
     const cycleMs = 4 * oneHour;
     const horizonMs = 10 * oneHour;
-    const builder = fakeBuilder({ cycleMs, library: 'v1' });
+    const builder = fakeBuilder({ cycleMs, library: 'v1', checkpoints: true });
     const opts = (now: number): CycleOptions => ({
       now,
       horizonMs,
@@ -584,40 +745,164 @@ describe('cascadeCycles', () => {
     });
 
     const state = await initializeCycles(oddStart, opts(oddStart));
-    expect(state.cycles).toHaveLength(3);
-    const firstSnapshot = state.cycles[0]?.snapshot;
+    const now = oddStart + cycleMs + 90 * oneMinute;
+    const before = positionAt(state, now);
+    const restart = firstRestartAfterAiring(state, now);
 
     // The library changed under the channel.
     builder.setLibrary('v2');
     const callsBefore = builder.calls.length;
-    const now = oddStart + oneHour;
-    const cascaded = await cascadeCycles(state, opts(now));
+    const rebuilt = await rebuildAfterAiring(state, opts(now));
+    if (!rebuilt) {
+      throw new Error('expected a rebuild');
+    }
 
-    expect(cascaded.startTime).toBe(oddStart);
-    expect(cascaded.cycles).toHaveLength(3);
-    expect(cascaded.cycles[0]?.snapshot).toEqual(firstSnapshot);
-    expectItemsMatchCycles(cascaded);
+    expect(rebuilt.startTime).toBe(oddStart);
+    expect(positionAt(rebuilt, now)).toEqual(before);
+    expectItemsMatchCycles(rebuilt);
 
-    // Cycle 0 was rebuilt at the old start, and cycle 1 started from cycle 0's
-    // new end snapshot, not the one it held before.
-    const rebuilds = builder.calls.slice(callsBefore);
-    const newCycle0 = builder.results[callsBefore];
-    expect(rebuilds[0]).toEqual({
-      startTime: oddStart,
-      snapshot: firstSnapshot,
-    });
-    expect(rebuilds[1]).toEqual({
-      startTime: oddStart + cycleMs,
-      snapshot: newCycle0?.endSnapshot,
-    });
-    expect(cascaded.cycles[1]?.snapshot).toEqual(newCycle0?.endSnapshot);
-    expect(cascaded.cycles[1]?.snapshot).not.toEqual(state.cycles[1]?.snapshot);
-
-    // Every item comes from the new library.
-    expect(contentIds(cascaded.items).every((id) => id.startsWith('v2@'))).toBe(
-      true,
+    // Items through the airing one are untouched, and the first rebuild
+    // starts where it ends, from the state recorded there.
+    const keptCount = cycleMs / oneHour + 2;
+    expect(rebuilt.items.slice(0, keptCount)).toEqual(
+      state.items.slice(0, keptCount),
     );
-    expect(contentEnd(cascaded)).toBeGreaterThan(now + horizonMs);
+    expect(builder.calls[callsBefore]).toEqual({
+      startTime: oddStart + cycleMs + 2 * oneHour,
+      snapshot: restart?.snapshot,
+    });
+    expect(
+      contentIds(rebuilt.items.slice(keptCount)).every((id) =>
+        id.startsWith('v2@'),
+      ),
+    ).toBe(true);
+    expect(contentEnd(rebuilt)).toBeGreaterThan(now + horizonMs);
+  });
+
+  test('hands the restart state through carry before building', async () => {
+    const builder = fakeBuilder({ cycleMs: 4 * oneHour, checkpoints: true });
+    const opts = (now: number): CycleOptions => ({
+      now,
+      horizonMs: 6 * oneHour,
+      build: builder.build,
+    });
+    const state = await initializeCycles(oddStart, opts(oddStart));
+
+    const carried: CycleSnapshot = {
+      discardCount: 0,
+      iteratorState: { iterators: {} },
+    };
+    const callsBefore = builder.calls.length;
+    const rebuilt = await rebuildAfterAiring(
+      state,
+      opts(oddStart + 30 * oneMinute),
+      () => carried,
+    );
+
+    expect(builder.calls[callsBefore]?.snapshot).toEqual(carried);
+    // The truncated cycle ends where the edited schedule takes over.
+    expect(rebuilt?.cycles[0]?.durationMs).toBe(oneHour);
+    expect(rebuilt?.cycles[1]?.snapshot).toEqual(carried);
+  });
+
+  test('returns nothing when everything has aired', async () => {
+    const builder = fakeBuilder({ cycleMs: 2 * oneHour, checkpoints: true });
+    const state = await initializeCycles(oddStart, {
+      now: oddStart,
+      horizonMs: oneHour,
+      build: builder.build,
+    });
+
+    const rebuilt = await rebuildAfterAiring(state, {
+      now: contentEnd(state) + oneHour,
+      horizonMs: oneHour,
+      build: builder.build,
+    });
+    expect(rebuilt).toBeUndefined();
+  });
+
+  // A restart restores every show's place and the RNG position, so an
+  // unchanged library airs the same programs until a shuffle starts a new
+  // build. A restored shuffle reshuffles the rest of its pass, and filler
+  // weights start over, so picks after that differ.
+  test('a schedule rebuilt mid-chunk airs the same programs for the rest of the day', async () => {
+    const schedule = fixtureTimeSlotSchedule();
+    const build = timeSlotBuilder(schedule, fixturePrograms, [7], 12 * oneHour);
+    const start = +day1;
+    const opts = (now: number): CycleOptions => ({
+      now,
+      horizonMs: 2 * oneDay,
+      build,
+    });
+    const state = await initializeCycles(start, opts(start));
+
+    // Mid-afternoon, so the restart falls between the mixed link group's
+    // continue slot (16:00) and the rerun slot that replays it (18:00).
+    const now = start + 17 * oneHour + 7 * oneMinute;
+    const rebuilt = await rebuildAfterAiring(state, opts(now));
+    if (!rebuilt) {
+      throw new Error('expected a rebuild');
+    }
+
+    // A cut can split one flex block in two. Viewers see the same flex.
+    const end = start + oneDay;
+    const upTo = (s: CycleState) => {
+      const kept: LineupItem[] = [];
+      let cursor = s.startTime;
+      for (const item of s.items) {
+        if (cursor >= end) break;
+        const last = kept.at(-1);
+        if (item.type === 'offline' && last?.type === 'offline') {
+          kept[kept.length - 1] = {
+            ...last,
+            durationMs: last.durationMs + item.durationMs,
+          };
+        } else {
+          kept.push(item);
+        }
+        cursor += item.durationMs;
+      }
+      return kept;
+    };
+    expect(upTo(rebuilt)).toEqual(upTo(state));
+  });
+
+  test('an ordered show continues across a rebuild', async () => {
+    const schedule = fixtureTimeSlotSchedule();
+    const build = timeSlotBuilder(schedule, fixturePrograms, [7], 12 * oneHour);
+    const start = +day1;
+    const opts = (now: number): CycleOptions => ({
+      now,
+      horizonMs: 3 * oneDay,
+      build,
+    });
+    const state = await initializeCycles(start, opts(start));
+    const rebuilt = await rebuildAfterAiring(
+      state,
+      opts(start + 9 * oneHour + 30 * oneMinute),
+    );
+    if (!rebuilt) {
+      throw new Error('expected a rebuild');
+    }
+
+    // The 03:00 slot plays show A in order, one episode a day.
+    const nextSlotEpisodes = (s: CycleState) => {
+      const ids: string[] = [];
+      let cursor = s.startTime;
+      for (const item of s.items) {
+        const offset = (cursor - start) % oneDay;
+        if (offset === 3 * oneHour && item.type === 'content' && item.id) {
+          ids.push(item.id);
+        }
+        cursor += item.durationMs;
+      }
+      return ids;
+    };
+    const original = nextSlotEpisodes(state);
+    const after = nextSlotEpisodes(rebuilt);
+    const shared = Math.min(original.length, after.length);
+    expect(shared).toBeGreaterThanOrEqual(3);
+    expect(after.slice(0, shared)).toEqual(original.slice(0, shared));
   });
 });
 

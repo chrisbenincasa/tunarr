@@ -25,6 +25,13 @@ export type ProgramIteratorSnapshot = z.infer<
   typeof ProgramIteratorSnapshotSchema
 >;
 
+export const PeriodPlaysSchema = z.object({
+  programIds: z.string().array().nonempty(),
+  replayCursors: z.number().int().nonnegative().array(),
+});
+
+export type PeriodPlays = z.infer<typeof PeriodPlaysSchema>;
+
 // Scheduler state carried from one build to the next. The RNG position is
 // the separate `discardCount`, which the schedulers already accept and return.
 //
@@ -36,6 +43,12 @@ export const SlotIteratorStateSchema = z.object({
   // All-rerun link groups only. How many of the group's slots have already
   // aired the group's current program, keyed like `iterators`.
   rerunPlays: z.record(z.string(), z.number().int().positive()).optional(),
+
+  // Mixed link groups only, keyed like `iterators`. The programs the group's
+  // continue slots played that its rerun slots have not all replayed yet,
+  // and each rerun slot's place in that list, in slot order. Time slots
+  // clear it each period.
+  periodPlays: z.record(z.string(), PeriodPlaysSchema).optional(),
 
   // Random slots only. The next slot for sequential distribution, and when
   // each slot last played, keyed by its index in the sorted slot list.
@@ -55,4 +68,6 @@ export type SlotCycleOptions = {
   // Also stops `startTomorrow` from moving the start, because the caller
   // picks each cycle's start.
   endTime?: Dayjs;
+  // Record a checkpoint at each point the scheduler could restart from.
+  checkpoints?: boolean;
 };

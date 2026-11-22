@@ -23,6 +23,8 @@ export const ChannelSlotScheduleRequest = z.object({
   iteratorState: SlotIteratorStateSchema.optional(),
   // Epoch milliseconds.
   endTime: z.number().int().optional(),
+  // Return restart points inside the build. See SlotCycleOptions.
+  checkpoints: z.boolean().optional(),
 });
 
 export type ChannelSlotScheduleRequest = z.infer<
@@ -43,6 +45,8 @@ export const ProgramsSlotScheduleRequest = z.object({
   iteratorState: SlotIteratorStateSchema.optional(),
   // Epoch milliseconds.
   endTime: z.number().int().optional(),
+  // Return restart points inside the build. See SlotCycleOptions.
+  checkpoints: z.boolean().optional(),
 });
 
 export type ProgramsSlotScheduleRequest = z.infer<
@@ -89,6 +93,7 @@ export class SlotSchedulerService {
         iteratorState: request.iteratorState,
         endTime:
           request.endTime !== undefined ? dayjs(request.endTime) : undefined,
+        checkpoints: request.checkpoints,
       },
     );
   }

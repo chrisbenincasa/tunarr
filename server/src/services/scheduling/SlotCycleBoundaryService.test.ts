@@ -14,7 +14,8 @@ import { createChannel } from '../../testing/fakes/entityCreators.ts';
 import { fixtureRandomSlotSchedule } from '../../testing/fakes/slotScheduleFixtures.ts';
 import { ChannelLineupLock } from '../ChannelLineupLock.ts';
 import type { TVGuideService } from '../TvGuideService.ts';
-import type { BuiltCycle } from './slotCycles.ts';
+import type { BuiltCycle, CycleSnapshot } from './slotCycles.ts';
+import type { SlotIteratorState } from './slotIteratorState.ts';
 import { SlotCycleBoundaryService } from './SlotCycleBoundaryService.ts';
 
 // The real guide service pulls in most of the server. The boundary service
@@ -124,7 +125,11 @@ function createFakeChannelDB(lineup: Lineup): FakeChannelDB {
 
 type FakeBuilder = {
   command: BuildSlotCycleCommand;
-  calls: { startTime: number; discardCount: number }[];
+  calls: {
+    startTime: number;
+    discardCount: number;
+    iteratorState: SlotIteratorState | undefined;
+  }[];
 };
 
 // Each cycle's items name the start time they were built for, so a lineup
@@ -135,12 +140,13 @@ function createFakeBuildCommand(): FakeBuilder {
 
   const execute = async (req: {
     startTime: number;
-    snapshot?: { discardCount: number };
+    snapshot?: CycleSnapshot;
   }): Promise<BuiltCycle> => {
     const index = calls.length;
     calls.push({
       startTime: req.startTime,
       discardCount: req.snapshot?.discardCount ?? 0,
+      iteratorState: req.snapshot?.iteratorState,
     });
 
     await tick(delays[index % delays.length] ?? 0);
@@ -158,7 +164,11 @@ function createFakeBuildCommand(): FakeBuilder {
         discardCount: (req.snapshot?.discardCount ?? 0) + items.length,
         iteratorState: {
           iterators: {
-            main: { type: 'ordered', lastProgramId: `@${req.startTime}` },
+            // The fixture's first slot plays show A in order.
+            'slot:0': {
+              type: 'ordered',
+              lastProgramId: `@${req.startTime}`,
+            },
           },
         },
       },
@@ -399,5 +409,125 @@ describe('SlotCycleBoundaryService', () => {
         (call) => call.startTime >= channelDB.state.channel.startTime,
       ),
     ).toBe(true);
+  });
+
+  describe('applyScheduleEdit', () => {
+    // What a slot save leaves behind: the edited schedule, a new seed, a
+    // single pass of items and no cycles.
+    async function editAndSave(
+      channelDB: FakeChannelDB,
+      edit: (lineup: Lineup) => Partial<Lineup>,
+    ) {
+      const previous = {
+        startTime: channelDB.state.channel.startTime,
+        lineup: structuredClone(channelDB.state.lineup),
+      };
+      const {
+        cycles: _cycles,
+        nextCycleSnapshot: _next,
+        ...rest
+      } = channelDB.state.lineup;
+      channelDB.state.lineup = {
+        ...rest,
+        scheduleSeed: [9, 9, 9],
+        items: [{ type: 'offline', durationMs: oneHour }],
+        ...edit(previous.lineup),
+      };
+      await tick(1);
+      return previous;
+    }
+
+    const reverseSlots = (lineup: Lineup): Partial<Lineup> => {
+      const schedule = lineup.schedule;
+      if (schedule?.type !== 'random') {
+        throw new Error('expected a random slot schedule');
+      }
+      return {
+        schedule: { ...schedule, slots: [...schedule.slots].reverse() },
+      };
+    };
+
+    test('keeps the program on air and carries each slot’s place', async () => {
+      const { service, channelDB, builder } = setup();
+      await service.advanceChannel(channelId, now0);
+
+      const now = now0 + 20 * oneMinute;
+      const startTime = channelDB.state.channel.startTime;
+      const before = structuredClone(channelDB.state.lineup);
+      const firstCycle = before.cycles?.[0];
+      const secondCycleStart = startTime + (firstCycle?.durationMs ?? 0);
+      expect(secondCycleStart).toBeGreaterThan(now);
+
+      const previous = await editAndSave(channelDB, reverseSlots);
+      const callsBefore = builder.calls.length;
+      await service.applyScheduleEdit(channelId, previous, now);
+
+      // The start time stays, and so does the cycle on air.
+      expect(channelDB.state.channel.startTime).toBe(startTime);
+      expect(
+        channelDB.state.lineup.items.slice(0, firstCycle?.itemCount),
+      ).toEqual(before.items.slice(0, firstCycle?.itemCount));
+
+      // The edited schedule takes over at the next restart point. Show A
+      // moved from the first slot to the last, and its place moved with it.
+      // The new seed starts its RNG over.
+      expect(builder.calls[callsBefore]).toEqual({
+        startTime: secondCycleStart,
+        discardCount: 0,
+        iteratorState: {
+          iterators: {
+            'slot:4': { type: 'ordered', lastProgramId: `@${startTime}` },
+          },
+          slotLastPlayedMs: {},
+        },
+      });
+      expectConsistentState(channelDB, now);
+    });
+
+    test('a channel whose cycles have all aired catches up with the carried places', async () => {
+      const { service, channelDB, builder } = setup();
+      await service.advanceChannel(channelId, now0);
+      const lastSnapshot = channelDB.state.lineup.nextCycleSnapshot;
+
+      const now = now0 + 3 * 24 * oneHour;
+      const previous = await editAndSave(channelDB, reverseSlots);
+      const callsBefore = builder.calls.length;
+      await service.applyScheduleEdit(channelId, previous, now);
+
+      const lastProgramId =
+        lastSnapshot?.iteratorState.iterators['slot:0']?.type === 'ordered'
+          ? lastSnapshot.iteratorState.iterators['slot:0'].lastProgramId
+          : undefined;
+      expect(lastProgramId).toBeDefined();
+      expect(builder.calls[callsBefore]).toEqual({
+        startTime: now - (now % oneMinute),
+        discardCount: 0,
+        iteratorState: {
+          iterators: {
+            'slot:4': { type: 'ordered', lastProgramId },
+          },
+          slotLastPlayedMs: {},
+        },
+      });
+      expectConsistentState(channelDB, now);
+    });
+
+    test('a channel that was not rebuilding starts fresh', async () => {
+      const { service, channelDB, builder } = setup(
+        baseLineup({ rebuildEachCycle: false }),
+      );
+      const previous = await editAndSave(channelDB, () => ({
+        rebuildEachCycle: true,
+      }));
+
+      await service.applyScheduleEdit(channelId, previous, now0);
+
+      expect(builder.calls[0]).toEqual({
+        startTime: now0 - (now0 % oneMinute),
+        discardCount: 0,
+        iteratorState: undefined,
+      });
+      expectConsistentState(channelDB, now0);
+    });
   });
 });

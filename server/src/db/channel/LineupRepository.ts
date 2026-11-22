@@ -504,24 +504,24 @@ export class LineupRepository {
 
   /**
    * Rewrites every reference to the given programs as flex, across all channel
-   * lineups. Returns the number of channels that actually changed.
+   * lineups. Returns the IDs of the channels that actually changed.
    *
    * Accepts a Set so large callers (the empty-trash drain) can avoid rebuilding
    * one per call.
    */
   async removeProgramsFromAllLineups(
     programIds: ReadonlySet<string> | string[],
-  ): Promise<number> {
+  ): Promise<string[]> {
     const programsToRemove =
       programIds instanceof Set ? programIds : new Set(programIds);
 
     if (programsToRemove.size === 0) {
-      return 0;
+      return [];
     }
 
     const lineups = await this.loadAllLineups();
 
-    let changedChannels = 0;
+    const changedChannels: string[] = [];
     for (const channelId of Object.keys(lineups)) {
       // Re-read under the lock: the snapshot above is only an enumeration, and
       // another writer may have rewritten the channel since.
@@ -559,7 +559,7 @@ export class LineupRepository {
       });
 
       if (didChange) {
-        changedChannels++;
+        changedChannels.push(channelId);
       }
 
       // Give the event loop a turn so a large install stays responsive.

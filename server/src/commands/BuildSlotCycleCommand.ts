@@ -9,7 +9,7 @@ import type {
   BuiltCycle,
   CycleSnapshot,
 } from '../services/scheduling/slotCycles.ts';
-import { cycleEndTime } from '../services/scheduling/slotCycles.ts';
+import type { SlotCheckpoint } from '../services/scheduling/slotCheckpoints.ts';
 import { KEYS } from '../types/inject.ts';
 import type { Nullable } from '../types/util.ts';
 
@@ -18,6 +18,7 @@ type Request = {
   lineup: LineupConfig;
   startTime: number;
   snapshot: CycleSnapshot | undefined;
+  chunkMs: number;
 };
 
 /**
@@ -38,6 +39,7 @@ export class BuildSlotCycleCommand {
     lineup,
     startTime,
     snapshot,
+    chunkMs,
   }: Request): Promise<BuiltCycle> {
     const { schedule, scheduleSeed } = lineup;
     if (!schedule) {
@@ -62,7 +64,8 @@ export class BuildSlotCycleCommand {
       seed: scheduleSeed,
       discardCount: snapshot?.discardCount ?? 0,
       iteratorState: snapshot?.iteratorState,
-      endTime: cycleEndTime(schedule, startTime),
+      endTime: startTime + chunkMs,
+      checkpoints: true,
     };
 
     const { result } =
@@ -85,8 +88,43 @@ export class BuildSlotCycleCommand {
         discardCount: result.discardCount,
         iteratorState: result.iteratorState,
       },
+      checkpoints: shiftForDroppedItems(
+        result.lineup,
+        result.checkpoints ?? [],
+      ),
     };
   }
+}
+
+// Checkpoint offsets count the scheduler's own output. Dropping an item
+// shortens the lineup, so every checkpoint after it moves earlier by that
+// item's duration.
+function shiftForDroppedItems(
+  lineup: readonly CondensedChannelProgram[],
+  checkpoints: readonly SlotCheckpoint[],
+): SlotCheckpoint[] {
+  const drops: { startMs: number; durationMs: number }[] = [];
+  let cursorMs = 0;
+  for (const program of lineup) {
+    if (channelProgramToLineupItem(program) === null) {
+      drops.push({ startMs: cursorMs, durationMs: program.duration });
+    }
+    cursorMs += program.duration;
+  }
+
+  if (drops.length === 0) {
+    return [...checkpoints];
+  }
+
+  return checkpoints.map((checkpoint) => ({
+    ...checkpoint,
+    offsetMs:
+      checkpoint.offsetMs -
+      sumBy(
+        drops.filter((drop) => drop.startMs < checkpoint.offsetMs),
+        (drop) => drop.durationMs,
+      ),
+  }));
 }
 
 function channelProgramToLineupItem(

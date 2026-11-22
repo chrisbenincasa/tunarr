@@ -307,7 +307,7 @@ export class ChannelDB implements IChannelDB {
 
   removeProgramsFromAllLineups(
     programIds: ReadonlySet<string> | string[],
-  ): Promise<number> {
+  ): Promise<string[]> {
     return this.lineup.removeProgramsFromAllLineups(programIds);
   }
 

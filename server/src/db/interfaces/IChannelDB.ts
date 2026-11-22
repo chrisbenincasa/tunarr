@@ -180,7 +180,7 @@ export interface IChannelDB {
 
   removeProgramsFromAllLineups(
     programIds: ReadonlySet<string> | string[],
-  ): Promise<number>;
+  ): Promise<string[]>;
 
   loadAllLineupConfigs(
     forceRead?: boolean,

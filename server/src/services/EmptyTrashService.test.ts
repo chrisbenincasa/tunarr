@@ -21,6 +21,7 @@ import {
 } from './EmptyTrashService.ts';
 import type { EventService } from './EventService.ts';
 import type { MeilisearchService } from './MeilisearchService.ts';
+import type { SlotCycleBoundaryService } from './scheduling/SlotCycleBoundaryService.ts';
 
 const { runXmlTvNow } = vi.hoisted(() => ({ runXmlTvNow: vi.fn() }));
 
@@ -35,6 +36,7 @@ type Harness = {
   stateRepo: ProgramStateRepository;
   drizzle: DrizzleDBAccess;
   channelDB: { removeProgramsFromAllLineups: ReturnType<typeof vi.fn> };
+  slotCycles: { regenerateChannel: ReturnType<typeof vi.fn> };
   search: { deleteByIds: ReturnType<typeof vi.fn> };
   settings: ISettingsDB;
   events: TunarrEvent[];
@@ -95,7 +97,10 @@ const test = baseTest.extend<Fixture>({
     runXmlTvNow.mockResolvedValue(undefined);
 
     const channelDB = {
-      removeProgramsFromAllLineups: vi.fn().mockResolvedValue(0),
+      removeProgramsFromAllLineups: vi.fn().mockResolvedValue([]),
+    };
+    const slotCycles = {
+      regenerateChannel: vi.fn().mockResolvedValue(undefined),
     };
     const search = { deleteByIds: vi.fn().mockResolvedValue(undefined) };
     const settings = fakeSettings();
@@ -107,6 +112,7 @@ const test = baseTest.extend<Fixture>({
       search as unknown as MeilisearchService,
       settings as unknown as ISettingsDB,
       { push: (ev: TunarrEvent) => events.push(ev) } as unknown as EventService,
+      slotCycles as unknown as SlotCycleBoundaryService,
     );
 
     await use({
@@ -114,6 +120,7 @@ const test = baseTest.extend<Fixture>({
       stateRepo,
       drizzle,
       channelDB,
+      slotCycles,
       search,
       settings: settings as unknown as ISettingsDB,
       events,
@@ -215,7 +222,10 @@ describe('EmptyTrashService', () => {
   });
 
   test('rebuilds the guide once when lineups change', async ({ harness }) => {
-    harness.channelDB.removeProgramsFromAllLineups.mockResolvedValue(2);
+    harness.channelDB.removeProgramsFromAllLineups.mockResolvedValue([
+      'channel-1',
+      'channel-2',
+    ]);
     await insertMissingPrograms(
       harness.drizzle,
       EmptyTrashProgramBatchSize + 10,
@@ -242,7 +252,9 @@ describe('EmptyTrashService', () => {
   test('a failed guide rebuild does not fail the drain', async ({
     harness,
   }) => {
-    harness.channelDB.removeProgramsFromAllLineups.mockResolvedValue(1);
+    harness.channelDB.removeProgramsFromAllLineups.mockResolvedValue([
+      'channel-1',
+    ]);
     runXmlTvNow.mockRejectedValue(new Error('guide build failed'));
     await insertMissingPrograms(harness.drizzle, 3);
 
@@ -256,6 +268,54 @@ describe('EmptyTrashService', () => {
         ev.type === 'empty_trash' ? ev.detail.status : ev.type,
       ),
     ).toEqual(['started', 'completed']);
+  });
+
+  test('rebuilds slot cycles for changed channels after deleting programs', async ({
+    harness,
+  }) => {
+    harness.channelDB.removeProgramsFromAllLineups.mockResolvedValue([
+      'channel-1',
+      'channel-2',
+    ]);
+    let missingAtRebuild: number | undefined;
+    harness.slotCycles.regenerateChannel.mockImplementation(async () => {
+      missingAtRebuild ??= await harness.stateRepo.countMissingPrograms();
+    });
+    await insertMissingPrograms(harness.drizzle, 3);
+
+    await harness.service.request();
+    await settle(harness.events);
+
+    expect(harness.slotCycles.regenerateChannel.mock.calls).toEqual([
+      ['channel-1'],
+      ['channel-2'],
+    ]);
+    // A rebuild before the deletes could pick the trashed programs again.
+    expect(missingAtRebuild).toBe(0);
+  });
+
+  test('a failed slot cycle rebuild does not fail the drain or the other channels', async ({
+    harness,
+  }) => {
+    harness.channelDB.removeProgramsFromAllLineups.mockResolvedValue([
+      'channel-1',
+      'channel-2',
+    ]);
+    harness.slotCycles.regenerateChannel.mockRejectedValueOnce(
+      new Error('rebuild failed'),
+    );
+    await insertMissingPrograms(harness.drizzle, 3);
+
+    await harness.service.request();
+    await settle(harness.events);
+
+    expect(harness.slotCycles.regenerateChannel).toHaveBeenCalledTimes(2);
+    expect(harness.pendingFlag()).toBeNull();
+    expect(
+      harness.events.some(
+        (ev) => ev.type === 'empty_trash' && ev.detail.status === 'completed',
+      ),
+    ).toBe(true);
   });
 
   test('search deletes carry exactly the ids of their own batch', async ({
@@ -286,7 +346,7 @@ describe('EmptyTrashService', () => {
       async () => {
         secondStatus = await harness.service.request();
         await lineupGate;
-        return 0;
+        return [];
       },
     );
 
@@ -320,7 +380,7 @@ describe('EmptyTrashService', () => {
       async () => {
         harness.service.cancel();
         await lineupGate;
-        return 0;
+        return ['channel-1'];
       },
     );
 
@@ -329,6 +389,7 @@ describe('EmptyTrashService', () => {
     await settle(harness.events);
 
     expect(await harness.stateRepo.countMissingPrograms()).toBe(30);
+    expect(harness.slotCycles.regenerateChannel).not.toHaveBeenCalled();
     expect(harness.service.getStatus().state).toBe('idle');
     expect(harness.pendingFlag()).toBeNull();
     expect(
