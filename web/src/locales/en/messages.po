@@ -353,6 +353,10 @@ msgstr "# of Programs"
 msgid "# Programs"
 msgstr "# Programs"
 
+#: src/components/settings/media_source/MediaSourceLocation.tsx
+msgid "+{more} more"
+msgstr "+{more} more"
+
 #: src/components/channels/ChannelsView.tsx
 msgid "<0>{channelCount}</0> {channelCount, plural, one {channel} other {channels}} · <1>{streaming}</1> streaming"
 msgstr "<0>{channelCount}</0> {channelCount, plural, one {channel} other {channels}} · <1>{streaming}</1> streaming"
@@ -368,6 +372,10 @@ msgstr "<0>{fillerCount}</0> {fillerCount, plural, one {filler list} other {fill
 #: src/components/custom-shows/CustomShowsView.tsx
 msgid "<0>{showCount}</0> {showCount, plural, one {playlist} other {playlists}}"
 msgstr "<0>{showCount}</0> {showCount, plural, one {playlist} other {playlists}}"
+
+#: src/components/settings/media_source/MediaSourcesView.tsx
+msgid "<0>{sourceCount}</0> {sourceCount, plural, one {media source} other {media sources}}"
+msgstr "<0>{sourceCount}</0> {sourceCount, plural, one {media source} other {media sources}}"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "<0>Configure the directory where Tunarr writes HLS segment files when transcoding. Tunarr will create the target directory (but not intermediate directories) if it doesn't exist.<1/>Changing this field will only affect new sessions. Existing sessions will continue writing to the previous setting, but will clean out segments when the segment ends.<2/>When unset, Tunarr will write segments to its current working directory.</0>"
@@ -1279,6 +1287,10 @@ msgstr "Check"
 msgid "Check FFmpeg"
 msgstr "Check FFmpeg"
 
+#: src/components/settings/media_source/MediaSourceHealthPill.tsx
+msgid "Checking"
+msgstr "Checking"
+
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Choose the transcode configuration to use for this channel. Configure transcode configurations on the <0>FFmpeg settings page</0>."
 msgstr "Choose the transcode configuration to use for this channel. Configure transcode configurations on the <0>FFmpeg settings page</0>."
@@ -1736,10 +1748,12 @@ msgstr "Default profile"
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Delete"
 msgstr "Delete"
 
@@ -1753,6 +1767,7 @@ msgstr "Delete \"{0}\""
 #. placeholder {0}: show.name
 #: src/components/custom-shows/CustomShowCard.tsx
 #: src/components/fillers/FillerListCard.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 msgid "Delete {0}"
 msgstr "Delete {0}"
@@ -1775,8 +1790,8 @@ msgstr "Delete Channel \"{0}\"?"
 msgid "Delete Filler List \"{0}\"?"
 msgstr "Delete Filler List \"{0}\"?"
 
-#. placeholder {0}: deletingMediaSource?.name
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#. placeholder {0}: pendingDelete?.name
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Delete Media Source \"{0}\"?"
 msgstr "Delete Media Source \"{0}\"?"
 
@@ -1830,7 +1845,7 @@ msgstr "Deleting a Channel will remove all programming from the channel. This ac
 msgid "Deleting a Filler will remove all programming from the channel. This action cannot be undone."
 msgstr "Deleting a Filler will remove all programming from the channel. This action cannot be undone."
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Deleting a media source will remove all of its associated programs from Tunarr."
 msgstr "Deleting a media source will remove all of its associated programs from Tunarr."
 
@@ -2037,6 +2052,7 @@ msgstr "Eager"
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
@@ -2047,6 +2063,8 @@ msgid "Edit"
 msgstr "Edit"
 
 #. placeholder {0}: collection.name
+#. placeholder {0}: source.name
+#: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 msgid "Edit {0}"
 msgstr "Edit {0}"
@@ -2072,13 +2090,19 @@ msgstr "Edit Filler List"
 msgid "Edit Flex Time"
 msgstr "Edit Flex Time"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Edit Libraries"
 msgstr "Edit Libraries"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#. placeholder {0}: source.name
+#: src/components/settings/media_source/MediaSourceCard.tsx
+msgid "Edit libraries of {0}"
+msgstr "Edit libraries of {0}"
+
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Edit Media Source"
 msgstr "Edit Media Source"
 
@@ -2830,9 +2854,17 @@ msgstr "HDHR: Loading..."
 msgid "Head"
 msgstr "Head"
 
+#: src/components/settings/media_source/MediaSourcesView.tsx
+msgid "Health"
+msgstr "Health"
+
+#: src/components/settings/media_source/MediaSourceHealthPill.tsx
+msgid "Healthy"
+msgstr "Healthy"
+
 #: src/pages/settings/MediaSourceSettingsPage.tsx
-msgid "Healthy?"
-msgstr "Healthy?"
+#~ msgid "Healthy?"
+#~ msgstr "Healthy?"
 
 #: src/components/ui/patterns/AppShell/HelpMenu.tsx
 #: src/components/ui/patterns/AppShell/HelpMenu.tsx
@@ -3100,8 +3132,8 @@ msgstr "Level"
 
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/shell/useShellNav.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Libraries"
 msgstr "Libraries"
 
@@ -3195,6 +3227,10 @@ msgstr "Local"
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 msgid "Local Path"
 msgstr "Local Path"
+
+#: src/components/settings/media_source/MediaSourcesView.tsx
+msgid "Location"
+msgstr "Location"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Lock Weights"
@@ -3380,12 +3416,13 @@ msgstr "Media Source"
 msgid "Media Source: \"{0}\""
 msgstr "Media Source: \"{0}\""
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Media Sources"
 msgstr "Media Sources"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
 msgstr "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
 
@@ -3541,11 +3578,11 @@ msgstr "Must use a valid URL, or empty."
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 #: src/pages/settings/TaskSettingsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Name"
@@ -4359,10 +4396,16 @@ msgstr "Redirect..."
 msgid "Refresh"
 msgstr "Refresh"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Refresh Libraries"
 msgstr "Refresh Libraries"
+
+#. placeholder {0}: source.name
+#: src/components/settings/media_source/MediaSourceCard.tsx
+msgid "Refresh libraries of {0}"
+msgstr "Refresh libraries of {0}"
 
 #: src/pages/ErrorPage.tsx
 msgid "Refresh Page"
@@ -5909,12 +5952,12 @@ msgstr "TV shows are grouped by show"
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Type"
@@ -5942,6 +5985,10 @@ msgstr "Unlink"
 #~ msgid "Unlink from group"
 #~ msgstr "Unlink from group"
 
+#: src/components/settings/media_source/MediaSourceHealthPill.tsx
+msgid "Unreachable"
+msgstr "Unreachable"
+
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
@@ -5957,7 +6004,6 @@ msgstr "Update Play Status"
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "URL"
 msgstr "URL"
 
@@ -6240,6 +6286,10 @@ msgstr "You can change any setting below before shuffling."
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "You have unsaved changes!"
 msgstr "You have unsaved changes!"
+
+#: src/components/settings/media_source/MediaSourcesView.tsx
+msgid "You haven't added any media sources yet."
+msgstr "You haven't added any media sources yet."
 
 #: src/components/channel_config/NoChannelsCreated.tsx
 #: src/components/channels/ChannelsView.tsx

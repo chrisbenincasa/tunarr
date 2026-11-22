@@ -353,6 +353,10 @@ msgstr "节目数量"
 msgid "# Programs"
 msgstr "节目数"
 
+#: src/components/settings/media_source/MediaSourceLocation.tsx
+msgid "+{more} more"
+msgstr ""
+
 #: src/components/channels/ChannelsView.tsx
 msgid "<0>{channelCount}</0> {channelCount, plural, one {channel} other {channels}} · <1>{streaming}</1> streaming"
 msgstr ""
@@ -367,6 +371,10 @@ msgstr ""
 
 #: src/components/custom-shows/CustomShowsView.tsx
 msgid "<0>{showCount}</0> {showCount, plural, one {playlist} other {playlists}}"
+msgstr ""
+
+#: src/components/settings/media_source/MediaSourcesView.tsx
+msgid "<0>{sourceCount}</0> {sourceCount, plural, one {media source} other {media sources}}"
 msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -1279,6 +1287,10 @@ msgstr "检查"
 msgid "Check FFmpeg"
 msgstr ""
 
+#: src/components/settings/media_source/MediaSourceHealthPill.tsx
+msgid "Checking"
+msgstr ""
+
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Choose the transcode configuration to use for this channel. Configure transcode configurations on the <0>FFmpeg settings page</0>."
 msgstr "选择此频道使用的转码配置。转码配置可在<0>FFmpeg 设置页</0>中配置。"
@@ -1736,10 +1748,12 @@ msgstr ""
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Delete"
 msgstr "删除"
 
@@ -1753,6 +1767,7 @@ msgstr "删除「{0}」"
 #. placeholder {0}: show.name
 #: src/components/custom-shows/CustomShowCard.tsx
 #: src/components/fillers/FillerListCard.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 msgid "Delete {0}"
 msgstr ""
@@ -1775,8 +1790,8 @@ msgstr "删除频道「{0}」？"
 msgid "Delete Filler List \"{0}\"?"
 msgstr "删除垫片列表「{0}」？"
 
-#. placeholder {0}: deletingMediaSource?.name
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#. placeholder {0}: pendingDelete?.name
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Delete Media Source \"{0}\"?"
 msgstr "删除媒体源「{0}」？"
 
@@ -1830,7 +1845,7 @@ msgstr "删除频道将移除该频道的所有节目编排，此操作无法撤
 msgid "Deleting a Filler will remove all programming from the channel. This action cannot be undone."
 msgstr "删除垫片将移除该频道的所有节目编排，此操作无法撤销。"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Deleting a media source will remove all of its associated programs from Tunarr."
 msgstr "删除媒体源将从 Tunarr 中移除其关联的所有节目。"
 
@@ -2037,6 +2052,7 @@ msgstr "即时"
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
@@ -2047,6 +2063,8 @@ msgid "Edit"
 msgstr "编辑"
 
 #. placeholder {0}: collection.name
+#. placeholder {0}: source.name
+#: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 msgid "Edit {0}"
 msgstr ""
@@ -2072,13 +2090,19 @@ msgstr "编辑垫片列表"
 msgid "Edit Flex Time"
 msgstr "编辑弹性时间"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Edit Libraries"
 msgstr "编辑媒体库"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#. placeholder {0}: source.name
+#: src/components/settings/media_source/MediaSourceCard.tsx
+msgid "Edit libraries of {0}"
+msgstr ""
+
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Edit Media Source"
 msgstr "编辑媒体源"
 
@@ -2830,9 +2854,17 @@ msgstr "HDHR：加载中…"
 msgid "Head"
 msgstr "头部"
 
+#: src/components/settings/media_source/MediaSourcesView.tsx
+msgid "Health"
+msgstr ""
+
+#: src/components/settings/media_source/MediaSourceHealthPill.tsx
+msgid "Healthy"
+msgstr ""
+
 #: src/pages/settings/MediaSourceSettingsPage.tsx
-msgid "Healthy?"
-msgstr "是否正常？"
+#~ msgid "Healthy?"
+#~ msgstr "是否正常？"
 
 #: src/components/ui/patterns/AppShell/HelpMenu.tsx
 #: src/components/ui/patterns/AppShell/HelpMenu.tsx
@@ -3100,8 +3132,8 @@ msgstr "级别"
 
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/shell/useShellNav.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Libraries"
 msgstr "媒体库"
 
@@ -3195,6 +3227,10 @@ msgstr "本地"
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 msgid "Local Path"
 msgstr "本地路径"
+
+#: src/components/settings/media_source/MediaSourcesView.tsx
+msgid "Location"
+msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Lock Weights"
@@ -3380,12 +3416,13 @@ msgstr "媒体源"
 msgid "Media Source: \"{0}\""
 msgstr "媒体源：「{0}」"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Media Sources"
 msgstr "媒体源"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
 msgstr "媒体源是 Tunarr 获取内容的来源。内容可以来自你的文件系统，也可以来自远程服务器（如 Plex 或 Jellyfin）。Tunarr 至少需要连接一个媒体源，才能创建频道并播放媒体。"
 
@@ -3541,11 +3578,11 @@ msgstr "必须填写有效的 URL，或留空。"
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 #: src/pages/settings/TaskSettingsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Name"
@@ -4359,10 +4396,16 @@ msgstr ""
 msgid "Refresh"
 msgstr "刷新"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Refresh Libraries"
 msgstr "刷新媒体库"
+
+#. placeholder {0}: source.name
+#: src/components/settings/media_source/MediaSourceCard.tsx
+msgid "Refresh libraries of {0}"
+msgstr ""
 
 #: src/pages/ErrorPage.tsx
 msgid "Refresh Page"
@@ -5909,12 +5952,12 @@ msgstr "剧集按剧名分组"
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Type"
@@ -5942,6 +5985,10 @@ msgstr "解除关联"
 #~ msgid "Unlink from group"
 #~ msgstr "Unlink from group"
 
+#: src/components/settings/media_source/MediaSourceHealthPill.tsx
+msgid "Unreachable"
+msgstr ""
+
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
@@ -5957,7 +6004,6 @@ msgstr ""
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "URL"
 msgstr "链接"
 
@@ -6240,6 +6286,10 @@ msgstr ""
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "You have unsaved changes!"
 msgstr "有未保存的更改！"
+
+#: src/components/settings/media_source/MediaSourcesView.tsx
+msgid "You haven't added any media sources yet."
+msgstr ""
 
 #: src/components/channel_config/NoChannelsCreated.tsx
 #: src/components/channels/ChannelsView.tsx
