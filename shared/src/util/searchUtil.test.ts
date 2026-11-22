@@ -1297,3 +1297,72 @@ describe('dateValue parser rule', () => {
     expect(query).toEqual('title ~ "a b c"');
   });
 });
+
+describe('summary, rating, country, and collection fields', () => {
+  test.each([
+    [
+      'summary ~ heist',
+      {
+        key: 'summary',
+        name: 'summary',
+        op: 'contains',
+        type: 'string',
+        value: ['heist'],
+      },
+    ],
+    [
+      'summary !~ heist',
+      {
+        key: 'summary',
+        name: 'summary',
+        op: 'not contains',
+        type: 'string',
+        value: ['heist'],
+      },
+    ],
+    [
+      'country = Japan',
+      {
+        key: 'countries.name',
+        name: 'country',
+        op: '=',
+        type: 'faceted_string',
+        value: ['Japan'],
+      },
+    ],
+    [
+      'collection IN [Marvel, "Star Wars"]',
+      {
+        key: 'collections.name',
+        name: 'collection',
+        op: 'in',
+        type: 'faceted_string',
+        value: ['Marvel', 'Star Wars'],
+      },
+    ],
+    [
+      'audience_rating > 7.5',
+      {
+        key: 'audienceRating',
+        name: 'audience_rating',
+        op: '>',
+        type: 'numeric',
+        value: 7.5,
+      },
+    ],
+    [
+      'critic_rating between [60, 90]',
+      {
+        key: 'criticRating',
+        name: 'critic_rating',
+        op: 'to',
+        type: 'numeric',
+        value: [60, 90],
+      },
+    ],
+  ] as const)('parses %s to its index field', (input, fieldSpec) => {
+    const request = parsedSearchToRequest(parseAndCheckExpression(input));
+
+    expect(request).toEqual({ type: 'value', fieldSpec });
+  });
+});

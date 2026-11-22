@@ -138,8 +138,10 @@ export class ProgramConverter {
           ({
             ...base,
             type: 'movie',
-            plot: movie.summary,
+            plot: movie.plot ?? movie.summary,
             tagline: null,
+            audienceRating: movie.audienceRating,
+            criticRating: movie.criticRating,
             writers:
               program.credits
                 ?.filter((c) => c.type === 'writer')

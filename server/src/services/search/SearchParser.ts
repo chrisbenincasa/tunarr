@@ -1,13 +1,11 @@
-import type {
-  SearchFilter,
-  SearchFilterValueNode,
-} from '@tunarr/types/schemas';
+import type { SearchFilter } from '@tunarr/types/schemas';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import { LanguageCodeSearchFilterMutator } from './LanguageCodeSearchFilterMutator.ts';
 import { LibraryNameSearchMutator } from './LibraryNameSearchMutator.ts';
 import { MediaSourceNameSearchMutator } from './MediaSourceNameSearchMutator.ts';
 import type { SearchFilterValueMutator } from './SearchFilterValueMutator.ts';
+import { SummarySearchMutator } from './SummarySearchMutator.ts';
 
 @injectable()
 export class SearchParser {
@@ -24,6 +22,7 @@ export class SearchParser {
         allMediaSources.flatMap((ms) => ms.libraries),
       ),
       new LanguageCodeSearchFilterMutator(),
+      new SummarySearchMutator(),
     ];
 
     return this.preprocessSearchFilterInner(filter, mutators);
@@ -45,9 +44,9 @@ export class SearchParser {
         return filter;
       }
       case 'value': {
-        let newOp: SearchFilterValueNode = filter;
+        let newOp: SearchFilter = filter;
         for (const op of operators) {
-          if (!op.appliesTo(newOp)) {
+          if (newOp.type !== 'value' || !op.appliesTo(newOp)) {
             continue;
           }
           newOp = op.mutate(newOp);

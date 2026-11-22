@@ -171,6 +171,12 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'grandparent.studio',
     'audioLanguages',
     'subtitleLanguages',
+    'summary',
+    'plot',
+    'countries.name',
+    'collections.name',
+    'audienceRating',
+    'criticRating',
   ],
   sortable: [
     'title',
@@ -180,6 +186,8 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'originalReleaseYear',
     'addedAt',
     'index',
+    'audienceRating',
+    'criticRating',
   ],
   caseSensitiveFilters: [
     'grandparent.id',
@@ -285,6 +293,10 @@ type BaseProgramSearchDocument = {
   tags: string[];
   state: ProgramState;
   addedAt: Nullable<number>;
+  countries: StringName[];
+  collections: StringName[];
+  audienceRating: Nullable<number>;
+  criticRating: Nullable<number>;
 };
 
 export type TerminalProgramSearchDocument<
@@ -389,6 +401,66 @@ export type ProgramIndexPartialUpdate =
       Partial<ProgramGroupingSearchDocument<ProgramGroupingType>>,
       'id'
     >;
+
+/**
+ * ANDs a scope clause onto a filter. The filter is parenthesized because
+ * Meilisearch binds AND tighter than OR, so an unwrapped top-level OR would
+ * leak results from outside the scope.
+ */
+export function scopeFilter(filter: Maybe<string>, clause: string): string {
+  return isNonEmptyString(filter) ? `(${filter}) AND ${clause}` : clause;
+}
+
+type RatingAndOriginSource = {
+  audienceRating?: number | null;
+  criticRating?: number | null;
+  countries?: StringName[];
+  collections?: StringName[];
+};
+
+type RatingAndOriginFields = {
+  audienceRating: number | null;
+  criticRating: number | null;
+  countries: StringName[];
+  collections: StringName[];
+};
+
+/**
+ * Ratings, countries, and collections for an index document, defaulting
+ * missing values to null or empty.
+ */
+export function ratingAndOriginFields(
+  source: Maybe<RatingAndOriginSource>,
+): RatingAndOriginFields {
+  return {
+    audienceRating: source?.audienceRating ?? null,
+    criticRating: source?.criticRating ?? null,
+    countries: source?.countries ?? [],
+    collections: source?.collections ?? [],
+  };
+}
+
+/**
+ * Ratings, countries, and collections for a program's index document.
+ * Episodes inherit all four from their show.
+ */
+export function programRatingAndOriginFields(
+  program:
+    | ({ type: 'movie' } & RatingAndOriginSource)
+    | { type: 'episode'; season?: { show?: RatingAndOriginSource } }
+    | { type: 'track' | 'other_video' | 'music_video' },
+): RatingAndOriginFields {
+  switch (program.type) {
+    case 'movie':
+      return ratingAndOriginFields(program);
+    case 'episode':
+      return ratingAndOriginFields(program.season?.show);
+    case 'track':
+    case 'other_video':
+    case 'music_video':
+      return ratingAndOriginFields(undefined);
+  }
+}
 
 @injectable()
 export class MeilisearchService implements ISearchService {
@@ -968,6 +1040,7 @@ export class MeilisearchService implements ISearchService {
       ),
       tags: show.tags,
       studio: show.studios,
+      ...ratingAndOriginFields(show),
       state: 'ok',
       addedAt: show.createdAt ?? null,
     };
@@ -1021,6 +1094,10 @@ export class MeilisearchService implements ISearchService {
           `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
       ),
       tags: season.tags,
+      countries: [],
+      collections: [],
+      audienceRating: null,
+      criticRating: null,
       state: 'ok',
       addedAt: season.createdAt ?? null,
       parent: {
@@ -1146,6 +1223,10 @@ export class MeilisearchService implements ISearchService {
           `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
       ),
       tags: artist.tags,
+      countries: [],
+      collections: [],
+      audienceRating: null,
+      criticRating: null,
       state: 'ok',
       addedAt: artist.createdAt ?? null,
     };
@@ -1196,6 +1277,10 @@ export class MeilisearchService implements ISearchService {
           `${eid.type}|${eid.sourceId ?? ''}|${eid.id}` satisfies MergedExternalId,
       ),
       tags: album.tags,
+      countries: [],
+      collections: [],
+      audienceRating: null,
+      criticRating: null,
       state: 'ok',
       addedAt: album.createdAt ?? null,
       parent: {
@@ -1461,11 +1546,7 @@ export class MeilisearchService implements ISearchService {
       index.filterable.includes('libraryId')
     ) {
       const encodedLibraryId = encodeCaseSensitiveId(request.libraryId);
-      if (isNonEmptyString(filter)) {
-        filter += ` AND libraryId = "${encodedLibraryId}"`;
-      } else {
-        filter = `libraryId = "${encodedLibraryId}"`;
-      }
+      filter = scopeFilter(filter, `libraryId = "${encodedLibraryId}"`);
     }
 
     if (
@@ -1473,11 +1554,7 @@ export class MeilisearchService implements ISearchService {
       index.filterable.includes('mediaSourceId')
     ) {
       const encodedMediaSourceId = encodeCaseSensitiveId(request.mediaSourceId);
-      if (isNonEmptyString(filter)) {
-        filter += ` AND mediaSourceId = "${encodedMediaSourceId}"`;
-      } else {
-        filter = `mediaSourceId = "${encodedMediaSourceId}"`;
-      }
+      filter = scopeFilter(filter, `mediaSourceId = "${encodedMediaSourceId}"`);
     }
 
     if (isNonEmptyString(request.query)) {
@@ -1556,11 +1633,7 @@ export class MeilisearchService implements ISearchService {
       index.filterable.includes('libraryId')
     ) {
       const encodedLibraryId = encodeCaseSensitiveId(request.libraryId);
-      if (isNonEmptyString(filter)) {
-        filter += ` AND libraryId = "${encodedLibraryId}"`;
-      } else {
-        filter = `libraryId = "${encodedLibraryId}"`;
-      }
+      filter = scopeFilter(filter, `libraryId = "${encodedLibraryId}"`);
     }
 
     if (
@@ -1568,11 +1641,7 @@ export class MeilisearchService implements ISearchService {
       index.filterable.includes('mediaSourceId')
     ) {
       const encodedMediaSourceId = encodeCaseSensitiveId(request.mediaSourceId);
-      if (isNonEmptyString(filter)) {
-        filter += ` AND mediaSourceId = "${encodedMediaSourceId}"`;
-      } else {
-        filter = `mediaSourceId = "${encodedMediaSourceId}"`;
-      }
+      filter = scopeFilter(filter, `mediaSourceId = "${encodedMediaSourceId}"`);
     }
 
     this.logger.debug(
@@ -1908,6 +1977,9 @@ export class MeilisearchService implements ISearchService {
         break;
     }
 
+    const { audienceRating, criticRating, countries, collections } =
+      programRatingAndOriginFields(program);
+
     return {
       id: program.uuid,
       duration: program.duration ?? null,
@@ -1918,7 +1990,7 @@ export class MeilisearchService implements ISearchService {
         .getOrElse(() => null),
       originalReleaseYear: program.year,
       summary,
-      plot: null,
+      plot: program.type === 'movie' ? program.plot : null,
       tagline: program.type === 'movie' ? program.tagline : null,
       title: program.title,
       titleReverse: program.title.split('').reverse().join(''),
@@ -1940,6 +2012,10 @@ export class MeilisearchService implements ISearchService {
       studio: program.studios ?? [],
       tags: program.tags,
       addedAt: program.createdAt ?? null,
+      countries,
+      collections,
+      audienceRating,
+      criticRating,
       mediaSourceId: encodeCaseSensitiveId(program.mediaSourceId),
       libraryId: encodeCaseSensitiveId(program.libraryId),
       videoWidth: width,
@@ -2052,7 +2128,7 @@ export class MeilisearchService implements ISearchService {
         .getOrElse(() => null),
       originalReleaseYear: program.year,
       summary,
-      plot: null,
+      plot: program.type === 'movie' ? program.plot : null,
       tagline: program.type === 'movie' ? program.tagline : null,
       title: program.title,
       titleReverse: program.title?.split('').reverse().join(''),

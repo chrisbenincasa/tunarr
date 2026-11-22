@@ -1,6 +1,19 @@
+import type { Movie } from '@tunarr/types';
 import { SearchFilter } from '@tunarr/types/api';
+import { instance, mock } from 'ts-mockito';
 import { describe, expect, test } from 'vitest';
-import { MeilisearchService } from './MeilisearchService.js';
+import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
+import type { ServerOptions } from '../globals.ts';
+import type { HasMediaSourceAndLibraryId } from '../types/Media.ts';
+import { ChildProcessHelper } from '../util/ChildProcessHelper.ts';
+import { FileSystemService } from './FileSystemService.ts';
+import {
+  MeilisearchService,
+  programRatingAndOriginFields,
+  ratingAndOriginFields,
+  scopeFilter,
+} from './MeilisearchService.js';
+import { SearchParser } from './search/SearchParser.ts';
 
 // Mock index configuration for testing
 const mockIndex = {
@@ -1050,6 +1063,174 @@ describe('MeilisearchService.buildFilterExpression', () => {
       expect(result).toBe(
         "type = 'movie' AND genres.name NOT IN ['horror', 'thriller']",
       );
+    });
+  });
+});
+
+describe('scopeFilter', () => {
+  test('returns the clause alone when there is no filter', () => {
+    expect(scopeFilter(undefined, 'libraryId = "abc"')).toBe(
+      'libraryId = "abc"',
+    );
+    expect(scopeFilter('', 'libraryId = "abc"')).toBe('libraryId = "abc"');
+  });
+
+  test('parenthesizes the filter so a top-level OR stays in scope', () => {
+    expect(
+      scopeFilter(
+        'summary CONTAINS "x" OR plot CONTAINS "x"',
+        'libraryId = "abc"',
+      ),
+    ).toBe('(summary CONTAINS "x" OR plot CONTAINS "x") AND libraryId = "abc"');
+  });
+
+  test('nests when library and media source scopes both apply', () => {
+    const library = scopeFilter('a = 1 OR b = 2', 'libraryId = "lib"');
+    expect(scopeFilter(library, 'mediaSourceId = "ms"')).toBe(
+      '((a = 1 OR b = 2) AND libraryId = "lib") AND mediaSourceId = "ms"',
+    );
+  });
+});
+
+describe('programRatingAndOriginFields', () => {
+  const origin = {
+    audienceRating: 8.1,
+    criticRating: 92,
+    countries: [{ name: 'Japan' }],
+    collections: [{ name: 'Ghibli' }],
+  };
+
+  test('reads a movie its own values', () => {
+    expect(programRatingAndOriginFields({ type: 'movie', ...origin })).toEqual(
+      origin,
+    );
+  });
+
+  test('defaults a movie with no values to null and empty', () => {
+    expect(programRatingAndOriginFields({ type: 'movie' })).toEqual({
+      audienceRating: null,
+      criticRating: null,
+      countries: [],
+      collections: [],
+    });
+  });
+
+  test('gives an episode all four values from its show, collections included', () => {
+    expect(
+      programRatingAndOriginFields({
+        type: 'episode',
+        season: { show: origin },
+      }),
+    ).toEqual(origin);
+  });
+
+  test('defaults an episode without a loaded show', () => {
+    expect(programRatingAndOriginFields({ type: 'episode' })).toEqual({
+      audienceRating: null,
+      criticRating: null,
+      countries: [],
+      collections: [],
+    });
+  });
+
+  test.each(['track', 'other_video', 'music_video'] as const)(
+    'leaves a %s empty',
+    (type) => {
+      expect(programRatingAndOriginFields({ type })).toEqual({
+        audienceRating: null,
+        criticRating: null,
+        countries: [],
+        collections: [],
+      });
+    },
+  );
+});
+
+describe('ratingAndOriginFields', () => {
+  test("copies a show's values into its document", () => {
+    const show = {
+      audienceRating: 8.4,
+      criticRating: null,
+      countries: [{ name: 'Japan' }],
+      collections: [{ name: 'Anime' }],
+    };
+
+    expect(ratingAndOriginFields(show)).toEqual(show);
+  });
+
+  test('defaults a missing source to null and empty', () => {
+    expect(ratingAndOriginFields(undefined)).toEqual({
+      audienceRating: null,
+      criticRating: null,
+      countries: [],
+      collections: [],
+    });
+  });
+});
+
+describe('MeilisearchService movie documents', () => {
+  const service = new MeilisearchService(
+    instance(mock<ServerOptions>()),
+    instance(mock<ISettingsDB>()),
+    instance(mock(ChildProcessHelper)),
+    instance(mock(FileSystemService)),
+    instance(mock(SearchParser)),
+  );
+
+  function makeMovie(
+    overrides: Partial<Movie>,
+  ): Movie & HasMediaSourceAndLibraryId {
+    return {
+      uuid: '00000000-0000-4000-8000-000000000001',
+      type: 'movie',
+      sourceType: 'jellyfin',
+      externalId: 'ext-1',
+      canonicalId: 'canonical-1',
+      mediaSourceId: 'media-source-1',
+      libraryId: 'library-1',
+      identifiers: [],
+      title: 'Spirited Away',
+      sortTitle: 'spirited away',
+      originalTitle: null,
+      tags: [],
+      year: 2001,
+      releaseDate: null,
+      releaseDateString: null,
+      summary: null,
+      plot: null,
+      tagline: null,
+      rating: 'PG',
+      artwork: [],
+      state: 'ok',
+      duration: 60_000,
+      ...overrides,
+    };
+  }
+
+  test("indexes a movie's plot so the summary filter can match it", () => {
+    const document = service['convertProgramToSearchDocument'](
+      makeMovie({ plot: 'A girl wanders into a world of spirits.' }),
+    );
+
+    expect(document.plot).toBe('A girl wanders into a world of spirits.');
+    expect(document.summary).toBeNull();
+  });
+
+  test("indexes a movie's ratings, countries, and collections", () => {
+    const document = service['convertProgramToSearchDocument'](
+      makeMovie({
+        audienceRating: 8.6,
+        criticRating: 97,
+        countries: [{ name: 'Japan' }],
+        collections: [{ name: 'Ghibli' }],
+      }),
+    );
+
+    expect(document).toMatchObject({
+      audienceRating: 8.6,
+      criticRating: 97,
+      countries: [{ name: 'Japan' }],
+      collections: [{ name: 'Ghibli' }],
     });
   });
 });
