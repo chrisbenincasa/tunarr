@@ -51,6 +51,12 @@ export const BwdifOptionsSchema = z.strictObject({
 });
 export type BwdifOptions = z.infer<typeof BwdifOptionsSchema>;
 
+export const CacheConfigSchema = z.strictObject({
+  folder: z.string().nullable().optional(),
+  max_unused_days: z.number().int().min(1).nullable().optional(),
+});
+export type CacheConfig = z.infer<typeof CacheConfigSchema>;
+
 export const DeinterlaceQsvOptionsSchema = z.strictObject({
   mode: z.string().regex(new RegExp('^[a-z0-9_.+-]+$')).nullable().optional(),
 });
@@ -219,11 +225,19 @@ export const PlayoutConfigSchema = z.strictObject({
 });
 export type PlayoutConfig = z.infer<typeof PlayoutConfigSchema>;
 
+export const SessionConfigSchema = z.strictObject({
+  idle_timeout_seconds: z.number().int().min(0).nullable().optional(),
+  ready_segment_count: z.number().int().min(1).max(10).nullable().optional(),
+});
+export type SessionConfig = z.infer<typeof SessionConfigSchema>;
+
 export const ChannelConfigSchema = z.strictObject({
+  cache: CacheConfigSchema.optional(),
   fallback: FallbackConfigSchema.optional(),
   ffmpeg: FfmpegConfigSchema,
   normalization: NormalizationConfigSchema,
   playout: PlayoutConfigSchema,
+  session: SessionConfigSchema.optional(),
   version: z.string().optional(),
 });
 export type ChannelConfig = z.infer<typeof ChannelConfigSchema>;
