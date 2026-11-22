@@ -39,6 +39,7 @@ const { values: opt } = parseArgs({
     schedule: { type: 'string' },
     'sar-override': { type: 'string' },
     'server-bin': { type: 'string' },
+    'etv-next': { type: 'boolean', default: false },
   },
 });
 
@@ -75,6 +76,12 @@ const resolution = resolutionMatch && { widthPx: Number(resolutionMatch[1]), hei
 const HWACCELS = ['none', 'cuda', 'vaapi', 'qsv', 'videotoolbox'];
 if (opt.hwaccel !== undefined && !HWACCELS.includes(opt.hwaccel)) throw new Error(`--hwaccel takes one of ${HWACCELS.join(', ')}`);
 if (opt['vaapi-device'] !== undefined && !['vaapi', 'qsv'].includes(opt.hwaccel)) throw new Error('--vaapi-device needs --hwaccel vaapi or qsv');
+// The ErsatzTV next worker only serves these modes (EtvNextRoutableModes in server/src/stream/etv/EtvNextRouting.ts).
+const ETV_NEXT_MODES = ['hls', 'hls_direct_v2', 'mpegts'];
+if (opt['etv-next'] && !ETV_NEXT_MODES.includes(opt.mode)) throw new Error(`--etv-next needs --mode ${ETV_NEXT_MODES.join(', ')}`);
+
+// Set once the server is up. True when this run's stream goes through the worker.
+let routedToEtvNext = false;
 const log = (...a) => console.error('[repro]', ...a);
 
 // ---------- helpers ----------
@@ -311,6 +318,10 @@ async function startServer() {
         // Eight tsx-compiled workers boot for ~20s and starve ffmpeg of CPU,
         // which makes HLS startup time out. Streaming does not use them.
         TUNARR_USE_WORKER_POOL: 'false',
+
+        ...(opt['etv-next']
+          ? { TUNARR_ERSATZTV_NEXT_ENABLED: 'true', TUNARR_ERSATZTV_NEXT_PATH: etvNextWorkerShim(cwd) }
+          : {}),
       },
     },
   );
@@ -323,6 +334,61 @@ async function startServer() {
   const base = `http://127.0.0.1:${port}`;
   await until('server ready', async () => (await fetch(`${base}/api/channels`)).ok, 180_000);
   return { base, stop, pid: child.pid };
+}
+
+// Wraps the worker binary so `run` appends its stderr to <out>/etv-next-worker.log.
+// Tunarr keeps worker output only when the worker crashes. The search order
+// mirrors EtvNextBinaryResolver.candidatePaths.
+function etvNextWorkerShim(serverCwd) {
+  const names = [`ersatztv-channel-${os.platform()}-${os.arch()}`, 'ersatztv-channel'];
+  const envPath = process.env.TUNARR_ERSATZTV_NEXT_PATH;
+  const candidates = envPath
+    ? [envPath, ...names.map((n) => path.join(envPath, n))]
+    : names.flatMap((n) => [path.join(serverCwd, 'bin', n), path.join(serverCwd, n)]);
+  const real = candidates.find((p) => fs.existsSync(p) && fs.statSync(p).isFile());
+  if (!real) throw new Error(`--etv-next: no ersatztv-channel binary in ${candidates.join(', ')}. Run \`pnpm download-ersatztv-next\` in server/`);
+  if (os.platform() === 'win32') return real;
+
+  const sq = (s) => `'${s.replace(/'/g, `'\\''`)}'`;
+  const shim = path.join(out, 'ersatztv-channel');
+  fs.writeFileSync(
+    shim,
+    [
+      '#!/bin/sh',
+      `if [ "$1" = run ]; then exec ${sq(real)} "$@" 2>>${sq(path.join(out, 'etv-next-worker.log'))}; fi`,
+      `exec ${sq(real)} "$@"`,
+      '',
+    ].join('\n'),
+    { mode: 0o755 },
+  );
+  return shim;
+}
+
+// A copied database can route to the worker on its own, through the global
+// flag or the channel's useEtvNext opt-in, so this asks the server.
+async function detectEtvNext(base, channelId) {
+  const { flags } = await api(base, 'GET', '/api/system/feature-flags');
+  const ch = await api(base, 'GET', `/api/channels/${channelId}`);
+  if (opt['etv-next'] && !flags.ersatzTvNextEnabled) throw new Error('--etv-next: the server did not pick up TUNARR_ERSATZTV_NEXT_ENABLED');
+  const routed = ETV_NEXT_MODES.includes(opt.mode) && (flags.ersatzTvNextEnabled || ch.useEtvNext === true);
+  return routed ? { flag: flags.ersatzTvNextEnabled, channelOptIn: ch.useEtvNext === true } : false;
+}
+
+// Copies each worker's channel config and playout windows out of its
+// workspace, which the session deletes when it stops.
+function collectEtvNextWorkspaces() {
+  const streams = path.join(dbDir, 'streams');
+  const dest = path.join(out, 'etv-next');
+  const workspaces = fs.existsSync(streams) ? fs.readdirSync(streams).filter((d) => d.startsWith('etv_')) : [];
+  for (const ws of workspaces) {
+    fs.cpSync(path.join(streams, ws), path.join(dest, ws), { recursive: true, filter: (p) => !/[\\/]out$/.test(p) });
+  }
+  const dossiers = path.join(dbDir, 'etv-diagnostics');
+  return {
+    workspaces: workspaces.map((ws) => path.relative(out, path.join(dest, ws))),
+    workerLog: fs.existsSync(path.join(out, 'etv-next-worker.log')) ? 'etv-next-worker.log' : null,
+    dossiers: fs.existsSync(dossiers) ? fs.readdirSync(dossiers, { recursive: true }).filter((d) => d.split(/[\\/]/).length === 2) : [],
+  };
 }
 
 // The endpoint is paged, so collect every page.
@@ -638,6 +704,7 @@ async function captureTs(base, channelId) {
 }
 
 function hlsListUrl(base, channelId) {
+  if (routedToEtvNext) return `${base}/stream/channels/${channelId}/etv_next/live.m3u8`;
   const sessionType = opt.mode === 'hls_slower' ? 'hls_slower' : opt.mode === 'hls_direct_v2' ? 'hls_direct_v2' : 'hls';
   return `${base}/stream/channels/${channelId}/${sessionType}/stream.m3u8`;
 }
@@ -859,9 +926,18 @@ function ffmpegCommands() {
     if (!line.includes('Starting ffmpeg with args')) continue;
     try {
       const j = JSON.parse(line);
-      commands.push({ time: j.time, args: String(j.msg).replace(/^Starting ffmpeg with args: "?|"$/g, '') });
+      commands.push({ time: j.time, source: 'tunarr', args: String(j.msg).replace(/^Starting ffmpeg with args: "?|"$/g, '') });
     } catch {
       commands.push({ raw: line });
+    }
+  }
+
+  // The worker runs its own ffmpeg and logs each argv as "optimized pipeline: ...".
+  const workerLog = path.join(out, 'etv-next-worker.log');
+  if (fs.existsSync(workerLog)) {
+    for (const line of fs.readFileSync(workerLog, 'utf8').split('\n')) {
+      const m = /^(\S+) .*?optimized pipeline: (.*)$/.exec(line);
+      if (m) commands.push({ time: m[1], source: 'etv-next', args: m[2] });
     }
   }
   return { logFile, commands };
@@ -918,6 +994,9 @@ try {
   }
   report.server = server.base;
   report.channel = channel;
+  report.etvNext = await detectEtvNext(server.base, channel.channelId);
+  routedToEtvNext = report.etvNext !== false;
+  if (routedToEtvNext) log('streaming through the ErsatzTV next worker', JSON.stringify(report.etvNext));
   if (seconds === 0) {
     log('--seconds 0: skipping the stream capture');
     throw new SkipCapture();
@@ -965,6 +1044,13 @@ try {
     process.exitCode = 1;
   }
 } finally {
+  if (routedToEtvNext) {
+    try {
+      Object.assign(report.etvNext, collectEtvNextWorkspaces());
+    } catch (e) {
+      report.etvNext.collectError = String(e);
+    }
+  }
   fs.writeFileSync(path.join(out, 'report.json'), JSON.stringify(report, null, 2));
   if (server && opt['keep-server']) log(`server left running at ${server.base} (pid group ${server.pid})`);
   log(`report: ${path.join(out, 'report.json')}`);
