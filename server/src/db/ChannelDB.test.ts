@@ -19,6 +19,7 @@ import { DBAccess } from './DBAccess.ts';
 import { ContentItem } from './derived_types/Lineup.ts';
 import type { IChannelDB } from './interfaces/IChannelDB.ts';
 import { ChannelPrograms } from './schema/ChannelPrograms.ts';
+import { ChannelTranscodingSettingsSchema } from './schema/base.ts';
 import { FillerShow } from './schema/FillerShow.ts';
 import { Program } from './schema/Program.ts';
 import { IProgramDB } from './interfaces/IProgramDB.ts';
@@ -887,6 +888,9 @@ describe('ChannelDB', () => {
       const channelData = createSaveableChannel(defaultTranscodeConfigId, {
         name: 'Original Channel',
         number: 1200,
+        transcoding: ChannelTranscodingSettingsSchema.parse({
+          nowPlayingOverlay: { enabled: true, showForSeconds: 13 },
+        }),
       });
 
       const created = await channelDb.saveChannel(channelData);
@@ -896,6 +900,7 @@ describe('ChannelDB', () => {
       expect(copied.channel.uuid).not.toBe(created.channel.uuid);
       expect(copied.channel.name).toContain('Copy');
       expect(copied.channel.number).not.toBe(created.channel.number);
+      expect(copied.channel.transcoding).toEqual(channelData.transcoding);
     });
 
     test('should copy channel lineup', async ({

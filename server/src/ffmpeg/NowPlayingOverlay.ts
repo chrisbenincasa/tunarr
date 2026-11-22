@@ -82,14 +82,14 @@ export function resolveNowPlayingOverlay(args: {
     remainingDurationSeconds: args.remainingDurationSeconds,
   });
 
-  const closingWindow = windows.length >= 2 ? windows[1] : undefined;
+  const resolvedNextTitle =
+    normalizeText(args.nextMetadata?.title) ??
+    filenameToNowPlayingTitle(args.nextMetadata?.filePath);
   const comingUpNextWindows = buildComingUpNextWindow({
-    comingUpNextForSeconds: comingUpNextFor,
+    comingUpNextForSeconds: resolvedNextTitle ? comingUpNextFor : 0,
     comingUpNextOffsetSeconds: comingUpNextOffset,
-    startOffsetSeconds: args.startOffsetSeconds,
     remainingDurationSeconds: args.remainingDurationSeconds,
-    openingWindow: windows[0],
-    closingWindow,
+    windows,
   });
 
   if (windows.length === 0 && comingUpNextWindows.length === 0) {
@@ -109,9 +109,6 @@ export function resolveNowPlayingOverlay(args: {
     args.metadata.year,
   ]);
 
-  const nextTitle = normalizeText(args.nextMetadata?.title);
-  const resolvedNextTitle =
-    nextTitle ?? filenameToNowPlayingTitle(args.nextMetadata?.filePath);
   const nextSubtitle = joinNonEmpty([
     args.nextMetadata?.artist,
     args.nextMetadata?.album,
@@ -124,7 +121,7 @@ export function resolveNowPlayingOverlay(args: {
     nextTitle: comingUpNextWindows.length > 0 ? resolvedNextTitle : undefined,
     nextSubtitle: comingUpNextWindows.length > 0 ? nextSubtitle : undefined,
     windows,
-    comingUpNextWindows: resolvedNextTitle ? comingUpNextWindows : [],
+    comingUpNextWindows,
     fadeDurationSeconds: fadeDuration,
     fontFile: args.fontFile,
   };
@@ -226,7 +223,9 @@ function buildOverlayWindows(args: {
       remaining,
       Math.max(
         0,
-        args.showForSeconds + args.startPaddingSeconds - args.startOffsetSeconds,
+        args.showForSeconds +
+          args.startPaddingSeconds -
+          args.startOffsetSeconds,
       ),
     ),
   );
@@ -242,9 +241,7 @@ function buildOverlayWindows(args: {
   const closingEnd = roundSeconds(
     Math.max(0, remaining - args.endPaddingSeconds),
   );
-  const closingStart = roundSeconds(
-    Math.max(0, closingEnd - closingDuration),
-  );
+  const closingStart = roundSeconds(Math.max(0, closingEnd - closingDuration));
   if (remaining > 0 && closingDuration > 0 && closingEnd > closingStart) {
     // Skip if it would overlap with the opening window
     const lastOpening = windows[windows.length - 1];
@@ -262,10 +259,8 @@ function buildOverlayWindows(args: {
 function buildComingUpNextWindow(args: {
   comingUpNextForSeconds: number;
   comingUpNextOffsetSeconds: number;
-  startOffsetSeconds: number;
   remainingDurationSeconds: number;
-  openingWindow?: NowPlayingOverlayWindow;
-  closingWindow?: NowPlayingOverlayWindow;
+  windows: NowPlayingOverlayWindow[];
 }): NowPlayingOverlayWindow[] {
   if (args.comingUpNextForSeconds <= 0) {
     return [];
@@ -276,24 +271,19 @@ function buildComingUpNextWindow(args: {
     return [];
   }
 
-  const cuStart = roundSeconds(
-    Math.max(0, remaining - args.comingUpNextOffsetSeconds),
-  );
+  const scheduledStart = remaining - args.comingUpNextOffsetSeconds;
+  const cuStart = roundSeconds(Math.max(0, scheduledStart));
   const cuEnd = roundSeconds(
-    Math.min(remaining, cuStart + args.comingUpNextForSeconds),
+    Math.min(remaining, scheduledStart + args.comingUpNextForSeconds),
   );
 
   if (cuEnd <= cuStart) {
     return [];
   }
 
-  // Skip if it overlaps with the opening window
-  if (args.openingWindow && cuStart < args.openingWindow.endSeconds) {
-    return [];
-  }
-
-  // Skip if it overlaps with the closing window
-  if (args.closingWindow && cuEnd > args.closingWindow.startSeconds) {
+  if (
+    args.windows.some((w) => cuStart < w.endSeconds && cuEnd > w.startSeconds)
+  ) {
     return [];
   }
 

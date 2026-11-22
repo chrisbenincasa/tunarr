@@ -30,6 +30,7 @@ import { DefaultPipelineOptions, FfmpegState } from '../state/FfmpegState.ts';
 import { FrameState } from '../state/FrameState.ts';
 import { FrameSize } from '../types.ts';
 import { BasePipelineBuilder } from './BasePipelineBuilder.ts';
+import { SoftwarePipelineBuilder } from './software/SoftwarePipelineBuilder.ts';
 
 dayjs.extend(duration);
 
@@ -79,6 +80,40 @@ describe('BasePipelineBuilder', () => {
     isAnamorphic: false,
     paddedSize: FrameSize.FHD,
     scaledSize: FrameSize.FHD,
+  });
+
+  test('maps the overlay into the software video filtergraph', () => {
+    const input = new VideoInputSource(
+      new FileStreamSource('/videos/song.mkv'),
+      video.streams,
+    );
+    const builder = new SoftwarePipelineBuilder(
+      input,
+      null,
+      null,
+      null,
+      null,
+      EmptyFfmpegCapabilities,
+    );
+    const args = builder
+      .build(
+        FfmpegState.create({
+          version: state.version,
+          nowPlayingOverlay: {
+            title: 'Song Title',
+            windows: [{ startSeconds: 0, endSeconds: 8 }],
+            comingUpNextWindows: [],
+            fadeDurationSeconds: 0,
+          },
+        }),
+        frameState,
+        DefaultPipelineOptions,
+      )
+      .getCommandArgs();
+    expect(args).toContain('-filter_complex');
+    expect(args[args.indexOf('-filter_complex') + 1]).toContain(
+      'text=Song Title',
+    );
   });
 
   test('set audio volume filter', () => {

@@ -63,19 +63,25 @@ describe('NowPlayingOverlayFilter', () => {
     expect(filter.filter).toContain('expansion=none:text=100% Pure');
   });
 
-  test('escapes colon in Windows font path', () => {
+  test('escapes a quoted font filename and platform-specific separators', () => {
     const filter = new NowPlayingOverlayFilter(FrameSize.SevenTwenty, {
       title: 'Song Title',
       windows: [{ startSeconds: 0, endSeconds: 5.5 }],
       comingUpNextWindows: [],
       fadeDurationSeconds: 0,
-      fontFile: 'C:\\Windows\\Fonts\\arial.ttf',
+      fontFile: isWindows()
+        ? "C:\\Fonts\\O'Brien.ttf"
+        : '/fonts/"O\'Brien":live.ttf',
     });
 
     if (isWindows()) {
-      expect(filter.filter).toContain('fontfile=C\\\\:/Windows/Fonts/arial.ttf');
+      expect(filter.filter).toContain(
+        "fontfile=C\\\\:/Fonts/O\\\\\\'Brien.ttf:",
+      );
     } else {
-      expect(filter.filter).toContain('fontfile=C:/Windows/Fonts/arial.ttf');
+      expect(filter.filter).toContain(
+        'fontfile=/fonts/"O\\\\\\\'Brien"\\\\:live.ttf:',
+      );
     }
   });
 
@@ -115,9 +121,7 @@ describe('NowPlayingOverlayFilter', () => {
     });
 
     expect(filter.filter).toContain('text=Current Song');
-    expect(filter.filter).toContain(
-      'text=Coming Up Next',
-    );
+    expect(filter.filter).toContain('text=Coming Up Next');
     expect(filter.filter).toContain('text=Next Song - Next Artist');
     expect(filter.filter).toContain("enable='between(t\\,150\\,156)'");
   });

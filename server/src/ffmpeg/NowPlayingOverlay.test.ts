@@ -1,5 +1,7 @@
 import type { ContentBackedStreamLineupItem } from '@/db/derived_types/StreamLineup.js';
-import type { FfprobeMediaInfo } from '@/types/ffmpeg.js';
+import { createFakeProgramOrm } from '@/testing/fakes/entityCreators.js';
+import { tag } from '@tunarr/types';
+import type { MediaSourceId } from '@/db/schema/base.js';
 import {
   getNowPlayingMetadata,
   getNowPlayingMetadataFromFfprobe,
@@ -16,17 +18,18 @@ function makeLineupItem(
     programBeginMs: 0,
     infiniteLoop: false,
     program: {
+      ...createFakeProgramOrm(),
       title: 'Song Title',
       artistName: 'Artist Name',
       albumName: 'Album Name',
       year: 1998,
       originalAirDate: null,
       sourceType: 'local',
-      mediaSourceId: 'local-source',
+      mediaSourceId: tag<MediaSourceId>('local-source'),
       externalIds: [],
       ...program,
     },
-  } as unknown as ContentBackedStreamLineupItem;
+  };
 }
 
 describe('NowPlayingOverlay', () => {
@@ -46,6 +49,11 @@ describe('NowPlayingOverlay', () => {
     test('reads case-insensitive ffprobe tags and extracts a year', () => {
       const metadata = getNowPlayingMetadataFromFfprobe({
         format: {
+          nb_streams: 1,
+          format_name: 'matroska',
+          duration: 180,
+          size: 1024,
+          bit_rate: 44100,
           tags: {
             TITLE: 'Tagged Title',
             ALBUM_ARTIST: 'Tagged Artist',
@@ -53,13 +61,15 @@ describe('NowPlayingOverlay', () => {
         },
         streams: [
           {
+            index: 0,
+            codec_type: 'attachment',
             tags: {
               album: 'Tagged Album',
               creation_time: '1997-05-04T12:00:00.000000Z',
             },
           },
         ],
-      } as unknown as FfprobeMediaInfo);
+      });
 
       expect(metadata).toEqual({
         title: 'Tagged Title',
@@ -109,9 +119,9 @@ describe('NowPlayingOverlay', () => {
         remainingDurationSeconds: 177.75,
       });
 
-      expect(overlay!.title).toBe('Song Title');
-      expect(overlay!.subtitle).toBe('Artist');
-      expect(overlay!.windows[0]!.endSeconds).toBeCloseTo(5.75, 2);
+      expect(overlay?.title).toBe('Song Title');
+      expect(overlay?.subtitle).toBe('Artist');
+      expect(overlay?.windows[0]?.endSeconds).toBeCloseTo(5.75, 2);
     });
 
     test('skips overlay when viewer joins after the opening window', () => {
@@ -133,9 +143,9 @@ describe('NowPlayingOverlay', () => {
         remainingDurationSeconds: 180,
       });
 
-      expect(overlay!.windows).toHaveLength(2);
-      expect(overlay!.windows[0]).toEqual({ startSeconds: 0, endSeconds: 6 });
-      expect(overlay!.windows[1]).toEqual({
+      expect(overlay?.windows).toHaveLength(2);
+      expect(overlay?.windows[0]).toEqual({ startSeconds: 0, endSeconds: 6 });
+      expect(overlay?.windows[1]).toEqual({
         startSeconds: 172,
         endSeconds: 180,
       });
@@ -150,8 +160,8 @@ describe('NowPlayingOverlay', () => {
         remainingDurationSeconds: 5,
       });
 
-      expect(overlay!.windows).toHaveLength(1);
-      expect(overlay!.windows[0]!.endSeconds).toBe(5);
+      expect(overlay?.windows).toHaveLength(1);
+      expect(overlay?.windows[0]?.endSeconds).toBe(5);
     });
 
     test('startPaddingSeconds delays the opening window', () => {
@@ -163,7 +173,7 @@ describe('NowPlayingOverlay', () => {
         remainingDurationSeconds: 180,
       });
 
-      expect(overlay!.windows[0]).toEqual({
+      expect(overlay?.windows[0]).toEqual({
         startSeconds: 2,
         endSeconds: 10,
       });
@@ -179,7 +189,7 @@ describe('NowPlayingOverlay', () => {
         remainingDurationSeconds: 180,
       });
 
-      expect(overlay!.windows[1]).toEqual({
+      expect(overlay?.windows[1]).toEqual({
         startSeconds: 170,
         endSeconds: 178,
       });
@@ -196,9 +206,9 @@ describe('NowPlayingOverlay', () => {
         remainingDurationSeconds: 180,
       });
 
-      expect(overlay!.nextTitle).toBe('Next Song');
-      expect(overlay!.nextSubtitle).toBe('Next Artist');
-      expect(overlay!.comingUpNextWindows).toEqual([
+      expect(overlay?.nextTitle).toBe('Next Song');
+      expect(overlay?.nextSubtitle).toBe('Next Artist');
+      expect(overlay?.comingUpNextWindows).toEqual([
         { startSeconds: 150, endSeconds: 156 },
       ]);
     });
@@ -210,7 +220,8 @@ describe('NowPlayingOverlay', () => {
           artist: 'Next Artist',
           album: 'Next Album',
           year: '1995',
-          filePath: "D:/music/No Doubt - Don't Speak (Official 4K Music Video) [No Doubt].mp4",
+          filePath:
+            "D:/music/No Doubt - Don't Speak (Official 4K Music Video) [No Doubt].mp4",
         },
         showForSeconds: 8,
         comingUpNextForSeconds: 6,
@@ -219,10 +230,10 @@ describe('NowPlayingOverlay', () => {
         remainingDurationSeconds: 180,
       });
 
-      expect(overlay!.nextTitle).toBe(
+      expect(overlay?.nextTitle).toBe(
         "No Doubt - Don't Speak (Official 4K Music Video) [No Doubt]",
       );
-      expect(overlay!.nextSubtitle).toBe('Next Artist - Next Album - 1995');
+      expect(overlay?.nextSubtitle).toBe('Next Artist - Next Album - 1995');
     });
 
     test('skips coming-up-next when comingUpNextForSeconds is 0', () => {
@@ -235,7 +246,7 @@ describe('NowPlayingOverlay', () => {
         remainingDurationSeconds: 180,
       });
 
-      expect(overlay!.comingUpNextWindows).toEqual([]);
+      expect(overlay?.comingUpNextWindows).toEqual([]);
     });
 
     test('skips coming-up-next when no next metadata', () => {
@@ -248,7 +259,43 @@ describe('NowPlayingOverlay', () => {
         remainingDurationSeconds: 180,
       });
 
-      expect(overlay!.comingUpNextWindows).toEqual([]);
+      expect(overlay?.comingUpNextWindows).toEqual([]);
+    });
+
+    test('keeps the next card before a lone closing card after tuning in', () => {
+      const overlay = resolveNowPlayingOverlay({
+        metadata: { title: 'Current' },
+        nextMetadata: { title: 'Next' },
+        showForSeconds: 8,
+        showAtEndForSeconds: 8,
+        comingUpNextForSeconds: 5,
+        comingUpNextOffsetSeconds: 30,
+        startOffsetSeconds: 90,
+        remainingDurationSeconds: 90,
+      });
+      expect(overlay?.comingUpNextWindows).toEqual([
+        { startSeconds: 60, endSeconds: 65 },
+      ]);
+    });
+
+    test('omits the filter when no card can render after tuning in', () => {
+      const settings = {
+        metadata: { title: 'Current' },
+        showForSeconds: 8,
+        comingUpNextForSeconds: 5,
+        comingUpNextOffsetSeconds: 30,
+        startOffsetSeconds: 120,
+        remainingDurationSeconds: 60,
+      };
+      expect(resolveNowPlayingOverlay(settings)).toBeUndefined();
+      expect(
+        resolveNowPlayingOverlay({
+          ...settings,
+          nextMetadata: { title: 'Next' },
+          startOffsetSeconds: 170,
+          remainingDurationSeconds: 10,
+        }),
+      ).toBeUndefined();
     });
 
     test('skips coming-up-next when it would overlap closing window', () => {
@@ -264,7 +311,7 @@ describe('NowPlayingOverlay', () => {
       });
 
       // coming-up-next would be 45-51, closing is 50-60 — overlap, so skipped
-      expect(overlay!.comingUpNextWindows).toEqual([]);
+      expect(overlay?.comingUpNextWindows).toEqual([]);
     });
 
     test('skips coming-up-next when it would overlap opening window', () => {
@@ -278,7 +325,7 @@ describe('NowPlayingOverlay', () => {
         remainingDurationSeconds: 10,
       });
 
-      expect(overlay!.comingUpNextWindows).toEqual([]);
+      expect(overlay?.comingUpNextWindows).toEqual([]);
     });
 
     test('defaults fadeDurationSeconds to 0.5', () => {
@@ -289,7 +336,7 @@ describe('NowPlayingOverlay', () => {
         remainingDurationSeconds: 180,
       });
 
-      expect(overlay!.fadeDurationSeconds).toBe(0.5);
+      expect(overlay?.fadeDurationSeconds).toBe(0.5);
     });
 
     test('uses provided fadeDurationSeconds', () => {
@@ -301,7 +348,7 @@ describe('NowPlayingOverlay', () => {
         remainingDurationSeconds: 180,
       });
 
-      expect(overlay!.fadeDurationSeconds).toBe(0.75);
+      expect(overlay?.fadeDurationSeconds).toBe(0.75);
     });
   });
 });

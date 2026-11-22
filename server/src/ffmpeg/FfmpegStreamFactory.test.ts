@@ -4,6 +4,11 @@ import type {
   ReadableFfmpegSettings,
 } from '@/db/interfaces/ISettingsDB.ts';
 import type { ChannelOrm } from '@/db/schema/Channel.ts';
+import { ChannelTranscodingSettingsSchema } from '@/db/schema/base.ts';
+import { setTestGlobalOptions } from '@/testing/getFakeSettingsDb.ts';
+import { FfmpegCapabilities } from './builder/capabilities/FfmpegCapabilities.ts';
+import { writeFile } from 'node:fs/promises';
+import path from 'node:path';
 import type { TranscodeConfigOrm } from '@/db/schema/TranscodeConfig.ts';
 import {
   AudioFormats,
@@ -299,6 +304,70 @@ function makeMockStreamSelector(
 }
 
 describe('FfmpegStreamFactory', () => {
+  test.each(['transcode', 'remux'] as const)(
+    'resolves overlay metadata and font only for transcoded video (%s)',
+    async (mode) => {
+      const { databaseDirectory } = await setTestGlobalOptions();
+      const fontFile = path.join(databaseDirectory, 'font.ttf');
+      await writeFile(fontFile, '');
+      const source = new FileStreamSource('/videos/song.mkv');
+      const info = makeMockFfmpegInfo();
+      info.getCapabilities = vi
+        .fn()
+        .mockResolvedValue(
+          new FfmpegCapabilities(
+            new Set(),
+            new Map(),
+            new Set(['drawtext']),
+            new Set(),
+          ),
+        );
+      info.probeFileWithCache = vi.fn().mockResolvedValue({
+        format: { tags: { TITLE: 'Tagged Song' } },
+        streams: [],
+      });
+      const { factory, getCapturedFfmpegState } =
+        createCapturingPipelineBuilderFactory();
+      const sut = new FfmpegStreamFactory(
+        info,
+        makeMockSettingsDB(makeFfmpegSettings()),
+        factory,
+        makeMockFeatureFlagService(),
+        makeMockStreamSelector(),
+        makeTranscodeConfig(),
+        makeChannel(),
+      );
+      const lineupItem = makeLineupItem();
+      lineupItem.program.artistName = 'Library Artist';
+      await sut.createStreamSession({
+        stream: { source, details: makeStreamDetails() },
+        options: {
+          streamMode: 'hls',
+          encoding: { mode },
+          duration: dayjs.duration(30, 'seconds'),
+          startTime: dayjs.duration(0),
+          outputFormat: MpegTsOutputFormat,
+          nowPlayingOverlay: ChannelTranscodingSettingsSchema.parse({
+            nowPlayingOverlay: { enabled: true },
+          }).nowPlayingOverlay,
+        },
+        lineupItem,
+      });
+      const overlay = getCapturedFfmpegState()?.nowPlayingOverlay;
+      if (mode === 'transcode') {
+        expect(info.probeFileWithCache).toHaveBeenCalledWith(source.path);
+        expect(overlay).toMatchObject({
+          title: 'Tagged Song',
+          subtitle: 'Library Artist',
+          fontFile,
+        });
+      } else {
+        expect(info.probeFileWithCache).not.toHaveBeenCalled();
+        expect(overlay).toBeUndefined();
+      }
+    },
+  );
+
   describe('videoPreset wiring into FrameState', () => {
     test('createStreamSession passes videoPreset=veryfast for software h264', async () => {
       const config = makeTranscodeConfig({

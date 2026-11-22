@@ -181,14 +181,15 @@ export class SoftwarePipelineBuilder extends BasePipelineBuilder {
       return currentState;
     }
 
-    if (!this.context.nowPlayingOverlay) {
+    const overlay = this.context.ffmpegState.nowPlayingOverlay;
+    if (!overlay) {
       return currentState;
     }
 
     this.context.filterChain.nowPlayingOverlayFilterSteps.push(
       new NowPlayingOverlayFilter(
         this.context.desiredState.paddedSize,
-        this.context.nowPlayingOverlay,
+        overlay,
       ),
     );
 

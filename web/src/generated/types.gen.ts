@@ -2974,6 +2974,16 @@ export type GetChannelsResponses = {
             };
             videoBitrate?: number;
             videoBufferSize?: number;
+            nowPlayingOverlay?: {
+                enabled: boolean;
+                showForSeconds: number;
+                showAtEndForSeconds: number;
+                startPaddingSeconds: number;
+                endPaddingSeconds: number;
+                comingUpNextForSeconds: number;
+                comingUpNextOffsetSeconds: number;
+                fadeDurationSeconds: number;
+            };
         };
         watermark?: {
             url?: string;
@@ -3088,6 +3098,18 @@ export type CreateChannelV2Data = {
                 filter?: 'none' | 'forced' | 'default' | 'any';
             }>;
             streamSelectionProfileId?: string | null;
+            transcoding?: {
+                nowPlayingOverlay?: {
+                    enabled?: boolean;
+                    showForSeconds?: number;
+                    showAtEndForSeconds?: number;
+                    startPaddingSeconds?: number;
+                    endPaddingSeconds?: number;
+                    comingUpNextForSeconds?: number;
+                    comingUpNextOffsetSeconds?: number;
+                    fadeDurationSeconds?: number;
+                };
+            };
         };
     } | {
         type: 'copy';
@@ -3184,6 +3206,16 @@ export type CreateChannelV2Responses = {
             };
             videoBitrate?: number;
             videoBufferSize?: number;
+            nowPlayingOverlay?: {
+                enabled: boolean;
+                showForSeconds: number;
+                showAtEndForSeconds: number;
+                startPaddingSeconds: number;
+                endPaddingSeconds: number;
+                comingUpNextForSeconds: number;
+                comingUpNextOffsetSeconds: number;
+                fadeDurationSeconds: number;
+            };
         };
         watermark?: {
             url?: string;
@@ -3346,6 +3378,16 @@ export type GetChannelsByNumberV2Responses = {
             };
             videoBitrate?: number;
             videoBufferSize?: number;
+            nowPlayingOverlay?: {
+                enabled: boolean;
+                showForSeconds: number;
+                showAtEndForSeconds: number;
+                startPaddingSeconds: number;
+                endPaddingSeconds: number;
+                comingUpNextForSeconds: number;
+                comingUpNextOffsetSeconds: number;
+                fadeDurationSeconds: number;
+            };
         };
         watermark?: {
             url?: string;
@@ -3458,6 +3500,18 @@ export type PutApiChannelsByIdData = {
             filter?: 'none' | 'forced' | 'default' | 'any';
         }>;
         streamSelectionProfileId?: string | null;
+        transcoding?: {
+            nowPlayingOverlay?: {
+                enabled?: boolean;
+                showForSeconds?: number;
+                showAtEndForSeconds?: number;
+                startPaddingSeconds?: number;
+                endPaddingSeconds?: number;
+                comingUpNextForSeconds?: number;
+                comingUpNextOffsetSeconds?: number;
+                fadeDurationSeconds?: number;
+            };
+        };
     };
     path: {
         id: string;
@@ -3556,6 +3610,16 @@ export type PutApiChannelsByIdResponses = {
             };
             videoBitrate?: number;
             videoBufferSize?: number;
+            nowPlayingOverlay?: {
+                enabled: boolean;
+                showForSeconds: number;
+                showAtEndForSeconds: number;
+                startPaddingSeconds: number;
+                endPaddingSeconds: number;
+                comingUpNextForSeconds: number;
+                comingUpNextOffsetSeconds: number;
+                fadeDurationSeconds: number;
+            };
         };
         watermark?: {
             url?: string;
@@ -5595,6 +5659,16 @@ export type GetApiChannelsByIdScheduleResponses = {
                         };
                         videoBitrate?: number;
                         videoBufferSize?: number;
+                        nowPlayingOverlay?: {
+                            enabled: boolean;
+                            showForSeconds: number;
+                            showAtEndForSeconds: number;
+                            startPaddingSeconds: number;
+                            endPaddingSeconds: number;
+                            comingUpNextForSeconds: number;
+                            comingUpNextOffsetSeconds: number;
+                            fadeDurationSeconds: number;
+                        };
                     };
                     watermark?: {
                         url?: string;
@@ -5964,6 +6038,16 @@ export type GetApiChannelsByIdScheduleResponses = {
                         };
                         videoBitrate?: number;
                         videoBufferSize?: number;
+                        nowPlayingOverlay?: {
+                            enabled: boolean;
+                            showForSeconds: number;
+                            showAtEndForSeconds: number;
+                            startPaddingSeconds: number;
+                            endPaddingSeconds: number;
+                            comingUpNextForSeconds: number;
+                            comingUpNextOffsetSeconds: number;
+                            fadeDurationSeconds: number;
+                        };
                     };
                     watermark?: {
                         url?: string;
@@ -13473,6 +13557,16 @@ export type PostApiTroubleshootResponses = {
                 };
                 videoBitrate?: number;
                 videoBufferSize?: number;
+                nowPlayingOverlay?: {
+                    enabled: boolean;
+                    showForSeconds: number;
+                    showAtEndForSeconds: number;
+                    startPaddingSeconds: number;
+                    endPaddingSeconds: number;
+                    comingUpNextForSeconds: number;
+                    comingUpNextOffsetSeconds: number;
+                    fadeDurationSeconds: number;
+                };
             };
             watermark?: {
                 url?: string;
@@ -15776,6 +15870,16 @@ export type PostApiAutoChannelsCreateResponses = {
             };
             videoBitrate?: number;
             videoBufferSize?: number;
+            nowPlayingOverlay?: {
+                enabled: boolean;
+                showForSeconds: number;
+                showAtEndForSeconds: number;
+                startPaddingSeconds: number;
+                endPaddingSeconds: number;
+                comingUpNextForSeconds: number;
+                comingUpNextOffsetSeconds: number;
+                fadeDurationSeconds: number;
+            };
         };
         watermark?: {
             url?: string;

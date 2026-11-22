@@ -1,3 +1,4 @@
+import type { ChannelTranscodingSettings } from '../db/schema/base.ts';
 import type { ChannelStreamMode, Watermark } from '@tunarr/types';
 import type {
   SessionConcatStreamMode,
@@ -93,6 +94,7 @@ export type StreamOptions = {
   startTime: Duration;
   duration: Duration;
   watermark?: Watermark;
+  nowPlayingOverlay?: ChannelTranscodingSettings['nowPlayingOverlay'];
   realtime?: boolean; // = true,
   extraInputHeaders?: Record<string, string>;
   outputFormat: OutputFormat;

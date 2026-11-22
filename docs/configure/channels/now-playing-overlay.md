@@ -6,10 +6,6 @@ The overlay appears as a semi-transparent bar at the bottom of the video with te
 
 There are several ways to customize the overlay for a channel. Here are some details on specific options:
 
-### Position
-
-Controls whether the overlay appears at the bottom-left or bottom-right of the video.
-
 ### Show at Start
 
 How long (in seconds) the overlay is visible at the beginning of each program. For example, a value of 8 means the overlay will appear for the first 8 seconds.
@@ -44,6 +40,6 @@ How far from the end of the program (in seconds) the "coming up next" card start
 
 ## Things to consider
 
-- The overlay requires video transcoding. It will not appear when using HLS Direct or HLS Direct v2 stream modes, since those modes pass the video through without modification.
+- The overlay runs in Tunarr's native FFmpeg pipeline when it transcodes video. HLS Direct, HLS Direct v2, remux sessions, and playback served by the ErsatzTV next worker do not render it.
 - If a program is too short to fit all configured overlays without overlapping, the "coming up next" card is skipped first, followed by the closing card.
 - Program metadata (title, artist, album, year) comes from the media source (Plex, Jellyfin, Emby, or local file tags). For local files, embedded metadata from the file itself is preferred when available.

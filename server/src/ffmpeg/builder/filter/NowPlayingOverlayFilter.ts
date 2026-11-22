@@ -29,10 +29,7 @@ export class NowPlayingOverlayFilter extends FilterOption {
     }
 
     // Coming up next overlay
-    if (
-      this.overlay.nextTitle &&
-      this.overlay.comingUpNextWindows.length > 0
-    ) {
+    if (this.overlay.nextTitle && this.overlay.comingUpNextWindows.length > 0) {
       const nextSubtitle = this.overlay.nextSubtitle
         ? `${this.overlay.nextTitle} - ${this.overlay.nextSubtitle}`
         : this.overlay.nextTitle;
@@ -138,14 +135,7 @@ function buildAlphaExpr(
   return parts.length === 1 ? parts[0] : parts.join('+');
 }
 
-// drawtext text=... has different parsing rules than fontfile=... and than the
-// filter expressions used by enable=/alpha=. Keeping them separate is the only
-// reliable way to preserve text like "Don't Speak" across platforms.
-//
-// FFmpeg filtergraphs require a second escaping layer for text values. In
-// practice that means text=... needs filtergraph-safe escapes such as \\'
-// for apostrophes and \\: for colons, while expressions and paths follow
-// different rules.
+// Both the filtergraph parser and drawtext's option parser consume escapes.
 function escapeDrawTextValue(text: string): string {
   return text
     .replaceAll('\\', '\\\\\\\\')
@@ -160,22 +150,8 @@ function escapeDrawTextValue(text: string): string {
     .replaceAll(',', '\\,');
 }
 
-// FFmpeg accepts forward slashes on all platforms. On Windows, drive-letter
-// paths need the colon escaped as C\\:/... inside filter graphs; macOS/Linux
-// paths do not have that prefix and should otherwise pass through untouched.
 function escapeDrawTextPath(path: string): string {
-  let escaped = path.replaceAll('\\', '/');
-
-  if (isWindows()) {
-    escaped = escaped.replaceAll(':/', '\\\\:/');
-  }
-
-  return escaped
-    .replaceAll('[', '\\[')
-    .replaceAll(']', '\\]')
-    .replaceAll(';', '\\;')
-    .replaceAll('#', '\\#')
-    .replaceAll(',', '\\,');
+  return escapeDrawTextValue(isWindows() ? path.replaceAll('\\', '/') : path);
 }
 
 function formatSeconds(seconds: number): string {

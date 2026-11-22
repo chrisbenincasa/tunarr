@@ -65,8 +65,7 @@ function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
     },
     transcoding: {
       nowPlayingOverlay: {
-        enabled:
-          channel.transcoding?.nowPlayingOverlay?.enabled ?? false,
+        enabled: channel.transcoding?.nowPlayingOverlay?.enabled ?? false,
         showForSeconds:
           channel.transcoding?.nowPlayingOverlay?.showForSeconds ?? 8,
         showAtEndForSeconds:
@@ -78,7 +77,8 @@ function getDefaultFormValues(channel: Channel): DeepRequired<SaveableChannel> {
         comingUpNextForSeconds:
           channel.transcoding?.nowPlayingOverlay?.comingUpNextForSeconds ?? 0,
         comingUpNextOffsetSeconds:
-          channel.transcoding?.nowPlayingOverlay?.comingUpNextOffsetSeconds ?? 30,
+          channel.transcoding?.nowPlayingOverlay?.comingUpNextOffsetSeconds ??
+          30,
         fadeDurationSeconds:
           channel.transcoding?.nowPlayingOverlay?.fadeDurationSeconds ?? 0.5,
       },
