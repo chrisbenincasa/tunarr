@@ -473,7 +473,6 @@ msgid "Access Token"
 msgstr "Access Token"
 
 #: src/components/ui/table/ActionsHeader.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
 msgid "Actions"
 msgstr "Actions"
 
@@ -1878,7 +1877,7 @@ msgstr "Desc"
 msgid "Descending"
 msgstr "Descending"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Description"
 msgstr "Description"
 
@@ -2388,9 +2387,14 @@ msgstr "Error while saving settings. Please check console for details."
 msgid "Error while saving transcode config. See console log for details."
 msgstr "Error while saving transcode config. See console log for details."
 
+#. placeholder {0}: task.id
 #: src/pages/settings/TaskSettingsPage.tsx
-msgid "Error while scheduling {taskId}. Check server logs for details"
-msgstr "Error while scheduling {taskId}. Check server logs for details"
+msgid "Error while scheduling {0}. Check server logs for details"
+msgstr "Error while scheduling {0}. Check server logs for details"
+
+#: src/pages/settings/TaskSettingsPage.tsx
+#~ msgid "Error while scheduling {taskId}. Check server logs for details"
+#~ msgstr "Error while scheduling {taskId}. Check server logs for details"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Errors"
@@ -3088,7 +3092,7 @@ msgstr "Language"
 msgid "Languages"
 msgstr "Languages"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TaskCard.tsx
 msgid "Last run"
 msgstr "Last run"
 
@@ -3097,7 +3101,7 @@ msgstr "Last run"
 msgid "Last Scanned: {0}"
 msgstr "Last Scanned: {0}"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Last Scheduled Execution"
 msgstr "Last Scheduled Execution"
 
@@ -3314,6 +3318,10 @@ msgstr "Manage profiles"
 #: src/components/programming_controls/AdjustWeightsModal.tsx
 msgid "Manual"
 msgstr "Manual"
+
+#: src/components/system/tasks/TaskStatusPill.tsx
+msgid "Manual only"
+msgstr "Manual only"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Manually add an access token from your Emby server"
@@ -3583,7 +3591,7 @@ msgstr "Must use a valid URL, or empty."
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Name"
 msgstr "Name"
@@ -3666,11 +3674,11 @@ msgstr "New Transcode Config"
 #~ msgid "Next"
 #~ msgstr "Next"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TaskCard.tsx
 msgid "Next run"
 msgstr "Next run"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Next Scheduled Execution"
 msgstr "Next Scheduled Execution"
 
@@ -3773,6 +3781,10 @@ msgstr "No rule matched. On a real stream, Tunarr would move on to the next prof
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "No smart collections match this filter."
 msgstr "No smart collections match this filter."
+
+#: src/components/system/tasks/TasksView.tsx
+msgid "No tasks are registered."
+msgstr "No tasks are registered."
 
 #: src/components/channels/ChannelStatusPill.tsx
 msgid "No viewers"
@@ -4694,17 +4706,27 @@ msgid "Rules are evaluated in order. The first rule whose condition matches dete
 msgstr "Rules are evaluated in order. The first rule whose condition matches determines the audio and subtitle streams for playback."
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
 msgid "Run"
 msgstr "Run"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#. placeholder {0}: task.name
+#: src/components/system/tasks/TaskCard.tsx
+msgid "Run {0}"
+msgstr "Run {0}"
+
+#: src/components/system/tasks/TaskCard.tsx
+#: src/components/system/tasks/TasksView.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Run now"
 msgstr "Run now"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Run Troubleshooter"
 msgstr "Run Troubleshooter"
+
+#: src/components/system/tasks/TaskStatusPill.tsx
+msgid "Running"
+msgstr "Running"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Running..."
@@ -4793,6 +4815,10 @@ msgstr "Schedule programming using slots assigned a start time and duration."
 #: src/pages/channels/ChannelProgrammingPage.tsx
 msgid "Schedule removed"
 msgstr "Schedule removed"
+
+#: src/components/system/tasks/TaskStatusPill.tsx
+msgid "Scheduled"
+msgstr "Scheduled"
 
 #: src/components/ui/table/DataTable.tsx
 #: src/components/ui/table/DataTable.tsx
@@ -5232,6 +5258,7 @@ msgstr "Starting Episode"
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/shell/useShellNav.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Status"
 msgstr "Status"
 
@@ -5367,9 +5394,14 @@ msgstr "Successfully ran system fixer {fixerId}"
 msgid "Successfully saved config!"
 msgstr "Successfully saved config!"
 
+#. placeholder {0}: task.id
 #: src/pages/settings/TaskSettingsPage.tsx
-msgid "Successfully scheduled {taskId} (running in background)."
-msgstr "Successfully scheduled {taskId} (running in background)."
+msgid "Successfully scheduled {0} (running in background)."
+msgstr "Successfully scheduled {0} (running in background)."
+
+#: src/pages/settings/TaskSettingsPage.tsx
+#~ msgid "Successfully scheduled {taskId} (running in background)."
+#~ msgstr "Successfully scheduled {taskId} (running in background)."
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Successfully updated Media Source settings."
@@ -5450,8 +5482,9 @@ msgid "Take Turns"
 msgstr "Take Turns"
 
 #: src/components/shell/useShellNav.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
+#: src/components/system/tasks/TasksView.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Tasks"
 msgstr "Tasks"
 
@@ -5913,7 +5946,11 @@ msgstr "Tunarr only syncs content from enabled libraries. Click to choose librar
 msgid "Tunarr only syncs content from enabled libraries. Turn on a library's switch to sync it, or manage sources in <0>Media Source Settings.</0>"
 msgstr "Tunarr only syncs content from enabled libraries. Turn on a library's switch to sync it, or manage sources in <0>Media Source Settings.</0>"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
+msgid "Tunarr registers its background tasks when the server starts. Check the server logs if this list stays empty."
+msgstr "Tunarr registers its background tasks when the server starts. Check the server logs if this list stays empty."
+
+#: src/components/system/tasks/TasksView.tsx
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
 msgstr "Tunarr runs various tasks, sometimes on a schedule, for background operations."
 

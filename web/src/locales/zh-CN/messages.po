@@ -473,7 +473,6 @@ msgid "Access Token"
 msgstr "访问令牌"
 
 #: src/components/ui/table/ActionsHeader.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
 msgid "Actions"
 msgstr ""
 
@@ -1878,7 +1877,7 @@ msgstr "降序"
 msgid "Descending"
 msgstr "降序"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Description"
 msgstr "描述"
 
@@ -2388,9 +2387,14 @@ msgstr "保存设置时出错，详情请查看控制台。"
 msgid "Error while saving transcode config. See console log for details."
 msgstr "保存转码配置时出错，详情请查看控制台日志。"
 
+#. placeholder {0}: task.id
 #: src/pages/settings/TaskSettingsPage.tsx
-msgid "Error while scheduling {taskId}. Check server logs for details"
-msgstr "调度任务 {taskId} 时出错，详情请查看服务器日志"
+msgid "Error while scheduling {0}. Check server logs for details"
+msgstr ""
+
+#: src/pages/settings/TaskSettingsPage.tsx
+#~ msgid "Error while scheduling {taskId}. Check server logs for details"
+#~ msgstr "调度任务 {taskId} 时出错，详情请查看服务器日志"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Errors"
@@ -3088,7 +3092,7 @@ msgstr "语言"
 msgid "Languages"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TaskCard.tsx
 msgid "Last run"
 msgstr "上次运行"
 
@@ -3097,7 +3101,7 @@ msgstr "上次运行"
 msgid "Last Scanned: {0}"
 msgstr "上次扫描：{0}"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Last Scheduled Execution"
 msgstr "上次计划执行"
 
@@ -3314,6 +3318,10 @@ msgstr ""
 #: src/components/programming_controls/AdjustWeightsModal.tsx
 msgid "Manual"
 msgstr "手动"
+
+#: src/components/system/tasks/TaskStatusPill.tsx
+msgid "Manual only"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Manually add an access token from your Emby server"
@@ -3583,7 +3591,7 @@ msgstr "必须填写有效的 URL，或留空。"
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Name"
 msgstr "名称"
@@ -3666,11 +3674,11 @@ msgstr ""
 #~ msgid "Next"
 #~ msgstr "下一步"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TaskCard.tsx
 msgid "Next run"
 msgstr "下次运行"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Next Scheduled Execution"
 msgstr "下次计划执行"
 
@@ -3772,6 +3780,10 @@ msgstr ""
 
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "No smart collections match this filter."
+msgstr ""
+
+#: src/components/system/tasks/TasksView.tsx
+msgid "No tasks are registered."
 msgstr ""
 
 #: src/components/channels/ChannelStatusPill.tsx
@@ -4694,17 +4706,27 @@ msgid "Rules are evaluated in order. The first rule whose condition matches dete
 msgstr ""
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
 msgid "Run"
 msgstr "运行"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#. placeholder {0}: task.name
+#: src/components/system/tasks/TaskCard.tsx
+msgid "Run {0}"
+msgstr ""
+
+#: src/components/system/tasks/TaskCard.tsx
+#: src/components/system/tasks/TasksView.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Run now"
 msgstr "立即运行"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Run Troubleshooter"
 msgstr "运行排查工具"
+
+#: src/components/system/tasks/TaskStatusPill.tsx
+msgid "Running"
+msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Running..."
@@ -4792,6 +4814,10 @@ msgstr "使用指定了开始时间和时长的时段来编排节目。"
 
 #: src/pages/channels/ChannelProgrammingPage.tsx
 msgid "Schedule removed"
+msgstr ""
+
+#: src/components/system/tasks/TaskStatusPill.tsx
+msgid "Scheduled"
 msgstr ""
 
 #: src/components/ui/table/DataTable.tsx
@@ -5232,6 +5258,7 @@ msgstr ""
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/shell/useShellNav.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Status"
 msgstr "状态"
 
@@ -5367,9 +5394,14 @@ msgstr "已成功运行系统修复项 {fixerId}"
 msgid "Successfully saved config!"
 msgstr "配置已成功保存！"
 
+#. placeholder {0}: task.id
 #: src/pages/settings/TaskSettingsPage.tsx
-msgid "Successfully scheduled {taskId} (running in background)."
-msgstr "已成功调度 {taskId}（正在后台运行）。"
+msgid "Successfully scheduled {0} (running in background)."
+msgstr ""
+
+#: src/pages/settings/TaskSettingsPage.tsx
+#~ msgid "Successfully scheduled {taskId} (running in background)."
+#~ msgstr "已成功调度 {taskId}（正在后台运行）。"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Successfully updated Media Source settings."
@@ -5450,8 +5482,9 @@ msgid "Take Turns"
 msgstr ""
 
 #: src/components/shell/useShellNav.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
+#: src/components/system/tasks/TasksView.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Tasks"
 msgstr "任务"
 
@@ -5913,7 +5946,11 @@ msgstr ""
 msgid "Tunarr only syncs content from enabled libraries. Turn on a library's switch to sync it, or manage sources in <0>Media Source Settings.</0>"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
+msgid "Tunarr registers its background tasks when the server starts. Check the server logs if this list stays empty."
+msgstr ""
+
+#: src/components/system/tasks/TasksView.tsx
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
 msgstr "Tunarr 会运行各类后台任务，其中一些按计划定时执行。"
 
