@@ -6,7 +6,7 @@ import { DBAccess } from '../../db/DBAccess.ts';
 import { setGlobalOptionsUnchecked } from '../../globals.ts';
 import { copyPreMigratedDb } from '../../testing/testDbFactory.ts';
 
-const StudioUniqueMigration = 'migration1792761560';
+const StudioUniqueMigration = 'migration1795387942';
 
 type Fixture = { dbPath: string };
 
