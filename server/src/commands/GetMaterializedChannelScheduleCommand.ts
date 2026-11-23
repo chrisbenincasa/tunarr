@@ -338,8 +338,9 @@ export class GetMaterializedChannelScheduleCommand {
             };
           }
           case 'smart-collection': {
-            // MaterializedSlot has no smart collection variant, so a fresh
-            // object literal here would fail the excess property check.
+            // SmartCollectionRandomSlot doesn't declare smartCollection or
+            // isMissing, so returning this as a fresh object literal would
+            // fail the excess property check.
             const materialized = {
               ...slot,
               smartCollection: smartCollections[slot.smartCollectionId] ?? null,
