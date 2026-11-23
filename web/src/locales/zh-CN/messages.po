@@ -4517,8 +4517,8 @@ msgstr "展开阅读"
 msgid "Redirect duration"
 msgstr "跳转时长"
 
-#. placeholder {0}: p.channelName
 #. placeholder {0}: p.name
+#. placeholder {0}: program.channelName
 #: src/hooks/programming_controls/useSlotProgramOptions.ts
 #: src/hooks/useProgramTitleFormatter.ts
 msgid "Redirect to \"{0}\""
