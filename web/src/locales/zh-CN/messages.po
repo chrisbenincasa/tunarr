@@ -695,6 +695,7 @@ msgid "Albums"
 msgstr "专辑"
 
 #: src/components/channels/ChannelsView.tsx
+#: src/components/library/TrashView.tsx
 msgid "All"
 msgstr ""
 
@@ -1130,6 +1131,7 @@ msgstr "正在计算时段…"
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/fillers/FillerListsView.tsx
+#: src/components/library/TrashView.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
 #: src/components/programming_controls/AddFlexModal.tsx
@@ -1154,9 +1156,12 @@ msgstr "正在计算时段…"
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
-#: src/pages/library/TrashPage.tsx
 msgid "Cancel"
 msgstr "取消"
+
+#: src/components/library/TrashView.tsx
+msgid "Cancelling: <0>{count}</0> removed"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -2173,9 +2178,13 @@ msgstr "Emby"
 msgid "Emptied trash. Removed {0} item(s)."
 msgstr ""
 
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Empty Trash"
 msgstr "清空回收站"
+
+#: src/components/library/TrashView.tsx
+msgid "Empty trash progress"
+msgstr ""
 
 #: src/hooks/useEmptyTrash.ts
 msgid "Emptying the trash failed. Check the server logs for details."
@@ -2185,10 +2194,12 @@ msgstr ""
 msgid "Emptying trash in the background. You can keep using Tunarr."
 msgstr ""
 
-#. placeholder {0}: status.deleted
-#. placeholder {1}: status.total
 #: src/pages/library/TrashPage.tsx
-msgid "Emptying trash: {0} / {1}"
+#~ msgid "Emptying trash: {0} / {1}"
+#~ msgstr ""
+
+#: src/components/library/TrashView.tsx
+msgid "Emptying trash: <0>{count}</0>"
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
@@ -2314,8 +2325,8 @@ msgstr ""
 msgid "Episode Order"
 msgstr ""
 
+#: src/components/library/TrashView.tsx
 #: src/components/programs/Episodes.tsx
-#: src/pages/library/TrashPage.tsx
 msgid "Episodes"
 msgstr "剧集"
 
@@ -3084,9 +3095,17 @@ msgstr ""
 msgid "is not"
 msgstr ""
 
+#: src/components/library/TrashView.tsx
+msgid "Item types"
+msgstr ""
+
 #: src/components/channel_config/MediaGridItem.tsx
 msgid "Item was not present during the last scan"
 msgstr "上次扫描时该条目不存在"
+
+#: src/components/library/TrashView.tsx
+msgid "Items a recent scan couldn't find, because the file is missing or the media server no longer returns them. They can't play in channels. Emptying the trash replaces them with flex."
+msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Items from any filler list will not be chosen more frequently than this cooldown setting."
@@ -3585,7 +3604,7 @@ msgid "Movie, {0}"
 msgstr "电影，{0}"
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Movies"
 msgstr "电影"
 
@@ -3602,7 +3621,7 @@ msgid "Music Video"
 msgstr ""
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Music Videos"
 msgstr "音乐视频"
 
@@ -4007,7 +4026,7 @@ msgid "Other Video"
 msgstr ""
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Other Videos"
 msgstr "其他视频"
 
@@ -5922,8 +5941,8 @@ msgstr "总时长"
 msgid "Track"
 msgstr ""
 
+#: src/components/library/TrashView.tsx
 #: src/components/programs/Tracks.tsx
-#: src/pages/library/TrashPage.tsx
 msgid "Tracks"
 msgstr "音轨"
 
@@ -5956,15 +5975,15 @@ msgstr "转码配置"
 msgid "Transcoding Settings"
 msgstr "转码设置"
 
+#: src/components/library/TrashView.tsx
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
-#: src/pages/library/TrashPage.tsx
 msgid "Trash"
 msgstr "回收站"
 
 #: src/pages/library/TrashPage.tsx
-msgid "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
-msgstr "回收站中的条目是指之前扫描到、但在最近一次扫描中未找到的条目。原因可能是文件丢失，或媒体服务器不再通过 API 返回该条目。这些条目当前在频道中将无法播放。清空回收站后，它们在频道中的位置将被弹性时间替代。"
+#~ msgid "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
+#~ msgstr "回收站中的条目是指之前扫描到、但在最近一次扫描中未找到的条目。原因可能是文件丢失，或媒体服务器不再通过 API 返回该条目。这些条目当前在频道中将无法播放。清空回收站后，它们在频道中的位置将被弹性时间替代。"
 
 #: src/components/shell/useShellNav.tsx
 msgid "Troubleshoot"

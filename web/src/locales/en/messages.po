@@ -695,6 +695,7 @@ msgid "Albums"
 msgstr "Albums"
 
 #: src/components/channels/ChannelsView.tsx
+#: src/components/library/TrashView.tsx
 msgid "All"
 msgstr "All"
 
@@ -1130,6 +1131,7 @@ msgstr "Calculating Slots..."
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/fillers/FillerListsView.tsx
+#: src/components/library/TrashView.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
 #: src/components/programming_controls/AddFlexModal.tsx
@@ -1154,9 +1156,12 @@ msgstr "Calculating Slots..."
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
-#: src/pages/library/TrashPage.tsx
 msgid "Cancel"
 msgstr "Cancel"
+
+#: src/components/library/TrashView.tsx
+msgid "Cancelling: <0>{count}</0> removed"
+msgstr "Cancelling: <0>{count}</0> removed"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -2173,9 +2178,13 @@ msgstr "Emby"
 msgid "Emptied trash. Removed {0} item(s)."
 msgstr "Emptied trash. Removed {0} item(s)."
 
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Empty Trash"
 msgstr "Empty Trash"
+
+#: src/components/library/TrashView.tsx
+msgid "Empty trash progress"
+msgstr "Empty trash progress"
 
 #: src/hooks/useEmptyTrash.ts
 msgid "Emptying the trash failed. Check the server logs for details."
@@ -2185,11 +2194,13 @@ msgstr "Emptying the trash failed. Check the server logs for details."
 msgid "Emptying trash in the background. You can keep using Tunarr."
 msgstr "Emptying trash in the background. You can keep using Tunarr."
 
-#. placeholder {0}: status.deleted
-#. placeholder {1}: status.total
 #: src/pages/library/TrashPage.tsx
-msgid "Emptying trash: {0} / {1}"
-msgstr "Emptying trash: {0} / {1}"
+#~ msgid "Emptying trash: {0} / {1}"
+#~ msgstr "Emptying trash: {0} / {1}"
+
+#: src/components/library/TrashView.tsx
+msgid "Emptying trash: <0>{count}</0>"
+msgstr "Emptying trash: <0>{count}</0>"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Enable <0>EBU R 128</0> loudness normalization via the <1>loudnorm</1> FFmpeg filter. May increase CPU usage during streaming."
@@ -2314,8 +2325,8 @@ msgstr "Episode"
 msgid "Episode Order"
 msgstr "Episode Order"
 
+#: src/components/library/TrashView.tsx
 #: src/components/programs/Episodes.tsx
-#: src/pages/library/TrashPage.tsx
 msgid "Episodes"
 msgstr "Episodes"
 
@@ -3084,9 +3095,17 @@ msgstr "is"
 msgid "is not"
 msgstr "is not"
 
+#: src/components/library/TrashView.tsx
+msgid "Item types"
+msgstr "Item types"
+
 #: src/components/channel_config/MediaGridItem.tsx
 msgid "Item was not present during the last scan"
 msgstr "Item was not present during the last scan"
+
+#: src/components/library/TrashView.tsx
+msgid "Items a recent scan couldn't find, because the file is missing or the media server no longer returns them. They can't play in channels. Emptying the trash replaces them with flex."
+msgstr "Items a recent scan couldn't find, because the file is missing or the media server no longer returns them. They can't play in channels. Emptying the trash replaces them with flex."
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Items from any filler list will not be chosen more frequently than this cooldown setting."
@@ -3585,7 +3604,7 @@ msgid "Movie, {0}"
 msgstr "Movie, {0}"
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Movies"
 msgstr "Movies"
 
@@ -3602,7 +3621,7 @@ msgid "Music Video"
 msgstr "Music Video"
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Music Videos"
 msgstr "Music Videos"
 
@@ -4007,7 +4026,7 @@ msgid "Other Video"
 msgstr "Other Video"
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Other Videos"
 msgstr "Other Videos"
 
@@ -5922,8 +5941,8 @@ msgstr "Total Runtime"
 msgid "Track"
 msgstr "Track"
 
+#: src/components/library/TrashView.tsx
 #: src/components/programs/Tracks.tsx
-#: src/pages/library/TrashPage.tsx
 msgid "Tracks"
 msgstr "Tracks"
 
@@ -5956,15 +5975,15 @@ msgstr "Transcoding Configs"
 msgid "Transcoding Settings"
 msgstr "Transcoding Settings"
 
+#: src/components/library/TrashView.tsx
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
-#: src/pages/library/TrashPage.tsx
 msgid "Trash"
 msgstr "Trash"
 
 #: src/pages/library/TrashPage.tsx
-msgid "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
-msgstr "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
+#~ msgid "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
+#~ msgstr "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
 
 #: src/components/shell/useShellNav.tsx
 msgid "Troubleshoot"
