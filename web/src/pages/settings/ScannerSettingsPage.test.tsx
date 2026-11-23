@@ -74,7 +74,9 @@ describe('ScannerSettingsPage', () => {
     renderPage({ type: 'interval', hours: 6, minute: 30 });
 
     const next = dayjs(nextEpoch * 1000).format('llll');
-    expect(screen.getByText(`Next scan: ${next}`)).toBeInTheDocument();
+    expect(
+      screen.getByText(`Next scan: ${next} (your time zone)`),
+    ).toBeInTheDocument();
   });
 
   test('says scans are off when the saved schedule is off', () => {
@@ -97,6 +99,31 @@ describe('ScannerSettingsPage', () => {
     expect(
       screen.queryByText(/Scan times use the server's time zone/),
     ).not.toBeInTheDocument();
+  });
+
+  test('shows the time zone note for an unsaved schedule when saved scans are off', async () => {
+    const { user } = renderPage({ type: 'off' });
+
+    await user.click(screen.getByRole('combobox', { name: 'Scheduled scans' }));
+    await user.click(screen.getByRole('option', { name: 'Every few hours' }));
+
+    expect(
+      screen.getByText(/Scan times use the server's time zone/),
+    ).toBeInTheDocument();
+    expect(screen.queryByText(/your time zone/)).not.toBeInTheDocument();
+    expect(screen.getByText(/Scheduled scans are off/)).toBeInTheDocument();
+  });
+
+  test('keeps the next scan time zone label when the form is switched to off', async () => {
+    const { user } = renderPage({ type: 'interval', hours: 6, minute: 30 });
+
+    await user.click(screen.getByRole('combobox', { name: 'Scheduled scans' }));
+    await user.click(screen.getByRole('option', { name: 'Off' }));
+
+    const next = dayjs(nextEpoch * 1000).format('llll');
+    expect(
+      screen.getByText(`Next scan: ${next} (your time zone)`),
+    ).toBeInTheDocument();
   });
 
   test('saves scans as off', async () => {

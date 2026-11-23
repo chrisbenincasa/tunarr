@@ -133,7 +133,7 @@ export const ScannerSettingsPage = () => {
 
     if (isNumber(nextScanEpoch)) {
       const next = dayjs(nextScanEpoch * 1000).format('llll');
-      return <Trans>Next scan: {next}</Trans>;
+      return <Trans>Next scan: {next} (your time zone)</Trans>;
     }
 
     return null;
@@ -184,7 +184,7 @@ export const ScannerSettingsPage = () => {
                   {' '}
                   <Trans>
                     Scan times use the server's time zone, which can differ from
-                    yours. The next scan below is shown in your time zone.
+                    yours.
                   </Trans>
                 </>
               )}
