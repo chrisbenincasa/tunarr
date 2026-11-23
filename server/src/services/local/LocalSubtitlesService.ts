@@ -3,7 +3,6 @@ import type { MediaSubtitles } from '@tunarr/types';
 import { injectable } from 'inversify';
 import fs from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
-import { match, P } from 'ts-pattern';
 import type { Nullable } from '../../types/util.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
@@ -49,14 +48,20 @@ export class LocalSubtitlesService {
   ): Nullable<MediaSubtitles> {
     const itemName = basename(originalItemPath, extname(originalItemPath));
     const fileName = basename(fullPath);
-    const codec = match(extname(fileName))
-      .with(P.union('.ssa', '.ass'), () => 'ass')
-      .with('.srt', () => 'subrip')
-      .with('.vtt', () => 'webvtt')
-      .otherwise(() => null);
-
-    if (!codec) {
-      return null;
+    let codec: 'ass' | 'subrip' | 'webvtt';
+    switch (extname(fileName)) {
+      case '.ssa':
+      case '.ass':
+        codec = 'ass';
+        break;
+      case '.srt':
+        codec = 'subrip';
+        break;
+      case '.vtt':
+        codec = 'webvtt';
+        break;
+      default:
+        return null;
     }
 
     // Sidecars are named {media_name}(.{lang})?(.{opts})*.{codec_ext}. Requiring

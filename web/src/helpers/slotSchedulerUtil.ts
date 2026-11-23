@@ -11,7 +11,6 @@ import duration from 'dayjs/plugin/duration';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import { some } from 'lodash-es';
 import type { StrictExclude, StrictExtract } from 'ts-essentials';
-import { match, P } from 'ts-pattern';
 import type { DropdownOption } from './DropdownOption.ts';
 import { extractProgramGrandparent } from './programUtil.ts';
 
@@ -319,25 +318,25 @@ const UniformShuffleSortOpt = {
 export function slotOrderOptions(
   slotProgrammingType: SlotTypeWithOrdering,
 ): DropdownOption<SlotWithOrdering['order']>[] {
-  return match(slotProgrammingType)
-    .with(P.union('show', 'custom-show'), () => [
-      NextEpSortOpt,
-      OrderedShuffleSortOpt,
-      ShuffleSortOpt,
-    ])
-    .with('filler', () => [
-      ShufflePreferLongSortOpt,
-      ShufflePreferShortSortOpt,
-      UniformShuffleSortOpt,
-    ])
-    .with('smart-collection', () => [
-      AlphanumericSortOpt,
-      ChronologicalSortOpt,
-      ShuffleSortOpt,
-      NextEpSortOpt,
-      OrderedShuffleSortOpt,
-    ])
-    .exhaustive();
+  switch (slotProgrammingType) {
+    case 'show':
+    case 'custom-show':
+      return [NextEpSortOpt, OrderedShuffleSortOpt, ShuffleSortOpt];
+    case 'filler':
+      return [
+        ShufflePreferLongSortOpt,
+        ShufflePreferShortSortOpt,
+        UniformShuffleSortOpt,
+      ];
+    case 'smart-collection':
+      return [
+        AlphanumericSortOpt,
+        ChronologicalSortOpt,
+        ShuffleSortOpt,
+        NextEpSortOpt,
+        OrderedShuffleSortOpt,
+      ];
+  }
 }
 
 export type CustomShowAvailability = 'available' | 'empty' | 'missing';

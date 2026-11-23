@@ -11,7 +11,6 @@ import { type ProgramSearchResponse } from '@tunarr/types/api';
 import type { SearchRequest, SearchSort } from '@tunarr/types/schemas';
 import { groupBy, isEmpty, isUndefined, last } from 'lodash-es';
 import { useCallback, useEffect, useMemo } from 'react';
-import { match, P } from 'ts-pattern';
 import { postApiProgramsSearch } from '../../generated/sdk.gen.ts';
 import { defaultLibrarySearchFilter } from '../../helpers/programUtil.ts';
 import { useProgramHierarchy } from '../../hooks/channel_config/useProgramHierarchy.ts';
@@ -38,6 +37,25 @@ type Props = {
   searchRequest?: SearchRequest;
 };
 
+function childSort(parentType: ProgramOrFolder['type']): Maybe<SearchSort[]> {
+  switch (parentType) {
+    case 'show':
+    case 'season':
+    case 'album':
+      return [{ field: 'index', direction: 'asc' }];
+    case 'movie':
+    case 'episode':
+    case 'track':
+    case 'other_video':
+    case 'music_video':
+    case 'artist':
+    case 'collection':
+    case 'folder':
+    case 'playlist':
+      return;
+  }
+}
+
 export const LibraryProgramGrid = ({
   mediaSource,
   library,
@@ -59,12 +77,7 @@ export const LibraryProgramGrid = ({
   const query = useMemo<SearchRequest>(() => {
     if (currentParentContext) {
       // sort override
-      const sort = match(currentParentContext)
-        .returnType<Maybe<SearchSort[]>>()
-        .with({ type: P.union('show', 'season', 'album') }, () => [
-          { field: 'index', direction: 'asc' },
-        ])
-        .otherwise(() => undefined);
+      const sort = childSort(currentParentContext.type);
       const filter = getChildSearchFilter(currentParentContext);
       return {
         filter,

@@ -16,7 +16,6 @@ import { isTerminalItemType } from '@tunarr/types';
 import type { JellyfinItemKind } from '@tunarr/types/jellyfin';
 import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { find, isUndefined } from 'lodash-es';
-import { match } from 'ts-pattern';
 import { ProgramExternalIdType } from '../../db/custom_types/ProgramExternalIdType.ts';
 import { MediaSourceDB } from '../../db/mediaSourceDB.ts';
 import type { MediaSourceId } from '../../db/schema/base.js';
@@ -197,14 +196,24 @@ export class JellyfinItemFinder {
             break;
         }
 
-        const jellyfinItemType: JellyfinItemKind = match(program.type)
-          .returnType<JellyfinItemKind>()
-          .with(ProgramType.Movie, () => 'Movie')
-          .with(ProgramType.Episode, () => 'Episode')
-          .with(ProgramType.Track, () => 'Audio')
-          .with(ProgramType.MusicVideo, () => 'MusicVideo')
-          .with(ProgramType.OtherVideo, () => 'Video')
-          .exhaustive();
+        let jellyfinItemType: JellyfinItemKind;
+        switch (program.type) {
+          case ProgramType.Movie:
+            jellyfinItemType = 'Movie';
+            break;
+          case ProgramType.Episode:
+            jellyfinItemType = 'Episode';
+            break;
+          case ProgramType.Track:
+            jellyfinItemType = 'Audio';
+            break;
+          case ProgramType.MusicVideo:
+            jellyfinItemType = 'MusicVideo';
+            break;
+          case ProgramType.OtherVideo:
+            jellyfinItemType = 'Video';
+            break;
+        }
 
         const queryResult = await jfClient.getItems(
           null,

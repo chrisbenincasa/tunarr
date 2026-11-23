@@ -25,7 +25,6 @@ import fs from 'node:fs/promises';
 import { join, resolve, sep } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { format } from 'node:util';
-import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import z from 'zod/v4';
 import { container } from '../container.ts';
@@ -173,22 +172,18 @@ export const streamApi: RouterPluginAsyncCallback = async (fastify) => {
         );
 
       if (sessionResult.isFailure()) {
-        return match(sessionResult.error.type)
-          .with('channel_not_found', () =>
-            res.status(404).send('Channel not found.'),
-          )
-          .with('generic_error', () =>
-            res.status(500).send('Unable to start session'),
-          )
-          .with('transcode_config_not_found', () =>
-            res.status(404).send('Transcode config not found'),
-          )
-          .with(undefined, () =>
-            res
+        switch (sessionResult.error.type) {
+          case 'channel_not_found':
+            return res.status(404).send('Channel not found.');
+          case 'generic_error':
+            return res.status(500).send('Unable to start session');
+          case 'transcode_config_not_found':
+            return res.status(404).send('Transcode config not found');
+          case undefined:
+            return res
               .status(500)
-              .send(`Unknown error occurred. Check logs for details`),
-          )
-          .exhaustive();
+              .send(`Unknown error occurred. Check logs for details`);
+        }
       }
 
       const session = sessionResult.get();

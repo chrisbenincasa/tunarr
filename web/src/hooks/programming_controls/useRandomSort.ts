@@ -1,6 +1,5 @@
 import { flatten, groupBy, shuffle, values } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
-import { match } from 'ts-pattern';
 import type { ShuffleGroupingValue } from '../../components/programming_controls/ShuffleProgrammingModal.tsx';
 import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { setCurrentLineup } from '../../store/channelEditor/actions.ts';
@@ -53,10 +52,9 @@ function useCurrentEditorGetterSetter(): GetterSetter<UIChannelProgram> {
   const channelEditor = useChannelEditorLazy();
   const customEditor = useCustomShowEditor();
 
-  return useMemo(() => {
-    return match(entityType)
-      .returnType<GetterSetter<UIChannelProgram>>()
-      .with('custom-show', () => {
+  return useMemo((): GetterSetter<UIChannelProgram> => {
+    switch (entityType) {
+      case 'custom-show':
         return {
           getter: () => customEditor.programList,
           setter: (programs) =>
@@ -64,16 +62,19 @@ function useCurrentEditorGetterSetter(): GetterSetter<UIChannelProgram> {
               programs.filter(isUIContentProgram),
             ),
         };
-      })
-      .with('channel', () => ({
-        getter: () => channelEditor.materializeNewProgramList(),
-        setter: (programs: UIChannelProgram[]) =>
-          setCurrentLineup(programs, true),
-      }))
-      .otherwise(() => ({
-        getter: () => [] as UIChannelProgram[],
-        setter: (_: UIChannelProgram[]) => {},
-      }));
+      case 'channel':
+        return {
+          getter: () => channelEditor.materializeNewProgramList(),
+          setter: (programs: UIChannelProgram[]) =>
+            setCurrentLineup(programs, true),
+        };
+      case 'filler':
+      case undefined:
+        return {
+          getter: () => [] as UIChannelProgram[],
+          setter: (_: UIChannelProgram[]) => {},
+        };
+    }
   }, [channelEditor, customEditor.programList, entityType]);
 }
 

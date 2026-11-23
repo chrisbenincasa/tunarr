@@ -2,7 +2,6 @@ import { inject, injectable } from 'inversify';
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
-import { match } from 'ts-pattern';
 import type { ArtworkType } from '../db/schema/Artwork.ts';
 import type { GlobalOptions } from '../globals.ts';
 import { KEYS } from '../types/inject.ts';
@@ -93,15 +92,30 @@ export class ImageCache {
 
   getImagePath(cacheKey: string, artworkType: ArtworkType) {
     const cacheKeyBaseName = basename(cacheKey);
-    const base = match(artworkType)
-      .with('banner', () => BannerCacheFolderName)
-      .with('fanart', () => FanartCacheFolderName)
-      .with('landscape', () => LandscapeCacheFolderName)
-      .with('logo', () => LogoCacheFolderName)
-      .with('poster', () => PosterCacheFolderName)
-      .with('thumbnail', () => ThumbnailCacheFolderName)
-      .with('watermark', () => WatermarkCacheFolderName)
-      .exhaustive();
+    let base: string;
+    switch (artworkType) {
+      case 'banner':
+        base = BannerCacheFolderName;
+        break;
+      case 'fanart':
+        base = FanartCacheFolderName;
+        break;
+      case 'landscape':
+        base = LandscapeCacheFolderName;
+        break;
+      case 'logo':
+        base = LogoCacheFolderName;
+        break;
+      case 'poster':
+        base = PosterCacheFolderName;
+        break;
+      case 'thumbnail':
+        base = ThumbnailCacheFolderName;
+        break;
+      case 'watermark':
+        base = WatermarkCacheFolderName;
+        break;
+    }
     return path.join(
       this.globalOpts.databaseDirectory,
       CacheFolderName,

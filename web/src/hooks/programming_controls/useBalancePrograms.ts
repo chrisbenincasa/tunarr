@@ -3,7 +3,6 @@ import useStore from '@/store/index.ts';
 import { materializedProgramListSelector } from '@/store/selectors.ts';
 import type { ChannelProgram } from '@tunarr/types';
 import { every, flatMap, forEach, maxBy, range, values } from 'lodash-es';
-import { match } from 'ts-pattern';
 import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { removeDuplicatePrograms } from './useRemoveDuplicates.ts';
 
@@ -21,10 +20,12 @@ const extractMaxByFunc = (
   balanceType: BalanceProgramsOptions['balanceType'],
 ) => {
   return (group: BalanceGroup) => {
-    return match(balanceType)
-      .with('duration', () => group.totalDuration)
-      .with('programCount', () => group.programs.length)
-      .exhaustive();
+    switch (balanceType) {
+      case 'duration':
+        return group.totalDuration;
+      case 'programCount':
+        return group.programs.length;
+    }
   };
 };
 
@@ -53,19 +54,8 @@ export const useBalancePrograms = () => {
     // each show
     const maxChunk = maxBy(values(groups), extractMaxByFunc(opts.balanceType));
 
-    const maxCount =
-      match(opts.balanceType)
-        .with('duration', () => maxChunk?.totalDuration)
-        .with('programCount', () => maxChunk?.programs.length)
-        .exhaustive() ?? 0;
-
-    // Let's just replicate this for now and then we'll go back and see
-    // This is pretty similar to the match above... may want to refactor
-    const factorDivisor = (group: BalanceGroup) =>
-      match(opts.balanceType)
-        .with('duration', () => group.totalDuration)
-        .with('programCount', () => group.programs.length)
-        .exhaustive();
+    const factorDivisor = extractMaxByFunc(opts.balanceType);
+    const maxCount = maxChunk ? factorDivisor(maxChunk) : 0;
 
     const factor = every(groups, (group) => {
       return Math.floor((maxCount * 2) / factorDivisor(group)) % 2 === 0;

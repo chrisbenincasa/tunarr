@@ -6,7 +6,6 @@ import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import Fixer from './fixer.ts';
 import { ProgramGroupingTypes } from '@/db/schema/ProgramGrouping.js';
-import { match } from 'ts-pattern';
 
 @injectable()
 export class BackfillMediaSourceIdFixer extends Fixer {
@@ -78,13 +77,21 @@ export class BackfillMediaSourceIdFixer extends Fixer {
       .execute();
 
     for (const typ of ProgramGroupingTypes) {
-      const field = match(typ)
-        .returnType<'albumUuid' | 'artistUuid' | 'seasonUuid' | 'tvShowUuid'>()
-        .with('album', () => 'albumUuid')
-        .with('artist', () => 'artistUuid')
-        .with('season', () => 'seasonUuid')
-        .with('show', () => 'tvShowUuid')
-        .exhaustive();
+      let field: 'albumUuid' | 'artistUuid' | 'seasonUuid' | 'tvShowUuid';
+      switch (typ) {
+        case 'album':
+          field = 'albumUuid';
+          break;
+        case 'artist':
+          field = 'artistUuid';
+          break;
+        case 'season':
+          field = 'seasonUuid';
+          break;
+        case 'show':
+          field = 'tvShowUuid';
+          break;
+      }
 
       await this.db
         .updateTable('programGrouping')
