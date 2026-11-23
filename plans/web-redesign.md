@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (11/22/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows`, `/library/fillers`, and `/library/smart_collections` merged together in PR #2507. `/settings/sources` merged in PR #2516 and `/system/tasks` in PR #2519. `/system/logs` is in review in PR #2524, which finishes Phase 3's pages. `/library/trash` moves to Phase 5. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. The forms/settings mock is still due and gates Phase 4.
+> **Status (11/22/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows`, `/library/fillers`, and `/library/smart_collections` merged together in PR #2507. `/settings/sources` merged in PR #2516 and `/system/tasks` in PR #2519. `/system/logs` merged in PR #2524. `/library/trash` is in review in PR #2523, which finishes Phase 3's pages. Its program grid moves to Phase 5 with `MediaGrid`. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. The forms/settings mock is still due and gates Phase 4.
 
 ## Why
 
@@ -47,7 +47,7 @@ Each layer has stories before the layer above uses it.
 | Layer      | Examples                                                                                         | Where                        |
 | ---------- | ------------------------------------------------------------------------------------------------ | ---------------------------- |
 | Tokens     | colors, fonts, radii, density sizes                                                              | `themeTokens.ts`, `theme.ts` |
-| Primitives | `StatusPill`, `MonoText`, `KeyHint`, `PageHeader`, `Segmented`, `EmptyState`                     | `components/ui/`             |
+| Primitives | `StatusPill`, `MonoText`, `KeyHint`, `PageHeader`, `Segmented`, `FilterChip`, `EmptyState`       | `components/ui/`             |
 | Patterns   | `AppShell`, `CollectionView`, `FormSection`, `MediaGrid`, `LineupEditor`, `Inspector`, `SaveBar` | `components/ui/patterns/`    |
 | Pages      | route components assembled from patterns                                                         | `routes/`, `pages/`          |
 
@@ -97,7 +97,7 @@ Each phase is one or more PRs against `main`. Each PR leaves the app working.
 - Density reaches the MRT tables through `useStoreBackedTableSettings`. Done on branch, and temporary until `DataTable` replaces MRT.
 - Storybook with the provider decorator and the scheme and density toolbar.
 - First primitives with stories: `StatusPill`, `MonoText`, `PageHeader`.
-- Then `Segmented` (bans `ToggleButtonGroup` and `ToggleButton`), `KeyHint` and `EmptyState`. `EmptyState` has no mock yet, so its stories are the reference. Multi-select toggle groups (`TrashPage`) stay on the legacy list until a multi-select primitive exists.
+- Then `Segmented` (bans `ToggleButtonGroup` and `ToggleButton`), `KeyHint` and `EmptyState`. `EmptyState` has no mock yet, so its stories are the reference. Multi-select toggle groups use `FilterChip`, the multi-select primitive. `TrashPage` left the legacy list by switching to it.
 - The Vitest add-on, the a11y add-on (warnings only) and the story diff script.
 
 ### Phase 1. Mocks for the remaining page types
@@ -193,7 +193,7 @@ Built on `feat/media-sources-collection`, stacked on `feat/smart-collections-col
 - The page sits inside `SettingsLayout`, which keeps its Settings heading and `Paper` until Phase 4. `PageHeader` takes the place of the old in-paper heading.
 - Rows open the source's browse page at `/media_sources/$mediaSourceId`, and the card title links there. Nothing on this page opened it before (decided 11/09/2026).
 - The e2e table spec runs MediaSourceSettings at dense density too.
-- `/library/trash` is skipped. It renders `LibraryProgramGrid`, a grid of programs rather than a list of entities, so it moves to Phase 5 with `MediaGrid`.
+- `/library/trash` is skipped here. It renders `LibraryProgramGrid`, a grid of programs rather than a list of entities, so it gets its own rebuild below.
 
 Built on `feat/tasks-collection`, stacked on `feat/media-sources-collection` (11/09/2026):
 
@@ -214,6 +214,16 @@ Built on `feat/logs-collection`, stacked on `feat/tasks-collection` (11/11/2026)
 - Pause freezes the lines on screen while the stream keeps filling the buffer. The header shows Live, or Paused with a count of new lines. Resume shows everything.
 - `CollectionView` gains `equalRowHeights`, so an opened phone entry doesn't stretch the others. Its phone column is now `minmax(0, 1fr)`, because unbreakable text in a card widened the page past the screen.
 - The e2e table spec gains a phone-width check for every ported page. `TranscodeConfigs` skips it, because its table already overflows by 275px at 390px.
+
+Built on `feat/trash-page` in PR #2523 (11/09/2026):
+
+- Trash lists programs, not entities, so it doesn't use `CollectionView`. Its grid is `LibraryProgramGrid`, shared with search and the library pages, and Phase 5 (`MediaGrid`) rebuilds it. This PR rebuilds only the page around the grid.
+- `/library/trash` splits into `TrashView` (props only, with stories) in `web/src/components/library/` and `TrashPage` (data). The view takes the grid as `children`, so its stories use a placeholder box.
+- `PageHeader` holds the Empty Trash button. The explainer paragraph shrinks to the header subtitle, and the breadcrumbs are gone.
+- The type filter stays multi-select. It uses `FilterChip` from `components/ui/`, plus an All chip that clears the selection. `TrashPage` is off the `ToggleButtonGroup` legacy list.
+- The drain shows in a token-styled panel with its count, a progress bar and Cancel. The bar turns to the warning color while cancelling.
+- The page passes the view one `TrashDrain` state (`idle`, `starting`, `running` or `cancelling`) built from `useEmptyTrash`.
+- An empty trash shows the grid's "Total hits: 0" line, not an `EmptyState`. The page would need the grid's result count, which `LibraryProgramGrid` doesn't expose, so the empty state waits for Phase 5.
 
 ### Phase 4. Forms and settings
 
