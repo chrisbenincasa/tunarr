@@ -53,3 +53,34 @@ describe('pendingOperations', () => {
     expect(parsed.pendingOperations).toEqual({ emptyTrashRequestedAt: null });
   });
 });
+
+describe('legacy media source settings', () => {
+  const parseWithMediaSource = (mediaSource: Record<string, unknown>) =>
+    SettingsFileSchema.parse({
+      ...defaultSettings('/tmp/tunarr-test'),
+      settings: {
+        ...defaultSettings('/tmp/tunarr-test').settings,
+        mediaSource,
+      },
+    }).settings.mediaSource;
+
+  test('converts rescanIntervalHours into a scan schedule', () => {
+    expect(parseWithMediaSource({ rescanIntervalHours: 168 })).toEqual({
+      scanSchedule: {
+        type: 'days',
+        daysOfWeek: [0, 1, 2, 3, 4, 5, 6],
+        hour: 0,
+        minute: 30,
+      },
+    });
+  });
+
+  test('keeps a saved scan schedule over a leftover rescanIntervalHours', () => {
+    expect(
+      parseWithMediaSource({
+        rescanIntervalHours: 6,
+        scanSchedule: { type: 'off' },
+      }),
+    ).toEqual({ scanSchedule: { type: 'off' } });
+  });
+});

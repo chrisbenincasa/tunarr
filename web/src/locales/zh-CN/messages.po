@@ -130,6 +130,11 @@ msgstr "{0, plural, other {条路径}}"
 msgid "{0, plural, one {program} other {programs}}"
 msgstr "{0, plural, other {个节目}}"
 
+#. placeholder {0}: watch('intervalHours')
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "{0, plural, one {Scans run at this minute every hour.} other {Scans run at this time and every # hours after it, around the clock.}}"
+msgstr ""
+
 #. placeholder {0}: selectedMedia.length
 #: src/components/channel_config/SelectedProgrammingList.tsx
 msgid "{0, plural, one {Selected Item} other {Selected Items}}"
@@ -288,6 +293,10 @@ msgstr ""
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr "{hours, plural, other {# 小时}}"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "{hours, plural, one {Every hour} other {Every # hours}}"
+msgstr ""
 
 #: src/components/channels/ChannelStatusPill.tsx
 msgid "{label}, show sessions"
@@ -1632,6 +1641,14 @@ msgstr "创建重播块"
 msgid "Creates a new collection"
 msgstr "创建新合集"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Cron expression"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Custom (cron)"
+msgstr ""
+
 #: src/components/guide/TvGuide.tsx
 msgid "Custom Program"
 msgstr "自定义节目"
@@ -1710,6 +1727,11 @@ msgstr "数据目录："
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 msgid "Day"
 msgstr "天"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Days"
+msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
@@ -2283,6 +2305,10 @@ msgstr "确保节目有整齐的开始时间，会自动添加弹性时间来填
 msgid "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate."
 msgstr "确保节目只在每小时的特定间隔点开始，使排期更整齐。系统会安排弹性时间来实现这一点。"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Enter a cron expression."
+msgstr ""
+
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter a name for your Emby Server"
 msgstr "为你的 Emby 服务器输入名称"
@@ -2451,6 +2477,10 @@ msgstr "应急选项"
 msgid "Every"
 msgstr "每"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Every few hours"
+msgstr ""
+
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "Everything using this profile will fall back to the next profile in the resolution order (usually the channel's profile, or the default)."
 msgstr ""
@@ -2517,8 +2547,12 @@ msgid "Failed to save feature flags."
 msgstr "保存功能开关失败。"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "Failed to update Media Source settings. Please check server and browser logs for details."
-msgstr "更新媒体源设置失败，详情请查看服务器和浏览器日志。"
+#~ msgid "Failed to update Media Source settings. Please check server and browser logs for details."
+#~ msgstr "更新媒体源设置失败，详情请查看服务器和浏览器日志。"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Failed to update scanner settings. {message}"
+msgstr ""
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Failed to validate expression"
@@ -2736,6 +2770,14 @@ msgstr "完成"
 msgid "First Episode"
 msgstr ""
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "First scan at"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Five fields, or six with seconds first. For example, \"0 4 * * 0\" scans at 4:00 AM every Sunday."
+msgstr ""
+
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Fix the errors in the rules above to run a test."
 msgstr ""
@@ -2804,6 +2846,8 @@ msgid "Frame Rate"
 msgstr "帧率"
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Frequency"
 msgstr "频率"
 
@@ -2947,8 +2991,8 @@ msgid "How far past its boundary can a slot's content extend? 'One extra item' a
 msgstr "时段的内容最多可以超出其边界多少？「One extra item」表示最多再允许一个跨越边界的节目。"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "How frequently libraries should be scanned (starting from midnight)."
-msgstr "媒体库的扫描频率（从午夜开始计算）。"
+#~ msgid "How frequently libraries should be scanned (starting from midnight)."
+#~ msgstr "媒体库的扫描频率（从午夜开始计算）。"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "How long each commercial break lasts"
@@ -3738,6 +3782,10 @@ msgstr ""
 msgid "Next run"
 msgstr "下次运行"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Next scan: {next} (your time zone)"
+msgstr ""
+
 #: src/components/system/tasks/TasksView.tsx
 msgid "Next Scheduled Execution"
 msgstr "下次计划执行"
@@ -3942,6 +3990,14 @@ msgstr "Nvidia 支持能力"
 msgid "of the following"
 msgstr ""
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Off"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "On selected days"
+msgstr ""
+
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/components/channels/ChannelCard.tsx
 #: src/components/channels/ChannelsView.tsx
@@ -4138,6 +4194,10 @@ msgstr "按百分比"
 msgid "Period"
 msgstr "周期"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Pick at least one day."
+msgstr ""
+
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Pick specific programming to remove from the channel."
 msgstr "选择要从频道中移除的特定节目。"
@@ -4222,6 +4282,10 @@ msgstr ""
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 #~ msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first."
 #~ msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Please check server and browser logs for details."
+msgstr ""
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
@@ -4654,8 +4718,8 @@ msgstr "重播"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "Rescan Interval (hours)"
-msgstr "重新扫描间隔（小时）"
+#~ msgid "Rescan Interval (hours)"
+#~ msgstr "重新扫描间隔（小时）"
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
@@ -4867,6 +4931,14 @@ msgstr "扫描"
 msgid "Scan {0}"
 msgstr "扫描 {0}"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scan times use the server's time zone, which can differ from yours."
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+#~ msgid "Scan times use the server's time zone, which can differ from yours. The next scan below is shown in your time zone."
+#~ msgstr ""
+
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Scan your libraries"
 msgstr ""
@@ -4879,6 +4951,10 @@ msgstr "扫描器"
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Scanning"
 msgstr "扫描中"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scans every enabled library on this schedule. Collection and playlist sync from media servers run on the same schedule."
+msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Schedule programming in blocks that are either count or duration based. Can be used to generate random schedules."
@@ -4894,6 +4970,15 @@ msgstr ""
 
 #: src/components/system/tasks/TaskStatusPill.tsx
 msgid "Scheduled"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scheduled scans"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scheduled scans are off. You can still scan a library by hand from its media source."
 msgstr ""
 
 #: src/components/ui/table/DataTable.tsx
@@ -5493,8 +5578,12 @@ msgstr ""
 #~ msgstr "已成功调度 {taskId}（正在后台运行）。"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "Successfully updated Media Source settings."
-msgstr "媒体源设置已成功更新。"
+#~ msgid "Successfully updated Media Source settings."
+#~ msgstr "媒体源设置已成功更新。"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Successfully updated scanner settings."
+msgstr ""
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Supplies the channel name and number to rule conditions."
@@ -5667,8 +5756,12 @@ msgid "There was an error generating time slots. Check the browser console log f
 msgstr "生成时段时出错，详情请查看浏览器控制台日志"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "There was an error submitting the request to update Media Source settings. Please check the form and try again"
-msgstr "提交媒体源设置更新请求时出错，请检查表单后重试"
+#~ msgid "There was an error submitting the request to update Media Source settings. Please check the form and try again"
+#~ msgstr "提交媒体源设置更新请求时出错，请检查表单后重试"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "There was an error submitting the request to update scanner settings. Please check the form and try again"
+msgstr ""
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "There was an error when submitting the form. Please see console logs for details."
@@ -5831,6 +5924,7 @@ msgstr "缩略图链接"
 
 #: src/components/system/system-logs/LogDetail.tsx
 #: src/components/system/system-logs/SystemLogsView.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Time"
 msgstr ""
 

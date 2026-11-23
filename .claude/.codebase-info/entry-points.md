@@ -1,6 +1,6 @@
 # Entry Points
 
-*Last Updated: 2026-11-07*
+*Last Updated: 2026-11-13*
 
 ## Process start
 
@@ -39,6 +39,10 @@ force scan). They are called from services and APIs, not from the CLI.
 - `server/src/tasks/TaskRegistry.ts` registers tasks. `ScheduledTask.ts` handles cron timing.
 - Notable tasks: `ScanLibrariesTask`, `UpdateXmlTvTask`, `RefreshMediaSourceLibraryTask`,
   `ReconcileProgramDurationsTask`, `SubtitleExtractorTask`, `OnDemandChannelStateTask`.
+- `services/startup/ScheduleJobsStartupTask.ts` schedules the recurring tasks at boot.
+- `services/libraryScanSchedule.ts` schedules `ScanLibrariesTask`, `SyncCollectionsTask`, and
+  `SyncCustomShowsTask` on one cron from the global `scanSchedule` setting (off, interval, days, or
+  cron). It runs at boot and again on `PUT /api/settings/media-source`, so changes apply without a restart.
 - `tasks/fixers/` holds one-shot data repair jobs.
 
 ## Web

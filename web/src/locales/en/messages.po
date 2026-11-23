@@ -130,6 +130,11 @@ msgstr "{0, plural, one {Path} other {Paths}}"
 msgid "{0, plural, one {program} other {programs}}"
 msgstr "{0, plural, one {program} other {programs}}"
 
+#. placeholder {0}: watch('intervalHours')
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "{0, plural, one {Scans run at this minute every hour.} other {Scans run at this time and every # hours after it, around the clock.}}"
+msgstr "{0, plural, one {Scans run at this minute every hour.} other {Scans run at this time and every # hours after it, around the clock.}}"
+
 #. placeholder {0}: selectedMedia.length
 #: src/components/channel_config/SelectedProgrammingList.tsx
 msgid "{0, plural, one {Selected Item} other {Selected Items}}"
@@ -288,6 +293,10 @@ msgstr "{from}–{to} of {count}"
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr "{hours, plural, one {# hour} other {# hours}}"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "{hours, plural, one {Every hour} other {Every # hours}}"
+msgstr "{hours, plural, one {Every hour} other {Every # hours}}"
 
 #: src/components/channels/ChannelStatusPill.tsx
 msgid "{label}, show sessions"
@@ -1632,6 +1641,14 @@ msgstr "Create Rerun Block"
 msgid "Creates a new collection"
 msgstr "Creates a new collection"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Cron expression"
+msgstr "Cron expression"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Custom (cron)"
+msgstr "Custom (cron)"
+
 #: src/components/guide/TvGuide.tsx
 msgid "Custom Program"
 msgstr "Custom Program"
@@ -1710,6 +1727,11 @@ msgstr "Data Directory:"
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 msgid "Day"
 msgstr "Day"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Days"
+msgstr "Days"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
@@ -2283,6 +2305,10 @@ msgstr "Ensures programs have a nice-looking start time, it will add Flex time t
 msgid "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate."
 msgstr "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate."
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Enter a cron expression."
+msgstr "Enter a cron expression."
+
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter a name for your Emby Server"
 msgstr "Enter a name for your Emby Server"
@@ -2451,6 +2477,10 @@ msgstr "Escape Hatches"
 msgid "Every"
 msgstr "Every"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Every few hours"
+msgstr "Every few hours"
+
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "Everything using this profile will fall back to the next profile in the resolution order (usually the channel's profile, or the default)."
 msgstr "Everything using this profile will fall back to the next profile in the resolution order (usually the channel's profile, or the default)."
@@ -2517,8 +2547,12 @@ msgid "Failed to save feature flags."
 msgstr "Failed to save feature flags."
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "Failed to update Media Source settings. Please check server and browser logs for details."
-msgstr "Failed to update Media Source settings. Please check server and browser logs for details."
+#~ msgid "Failed to update Media Source settings. Please check server and browser logs for details."
+#~ msgstr "Failed to update Media Source settings. Please check server and browser logs for details."
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Failed to update scanner settings. {message}"
+msgstr "Failed to update scanner settings. {message}"
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Failed to validate expression"
@@ -2736,6 +2770,14 @@ msgstr "Finish"
 msgid "First Episode"
 msgstr "First Episode"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "First scan at"
+msgstr "First scan at"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Five fields, or six with seconds first. For example, \"0 4 * * 0\" scans at 4:00 AM every Sunday."
+msgstr "Five fields, or six with seconds first. For example, \"0 4 * * 0\" scans at 4:00 AM every Sunday."
+
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Fix the errors in the rules above to run a test."
 msgstr "Fix the errors in the rules above to run a test."
@@ -2804,6 +2846,8 @@ msgid "Frame Rate"
 msgstr "Frame Rate"
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Frequency"
 msgstr "Frequency"
 
@@ -2947,8 +2991,8 @@ msgid "How far past its boundary can a slot's content extend? 'One extra item' a
 msgstr "How far past its boundary can a slot's content extend? 'One extra item' allows exactly one more program that crosses the boundary."
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "How frequently libraries should be scanned (starting from midnight)."
-msgstr "How frequently libraries should be scanned (starting from midnight)."
+#~ msgid "How frequently libraries should be scanned (starting from midnight)."
+#~ msgstr "How frequently libraries should be scanned (starting from midnight)."
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "How long each commercial break lasts"
@@ -3738,6 +3782,10 @@ msgstr "New Transcode Config"
 msgid "Next run"
 msgstr "Next run"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Next scan: {next} (your time zone)"
+msgstr "Next scan: {next} (your time zone)"
+
 #: src/components/system/tasks/TasksView.tsx
 msgid "Next Scheduled Execution"
 msgstr "Next Scheduled Execution"
@@ -3942,6 +3990,14 @@ msgstr "Nvidia Capabilities"
 msgid "of the following"
 msgstr "of the following"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Off"
+msgstr "Off"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "On selected days"
+msgstr "On selected days"
+
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/components/channels/ChannelCard.tsx
 #: src/components/channels/ChannelsView.tsx
@@ -4138,6 +4194,10 @@ msgstr "Percentage-Based"
 msgid "Period"
 msgstr "Period"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Pick at least one day."
+msgstr "Pick at least one day."
+
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Pick specific programming to remove from the channel."
 msgstr "Pick specific programming to remove from the channel."
@@ -4222,6 +4282,10 @@ msgstr "Plays the channel's programming only between the hours you set. Flex fil
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 #~ msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first."
 #~ msgstr "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first."
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Please check server and browser logs for details."
+msgstr "Please check server and browser logs for details."
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
@@ -4654,8 +4718,8 @@ msgstr "Rerun"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "Rescan Interval (hours)"
-msgstr "Rescan Interval (hours)"
+#~ msgid "Rescan Interval (hours)"
+#~ msgstr "Rescan Interval (hours)"
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
@@ -4867,6 +4931,14 @@ msgstr "Scan"
 msgid "Scan {0}"
 msgstr "Scan {0}"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scan times use the server's time zone, which can differ from yours."
+msgstr "Scan times use the server's time zone, which can differ from yours."
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+#~ msgid "Scan times use the server's time zone, which can differ from yours. The next scan below is shown in your time zone."
+#~ msgstr "Scan times use the server's time zone, which can differ from yours. The next scan below is shown in your time zone."
+
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Scan your libraries"
 msgstr "Scan your libraries"
@@ -4879,6 +4951,10 @@ msgstr "Scanner"
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Scanning"
 msgstr "Scanning"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scans every enabled library on this schedule. Collection and playlist sync from media servers run on the same schedule."
+msgstr "Scans every enabled library on this schedule. Collection and playlist sync from media servers run on the same schedule."
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Schedule programming in blocks that are either count or duration based. Can be used to generate random schedules."
@@ -4895,6 +4971,15 @@ msgstr "Schedule removed"
 #: src/components/system/tasks/TaskStatusPill.tsx
 msgid "Scheduled"
 msgstr "Scheduled"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scheduled scans"
+msgstr "Scheduled scans"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scheduled scans are off. You can still scan a library by hand from its media source."
+msgstr "Scheduled scans are off. You can still scan a library by hand from its media source."
 
 #: src/components/ui/table/DataTable.tsx
 #: src/components/ui/table/DataTable.tsx
@@ -5493,8 +5578,12 @@ msgstr "Successfully scheduled {0} (running in background)."
 #~ msgstr "Successfully scheduled {taskId} (running in background)."
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "Successfully updated Media Source settings."
-msgstr "Successfully updated Media Source settings."
+#~ msgid "Successfully updated Media Source settings."
+#~ msgstr "Successfully updated Media Source settings."
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Successfully updated scanner settings."
+msgstr "Successfully updated scanner settings."
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Supplies the channel name and number to rule conditions."
@@ -5667,8 +5756,12 @@ msgid "There was an error generating time slots. Check the browser console log f
 msgstr "There was an error generating time slots. Check the browser console log for more information"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "There was an error submitting the request to update Media Source settings. Please check the form and try again"
-msgstr "There was an error submitting the request to update Media Source settings. Please check the form and try again"
+#~ msgid "There was an error submitting the request to update Media Source settings. Please check the form and try again"
+#~ msgstr "There was an error submitting the request to update Media Source settings. Please check the form and try again"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "There was an error submitting the request to update scanner settings. Please check the form and try again"
+msgstr "There was an error submitting the request to update scanner settings. Please check the form and try again"
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "There was an error when submitting the form. Please see console logs for details."
@@ -5831,6 +5924,7 @@ msgstr "Thumbnail URL"
 
 #: src/components/system/system-logs/LogDetail.tsx
 #: src/components/system/system-logs/SystemLogsView.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Time"
 msgstr "Time"
 
