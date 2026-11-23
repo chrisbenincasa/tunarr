@@ -306,6 +306,10 @@ msgstr "{minutes, plural, one {# minute} other {# minutes}}"
 msgid "{more, plural, one {and # more} other {and # more}}"
 msgstr "{more, plural, one {and # more} other {and # more}}"
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "{newWhilePaused, plural, one {Paused, # new line} other {Paused, # new lines}}"
+msgstr "{newWhilePaused, plural, one {Paused, # new line} other {Paused, # new lines}}"
+
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "{programCount} program(s)"
@@ -314,6 +318,10 @@ msgstr "{programCount} program(s)"
 #: src/components/guide/TvGuide.tsx
 msgid "{remainingTime} left"
 msgstr "{remainingTime} left"
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "{shownCount, plural, one {Download last # line} other {Download last # lines}}"
+msgstr "{shownCount, plural, one {Download last # line} other {Download last # lines}}"
 
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/channels/ChannelsPage.tsx
@@ -1377,7 +1385,7 @@ msgstr "Commit"
 msgid "Completely randomizes the order of programs."
 msgstr "Completely randomizes the order of programs."
 
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Component"
 msgstr "Component"
 
@@ -1460,6 +1468,10 @@ msgstr "Consolidates contiguous match flex and redirect blocks into singular spa
 msgid "contains"
 msgstr "contains"
 
+#: src/components/system/system-logs/LogDetail.tsx
+msgid "Context"
+msgstr "Context"
+
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Continue"
 msgstr "Continue"
@@ -1503,6 +1515,10 @@ msgstr "Copied Channel ID!"
 msgid "Copied M3U URL to clipboard"
 msgstr "Copied M3U URL to clipboard"
 
+#: src/components/system/system-logs/LogDetail.tsx
+msgid "Copied the log line"
+msgstr "Copied the log line"
+
 #: src/hooks/useCopyToClipboard.ts
 msgid "Copied to clipboard!"
 msgstr "Copied to clipboard!"
@@ -1536,6 +1552,10 @@ msgstr "Copy M3U URL"
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Copy of {0}"
 msgstr "Copy of {0}"
+
+#: src/components/system/system-logs/LogDetail.tsx
+msgid "Copy raw line"
+msgstr "Copy raw line"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Copy to clipboard"
@@ -1886,6 +1906,7 @@ msgid "Deselect All"
 msgstr "Deselect All"
 
 #: src/components/channels/ChannelNowPlayingCard.tsx
+#: src/components/ui/table/ExpandRowButton.tsx
 msgid "Details"
 msgstr "Details"
 
@@ -1932,10 +1953,9 @@ msgstr "Dismiss"
 msgid "Display Watermark on Leading Edge"
 msgstr "Display Watermark on Leading Edge"
 
-#. placeholder {0}: logBuf.length
 #: src/pages/system/SystemLogsPage.tsx
-msgid "Displays the last {0} system log events. Use the buttons below to export these logs or download the entire log file for debugging."
-msgstr "Displays the last {0} system log events. Use the buttons below to export these logs or download the entire log file for debugging."
+#~ msgid "Displays the last {0} system log events. Use the buttons below to export these logs or download the entire log file for debugging."
+#~ msgstr "Displays the last {0} system log events. Use the buttons below to export these logs or download the entire log file for debugging."
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
@@ -1971,7 +1991,7 @@ msgstr "does not include"
 msgid "Done"
 msgstr "Done"
 
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Download all logs"
 msgstr "Download all logs"
 
@@ -1983,11 +2003,9 @@ msgstr "Download Backend Diagnostics ({dossierCount})"
 msgid "Download JSON"
 msgstr "Download JSON"
 
-#. placeholder {0}: table.getRowCount()
-#. placeholder {1}: table.getRowCount()
 #: src/pages/system/SystemLogsPage.tsx
-msgid "Download last {0} {1, plural, one {# row} other {# rows}}"
-msgstr "Download last {0} {1, plural, one {# row} other {# rows}}"
+#~ msgid "Download last {0} {1, plural, one {# row} other {# rows}}"
+#~ msgstr "Download last {0} {1, plural, one {# row} other {# rows}}"
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -2300,6 +2318,10 @@ msgstr "Episode Order"
 #: src/pages/library/TrashPage.tsx
 msgid "Episodes"
 msgstr "Episodes"
+
+#: src/components/system/system-logs/LogDetail.tsx
+msgid "Error"
+msgstr "Error"
 
 #: src/hooks/useBulkAssignFillers.tsx
 msgid "Error assigning fillers: {message}"
@@ -2879,6 +2901,15 @@ msgstr "Help and links"
 msgid "Hide Advanced"
 msgstr "Hide Advanced"
 
+#. placeholder {0}: line.msg
+#: src/components/system/system-logs/LogEntry.tsx
+msgid "Hide details for {0}"
+msgstr "Hide details for {0}"
+
+#: src/components/ui/table/ExpandRowButton.tsx
+msgid "Hide details for {label}"
+msgstr "Hide details for {label}"
+
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Hide Watermark After (minutes)"
 msgstr "Hide Watermark After (minutes)"
@@ -3130,7 +3161,7 @@ msgstr "Leave blank to use the channel's icon."
 #~ msgid "Let's get started..."
 #~ msgstr "Let's get started..."
 
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Level"
 msgstr "Level"
 
@@ -3181,6 +3212,10 @@ msgstr "Light"
 msgid "Linear"
 msgstr "Linear"
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Lines show here as the server writes them."
+msgstr "Lines show here as the server writes them."
+
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Link Mode"
@@ -3198,6 +3233,10 @@ msgstr "Linked slots advance episode progression together sequentially."
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "List"
 msgstr "List"
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Live"
+msgstr "Live"
 
 #: src/components/programs/Actors.tsx
 msgid "Load More"
@@ -3262,7 +3301,9 @@ msgid "Logging"
 msgstr "Logging"
 
 #: src/components/shell/useShellNav.tsx
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Logs"
 msgstr "Logs"
 
@@ -3448,7 +3489,7 @@ msgstr "Media Type"
 msgid "Media..."
 msgstr "Media..."
 
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Message"
 msgstr "Message"
 
@@ -3720,6 +3761,10 @@ msgstr "No libraries are enabled yet. Tunarr only syncs content from enabled lib
 #: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
 msgid "No libraries enabled"
 msgstr "No libraries enabled"
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "No log lines yet"
+msgstr "No log lines yet"
 
 #: src/pages/welcome/WelcomePage.tsx
 #~ msgid "No media sources connected."
@@ -4056,6 +4101,14 @@ msgstr "Path"
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 msgid "Path Replacements"
 msgstr "Path Replacements"
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Pause"
+msgstr "Pause"
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Paused"
+msgstr "Paused"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Percentage-Based"
@@ -4651,6 +4704,10 @@ msgstr "Restrict search fields"
 msgid "Results"
 msgstr "Results"
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Resume"
+msgstr "Resume"
+
 #: src/components/channels/BulkAssignFillersDialog.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 msgid "Retry"
@@ -4948,6 +5005,10 @@ msgstr "Server is unreachable"
 msgid "Server Listen Port"
 msgstr "Server Listen Port"
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Server log lines as they arrive, newest first. Download the log file to attach it to a bug report."
+msgstr "Server log lines as they arrive, newest first. Download the log file to attach it to a bug report."
+
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 msgid "Server Path"
 msgstr "Server Path"
@@ -5010,6 +5071,15 @@ msgstr "Show Advanced"
 #: src/components/channels/ChannelsView.tsx
 msgid "Show all channels"
 msgstr "Show all channels"
+
+#. placeholder {0}: line.msg
+#: src/components/system/system-logs/LogEntry.tsx
+msgid "Show details for {0}"
+msgstr "Show details for {0}"
+
+#: src/components/ui/table/ExpandRowButton.tsx
+msgid "Show details for {label}"
+msgstr "Show details for {label}"
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Show disabled libraries"
@@ -5740,6 +5810,11 @@ msgstr "Threads"
 msgid "Thumbnail URL"
 msgstr "Thumbnail URL"
 
+#: src/components/system/system-logs/LogDetail.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Time"
+msgstr "Time"
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Time before first break"
 msgstr "Time before first break"
@@ -5773,8 +5848,8 @@ msgid "Time Slots..."
 msgstr "Time Slots..."
 
 #: src/pages/system/SystemLogsPage.tsx
-msgid "Timestamp"
-msgstr "Timestamp"
+#~ msgid "Timestamp"
+#~ msgstr "Timestamp"
 
 #: src/components/profiles/condition/ConditionClauseEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
