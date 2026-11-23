@@ -223,7 +223,7 @@ Built on `feat/trash-page` in PR #2523 (11/09/2026):
 - The type filter stays multi-select. It uses `FilterChip` from `components/ui/`, plus an All chip that clears the selection. `TrashPage` is off the `ToggleButtonGroup` legacy list.
 - The drain shows in a token-styled panel with its count, a progress bar and Cancel. The bar turns to the warning color while cancelling.
 - The page passes the view one `TrashDrain` state (`idle`, `starting`, `running` or `cancelling`) built from `useEmptyTrash`.
-- An empty trash still shows only an empty grid. An `EmptyState` needs the grid's result count, which `LibraryProgramGrid` doesn't expose, so it waits for Phase 5.
+- An empty trash shows the grid's "Total hits: 0" line, not an `EmptyState`. The page would need the grid's result count, which `LibraryProgramGrid` doesn't expose, so the empty state waits for Phase 5.
 
 ### Phase 4. Forms and settings
 
