@@ -4867,6 +4867,10 @@ msgstr "扫描"
 msgid "Scan {0}"
 msgstr "扫描 {0}"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scan times use the server's time zone, which can differ from yours. The next scan below is shown in your time zone."
+msgstr ""
+
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Scan your libraries"
 msgstr ""

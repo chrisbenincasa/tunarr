@@ -83,6 +83,22 @@ describe('ScannerSettingsPage', () => {
     expect(screen.getByText(/Scheduled scans are off/)).toBeInTheDocument();
   });
 
+  test("says scan times use the server's time zone", () => {
+    renderPage({ type: 'interval', hours: 6, minute: 30 });
+
+    expect(
+      screen.getByText(/Scan times use the server's time zone/),
+    ).toBeInTheDocument();
+  });
+
+  test('hides the time zone note when scans are off', () => {
+    renderPage({ type: 'off' });
+
+    expect(
+      screen.queryByText(/Scan times use the server's time zone/),
+    ).not.toBeInTheDocument();
+  });
+
   test('saves scans as off', async () => {
     const { user } = renderPage({ type: 'interval', hours: 6, minute: 30 });
 

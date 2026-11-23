@@ -179,6 +179,15 @@ export const ScannerSettingsPage = () => {
                 Scans every enabled library on this schedule. Collection and
                 playlist sync from media servers run on the same schedule.
               </Trans>
+              {scheduleType !== 'off' && (
+                <>
+                  {' '}
+                  <Trans>
+                    Scan times use the server's time zone, which can differ from
+                    yours. The next scan below is shown in your time zone.
+                  </Trans>
+                </>
+              )}
             </FormHelperText>
           </FormControl>
 

@@ -54,6 +54,8 @@ Tunarr rescans your libraries on a schedule to pick up added, changed, and remov
 
 The default is every 6 hours from 12:30 AM. Pick a first scan time to shift the whole schedule. For example, every 6 hours from 3:30 AM scans at 3:30 AM, 9:30 AM, 3:30 PM, and 9:30 PM. The page shows when the next scan will run, and changes apply as soon as you save.
 
+Scan times use the server's time zone, so 3:30 AM means 3:30 AM where Tunarr runs. In Docker, that is the container's `TZ` setting, which defaults to UTC. The "Next scan" line on the page converts the next run to your browser's time zone.
+
 Media server collections and [synced playlists](../library/playlists.md) sync on the same schedule. Turning scheduled scans off also turns off their automatic sync.
 
 !!! note
