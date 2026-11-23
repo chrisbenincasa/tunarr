@@ -315,11 +315,20 @@ function guardAgentConnections<T extends http.Agent>(agent: T): T {
  * Both agents are needed: axios hands follow-redirects an agent per protocol and
  * it re-selects on each hop, so an http -> https redirect would otherwise escape
  * the guard.
+ *
+ * keepAlive and timeout match Node's global agent. Without keepAlive every
+ * request opens a new socket and repeats the DNS lookup.
  */
+const guardedAgentOptions = {
+  keepAlive: true,
+  timeout: 5_000,
+  lookup: guardedLookup,
+} as const;
+
 export const outboundRequestGuard = {
   ...outboundRedirectGuard,
-  httpAgent: guardAgentConnections(new http.Agent({ lookup: guardedLookup })),
-  httpsAgent: guardAgentConnections(new https.Agent({ lookup: guardedLookup })),
+  httpAgent: guardAgentConnections(new http.Agent(guardedAgentOptions)),
+  httpsAgent: guardAgentConnections(new https.Agent(guardedAgentOptions)),
 } as const;
 
 /**
