@@ -48,6 +48,8 @@ This is a monorepo with four main packages:
 - Write all plans, designs, and audits to `plans/` at the repo root. Never use `.claude/plans/`.
 - Write issue investigations to `plans/investigations/`, named `issue-<n>-<slug>-YYYY-MM-DD.md`. These report whether a bug is real and why. A design that follows from one goes in `plans/`.
 - Name files `<topic>.md`, adding a date suffix (`-YYYY-MM-DD`) for point-in-time reports.
+- Every plan carries a dated status line under its H1: `> **Status (MM/DD/YYYY):** <state, evidence, next step>`. Update it when the plan's state changes.
+- Move a plan to `plans/complete/` when everything it delivers is on `main`, or to `plans/obsolete/` when it is superseded or moot.
 - `.claude/settings.json` sets `plansDirectory` to `plans`, so plan-mode plans land there too.
 
 ### PR Review Labels

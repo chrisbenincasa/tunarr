@@ -1,7 +1,9 @@
 # Frontend Audit — Plan
 
-Generated 2026-08-23, after the server-side fail-open sweep. **No frontend code has
-been changed.** This plan exists because the previous session's conclusions about the
+> **Status (11/22/2026):** Partial. FE1 is fixed in #2016, and FE5 plus 10 more dead invalidations in #2018. Web test files grew from 11 to 85. The oxlint switch (#1941) made the eslint warnings moot. Open are FE2 (`getTimezoneOffset` at 5 sites), FE3 (DST constants), FE4 (empty `customShowEditor/store.ts`), the rest of Phase 1, the Phase 2 time contract, Track B, and Phases 3–4.
+
+Generated 2026-08-23, after the server-side fail-open sweep. No frontend code had
+been changed at the time. This plan exists because the previous session's conclusions about the
 frontend were drawn from having read two files, which is not evidence.
 
 ## Verification legend

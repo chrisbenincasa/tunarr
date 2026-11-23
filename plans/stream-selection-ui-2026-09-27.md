@@ -1,5 +1,7 @@
 # Plan: Stream Selection UI — Remaining Work
 
+> **Status (11/22/2026):** Mostly done. PR 1 (#1876) and PR 2 (#2181) merged 11/07/2026, with fix #2360 and docs in `docs/configure/stream-selection.md`. The release N+1 chore is left. It drops `subtitles_enabled` and `languagePreferences`, rebuilds the FKs, and deletes the legacy synthesis. The two QA items and the Deferred list are also open.
+
 ## Context
 
 The `stream-selector-ui` branch adds a profile editor (list, create/edit/delete, rule editor, Basic↔CEL condition builder) on top of the server-side stream selection pipeline (`StreamSelectionProfileResolver` → `StreamSelectionEvaluator` → `FfmpegStreamFactory`).

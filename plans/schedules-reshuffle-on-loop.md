@@ -1,8 +1,6 @@
 # Reshuffle Schedules on Loop
 
-> **Status (10/13/2026):** Scheduler plumbing (PR plan step 2) built on branch
-> `feat/slot-cycle-snapshots`, not yet merged. Boundary service next, once #2306 lands. Phase 2
-> (manual lineups) is deferred.
+> **Status (11/22/2026):** Partial. Prerequisites #2301 and #2308 (fixes #2306) and the scheduler plumbing (#2311, `slotIteratorState.ts`) merged. The boundary service, the `rebuildEachCycle` toggle, and the web UI are in open PR #2312. Phase 2 (manual lineups) is deferred.
 
 Stopgap for dynamic schedules (Tunarr v2). A slot channel's lineup holds one cycle of content at a
 time. Before a cycle ends, the server builds the next one from the same schedule, continuing the RNG

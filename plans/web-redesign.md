@@ -1,6 +1,6 @@
 # Web Redesign on a Tunarr Component Layer
 
-> **Status (11/22/2026):** Phases 0 and 2 are merged. Phase 3 is under way. The `/channels` pilot merged in PR #2414 and its bulk actions in PR #2421. `/library/custom-shows`, `/library/fillers`, and `/library/smart_collections` merged together in PR #2507. `/settings/sources` is in review in PR #2516, and `/system/tasks` is stacked on it in PR #2519. `/library/trash` moves to Phase 5. `plans/mrt-replacement.md` Phase 1 merged in PR #2411. Next is `/system/logs`. The forms/settings mock is still due and gates Phase 4.
+> **Status (11/22/2026):** Partial. Phases 0 and 2 merged. In Phase 3, `/channels` (#2414, #2421), the custom shows, filler lists, and smart collections pages (#2507), sources (#2516), and tasks (#2519) merged. Trash (#2523) and logs (#2524) are in open PRs. Phases 4–9 are not started, and the forms/settings mock still gates Phase 4.
 
 ## Why
 

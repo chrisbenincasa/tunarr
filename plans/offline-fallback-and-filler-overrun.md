@@ -1,6 +1,6 @@
 # Offline Fallback and Filler Overrun
 
-> **Status (10/18/2026):** Proposed. Design settled (filler list as fallback, global defaults, precedence below). No code yet. Next step: build phase 1.
+> **Status (11/22/2026):** Proposed, no code yet. Since 10/18/2026, #2467 (offline soundtrack upload and loop) merged, and open PR #2463 plays a library clip as the channel fallback instead of this plan's filler list. Decide whether #2463 replaces Phase 2 before building it. Phase 1 (the filler overrun setting) is unaffected.
 
 Trigger: a 2026.10.0 user report. Flex gaps now show the offline screen where 2026.9.3 played a filler clip and cut it off. Cause: PR #2241 (`7c9e5e9a7`) scaled the filler overrun tolerance to `min(SLACK, gap / 10)`.
 

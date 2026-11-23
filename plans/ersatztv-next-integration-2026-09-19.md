@@ -6,7 +6,7 @@ The recommended shape is: **spawn `ersatztv-channel` directly from `SessionManag
 
 This is a design and source-inspection plan against `next` at `ed95077` and Tunarr at `b7cd3f45`. Nothing was built or run; effort and risk judgments are estimates from the integration points cited below.
 
-> **Status: design review complete. Implementation not yet authorized.**
+> **Status (11/22/2026):** Mostly done. Shipped on main, not dev, in #2121 (10/31/2026) behind `ersatzTvNextEnabled`. The pin is now `v0.2.7` (#2556). Left are the D3 settings that are still ignored (threadCount, preset, profile, volume, normalizeFrameRate), B7 copy mode, `mp3` encode, G7 implicit ffmpeg flags, the deferred E.1 and E.2, and the tier 1 and tier 3 upstream asks. The review notes below date from 09/30/2026.
 >
 > The review happened and changed the document. Read §15 before the sections above it — the defect register carries 28 source-verified findings, the decisions taken are in §15.F, and the corrections table at the end of §15 records where earlier drafts were wrong. Every question on the §13 agenda is now marked answered in place.
 >
