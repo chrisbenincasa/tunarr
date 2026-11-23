@@ -34,7 +34,7 @@ export const LogEntry = ({ line, formatTime }: LogEntryProps) => {
     >
       <ButtonBase
         aria-expanded={expanded}
-        aria-controls={detailId}
+        aria-controls={expanded ? detailId : undefined}
         aria-label={
           expanded
             ? t`Hide details for ${line.msg}`

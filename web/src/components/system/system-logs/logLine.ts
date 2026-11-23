@@ -72,6 +72,16 @@ const parseError = (value: unknown): LogError | undefined => {
   };
 };
 
+const errorHeadFields = new Set(['type', 'message', 'stack']);
+
+// Other error fields, such as code or syscall, shown in context as err.<key>.
+const extraErrorFields = (value: unknown): [string, unknown][] =>
+  isRecord(value)
+    ? Object.entries(value)
+        .filter(([key]) => !errorHeadFields.has(key))
+        .map(([key, field]) => [`err.${key}`, field])
+    : [];
+
 // Fields every line carries, or that LogLine already holds.
 const knownFields = new Set([
   'level',
@@ -101,9 +111,10 @@ export const parseLogLine = (raw: string, id: number): LogLine | undefined => {
   }
 
   const err = parseError(parsed.err);
-  const context = Object.fromEntries(
-    Object.entries(parsed).filter(([key]) => !knownFields.has(key)),
-  );
+  const context = Object.fromEntries([
+    ...Object.entries(parsed).filter(([key]) => !knownFields.has(key)),
+    ...extraErrorFields(parsed.err),
+  ]);
 
   return {
     id,

@@ -82,6 +82,25 @@ describe('parseLogLine', () => {
     expect(line?.context).toEqual({});
   });
 
+  test('keeps other error fields as context', () => {
+    const line = parseLogLine(
+      raw({
+        level: 50,
+        err: {
+          type: 'Error',
+          message: 'connect ECONNREFUSED',
+          code: 'ECONNREFUSED',
+          syscall: 'connect',
+        },
+      }),
+      0,
+    );
+    expect(line?.context).toEqual({
+      'err.code': 'ECONNREFUSED',
+      'err.syscall': 'connect',
+    });
+  });
+
   test("falls back to the error's message when the line has none", () => {
     const line = parseLogLine(
       raw({ msg: undefined, err: { message: 'Disk full' } }),

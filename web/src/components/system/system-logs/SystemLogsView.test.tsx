@@ -169,9 +169,13 @@ describe('SystemLogsView cards', () => {
     const { user } = renderView('cards');
     expect(screen.getAllByRole('article')).toHaveLength(3);
 
-    await user.click(
-      screen.getByRole('button', { name: 'Show details for Scan failed' }),
-    );
+    const toggle = screen.getByRole('button', {
+      name: 'Show details for Scan failed',
+    });
+    expect(toggle).not.toHaveAttribute('aria-controls');
+    await user.click(toggle);
+    const detailId = toggle.getAttribute('aria-controls');
+    expect(detailId && document.getElementById(detailId)).toBeTruthy();
     const entry = within(screen.getByRole('article', { name: 'Scan failed' }));
     expect(entry.getByText(/at PlexApiClient\.doRequest/)).toBeVisible();
     expect(entry.getByText('Movies')).toBeInTheDocument();
