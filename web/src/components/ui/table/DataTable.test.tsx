@@ -3,7 +3,7 @@ import type { PaginationState, RowSelectionState } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 import { describe, expect, test, vi } from 'vitest';
 import { DataTable } from './DataTable.tsx';
-import { actionsColumn, selectColumn } from './columns.tsx';
+import { actionsColumn, expandColumn, selectColumn } from './columns.tsx';
 import { createAppColumnHelper, useTunarrTable } from './tunarrTable.ts';
 
 type Item = { id: string; name: string; count: number; active: boolean };
@@ -393,4 +393,68 @@ describe('DataTable', () => {
     await user.keyboard('{Enter}');
     expect(onOpen).not.toHaveBeenCalled();
   });
+
+  test('shows a detail row under an expanded row', async () => {
+    const onRowClick = vi.fn();
+    const { user } = renderWithProviders(
+      <ExpandableHarness onRowClick={onRowClick} />,
+    );
+    expect(screen.queryByText('Details of Alpha')).not.toBeInTheDocument();
+
+    await user.click(
+      screen.getByRole('button', { name: 'Show details for Alpha' }),
+    );
+    expect(screen.getByText('Details of Alpha')).toBeVisible();
+    expect(onRowClick).not.toHaveBeenCalled();
+
+    const detailRow = screen.getByText('Details of Alpha').closest('tr');
+    if (!detailRow) {
+      throw new Error('No row holds the detail');
+    }
+    expect(detailRow.previousElementSibling).toHaveTextContent('Alpha');
+    expect(within(detailRow).getByRole('cell')).toHaveAttribute('colspan', '3');
+
+    await user.click(
+      screen.getByRole('button', { name: 'Hide details for Alpha' }),
+    );
+    expect(screen.queryByText('Details of Alpha')).not.toBeInTheDocument();
+  });
+
+  test('disables the button on a row that cannot expand', () => {
+    renderWithProviders(<ExpandableHarness />);
+    expect(
+      screen.getByRole('button', { name: 'Show details for Bravo' }),
+    ).toBeDisabled();
+  });
 });
+
+const ExpandableHarness = ({
+  onRowClick,
+}: {
+  onRowClick?: (item: Item) => void;
+}) => {
+  const columns = useMemo(
+    () => [
+      expandColumn<Item>({ getLabel: (item) => item.name }),
+      ...columnHelper.columns([
+        columnHelper.accessor('name', { header: 'Name' }),
+        columnHelper.accessor('count', { header: 'Count' }),
+      ]),
+    ],
+    [],
+  );
+  const table = useTunarrTable({
+    columns,
+    data: items,
+    getRowId: (item) => item.id,
+    getRowCanExpand: (row) => row.original.id !== 'b',
+  });
+  return (
+    <DataTable
+      table={table}
+      aria-label="Items"
+      getRowProps={(row) => ({ onClick: () => onRowClick?.(row.original) })}
+      renderDetail={({ original }) => <span>Details of {original.name}</span>}
+    />
+  );
+};
