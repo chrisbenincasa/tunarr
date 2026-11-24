@@ -1,10 +1,9 @@
 # Reshuffle Schedules on Loop
 
-> **Status (11/22/2026):** Slice 3 reworked on `feat/slot-cycle-boundary` (PR #2312), uncommitted.
-> Cycles are now chunks of `programmingHours`, capped at 24 h. Saves, rescans and purges cut over
-> after the program on air and keep each show's place. Design check:
-> `plans/schedules-reshuffle-vs-infinite-output-check-2026-11-22.md`. Next: maintainer review of the
-> rework, then the PR body. Slice 4 (web toggle) follows. Phase 2 (manual lineups) is deferred.
+> **Status (11/24/2026):** Prerequisites #2301, #2308 and #2311 merged. Slice 3 (boundary service,
+> `rebuildEachCycle`, chunked cycles, cut-over after the program on air) is in PR #2312, in re-review.
+> Carrying show places when the toggle turns on is PR #2564, stacked on #2312. Slice 4 (web toggle and
+> user docs) is on `feat/slot-cycle-web-toggle`, stacked on #2564. Phase 2 (manual lineups) is deferred.
 
 Stopgap for dynamic schedules (Tunarr v2). A slot channel's lineup holds one cycle of content at a
 time. Before a cycle ends, the server builds the next one from the same schedule, continuing the RNG

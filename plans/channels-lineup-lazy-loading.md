@@ -1,6 +1,6 @@
 # Channel Lineup Loading, Server-Side Drafts and Program Add Flow
 
-> **Status (09/29/2026):** Phases 0 and 1 are in open PR #2176. Part of Phase 2 is in open PR #2177 (dialogs mount only when open, memoized lineup). A 16,920-item lineup now cold-loads in 1.7 s at a 110 MB peak heap. Phase 4 is now server-side lineup drafts, chosen 09/28/2026 over a slim client payload. Phase 4 design was grilled 09/28–09/29/2026, and all open questions are settled. Next step is Phase 4a on `main` (moved from `dev` 10/19/2026, see Stages). Phase 3 (batched add) is not started and now feeds the draft.
+> **Status (11/22/2026):** Partial. Phases 0 and 1 merged in #2176 and the Phase 2 items marked done in #2177 (both 09/28/2026). A 16,920-item lineup cold-loads in 1.7 s at a 110 MB peak heap. Phase 4 is server-side lineup drafts, grilled 09/28–09/29/2026 with all questions settled. Next step is Phase 4a on `main` (moved from `dev` 10/19/2026, see Stages). Phase 3 (batched add) is not started and feeds the draft. This copy is newer than the one in the plans repo.
 
 ## Context
 

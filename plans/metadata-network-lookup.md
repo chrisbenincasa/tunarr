@@ -1,6 +1,6 @@
 # Network lookup
 
-> **Status (11/08/2026):** Draft design, not started. Fetchers ship in core, TMDB is the v1 provider, and the preset's studio fallback is configurable (all decided 11/08/2026). TVDB is tracked as a follow-up pending its subscriber-key model.
+> **Status (11/22/2026):** Partial. Rollout step 1, keeping tvshow.nfo `uniqueid` values as show external IDs, shipped in #2479 (`23323180e`). #1805 merged with a `network` preset category but no network tables. Next is rollout step 2 (`studio_external_id`). The 11/08/2026 decisions still hold (fetchers in core, TMDB first, configurable studio fallback).
 
 ## Goal
 

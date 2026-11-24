@@ -1,6 +1,6 @@
 # ErsatzTV next — B3 tagged releases
 
-> **Status (10/07/2026):** Done. Upstream published `v0.2.0` (`b340569`) from `release.yml` (#312). Tunarr pins it by tag and per-target SHA-256 in `a2bd35122`, and refuses a bundled worker off the pin in `8b19291e5`. The only open item is the third-party notices issue (§4), which gates the first Tunarr release that bundles the worker.
+> **Status (11/22/2026):** Mostly done. Upstream publishes tagged releases from `v0.2.0` on. Tunarr pins `v0.2.7` by tag and per-target SHA-256 and refuses an off-pin bundled worker (`8b19291e5`). The third-party notices issue (§4) was never filed, and the v2026.11.x releases already bundle `ersatztv-channel` without it.
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md). B3 is the ship gate.
 

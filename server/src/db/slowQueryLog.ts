@@ -1,0 +1,258 @@
+import type Sqlite from 'better-sqlite3';
+import { QueryPromise } from 'drizzle-orm/query-promise';
+import { SQLiteCountBuilder } from 'drizzle-orm/sqlite-core/query-builders/count';
+import { SQLiteSelectBase } from 'drizzle-orm/sqlite-core/query-builders/select';
+import { performance } from 'node:perf_hooks';
+
+export type SlowQuery = {
+  sql: string;
+  durationMs: number;
+  /** Stack frames of the code that ran the query, innermost first. */
+  callStack: string[];
+};
+
+export type SlowQueryLogOptions = {
+  thresholdMs: number;
+  onSlowQuery: (query: SlowQuery) => void;
+  now?: () => number;
+};
+
+type AnyFunction = (...args: never[]) => unknown;
+
+const CallerFrameLimit = 20;
+
+export const DefaultSlowQueryThresholdMs = 500;
+export const MaxLoggedSqlLength = 2_000;
+
+/**
+ * Turns the configured threshold into the one to log at. Returns nothing when
+ * the log is off, which a threshold of 0 or less asks for.
+ */
+export function resolveSlowQueryThresholdMs(
+  configuredMs: number | null,
+): number | undefined {
+  const thresholdMs = configuredMs ?? DefaultSlowQueryThresholdMs;
+  if (thresholdMs <= 0) {
+    return;
+  }
+  return thresholdMs;
+}
+
+export function truncateSql(sql: string): string {
+  return sql.length > MaxLoggedSqlLength
+    ? `${sql.slice(0, MaxLoggedSqlLength)}…`
+    : sql;
+}
+
+/**
+ * Times every statement run through a better-sqlite3 connection and reports
+ * the ones that reach `thresholdMs`. Kysely and Drizzle both prepare their
+ * statements on the connection, so one wrapper covers both.
+ *
+ * better-sqlite3 runs queries synchronously, so a slow query blocks its
+ * thread's event loop for its whole run. The report fires as the query
+ * returns, while the caller's stack is still live.
+ */
+export function withSlowQueryLog(
+  db: Sqlite.Database,
+  opts: SlowQueryLogOptions,
+): Sqlite.Database {
+  traceDrizzleCallers();
+  const now = opts.now ?? (() => performance.now());
+
+  function finish(sql: string, durationMs: number, caller?: AnyFunction) {
+    if (durationMs < opts.thresholdMs) {
+      return;
+    }
+    opts.onSlowQuery({
+      sql,
+      durationMs: Math.round(durationMs),
+      callStack: captureCaller(caller),
+    });
+  }
+
+  function timeIterator<T>(
+    iterator: IterableIterator<T>,
+    sql: string,
+  ): IterableIterator<T> {
+    let elapsed = 0;
+    let finished = false;
+
+    // Reports once, when the rows run out, the read throws, or the consumer
+    // stops early. Named functions keep the wrapper out of the call stack.
+    function end(above: AnyFunction) {
+      if (finished) {
+        return;
+      }
+      finished = true;
+      finish(sql, elapsed, above);
+    }
+
+    const timed: IterableIterator<T> = {
+      next: function timedNext() {
+        const startedAt = now();
+        let next: IteratorResult<T>;
+        try {
+          next = iterator.next();
+        } catch (error) {
+          elapsed += now() - startedAt;
+          iterator.return?.();
+          end(timedNext);
+          throw error;
+        }
+        elapsed += now() - startedAt;
+        if (next.done) {
+          end(timedNext);
+        }
+        return next;
+      },
+      return: function timedReturn() {
+        // Closes the statement when the consumer stops early.
+        iterator.return?.();
+        end(timedReturn);
+        return { done: true, value: undefined };
+      },
+      [Symbol.iterator]() {
+        return timed;
+      },
+    };
+    return timed;
+  }
+
+  function timeStatement(stmt: Sqlite.Statement): Sqlite.Statement {
+    const proxy: Sqlite.Statement = new Proxy(stmt, {
+      get(target, prop) {
+        const value: unknown = Reflect.get(target, prop, target);
+        if (typeof value !== 'function') {
+          return value;
+        }
+
+        switch (prop) {
+          case 'run':
+          case 'get':
+          case 'all':
+            return function timedStatement(...args: unknown[]): unknown {
+              const startedAt = now();
+              try {
+                return value.apply(target, args);
+              } finally {
+                finish(target.source, now() - startedAt, timedStatement);
+              }
+            };
+          case 'iterate':
+            return (...args: unknown[]) =>
+              timeIterator(target.iterate(...args), target.source);
+        }
+
+        // Chaining methods such as raw() and pluck() return the statement, so
+        // hand back the proxy to keep timing the calls that follow.
+        return (...args: unknown[]) => {
+          const result: unknown = value.apply(target, args);
+          return result === target ? proxy : result;
+        };
+      },
+    });
+    return proxy;
+  }
+
+  const proxy: Sqlite.Database = new Proxy(db, {
+    get(target, prop) {
+      const value: unknown = Reflect.get(target, prop, target);
+      if (typeof value !== 'function') {
+        return value;
+      }
+
+      switch (prop) {
+        case 'prepare':
+          return function timedPrepare(source: string) {
+            const startedAt = now();
+            try {
+              return timeStatement(target.prepare(source));
+            } finally {
+              finish(source, now() - startedAt, timedPrepare);
+            }
+          };
+        case 'exec':
+          return function timedExec(source: string) {
+            const startedAt = now();
+            try {
+              target.exec(source);
+              return proxy;
+            } finally {
+              finish(source, now() - startedAt, timedExec);
+            }
+          };
+      }
+
+      return (...args: unknown[]) => {
+        const result: unknown = value.apply(target, args);
+        return result === target ? proxy : result;
+      };
+    },
+  });
+  return proxy;
+}
+
+function captureCaller(above?: AnyFunction): string[] {
+  const holder: { stack?: string } = {};
+  const limit = Error.stackTraceLimit;
+  Error.stackTraceLimit = CallerFrameLimit;
+  try {
+    Error.captureStackTrace(holder, above);
+  } finally {
+    Error.stackTraceLimit = limit;
+  }
+  return (holder.stack ?? '')
+    .split('\n')
+    .slice(1)
+    .map((frame) => frame.trim());
+}
+
+let drizzleCallersTraced = false;
+
+/**
+ * `await builder` makes V8 call a Drizzle builder's `then` from a microtask
+ * that has no link to the awaiting function, so a query run there has no
+ * caller frames. Starting the query one promise hop later lets V8's async
+ * stack traces walk back through the functions awaiting it.
+ *
+ * Drizzle copies `then` onto its select builder, and its count builder defines
+ * its own, so each prototype needs the change.
+ */
+function traceDrizzleCallers() {
+  if (drizzleCallersTraced) {
+    return;
+  }
+  drizzleCallersTraced = true;
+
+  deferThen(QueryPromise.prototype);
+  deferThen(SQLiteSelectBase.prototype);
+  deferThen(SQLiteCountBuilder.prototype);
+}
+
+/**
+ * Makes `prototype.then` start its query one promise hop later. Returns false
+ * and changes nothing when the prototype has no `then`, so a Drizzle upgrade
+ * that moves it costs caller frames instead of failing every connection. The
+ * Drizzle caller tests catch that loss.
+ */
+export function deferThen(prototype: object): boolean {
+  const then: unknown = Reflect.get(prototype, 'then');
+  if (typeof then !== 'function') {
+    return false;
+  }
+  Object.defineProperty(prototype, 'then', {
+    configurable: true,
+    writable: true,
+    value: function deferredThen(
+      this: unknown,
+      onFulfilled?: ((value: unknown) => unknown) | null,
+      onRejected?: ((reason: unknown) => unknown) | null,
+    ) {
+      return Promise.resolve()
+        .then((): unknown => Reflect.apply(then, this, []))
+        .then(onFulfilled, onRejected);
+    },
+  });
+  return true;
+}

@@ -1,8 +1,8 @@
 # ErsatzTV next — B6 scaling algorithm
 
-> **Status (10/13/2026):** Done upstream in #320 (`v0.2.1`), built by the maintainer. One difference from this plan: the default is `bicubic`, not `fast_bilinear`. Tunarr always sends the flag (`f157db68d`), so the default does not reach it. Nothing to file.
+> **Status (11/22/2026):** Done. Upstream built it in #320 (`v0.2.1`) with a `bicubic` default. Tunarr always sends the flag (`f157db68d`, `EtvNextChannelConfigMapper.ts`). The note that the flag affects software scaling only never made it into `docs/configure/ffmpeg/ersatztv-next.md`.
 
-Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md).
+Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](../ersatztv-next-upstream-blockers-2026-09-30.md).
 
 ## 1. Verified state at `96aa6cb`
 

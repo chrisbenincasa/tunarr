@@ -1,6 +1,6 @@
 # ErsatzTV next — B5 in and out points on every source
 
-> **Status (09/30/2026):** Re-scoped and recorded in the main plan (§14 tier 3, §15.B, corrections table). Verified against upstream `091e174`. Remaining work is the Tunarr mapper test in §5 and the optional upstream graphics one-liner in §3.
+> **Status (11/22/2026):** Mostly done. Re-scoped in the main plan (§14 tier 3, §15.B). The existing offline and error tests imply the rule, because they assert lavfi tracks with exact `toEqual`. The dedicated mapper test in §5 and the optional upstream graphics one-liner in §3 are left.
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md).
 

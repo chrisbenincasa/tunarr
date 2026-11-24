@@ -1,6 +1,6 @@
 # Investigation plan: schedule drift (guide vs. playback disagreement)
 
-Status: not started. Scoped out of the #1991 blocking work on 2026-08-22.
+> **Status (11/22/2026):** Obsolete. D14 deprecates time and random slots, and the triggering issues closed through other fixes (#1798 via #2117, #1983 via #2241). #1991 is still open.
 
 ## What this is
 
@@ -165,6 +165,6 @@ These were asked in conversation but not yet answered:
 
 ## Note
 
-`plans/slot-save-skew-plan.md` is the older plan from the same
+`plans/complete/slot-save-skew-plan.md` is the older plan from the same
 conversation. Parts of it are now stale or wrong — see the correction note at the
 top of that file.

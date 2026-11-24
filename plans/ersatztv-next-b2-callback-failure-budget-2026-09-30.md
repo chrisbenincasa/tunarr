@@ -1,6 +1,6 @@
 # ErsatzTV next — B2 callback retry and failure budget
 
-> **Status (10/13/2026):** Retry and the configurable fallback duration are done upstream in #322 (`v0.2.1`), matching D2–D6. Upstream also raises the fallback to the retry budget itself (`config.rs:101-102`), so the D6 rule needs no Tunarr check. Tunarr emits them in `c87cdaecf`. The failure budget (D7, D8) is the only part left. §4 is trimmed to it, re-verified at `v0.2.2`, and filed as [ErsatzTV/next#332](https://github.com/ErsatzTV/next/issues/332). Next step is the PR once the maintainer answers its two questions.
+> **Status (11/22/2026):** Mostly done. Retry (`retry_budget_ms`, `retry_backoff_ms`) and `fallback.duration_seconds` ship in #2121 (`EtvNextDynamicPlayout.ts`, `EtvNextChannelConfigMapper.ts`). The §5.1 resolver deadline (about 15 s) and the §5.2 `kill` notice are not built. The failure budget waits on ErsatzTV/next#332, and then §5.4 replaces the watchdog in `EtvNextSession.ts`.
 
 Part of [`ersatztv-next-upstream-blockers-2026-09-30.md`](ersatztv-next-upstream-blockers-2026-09-30.md). The original argument is in main plan §15.B, "B2 in full." §1 below corrects part of it.
 

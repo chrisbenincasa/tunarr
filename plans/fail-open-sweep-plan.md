@@ -1,5 +1,7 @@
 # Fail-Open Sweep — Task Plan
 
+> **Status (11/22/2026):** Mostly done. G1–G9 merged to main (#1996–#2006), plus #2010. Still open are G11a (`TruthyQueryParam.catch(false)` in `FeatureFlagService.ts`), G11b (`LineupRepository.ts` drops the error object), and G11c (`allSettled` partial data in `ProgramGroupingRepository.ts`). The `program.stream_selection_profile_id` index is still missing. G10's dead settings belong to the deprecated built-in pipeline, so they fold into the ErsatzTV next D3 settings list.
+
 Generated 2026-08-23. Source: a four-way parallel sweep for "fail-open" constructs —
 code that silently succeeds, silently does nothing, or silently substitutes a value
 instead of erroring. This is the pattern behind every bug found in the previous

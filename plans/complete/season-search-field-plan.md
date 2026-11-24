@@ -1,5 +1,7 @@
 # Add "Season" as a search/filter field for Smart Collections
 
+> **Status (11/22/2026):** Done. Shipped in #2020 (`b35e94747`, 09/16/2026). Issue #2019 closed. There is no backfill, by design.
+
 Issue: https://github.com/chrisbenincasa/tunarr/issues/2019
 
 ## Goal & success criteria
