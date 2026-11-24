@@ -645,6 +645,29 @@ describe('SlotCycleBoundaryService', () => {
       expectConsistentState(channelDB, now0);
     });
 
+    // A rebuilding lineup with no stored cycles holds a classic pass, such as
+    // one saved before cycles existed.
+    test('a rebuilding channel without cycles carries places like a classic one', async () => {
+      const { service, channelDB, builder, startTime, passStart } =
+        await enableOnClassicChannel({ rebuildEachCycle: true });
+      const previous = await editAndSave(channelDB, turnOn);
+
+      const outcome = await service.applyScheduleEdit(
+        channelId,
+        previous,
+        now0,
+      );
+
+      expect(outcome).toEqual({ placesCarried: true });
+      expect(builder.replays).toHaveLength(1);
+      expect(builder.replays[0]?.startTime).toBe(startTime);
+      expect(channelDB.state.channel.startTime).toBe(passStart);
+      expect(channelDB.state.lineup.items.slice(0, 4)).toEqual(
+        classicItems(passStart).slice(0, 4),
+      );
+      expectConsistentState(channelDB, now0);
+    });
+
     test('a recorded program list is the only one replayed', async () => {
       const { service, channelDB, builder, startTime } =
         await enableOnClassicChannel({ scheduleProgramIds: ['p2', 'p1'] });
