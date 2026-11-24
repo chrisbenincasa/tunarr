@@ -161,11 +161,12 @@ If a screenshot can't be taken, leave a `<!-- TODO screenshot: ... -->` comment 
 pnpm exec prettier --check docs/blog/posts/next/index.md
 ```
 
-Build the site with the draft visible, in a scratch copy, so the real file keeps `draft: true`:
+Build the site with the draft visible, in a scratch copy, so the real file keeps `draft: true`.
+A published post needs a `date`, so the `sed` swaps the draft flag for today's date:
 
 ```bash
 rsync -a --exclude node_modules --exclude .git ./ <scratchpad>/site/
-sed -i '/^draft: true$/d' <scratchpad>/site/docs/blog/posts/next/index.md
+sed -i "s/^draft: true$/date: $(date +%F)/" <scratchpad>/site/docs/blog/posts/next/index.md
 (cd <scratchpad>/site && uvx --from mkdocs-material --with mkdocs-glightbox mkdocs build --strict)
 ```
 
