@@ -126,8 +126,11 @@ Opt-in reshuffle-on-loop for slot channels (design in `plans/schedules-reshuffle
   boundary service. Reentrancy lets a caller already holding the lock (e.g. the reconciler) call
   into another lock-taking operation (e.g. regenerate) without deadlocking.
 - Save rules: a slot save keeps `rebuildEachCycle` at its request value, falling back to the
-  lineup's existing value, falling back to off — the server never defaults it on, since slice 4's
-  web toggle doesn't exist yet. Every slot save assigns a new `scheduleSeed` and clears `cycles`.
+  lineup's existing value, falling back to off. The server never defaults it on; the web slot
+  editors do for new schedules (`RebuildEachCycleField`, `initialRebuildEachCycle` in
+  `web/src/helpers/slotSchedulerUtil.ts`) and show the save's `scheduleEdit` outcome in a snackbar
+  (`useScheduleEditNotice`). `GET /channels/:id/schedule` returns the saved value. Every slot save
+  assigns a new `scheduleSeed` and clears `cycles`.
   Turning it on for an airing classic channel replays the classic build
   (`BuildSlotCycleCommand.replayClassic`, `classicReplayInputs`, `classicPassState`) and cuts over
   after the program on air with each show's place, falling back to a fresh start at
