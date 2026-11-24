@@ -3,9 +3,7 @@
 Findings recorded 2026-09-15. Written from `main` at `8a2b36ca`. File and line references
 were re-checked on `main`.
 
-**Status:** Phase 1 step 1 done on `main`, unpushed. `docs/architecture/` moved to top-level
-`architecture/`; a local build confirms it no longer ships. D2 and the remaining phases are not
-started. Two decisions are open (see Open questions).
+> **Status (11/22/2026):** Partial. Phase 1 step 1 shipped and is deployed (`b0c9176ae`, `architecture/` at the top level). D2 (four unlinked pages still ship), Phase 2 pinning, and Phases 3–5 (Zensical, dev channel, `since()`) are not started. Material's critical-fix window closed 11/05/2026. Two decisions are open (see Open questions).
 
 ## Proposed decision
 

@@ -1,5 +1,7 @@
 # Plan: Chapter-Marker-Based Mid-Roll Filler Breaks
 
+> **Status (11/22/2026):** Superseded by the plans repo's `tunarr/midroll-chapter-marker-breaks.md` (11/14/2026). Nothing from this plan is on main. Its side bug, the Jellyfin chapter start time scaling, is fixed (`e73356c4e`).
+
 ## Context
 
 Tunarr's mid-roll filler system currently supports three break rule types for determining where to insert filler breaks within programs: `fixed_interval`, `percentage`, and `initial_then_interval`. These are all synthetic/time-based rules that ignore the actual structure of the content.

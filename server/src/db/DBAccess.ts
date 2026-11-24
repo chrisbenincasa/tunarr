@@ -1,6 +1,7 @@
 import type { TunarrMigrationInfo } from '@/migration/DrizzleMigrator.js';
 import { DrizzleMigrator } from '@/migration/DrizzleMigrator.js';
 import { attempt, isNonEmptyString } from '@/util/index.js';
+import { getNumericEnvVar, TUNARR_ENV_VARS } from '@/util/env.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { Mutex } from 'async-mutex';
@@ -16,6 +17,11 @@ import {
 } from 'kysely';
 import { findIndex, isError, last, map, replace, slice } from 'lodash-es';
 import { SqliteDatabaseBackup } from './backup/SqliteDatabaseBackup.ts';
+import {
+  resolveSlowQueryThresholdMs,
+  truncateSql,
+  withSlowQueryLog,
+} from './slowQueryLog.ts';
 import { DatabaseSchemaTooNewError } from '../migration/DatabaseSchemaTooNewError.ts';
 import { DatabaseCopyMigrator } from '../migration/db/DatabaseCopyMigrator.ts';
 import {
@@ -45,9 +51,11 @@ class Connection {
       className: Connection.name,
       dbName: name,
     });
-    this.sqlite = new Sqlite(name, {
-      timeout: 5000,
-    });
+    this.sqlite = this.withSlowQueryLog(
+      new Sqlite(name, {
+        timeout: 5000,
+      }),
+    );
 
     // Write to a separate WAL file, reads continue from main database
     // Multiple readers can work simultaneously with one writer.
@@ -110,6 +118,36 @@ class Connection {
 
   private get db() {
     return this.kysely;
+  }
+
+  /**
+   * Logs every query that reaches the threshold, so user logs name the query
+   * behind a stall. Parameters are left out because they can hold tokens.
+   * `TUNARR_SLOW_QUERY_THRESHOLD_MS` overrides the threshold, and 0 turns the
+   * log off.
+   */
+  private withSlowQueryLog(sqlite: Sqlite.Database): Sqlite.Database {
+    const thresholdMs = resolveSlowQueryThresholdMs(
+      getNumericEnvVar(TUNARR_ENV_VARS.SLOW_QUERY_THRESHOLD_MS),
+    );
+    if (thresholdMs === undefined) {
+      return sqlite;
+    }
+
+    return withSlowQueryLog(sqlite, {
+      thresholdMs,
+      onSlowQuery: ({ sql, durationMs, callStack }) => {
+        this.logger.warn(
+          {
+            durationMs,
+            sql: truncateSql(sql),
+            callStack,
+          },
+          'Slow database query took %d ms and blocked the event loop while it ran',
+          durationMs,
+        );
+      },
+    });
   }
 
   async pendingDatabaseMigrations(): Promise<TunarrMigrationInfo[]> {

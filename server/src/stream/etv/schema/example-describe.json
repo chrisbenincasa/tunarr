@@ -1,8 +1,8 @@
 {
   "describe_version": 1,
   "binary": {
-    "version": "0.2.5+linux-x64",
-    "commit": "c5cb065f9f35dbbcb7c05845f0f92c70f576a480"
+    "version": "0.2.7+linux-x64",
+    "commit": "aa0aedb516f60aa483043dc510137582d54abf26"
   },
   "contract": {
     "playout_schema": {
@@ -11,9 +11,9 @@
       "compatible": 8
     },
     "channel_config_schema": {
-      "uri": "https://ersatztv.org/channel/version/0.1.3",
+      "uri": "https://ersatztv.org/channel/version/0.1.5",
       "breaking": 1,
-      "compatible": 3
+      "compatible": 5
     },
     "output_files": {
       "playlist": "live.m3u8",

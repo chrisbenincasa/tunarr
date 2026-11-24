@@ -1,6 +1,6 @@
 # Bundle ffmpeg with binary releases (#1944)
 
-> **Status (10/09/2026):** Draft, revised after review. Nothing implemented. No open decisions except the Meilisearch slim build (lever 1).
+> **Status (11/22/2026):** Blocked on design. The built-in pipeline is deprecated in favor of ErsatzTV next, so redo the pin and bundling around the ErsatzTV-ffmpeg 8.1.2 build that ETV next uses. That build also has macOS binaries. The 7.1.1 pin below is moot. Waits on the ETV next cutover plan, which does not exist yet.
 
 ## Goal
 

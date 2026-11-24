@@ -130,6 +130,11 @@ msgstr "{0, plural, other {条路径}}"
 msgid "{0, plural, one {program} other {programs}}"
 msgstr "{0, plural, other {个节目}}"
 
+#. placeholder {0}: watch('intervalHours')
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "{0, plural, one {Scans run at this minute every hour.} other {Scans run at this time and every # hours after it, around the clock.}}"
+msgstr ""
+
 #. placeholder {0}: selectedMedia.length
 #: src/components/channel_config/SelectedProgrammingList.tsx
 msgid "{0, plural, one {Selected Item} other {Selected Items}}"
@@ -289,6 +294,10 @@ msgstr ""
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr "{hours, plural, other {# 小时}}"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "{hours, plural, one {Every hour} other {Every # hours}}"
+msgstr ""
+
 #: src/components/channels/ChannelStatusPill.tsx
 msgid "{label}, show sessions"
 msgstr ""
@@ -306,6 +315,10 @@ msgstr "{minutes, plural, other {# 分钟}}"
 msgid "{more, plural, one {and # more} other {and # more}}"
 msgstr ""
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "{newWhilePaused, plural, one {Paused, # new line} other {Paused, # new lines}}"
+msgstr ""
+
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "{programCount} program(s)"
@@ -314,6 +327,10 @@ msgstr ""
 #: src/components/guide/TvGuide.tsx
 msgid "{remainingTime} left"
 msgstr "剩余 {remainingTime}"
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "{shownCount, plural, one {Download last # line} other {Download last # lines}}"
+msgstr ""
 
 #: src/pages/channels/ChannelsPage.tsx
 #: src/pages/channels/ChannelsPage.tsx
@@ -353,6 +370,10 @@ msgstr "节目数量"
 msgid "# Programs"
 msgstr "节目数"
 
+#: src/components/settings/media_source/MediaSourceLocation.tsx
+msgid "+{more} more"
+msgstr ""
+
 #: src/components/channels/ChannelsView.tsx
 msgid "<0>{channelCount}</0> {channelCount, plural, one {channel} other {channels}} · <1>{streaming}</1> streaming"
 msgstr ""
@@ -367,6 +388,10 @@ msgstr ""
 
 #: src/components/custom-shows/CustomShowsView.tsx
 msgid "<0>{showCount}</0> {showCount, plural, one {playlist} other {playlists}}"
+msgstr ""
+
+#: src/components/settings/media_source/MediaSourcesView.tsx
+msgid "<0>{sourceCount}</0> {sourceCount, plural, one {media source} other {media sources}}"
 msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -465,7 +490,6 @@ msgid "Access Token"
 msgstr "访问令牌"
 
 #: src/components/ui/table/ActionsHeader.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
 msgid "Actions"
 msgstr ""
 
@@ -680,6 +704,7 @@ msgid "Albums"
 msgstr "专辑"
 
 #: src/components/channels/ChannelsView.tsx
+#: src/components/library/TrashView.tsx
 msgid "All"
 msgstr ""
 
@@ -1115,6 +1140,7 @@ msgstr "正在计算时段…"
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/fillers/FillerListsView.tsx
+#: src/components/library/TrashView.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
 #: src/components/programming_controls/AddFlexModal.tsx
@@ -1139,9 +1165,12 @@ msgstr "正在计算时段…"
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
-#: src/pages/library/TrashPage.tsx
 msgid "Cancel"
 msgstr "取消"
+
+#: src/components/library/TrashView.tsx
+msgid "Cancelling: <0>{count}</0> removed"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -1279,6 +1308,10 @@ msgstr "检查"
 msgid "Check FFmpeg"
 msgstr ""
 
+#: src/components/settings/media_source/MediaSourceHealthPill.tsx
+msgid "Checking"
+msgstr ""
+
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Choose the transcode configuration to use for this channel. Configure transcode configurations on the <0>FFmpeg settings page</0>."
 msgstr "选择此频道使用的转码配置。转码配置可在<0>FFmpeg 设置页</0>中配置。"
@@ -1366,7 +1399,7 @@ msgstr "提交"
 msgid "Completely randomizes the order of programs."
 msgstr "完全随机化节目顺序。"
 
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Component"
 msgstr "组件"
 
@@ -1449,6 +1482,10 @@ msgstr "将相邻的弹性填充块与跳转块合并为单一区间"
 msgid "contains"
 msgstr ""
 
+#: src/components/system/system-logs/LogDetail.tsx
+msgid "Context"
+msgstr ""
+
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Continue"
 msgstr "继续"
@@ -1492,6 +1529,10 @@ msgstr "频道 ID 已复制！"
 msgid "Copied M3U URL to clipboard"
 msgstr ""
 
+#: src/components/system/system-logs/LogDetail.tsx
+msgid "Copied the log line"
+msgstr ""
+
 #: src/hooks/useCopyToClipboard.ts
 msgid "Copied to clipboard!"
 msgstr "已复制到剪贴板！"
@@ -1524,6 +1565,10 @@ msgstr "复制 M3U 链接"
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Copy of {0}"
+msgstr ""
+
+#: src/components/system/system-logs/LogDetail.tsx
+msgid "Copy raw line"
 msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
@@ -1595,6 +1640,14 @@ msgstr "创建重播块"
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Creates a new collection"
 msgstr "创建新合集"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Cron expression"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Custom (cron)"
+msgstr ""
 
 #: src/components/guide/TvGuide.tsx
 msgid "Custom Program"
@@ -1675,6 +1728,11 @@ msgstr "数据目录："
 msgid "Day"
 msgstr "天"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Days"
+msgstr ""
+
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
@@ -1736,10 +1794,12 @@ msgstr ""
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Delete"
 msgstr "删除"
 
@@ -1753,6 +1813,7 @@ msgstr "删除「{0}」"
 #. placeholder {0}: show.name
 #: src/components/custom-shows/CustomShowCard.tsx
 #: src/components/fillers/FillerListCard.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 msgid "Delete {0}"
 msgstr ""
@@ -1775,8 +1836,8 @@ msgstr "删除频道「{0}」？"
 msgid "Delete Filler List \"{0}\"?"
 msgstr "删除垫片列表「{0}」？"
 
-#. placeholder {0}: deletingMediaSource?.name
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#. placeholder {0}: pendingDelete?.name
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Delete Media Source \"{0}\"?"
 msgstr "删除媒体源「{0}」？"
 
@@ -1830,7 +1891,7 @@ msgstr "删除频道将移除该频道的所有节目编排，此操作无法撤
 msgid "Deleting a Filler will remove all programming from the channel. This action cannot be undone."
 msgstr "删除垫片将移除该频道的所有节目编排，此操作无法撤销。"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Deleting a media source will remove all of its associated programs from Tunarr."
 msgstr "删除媒体源将从 Tunarr 中移除其关联的所有节目。"
 
@@ -1863,7 +1924,7 @@ msgstr "降序"
 msgid "Descending"
 msgstr "降序"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Description"
 msgstr "描述"
 
@@ -1872,6 +1933,7 @@ msgid "Deselect All"
 msgstr ""
 
 #: src/components/channels/ChannelNowPlayingCard.tsx
+#: src/components/ui/table/ExpandRowButton.tsx
 msgid "Details"
 msgstr "详情"
 
@@ -1918,10 +1980,9 @@ msgstr "忽略"
 msgid "Display Watermark on Leading Edge"
 msgstr "在片头显示水印"
 
-#. placeholder {0}: logBuf.length
 #: src/pages/system/SystemLogsPage.tsx
-msgid "Displays the last {0} system log events. Use the buttons below to export these logs or download the entire log file for debugging."
-msgstr "显示最近 {0} 条系统日志。可使用下方按钮导出这些日志，或下载完整日志文件用于调试。"
+#~ msgid "Displays the last {0} system log events. Use the buttons below to export these logs or download the entire log file for debugging."
+#~ msgstr "显示最近 {0} 条系统日志。可使用下方按钮导出这些日志，或下载完整日志文件用于调试。"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
@@ -1957,7 +2018,7 @@ msgstr ""
 msgid "Done"
 msgstr "完成"
 
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Download all logs"
 msgstr "下载全部日志"
 
@@ -1969,11 +2030,9 @@ msgstr ""
 msgid "Download JSON"
 msgstr "下载 JSON"
 
-#. placeholder {0}: table.getRowCount()
-#. placeholder {1}: table.getRowCount()
 #: src/pages/system/SystemLogsPage.tsx
-msgid "Download last {0} {1, plural, one {# row} other {# rows}}"
-msgstr "下载最后 {0} {1, plural, other {# 行}}"
+#~ msgid "Download last {0} {1, plural, one {# row} other {# rows}}"
+#~ msgstr "下载最后 {0} {1, plural, other {# 行}}"
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -2037,6 +2096,7 @@ msgstr "即时"
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
@@ -2047,6 +2107,8 @@ msgid "Edit"
 msgstr "编辑"
 
 #. placeholder {0}: collection.name
+#. placeholder {0}: source.name
+#: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 msgid "Edit {0}"
 msgstr ""
@@ -2072,13 +2134,19 @@ msgstr "编辑垫片列表"
 msgid "Edit Flex Time"
 msgstr "编辑弹性时间"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Edit Libraries"
 msgstr "编辑媒体库"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#. placeholder {0}: source.name
+#: src/components/settings/media_source/MediaSourceCard.tsx
+msgid "Edit libraries of {0}"
+msgstr ""
+
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Edit Media Source"
 msgstr "编辑媒体源"
 
@@ -2132,9 +2200,13 @@ msgstr "Emby"
 msgid "Emptied trash. Removed {0} item(s)."
 msgstr ""
 
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Empty Trash"
 msgstr "清空回收站"
+
+#: src/components/library/TrashView.tsx
+msgid "Empty trash progress"
+msgstr ""
 
 #: src/hooks/useEmptyTrash.ts
 msgid "Emptying the trash failed. Check the server logs for details."
@@ -2144,10 +2216,12 @@ msgstr ""
 msgid "Emptying trash in the background. You can keep using Tunarr."
 msgstr ""
 
-#. placeholder {0}: status.deleted
-#. placeholder {1}: status.total
 #: src/pages/library/TrashPage.tsx
-msgid "Emptying trash: {0} / {1}"
+#~ msgid "Emptying trash: {0} / {1}"
+#~ msgstr ""
+
+#: src/components/library/TrashView.tsx
+msgid "Emptying trash: <0>{count}</0>"
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
@@ -2231,6 +2305,10 @@ msgstr "确保节目有整齐的开始时间，会自动添加弹性时间来填
 msgid "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate."
 msgstr "确保节目只在每小时的特定间隔点开始，使排期更整齐。系统会安排弹性时间来实现这一点。"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Enter a cron expression."
+msgstr ""
+
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter a name for your Emby Server"
 msgstr "为你的 Emby 服务器输入名称"
@@ -2273,10 +2351,14 @@ msgstr ""
 msgid "Episode Order"
 msgstr ""
 
+#: src/components/library/TrashView.tsx
 #: src/components/programs/Episodes.tsx
-#: src/pages/library/TrashPage.tsx
 msgid "Episodes"
 msgstr "剧集"
+
+#: src/components/system/system-logs/LogDetail.tsx
+msgid "Error"
+msgstr ""
 
 #: src/hooks/useBulkAssignFillers.tsx
 msgid "Error assigning fillers: {message}"
@@ -2364,9 +2446,14 @@ msgstr "保存设置时出错，详情请查看控制台。"
 msgid "Error while saving transcode config. See console log for details."
 msgstr "保存转码配置时出错，详情请查看控制台日志。"
 
+#. placeholder {0}: task.id
 #: src/pages/settings/TaskSettingsPage.tsx
-msgid "Error while scheduling {taskId}. Check server logs for details"
-msgstr "调度任务 {taskId} 时出错，详情请查看服务器日志"
+msgid "Error while scheduling {0}. Check server logs for details"
+msgstr ""
+
+#: src/pages/settings/TaskSettingsPage.tsx
+#~ msgid "Error while scheduling {taskId}. Check server logs for details"
+#~ msgstr "调度任务 {taskId} 时出错，详情请查看服务器日志"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Errors"
@@ -2389,6 +2476,10 @@ msgstr "应急选项"
 #: src/components/settings/general/LogRollForm.tsx
 msgid "Every"
 msgstr "每"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Every few hours"
+msgstr ""
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "Everything using this profile will fall back to the next profile in the resolution order (usually the channel's profile, or the default)."
@@ -2456,8 +2547,12 @@ msgid "Failed to save feature flags."
 msgstr "保存功能开关失败。"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "Failed to update Media Source settings. Please check server and browser logs for details."
-msgstr "更新媒体源设置失败，详情请查看服务器和浏览器日志。"
+#~ msgid "Failed to update Media Source settings. Please check server and browser logs for details."
+#~ msgstr "更新媒体源设置失败，详情请查看服务器和浏览器日志。"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Failed to update scanner settings. {message}"
+msgstr ""
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Failed to validate expression"
@@ -2675,6 +2770,14 @@ msgstr "完成"
 msgid "First Episode"
 msgstr ""
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "First scan at"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Five fields, or six with seconds first. For example, \"0 4 * * 0\" scans at 4:00 AM every Sunday."
+msgstr ""
+
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Fix the errors in the rules above to run a test."
 msgstr ""
@@ -2743,6 +2846,8 @@ msgid "Frame Rate"
 msgstr "帧率"
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Frequency"
 msgstr "频率"
 
@@ -2830,9 +2935,17 @@ msgstr "HDHR：加载中…"
 msgid "Head"
 msgstr "头部"
 
+#: src/components/settings/media_source/MediaSourcesView.tsx
+msgid "Health"
+msgstr ""
+
+#: src/components/settings/media_source/MediaSourceHealthPill.tsx
+msgid "Healthy"
+msgstr ""
+
 #: src/pages/settings/MediaSourceSettingsPage.tsx
-msgid "Healthy?"
-msgstr "是否正常？"
+#~ msgid "Healthy?"
+#~ msgstr "是否正常？"
 
 #: src/components/ui/patterns/AppShell/HelpMenu.tsx
 #: src/components/ui/patterns/AppShell/HelpMenu.tsx
@@ -2842,6 +2955,15 @@ msgstr ""
 #: src/pages/profiles/TranscodeConfigPage.tsx
 msgid "Hide Advanced"
 msgstr "隐藏高级选项"
+
+#. placeholder {0}: line.msg
+#: src/components/system/system-logs/LogEntry.tsx
+msgid "Hide details for {0}"
+msgstr ""
+
+#: src/components/ui/table/ExpandRowButton.tsx
+msgid "Hide details for {label}"
+msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Hide Watermark After (minutes)"
@@ -2869,8 +2991,8 @@ msgid "How far past its boundary can a slot's content extend? 'One extra item' a
 msgstr "时段的内容最多可以超出其边界多少？「One extra item」表示最多再允许一个跨越边界的节目。"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "How frequently libraries should be scanned (starting from midnight)."
-msgstr "媒体库的扫描频率（从午夜开始计算）。"
+#~ msgid "How frequently libraries should be scanned (starting from midnight)."
+#~ msgstr "媒体库的扫描频率（从午夜开始计算）。"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "How long each commercial break lasts"
@@ -3017,9 +3139,17 @@ msgstr ""
 msgid "is not"
 msgstr ""
 
+#: src/components/library/TrashView.tsx
+msgid "Item types"
+msgstr ""
+
 #: src/components/channel_config/MediaGridItem.tsx
 msgid "Item was not present during the last scan"
 msgstr "上次扫描时该条目不存在"
+
+#: src/components/library/TrashView.tsx
+msgid "Items a recent scan couldn't find, because the file is missing or the media server no longer returns them. They can't play in channels. Emptying the trash replaces them with flex."
+msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Items from any filler list will not be chosen more frequently than this cooldown setting."
@@ -3056,7 +3186,7 @@ msgstr "语言"
 msgid "Languages"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TaskCard.tsx
 msgid "Last run"
 msgstr "上次运行"
 
@@ -3065,7 +3195,7 @@ msgstr "上次运行"
 msgid "Last Scanned: {0}"
 msgstr "上次扫描：{0}"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Last Scheduled Execution"
 msgstr "上次计划执行"
 
@@ -3094,14 +3224,14 @@ msgstr "留空则使用频道图标。"
 #~ msgid "Let's get started..."
 #~ msgstr "让我们开始吧…"
 
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Level"
 msgstr "级别"
 
 #: src/components/settings/ConnectMediaSources.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/shell/useShellNav.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "Libraries"
 msgstr "媒体库"
 
@@ -3145,6 +3275,10 @@ msgstr "浅色"
 msgid "Linear"
 msgstr "线性"
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Lines show here as the server writes them."
+msgstr ""
+
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Link Mode"
@@ -3162,6 +3296,10 @@ msgstr "关联的时段会一起按顺序推进剧集进度。"
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "List"
 msgstr "列表"
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Live"
+msgstr ""
 
 #: src/components/programs/Actors.tsx
 msgid "Load More"
@@ -3196,6 +3334,10 @@ msgstr "本地"
 msgid "Local Path"
 msgstr "本地路径"
 
+#: src/components/settings/media_source/MediaSourcesView.tsx
+msgid "Location"
+msgstr ""
+
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Lock Weights"
 msgstr "锁定权重"
@@ -3222,7 +3364,9 @@ msgid "Logging"
 msgstr "日志记录"
 
 #: src/components/shell/useShellNav.tsx
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Logs"
 msgstr "日志"
 
@@ -3278,6 +3422,10 @@ msgstr ""
 #: src/components/programming_controls/AdjustWeightsModal.tsx
 msgid "Manual"
 msgstr "手动"
+
+#: src/components/system/tasks/TaskStatusPill.tsx
+msgid "Manual only"
+msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Manually add an access token from your Emby server"
@@ -3380,12 +3528,13 @@ msgstr "媒体源"
 msgid "Media Source: \"{0}\""
 msgstr "媒体源：「{0}」"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Media Sources"
 msgstr "媒体源"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
 msgstr "媒体源是 Tunarr 获取内容的来源。内容可以来自你的文件系统，也可以来自远程服务器（如 Plex 或 Jellyfin）。Tunarr 至少需要连接一个媒体源，才能创建频道并播放媒体。"
 
@@ -3403,7 +3552,7 @@ msgstr "媒体类型"
 msgid "Media..."
 msgstr ""
 
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Message"
 msgstr "消息"
 
@@ -3499,7 +3648,7 @@ msgid "Movie, {0}"
 msgstr "电影，{0}"
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Movies"
 msgstr "电影"
 
@@ -3516,7 +3665,7 @@ msgid "Music Video"
 msgstr ""
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Music Videos"
 msgstr "音乐视频"
 
@@ -3541,12 +3690,12 @@ msgstr "必须填写有效的 URL，或留空。"
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Name"
 msgstr "名称"
@@ -3629,11 +3778,15 @@ msgstr ""
 #~ msgid "Next"
 #~ msgstr "下一步"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TaskCard.tsx
 msgid "Next run"
 msgstr "下次运行"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Next scan: {next} (your time zone)"
+msgstr ""
+
+#: src/components/system/tasks/TasksView.tsx
 msgid "Next Scheduled Execution"
 msgstr "下次计划执行"
 
@@ -3674,6 +3827,10 @@ msgstr ""
 
 #: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
 msgid "No libraries enabled"
+msgstr ""
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "No log lines yet"
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
@@ -3735,6 +3892,10 @@ msgstr ""
 
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "No smart collections match this filter."
+msgstr ""
+
+#: src/components/system/tasks/TasksView.tsx
+msgid "No tasks are registered."
 msgstr ""
 
 #: src/components/channels/ChannelStatusPill.tsx
@@ -3829,6 +3990,14 @@ msgstr "Nvidia 支持能力"
 msgid "of the following"
 msgstr ""
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Off"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "On selected days"
+msgstr ""
+
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/components/channels/ChannelCard.tsx
 #: src/components/channels/ChannelsView.tsx
@@ -3913,7 +4082,7 @@ msgid "Other Video"
 msgstr ""
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Other Videos"
 msgstr "其他视频"
 
@@ -4008,6 +4177,14 @@ msgstr "路径"
 msgid "Path Replacements"
 msgstr "路径替换"
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Pause"
+msgstr ""
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Paused"
+msgstr ""
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Percentage-Based"
 msgstr "按百分比"
@@ -4016,6 +4193,10 @@ msgstr "按百分比"
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Period"
 msgstr "周期"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Pick at least one day."
+msgstr ""
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Pick specific programming to remove from the channel."
@@ -4101,6 +4282,10 @@ msgstr ""
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 #~ msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first."
 #~ msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Please check server and browser logs for details."
+msgstr ""
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
@@ -4332,8 +4517,8 @@ msgstr "展开阅读"
 msgid "Redirect duration"
 msgstr "跳转时长"
 
-#. placeholder {0}: p.channelName
 #. placeholder {0}: p.name
+#. placeholder {0}: program.channelName
 #: src/hooks/programming_controls/useSlotProgramOptions.ts
 #: src/hooks/useProgramTitleFormatter.ts
 msgid "Redirect to \"{0}\""
@@ -4359,10 +4544,16 @@ msgstr ""
 msgid "Refresh"
 msgstr "刷新"
 
-#: src/pages/settings/MediaSourceSettingsPage.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
+#: src/components/settings/media_source/MediaSourceCard.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Refresh Libraries"
 msgstr "刷新媒体库"
+
+#. placeholder {0}: source.name
+#: src/components/settings/media_source/MediaSourceCard.tsx
+msgid "Refresh libraries of {0}"
+msgstr ""
 
 #: src/pages/ErrorPage.tsx
 msgid "Refresh Page"
@@ -4527,8 +4718,8 @@ msgstr "重播"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "Rescan Interval (hours)"
-msgstr "重新扫描间隔（小时）"
+#~ msgid "Rescan Interval (hours)"
+#~ msgstr "重新扫描间隔（小时）"
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
@@ -4596,6 +4787,10 @@ msgstr "限定搜索字段"
 msgid "Results"
 msgstr ""
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Resume"
+msgstr ""
+
 #: src/components/channels/BulkAssignFillersDialog.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 msgid "Retry"
@@ -4651,17 +4846,27 @@ msgid "Rules are evaluated in order. The first rule whose condition matches dete
 msgstr ""
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
 msgid "Run"
 msgstr "运行"
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#. placeholder {0}: task.name
+#: src/components/system/tasks/TaskCard.tsx
+msgid "Run {0}"
+msgstr ""
+
+#: src/components/system/tasks/TaskCard.tsx
+#: src/components/system/tasks/TasksView.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Run now"
 msgstr "立即运行"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Run Troubleshooter"
 msgstr "运行排查工具"
+
+#: src/components/system/tasks/TaskStatusPill.tsx
+msgid "Running"
+msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Running..."
@@ -4726,6 +4931,14 @@ msgstr "扫描"
 msgid "Scan {0}"
 msgstr "扫描 {0}"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scan times use the server's time zone, which can differ from yours."
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+#~ msgid "Scan times use the server's time zone, which can differ from yours. The next scan below is shown in your time zone."
+#~ msgstr ""
+
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Scan your libraries"
 msgstr ""
@@ -4739,6 +4952,10 @@ msgstr "扫描器"
 msgid "Scanning"
 msgstr "扫描中"
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scans every enabled library on this schedule. Collection and playlist sync from media servers run on the same schedule."
+msgstr ""
+
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Schedule programming in blocks that are either count or duration based. Can be used to generate random schedules."
 msgstr "按数量或时长分块编排节目，可用于生成随机排期。"
@@ -4749,6 +4966,19 @@ msgstr "使用指定了开始时间和时长的时段来编排节目。"
 
 #: src/pages/channels/ChannelProgrammingPage.tsx
 msgid "Schedule removed"
+msgstr ""
+
+#: src/components/system/tasks/TaskStatusPill.tsx
+msgid "Scheduled"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scheduled scans"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scheduled scans are off. You can still scan a library by hand from its media source."
 msgstr ""
 
 #: src/components/ui/table/DataTable.tsx
@@ -4879,6 +5109,10 @@ msgstr "服务器无法连接"
 msgid "Server Listen Port"
 msgstr "服务器监听端口"
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Server log lines as they arrive, newest first. Download the log file to attach it to a bug report."
+msgstr ""
+
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 msgid "Server Path"
 msgstr "服务器路径"
@@ -4940,6 +5174,15 @@ msgstr "显示高级选项"
 
 #: src/components/channels/ChannelsView.tsx
 msgid "Show all channels"
+msgstr ""
+
+#. placeholder {0}: line.msg
+#: src/components/system/system-logs/LogEntry.tsx
+msgid "Show details for {0}"
+msgstr ""
+
+#: src/components/ui/table/ExpandRowButton.tsx
+msgid "Show details for {label}"
 msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx
@@ -5189,6 +5432,7 @@ msgstr ""
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/shell/useShellNav.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Status"
 msgstr "状态"
 
@@ -5324,13 +5568,22 @@ msgstr "已成功运行系统修复项 {fixerId}"
 msgid "Successfully saved config!"
 msgstr "配置已成功保存！"
 
+#. placeholder {0}: task.id
 #: src/pages/settings/TaskSettingsPage.tsx
-msgid "Successfully scheduled {taskId} (running in background)."
-msgstr "已成功调度 {taskId}（正在后台运行）。"
+msgid "Successfully scheduled {0} (running in background)."
+msgstr ""
+
+#: src/pages/settings/TaskSettingsPage.tsx
+#~ msgid "Successfully scheduled {taskId} (running in background)."
+#~ msgstr "已成功调度 {taskId}（正在后台运行）。"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "Successfully updated Media Source settings."
-msgstr "媒体源设置已成功更新。"
+#~ msgid "Successfully updated Media Source settings."
+#~ msgstr "媒体源设置已成功更新。"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Successfully updated scanner settings."
+msgstr ""
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Supplies the channel name and number to rule conditions."
@@ -5407,8 +5660,9 @@ msgid "Take Turns"
 msgstr ""
 
 #: src/components/shell/useShellNav.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
+#: src/components/system/tasks/TasksView.tsx
+#: src/components/system/tasks/TasksView.tsx
 msgid "Tasks"
 msgstr "任务"
 
@@ -5502,8 +5756,12 @@ msgid "There was an error generating time slots. Check the browser console log f
 msgstr "生成时段时出错，详情请查看浏览器控制台日志"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "There was an error submitting the request to update Media Source settings. Please check the form and try again"
-msgstr "提交媒体源设置更新请求时出错，请检查表单后重试"
+#~ msgid "There was an error submitting the request to update Media Source settings. Please check the form and try again"
+#~ msgstr "提交媒体源设置更新请求时出错，请检查表单后重试"
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "There was an error submitting the request to update scanner settings. Please check the form and try again"
+msgstr ""
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "There was an error when submitting the form. Please see console logs for details."
@@ -5664,6 +5922,12 @@ msgstr "线程数"
 msgid "Thumbnail URL"
 msgstr "缩略图链接"
 
+#: src/components/system/system-logs/LogDetail.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Time"
+msgstr ""
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Time before first break"
 msgstr "第一段广告前的时间"
@@ -5697,8 +5961,8 @@ msgid "Time Slots..."
 msgstr "时段…"
 
 #: src/pages/system/SystemLogsPage.tsx
-msgid "Timestamp"
-msgstr "时间戳"
+#~ msgid "Timestamp"
+#~ msgstr "时间戳"
 
 #: src/components/profiles/condition/ConditionClauseEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -5771,8 +6035,8 @@ msgstr "总时长"
 msgid "Track"
 msgstr ""
 
+#: src/components/library/TrashView.tsx
 #: src/components/programs/Tracks.tsx
-#: src/pages/library/TrashPage.tsx
 msgid "Tracks"
 msgstr "音轨"
 
@@ -5805,15 +6069,15 @@ msgstr "转码配置"
 msgid "Transcoding Settings"
 msgstr "转码设置"
 
+#: src/components/library/TrashView.tsx
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
-#: src/pages/library/TrashPage.tsx
 msgid "Trash"
 msgstr "回收站"
 
 #: src/pages/library/TrashPage.tsx
-msgid "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
-msgstr "回收站中的条目是指之前扫描到、但在最近一次扫描中未找到的条目。原因可能是文件丢失，或媒体服务器不再通过 API 返回该条目。这些条目当前在频道中将无法播放。清空回收站后，它们在频道中的位置将被弹性时间替代。"
+#~ msgid "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
+#~ msgstr "回收站中的条目是指之前扫描到、但在最近一次扫描中未找到的条目。原因可能是文件丢失，或媒体服务器不再通过 API 返回该条目。这些条目当前在频道中将无法播放。清空回收站后，它们在频道中的位置将被弹性时间替代。"
 
 #: src/components/shell/useShellNav.tsx
 msgid "Troubleshoot"
@@ -5870,7 +6134,11 @@ msgstr ""
 msgid "Tunarr only syncs content from enabled libraries. Turn on a library's switch to sync it, or manage sources in <0>Media Source Settings.</0>"
 msgstr ""
 
-#: src/pages/settings/TaskSettingsPage.tsx
+#: src/components/system/tasks/TasksView.tsx
+msgid "Tunarr registers its background tasks when the server starts. Check the server logs if this list stays empty."
+msgstr ""
+
+#: src/components/system/tasks/TasksView.tsx
 msgid "Tunarr runs various tasks, sometimes on a schedule, for background operations."
 msgstr "Tunarr 会运行各类后台任务，其中一些按计划定时执行。"
 
@@ -5909,12 +6177,12 @@ msgstr "剧集按剧名分组"
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
+#: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Type"
@@ -5942,6 +6210,10 @@ msgstr "解除关联"
 #~ msgid "Unlink from group"
 #~ msgstr "Unlink from group"
 
+#: src/components/settings/media_source/MediaSourceHealthPill.tsx
+msgid "Unreachable"
+msgstr ""
+
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
@@ -5957,7 +6229,6 @@ msgstr ""
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
-#: src/pages/settings/MediaSourceSettingsPage.tsx
 msgid "URL"
 msgstr "链接"
 
@@ -6240,6 +6511,10 @@ msgstr ""
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "You have unsaved changes!"
 msgstr "有未保存的更改！"
+
+#: src/components/settings/media_source/MediaSourcesView.tsx
+msgid "You haven't added any media sources yet."
+msgstr ""
 
 #: src/components/channel_config/NoChannelsCreated.tsx
 #: src/components/channels/ChannelsView.tsx

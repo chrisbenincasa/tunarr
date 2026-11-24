@@ -1,6 +1,6 @@
 # Custom Error Screen and Audio (#1292)
 
-> **Status (11/09/2026):** Proposed. Scope settled 11/09/2026 (settings on the transcode config, file/URL/upload only, legacy bugs fixed separately). No code yet. Next step: build phase 1.
+> **Status (11/22/2026):** Proposed, no code yet. Scope settled 11/09/2026 (settings on the transcode config, file/URL/upload only, legacy bugs fixed separately). The built-in pipeline is deprecated in favor of ErsatzTV next, so build only the ErsatzTV next path below and skip the built-in work. Next step is phase 1.
 
 Issue: https://github.com/chrisbenincasa/tunarr/issues/1292. Asks for a custom error image or looping video, plus custom audio, from a file or a media server.
 

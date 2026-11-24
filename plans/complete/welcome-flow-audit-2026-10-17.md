@@ -1,6 +1,6 @@
 # Welcome Flow Audit
 
-> **Status (10/17/2026):** Audit done against `origin/main` @ `5ee30f5f9`. Option B chosen and implemented on branch `feat/welcome-checklist`, with a Skip Setup button. PR open against `main`.
+> **Status (11/22/2026):** Done. Option B shipped in #2337 (`0ea21ebe0`, 10/31/2026) with the setup checklist, Skip Setup, and the `onboardingComplete` flag.
 
 ## Scope
 

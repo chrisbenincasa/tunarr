@@ -1,6 +1,8 @@
 # Fix silent cascade deletion of programs & schedules during library reconciliation (GitHub #1973)
 
-Status: revised after design review · Issue: https://github.com/chrisbenincasa/tunarr/issues/1973
+> **Status (11/22/2026):** Done. Shipped in #2086 (`9856711a0`, 09/22/2026). Step 5 runs through `EmptyTrashService` (#2072, `ac71ab64e`). Issue #1973 closed. The out-of-scope follow-up, a scanner guard for a visible library that returns zero items, is not built.
+
+Issue: https://github.com/chrisbenincasa/tunarr/issues/1973
 
 ## Goal & success criteria
 

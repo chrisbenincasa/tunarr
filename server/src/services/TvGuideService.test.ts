@@ -1,7 +1,9 @@
 import { zip } from 'lodash-es';
 import { describe, expect, it, vi } from 'vitest';
 import { v4 } from 'uuid';
+import type { TerminalProgram } from '@tunarr/types';
 import type { ChannelOrm } from '../db/schema/Channel.ts';
+import type * as ServerUtil from '../util/serverUtil.ts';
 import type { Lineup, LineupItem } from '../db/derived_types/Lineup.ts';
 import type { MaterializedChannelPrograms } from './XmlTvWriter.ts';
 import type { ChannelPrograms } from './TvGuideService.ts';
@@ -14,8 +16,13 @@ dayjsBase.extend(relativeTime);
 
 // Break the OnDemandChannelService -> Scheduler -> container circular chain
 vi.mock('./Scheduler.ts', () => ({ GlobalScheduler: {} }));
+vi.mock('../util/serverUtil.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof ServerUtil>()),
+  makeLocalUrl: (path: string) => `http://localhost:8000${path}`,
+}));
 
 import { TVGuideService } from './TvGuideService.ts';
+import { ProgramConverter } from '../db/converters/ProgramConverter.ts';
 
 function makeChannelOrm(overrides?: Partial<ChannelOrm>): ChannelOrm {
   return {
@@ -1124,6 +1131,106 @@ describe('TVGuideService', () => {
         expect(program.programming.type).toBe('flex');
         expect(program.title).toBe('Off Air');
       }
+    });
+  });
+
+  describe('getChannelGuides', () => {
+    const HALF_HOUR = 30 * 60_000;
+    const BASE = new Date('2024-01-01T00:00:00Z').getTime();
+
+    async function guideFor(guideFlexTitle: string | null) {
+      const channel = makeChannelOrm({
+        number: 1,
+        name: 'Main',
+        guideFlexTitle,
+        startTime: BASE,
+      });
+      const lineups = {
+        [channel.uuid]: {
+          channel,
+          lineup: makeLineup([
+            { type: 'content', id: 'program-1', durationMs: HALF_HOUR },
+            { type: 'offline', durationMs: HALF_HOUR },
+            { type: 'redirect', channel: v4(), durationMs: HALF_HOUR },
+            { type: 'content', id: 'missing', durationMs: HALF_HOUR },
+            { type: 'offline', durationMs: 20 * HALF_HOUR },
+          ]),
+        },
+      };
+      const program = {
+        uuid: 'program-1',
+        type: 'movie',
+        title: 'Program One',
+        duration: HALF_HOUR,
+      } as unknown as TerminalProgram;
+
+      const service = new TVGuideService(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { write: vi.fn().mockResolvedValue(undefined) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { push: vi.fn() } as any,
+        {
+          loadAllLineups: vi.fn().mockResolvedValue(lineups),
+          syncChannelDuration: vi.fn().mockResolvedValue(false),
+          getAllChannels: vi.fn().mockResolvedValue([channel]),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        {
+          getGuideProgramsByIds: vi.fn().mockResolvedValue([]),
+          getLineupProgramsByIds: vi.fn().mockResolvedValue([]),
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        } as any,
+        new ProgramConverter(
+          {} as ConstructorParameters<typeof ProgramConverter>[0],
+        ),
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { featureFlags: () => ({ xmltvCreditImagesEnabled: false }) } as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {} as any,
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { execute: vi.fn().mockResolvedValue([program]) } as any,
+      );
+
+      await service.buildAllChannels(dayjs.duration({ hours: 12 }), true, BASE);
+      const guides = await service.getChannelGuides(
+        { from: dayjs(BASE), to: dayjs(BASE + 5 * HALF_HOUR) },
+        [channel.uuid],
+      );
+      return guides[0]?.programs.map((p) => ({
+        type: p.type,
+        start: p.start - BASE,
+        title: p.type === 'content' ? p.program.title : p.title,
+        id: p.type === 'content' ? p.id : undefined,
+      }));
+    }
+
+    it('converts each lineup item type to a guide program', async () => {
+      const programs = await guideFor('Off Air');
+
+      // The short offline block after the content melds into it.
+      expect(programs?.slice(0, 4)).toEqual([
+        {
+          type: 'content',
+          start: 0,
+          title: 'Program One',
+          id: 'program-1',
+        },
+        // A redirect to a deleted channel and a program missing from the
+        // database both list as flex.
+        { type: 'flex', start: 2 * HALF_HOUR, title: 'Off Air', id: undefined },
+        { type: 'flex', start: 3 * HALF_HOUR, title: 'Off Air', id: undefined },
+        { type: 'flex', start: 4 * HALF_HOUR, title: 'Off Air', id: undefined },
+      ]);
+    });
+
+    it('titles flex with the channel name when no guide flex title is set', async () => {
+      const programs = await guideFor(null);
+
+      expect(programs?.[3]).toEqual(
+        expect.objectContaining({ type: 'flex', title: 'Main' }),
+      );
     });
   });
 

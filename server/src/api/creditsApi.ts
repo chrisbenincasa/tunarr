@@ -2,7 +2,6 @@ import { isNonEmptyString } from '@tunarr/shared/util';
 import type { Person } from '@tunarr/types';
 import { Person as PersonSchema } from '@tunarr/types/schemas';
 import { inject, injectable } from 'inversify';
-import { match } from 'ts-pattern';
 import z from 'zod';
 import { ArtworkTypes } from '../db/schema/Artwork.ts';
 import { CreditTypes } from '../db/schema/Credit.ts';
@@ -63,28 +62,35 @@ export class CreditsApiController {
             ? matchingArt
             : undefined;
 
-        const person = match(maybeCredit)
-          .returnType<Person | null>()
-          .with({ type: 'cast' }, (cast) => ({
-            name: cast.name,
-            type: 'actor',
-            order: cast.index,
-            role: cast.role,
-            thumb,
-          }))
-          .with({ type: 'director' }, () => ({
-            name: maybeCredit.name,
-            type: 'director',
-            order: maybeCredit.index,
-            thumb,
-          }))
-          .with({ type: 'writer' }, () => ({
-            name: maybeCredit.name,
-            type: 'writer',
-            order: maybeCredit.index,
-            thumb,
-          }))
-          .otherwise(() => null);
+        let person: Person | null;
+        switch (maybeCredit.type) {
+          case 'cast':
+            person = {
+              name: maybeCredit.name,
+              type: 'actor',
+              order: maybeCredit.index,
+              role: maybeCredit.role,
+              thumb,
+            };
+            break;
+          case 'director':
+            person = {
+              name: maybeCredit.name,
+              type: 'director',
+              thumb,
+            };
+            break;
+          case 'writer':
+            person = {
+              name: maybeCredit.name,
+              type: 'writer',
+              thumb,
+            };
+            break;
+          case 'producer':
+            person = null;
+            break;
+        }
 
         if (!person) {
           return res.status(400).send();

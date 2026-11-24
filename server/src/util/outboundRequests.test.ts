@@ -215,6 +215,18 @@ describe('isBlockedOutboundUrlError', () => {
   });
 });
 
+describe('outboundRequestGuard agents', () => {
+  it('keeps connections alive so repeated requests reuse a socket', () => {
+    // Otherwise every request repeats the DNS lookup.
+    for (const agent of [
+      outboundRequestGuard.httpAgent,
+      outboundRequestGuard.httpsAgent,
+    ]) {
+      expect(agent).toHaveProperty('keepAlive', true);
+    }
+  });
+});
+
 describe('classifyUpstreamError', () => {
   function axiosError(extra: Record<string, unknown>) {
     return { isAxiosError: true, ...extra };
