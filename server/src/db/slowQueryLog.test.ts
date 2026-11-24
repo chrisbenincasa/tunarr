@@ -5,17 +5,29 @@ import { integer, sqliteTable } from 'drizzle-orm/sqlite-core';
 import { Kysely, sql as kyselySql, SqliteDialect } from 'kysely';
 import { describe, expect, test } from 'vitest';
 import type { SlowQuery } from './slowQueryLog.ts';
-import { withSlowQueryLog } from './slowQueryLog.ts';
+import {
+  DefaultSlowQueryThresholdMs,
+  deferThen,
+  MaxLoggedSqlLength,
+  resolveSlowQueryThresholdMs,
+  truncateSql,
+  withSlowQueryLog,
+} from './slowQueryLog.ts';
 
 // advance(ms) moves a fake clock forward while SQLite runs the statement, the
 // way a slow query spends real time inside the call.
-function setup(thresholdMs = 500) {
+function setup(thresholdMs = 500, prepareMs = 0) {
   let clock = 0;
   const raw = new Sqlite(':memory:');
   raw.function('advance', (ms: number) => {
     clock += ms;
     return ms;
   });
+  const prepare = raw.prepare.bind(raw);
+  raw.prepare = ((source: string) => {
+    clock += prepareMs;
+    return prepare(source);
+  }) as typeof raw.prepare;
 
   const reports: SlowQuery[] = [];
   const db = withSlowQueryLog(raw, {
@@ -88,6 +100,22 @@ describe('withSlowQueryLog', () => {
     expect(reports.map((r) => r.durationMs)).toEqual([600]);
     // An open iterator would leave the connection busy.
     expect(db.prepare('SELECT 1 AS one').get()).toEqual({ one: 1 });
+  });
+
+  test('reports a statement that is slow to prepare', () => {
+    const { db, reports } = setup(500, 600);
+
+    function prepareSlowStatement() {
+      return db.prepare('SELECT 1 AS one');
+    }
+
+    expect(prepareSlowStatement().get()).toEqual({ one: 1 });
+    expect(reports).toHaveLength(1);
+    expect(reports[0]).toMatchObject({
+      sql: 'SELECT 1 AS one',
+      durationMs: 600,
+    });
+    expect(reports[0]?.callStack[0]).toContain('prepareSlowStatement');
   });
 
   test('times exec and returns the wrapped connection', () => {
@@ -215,5 +243,52 @@ describe('withSlowQueryLog', () => {
 
       expect(frameNamed(reports, 'selectSlowRowsWithKysely')).toBeDefined();
     });
+  });
+});
+
+describe('resolveSlowQueryThresholdMs', () => {
+  test('uses the default when nothing is configured', () => {
+    expect(resolveSlowQueryThresholdMs(null)).toBe(DefaultSlowQueryThresholdMs);
+  });
+
+  test('uses a configured threshold', () => {
+    expect(resolveSlowQueryThresholdMs(250)).toBe(250);
+  });
+
+  test('turns the log off at 0 or less', () => {
+    expect(resolveSlowQueryThresholdMs(0)).toBeUndefined();
+    expect(resolveSlowQueryThresholdMs(-1)).toBeUndefined();
+  });
+});
+
+describe('truncateSql', () => {
+  test('keeps SQL at the limit as is', () => {
+    const sql = 'x'.repeat(MaxLoggedSqlLength);
+    expect(truncateSql(sql)).toBe(sql);
+  });
+
+  test('cuts longer SQL at the limit and marks the cut', () => {
+    const sql = 'x'.repeat(MaxLoggedSqlLength + 1);
+    expect(truncateSql(sql)).toBe(`${'x'.repeat(MaxLoggedSqlLength)}…`);
+  });
+});
+
+describe('deferThen', () => {
+  test('leaves a prototype without then() alone', () => {
+    class NoThen {}
+
+    expect(deferThen(NoThen.prototype)).toBe(false);
+    expect(Reflect.get(NoThen.prototype, 'then')).toBeUndefined();
+  });
+
+  test('still resolves to the original then() result', async () => {
+    class Thenable {
+      then(onFulfilled?: (value: number) => unknown) {
+        return Promise.resolve(42).then(onFulfilled);
+      }
+    }
+
+    expect(deferThen(Thenable.prototype)).toBe(true);
+    expect(await new Thenable()).toBe(42);
   });
 });

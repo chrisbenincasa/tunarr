@@ -17,7 +17,11 @@ import {
 } from 'kysely';
 import { findIndex, isError, last, map, replace, slice } from 'lodash-es';
 import { SqliteDatabaseBackup } from './backup/SqliteDatabaseBackup.ts';
-import { withSlowQueryLog } from './slowQueryLog.ts';
+import {
+  resolveSlowQueryThresholdMs,
+  truncateSql,
+  withSlowQueryLog,
+} from './slowQueryLog.ts';
 import { DatabaseSchemaTooNewError } from '../migration/DatabaseSchemaTooNewError.ts';
 import { DatabaseCopyMigrator } from '../migration/db/DatabaseCopyMigrator.ts';
 import {
@@ -34,9 +38,6 @@ const lock = new Mutex();
 
 export const MigrationTableName = 'migrations';
 export const MigrationLockTableName = 'migration_lock';
-
-const DefaultSlowQueryThresholdMs = 500;
-const MaxLoggedSqlLength = 2_000;
 
 class Connection {
   private logger!: Logger;
@@ -126,10 +127,10 @@ class Connection {
    * log off.
    */
   private withSlowQueryLog(sqlite: Sqlite.Database): Sqlite.Database {
-    const thresholdMs =
-      getNumericEnvVar(TUNARR_ENV_VARS.SLOW_QUERY_THRESHOLD_MS) ??
-      DefaultSlowQueryThresholdMs;
-    if (thresholdMs <= 0) {
+    const thresholdMs = resolveSlowQueryThresholdMs(
+      getNumericEnvVar(TUNARR_ENV_VARS.SLOW_QUERY_THRESHOLD_MS),
+    );
+    if (thresholdMs === undefined) {
       return sqlite;
     }
 
@@ -139,10 +140,7 @@ class Connection {
         this.logger.warn(
           {
             durationMs,
-            sql:
-              sql.length > MaxLoggedSqlLength
-                ? `${sql.slice(0, MaxLoggedSqlLength)}…`
-                : sql,
+            sql: truncateSql(sql),
             callStack,
           },
           'Slow database query took %d ms and blocked the event loop while it ran',

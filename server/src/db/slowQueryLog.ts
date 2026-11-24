@@ -21,6 +21,29 @@ type AnyFunction = (...args: never[]) => unknown;
 
 const CallerFrameLimit = 20;
 
+export const DefaultSlowQueryThresholdMs = 500;
+export const MaxLoggedSqlLength = 2_000;
+
+/**
+ * Turns the configured threshold into the one to log at. Returns nothing when
+ * the log is off, which a threshold of 0 or less asks for.
+ */
+export function resolveSlowQueryThresholdMs(
+  configuredMs: number | null,
+): number | undefined {
+  const thresholdMs = configuredMs ?? DefaultSlowQueryThresholdMs;
+  if (thresholdMs <= 0) {
+    return;
+  }
+  return thresholdMs;
+}
+
+export function truncateSql(sql: string): string {
+  return sql.length > MaxLoggedSqlLength
+    ? `${sql.slice(0, MaxLoggedSqlLength)}…`
+    : sql;
+}
+
 /**
  * Times every statement run through a better-sqlite3 connection and reports
  * the ones that reach `thresholdMs`. Kysely and Drizzle both prepare their
@@ -115,7 +138,14 @@ export function withSlowQueryLog(
 
       switch (prop) {
         case 'prepare':
-          return (source: string) => timeStatement(target.prepare(source));
+          return function timedPrepare(source: string) {
+            const startedAt = now();
+            try {
+              return timeStatement(target.prepare(source));
+            } finally {
+              finish(source, now() - startedAt, timedPrepare);
+            }
+          };
         case 'exec':
           return function timedExec(source: string) {
             const startedAt = now();
@@ -169,28 +199,34 @@ function traceDrizzleCallers() {
   }
   drizzleCallersTraced = true;
 
-  const prototypes: object[] = [
-    QueryPromise.prototype,
-    SQLiteSelectBase.prototype,
-    SQLiteCountBuilder.prototype,
-  ];
-  for (const prototype of prototypes) {
-    const then: unknown = Reflect.get(prototype, 'then');
-    if (typeof then !== 'function') {
-      throw new Error('Expected a Drizzle query builder to define then()');
-    }
-    Object.defineProperty(prototype, 'then', {
-      configurable: true,
-      writable: true,
-      value: function deferredThen(
-        this: unknown,
-        onFulfilled?: ((value: unknown) => unknown) | null,
-        onRejected?: ((reason: unknown) => unknown) | null,
-      ) {
-        return Promise.resolve()
-          .then((): unknown => Reflect.apply(then, this, []))
-          .then(onFulfilled, onRejected);
-      },
-    });
+  deferThen(QueryPromise.prototype);
+  deferThen(SQLiteSelectBase.prototype);
+  deferThen(SQLiteCountBuilder.prototype);
+}
+
+/**
+ * Makes `prototype.then` start its query one promise hop later. Returns false
+ * and changes nothing when the prototype has no `then`, so a Drizzle upgrade
+ * that moves it costs caller frames instead of failing every connection. The
+ * Drizzle caller tests catch that loss.
+ */
+export function deferThen(prototype: object): boolean {
+  const then: unknown = Reflect.get(prototype, 'then');
+  if (typeof then !== 'function') {
+    return false;
   }
+  Object.defineProperty(prototype, 'then', {
+    configurable: true,
+    writable: true,
+    value: function deferredThen(
+      this: unknown,
+      onFulfilled?: ((value: unknown) => unknown) | null,
+      onRejected?: ((reason: unknown) => unknown) | null,
+    ) {
+      return Promise.resolve()
+        .then((): unknown => Reflect.apply(then, this, []))
+        .then(onFulfilled, onRejected);
+    },
+  });
+  return true;
 }
