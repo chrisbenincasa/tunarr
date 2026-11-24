@@ -1,4 +1,4 @@
-import type { TimeSlotSchedule } from '@tunarr/types/api';
+import type { RandomSlotSchedule, TimeSlotSchedule } from '@tunarr/types/api';
 import type { FastifyInstance } from 'fastify';
 import { randomUUID } from 'node:crypto';
 import { chunk, uniq } from 'lodash-es';
@@ -11,7 +11,6 @@ import {
   createChannelViaApi,
   defaultTranscodeConfigId,
   makeTimeSlotSchedule,
-  saveTimeSlotSchedule,
   seedCustomShow,
   seedPrograms,
   setProgrammingHours,
@@ -20,6 +19,7 @@ import { initTestApp } from './testServer.js';
 
 const HourMs = 60 * 60 * 1000;
 const ProgramCount = 60;
+const CooldownMs = 6 * HourMs;
 
 let app: FastifyInstance;
 let programIds: string[];
@@ -79,6 +79,48 @@ function withNoonSlot(schedule: TimeSlotSchedule): TimeSlotSchedule {
   };
 }
 
+// Alternates one program from each playlist. `next` walks the slots in order;
+// `weighted` picks at random and keeps the other playlist on a cooldown.
+function randomSchedule(distribution: 'none' | 'weighted'): RandomSlotSchedule {
+  return {
+    type: 'random',
+    flexPreference: 'end',
+    maxDays: 3,
+    padMs: 1,
+    padStyle: 'slot',
+    randomDistribution: distribution,
+    lockWeights: false,
+    slots: [customShowId, otherCustomShowId].map((id, i) => ({
+      type: 'custom-show',
+      customShowId: id,
+      order: 'next',
+      direction: 'asc',
+      id: randomUUID(),
+      weight: 1,
+      cooldownMs: i === 1 && distribution === 'weighted' ? CooldownMs : 0,
+      durationSpec: { type: 'dynamic', programCount: 1 },
+    })),
+  };
+}
+
+function saveSchedule(
+  channelId: string,
+  schedule: TimeSlotSchedule | RandomSlotSchedule,
+  extra: { rebuildEachCycle?: boolean } = {},
+) {
+  return app.inject({
+    method: 'POST',
+    url: `/api/channels/${channelId}/programming`,
+    payload: {
+      type: schedule.type,
+      programs: [...programIds, ...otherProgramIds],
+      schedule,
+      seed: [1, 2, 3, 4],
+      ...extra,
+    },
+  });
+}
+
 type Airing = { startTime: number; items: readonly LineupItem[] };
 
 async function loadAiring(channelId: string): Promise<Airing> {
@@ -100,6 +142,32 @@ function itemAiringAt({ startTime, items }: Airing, at: number) {
   throw new Error('No item airing');
 }
 
+function expectPlaylistOrder(ids: string[], playlist: string[]) {
+  let previous: string | undefined;
+  for (const id of ids) {
+    if (previous !== undefined) {
+      const next = (playlist.indexOf(previous) + 1) % playlist.length;
+      expect(playlist.indexOf(id)).toBe(next);
+    }
+    previous = id;
+  }
+}
+
+function startTimes(
+  { startTime, items }: Airing,
+  fromCustomShowId: string,
+): number[] {
+  const starts: number[] = [];
+  let at = startTime;
+  for (const item of items) {
+    if (item.type === 'content' && item.customShowId === fromCustomShowId) {
+      starts.push(at);
+    }
+    at += item.durationMs;
+  }
+  return starts;
+}
+
 function contentIds(
   items: readonly LineupItem[],
   fromCustomShowId = customShowId,
@@ -117,38 +185,31 @@ function contentIds(
 // today. A fresh start would land on a different program.
 async function enableOnAiringChannel(
   number: number,
-  classicSchedule: TimeSlotSchedule,
+  classicSchedule: TimeSlotSchedule | RandomSlotSchedule,
   {
     enabledSchedule = classicSchedule,
     beforeEnabling,
+    airedHours = 50,
   }: {
-    enabledSchedule?: TimeSlotSchedule;
+    enabledSchedule?: TimeSlotSchedule | RandomSlotSchedule;
     beforeEnabling?: (channelId: string) => Promise<void>;
+    airedHours?: number;
   } = {},
 ) {
   const channelId = await createChannelViaApi(app, {
     number,
     transcodeConfigId,
-    startTime: Date.now() - 50 * HourMs,
+    startTime: Date.now() - airedHours * HourMs,
   });
 
-  const classic = await saveTimeSlotSchedule(
-    app,
-    channelId,
-    [...programIds, ...otherProgramIds],
-    classicSchedule,
-  );
+  const classic = await saveSchedule(channelId, classicSchedule);
   expect(classic.statusCode).toBe(200);
   await beforeEnabling?.(channelId);
   const before = await loadAiring(channelId);
 
-  const enabled = await saveTimeSlotSchedule(
-    app,
-    channelId,
-    [...programIds, ...otherProgramIds],
-    enabledSchedule,
-    { rebuildEachCycle: true },
-  );
+  const enabled = await saveSchedule(channelId, enabledSchedule, {
+    rebuildEachCycle: true,
+  });
   expect(enabled.statusCode).toBe(200);
   const after = await loadAiring(channelId);
 
@@ -171,11 +232,7 @@ describe('turning on rebuild each cycle for an airing classic channel', () => {
     const now = Date.now();
     expect(itemAiringAt(after, now)).toEqual(itemAiringAt(before, now));
 
-    const ids = contentIds(after.items);
-    for (let i = 1; i < ids.length; i++) {
-      const previous = programIds.indexOf(ids[i - 1]!);
-      expect(programIds.indexOf(ids[i]!)).toBe((previous + 1) % ProgramCount);
-    }
+    expectPlaylistOrder(contentIds(after.items), programIds);
   }, 120_000);
 
   test('a shuffle finishes its pass before repeating', async () => {
@@ -206,6 +263,44 @@ describe('turning on rebuild each cycle for an airing classic channel', () => {
       otherProgramIds[0],
     );
   }, 120_000);
+
+  test.each([
+    ['in order', 'none', 4105],
+    ['at random with a cooldown', 'weighted', 4106],
+  ] as const)(
+    'random slots picked %s continue each playlist',
+    async (_, distribution, number) => {
+      // The classic pass is 96 hours, so the channel is in its second loop
+      // and cooldown times must shift by one loop.
+      const { before, after, scheduleEdit } = await enableOnAiringChannel(
+        number,
+        randomSchedule(distribution),
+        { airedHours: 100 },
+      );
+
+      expect(scheduleEdit).toEqual({ placesCarried: true });
+
+      const now = Date.now();
+      expect(itemAiringAt(after, now)).toEqual(itemAiringAt(before, now));
+
+      expectPlaylistOrder(contentIds(after.items), programIds);
+      expectPlaylistOrder(
+        contentIds(after.items, otherCustomShowId),
+        otherProgramIds,
+      );
+
+      if (distribution === 'weighted') {
+        let previous: number | undefined;
+        for (const start of startTimes(after, otherCustomShowId)) {
+          if (previous !== undefined) {
+            expect(start - previous).toBeGreaterThanOrEqual(CooldownMs);
+          }
+          previous = start;
+        }
+      }
+    },
+    120_000,
+  );
 
   test('a classic lineup without a seed starts over', async () => {
     const { scheduleEdit } = await enableOnAiringChannel(
