@@ -12,7 +12,6 @@ import { chunk, compact, isNil } from 'lodash-es';
 import type { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
-import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import type {
@@ -492,9 +491,20 @@ export class LocalOtherVideoScanner extends FileSystemScanner {
     artworkType: ArtworkType,
     forceScan: boolean,
   ) {
-    const artworkFileNames = match(artworkType)
-      .with('thumbnail', () => ['thumb', ''])
-      .otherwise(() => []);
+    let artworkFileNames: string[];
+    switch (artworkType) {
+      case 'thumbnail':
+        artworkFileNames = ['thumb', ''];
+        break;
+      case 'poster':
+      case 'logo':
+      case 'fanart':
+      case 'watermark':
+      case 'banner':
+      case 'landscape':
+        artworkFileNames = [];
+        break;
+    }
     if (artworkFileNames.length === 0) {
       this.logger.warn(
         'Tried to scan unsupported artwork type for show: %s',

@@ -17,6 +17,7 @@ import {
   filterFn_weakEquals,
   globalFilteringFeature,
   metaHelper,
+  rowExpandingFeature,
   rowPaginationFeature,
   rowSelectionFeature,
   rowSortingFeature,
@@ -58,6 +59,7 @@ export const tunarrFeatures = tableFeatures({
   rowSortingFeature,
   rowPaginationFeature,
   rowSelectionFeature,
+  rowExpandingFeature,
   columnVisibilityFeature,
   filteredRowModel: createFilteredRowModel(),
   sortedRowModel: createSortedRowModel(),
@@ -97,6 +99,7 @@ export const { useAppTable: useTunarrTable, createAppColumnHelper } =
 
 export const ActionsColumnId = 'actions';
 export const SelectColumnId = 'select';
+export const ExpandColumnId = 'expand';
 
 export const columnLabel = <TData extends RowData>(
   column: TunarrColumn<TData>,

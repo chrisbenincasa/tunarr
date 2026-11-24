@@ -51,7 +51,11 @@ import { type ServerOptions, serverOptions } from './globals.js';
 import type { IWorkerPool } from './interfaces/IWorkerPool.ts';
 import { ServerContext, ServerRequestContext } from './ServerContext.js';
 import { Result } from './types/result.ts';
-import { getEnvVar, TUNARR_ENV_VARS } from './util/env.ts';
+import { getEnvVar, getNumericEnvVar, TUNARR_ENV_VARS } from './util/env.ts';
+import {
+  eventLoopStallThresholdMs,
+  startEventLoopStallLog,
+} from './util/eventLoopStallMonitor.ts';
 import { filename, isDev, run, timeoutPromise } from './util/index.js';
 import { InjectLogger } from './util/inject.js';
 import { type Logger } from './util/logging/LoggerFactory.js';
@@ -88,6 +92,7 @@ export class Server {
   @InjectLogger() declare private readonly logger: Logger;
 
   private app!: ServerType;
+  private stopEventLoopStallLog?: () => void;
 
   constructor(
     @inject(KEYS.ServerOptions) private serverOptions: ServerOptions,
@@ -483,6 +488,8 @@ export class Server {
       port: this.serverOptions.port,
     });
 
+    this.logEventLoopStalls();
+
     this.logger.debug(
       'Took %d ms for the server to start',
       round(performance.now() - start, 2),
@@ -542,8 +549,22 @@ export class Server {
     return this.app;
   }
 
+  private logEventLoopStalls() {
+    const thresholdMs = eventLoopStallThresholdMs(
+      getNumericEnvVar(TUNARR_ENV_VARS.EVENT_LOOP_STALL_THRESHOLD_MS),
+    );
+    if (!thresholdMs) {
+      return;
+    }
+    this.stopEventLoopStallLog = startEventLoopStallLog(this.logger, {
+      thresholdMs,
+    });
+  }
+
   private async gracefulShutdown() {
     const t = new Date().getTime();
+
+    this.stopEventLoopStallLog?.();
 
     try {
       this.serverContext.eventService.push({

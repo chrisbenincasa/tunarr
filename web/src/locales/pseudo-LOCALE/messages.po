@@ -130,6 +130,11 @@ msgstr ""
 msgid "{0, plural, one {program} other {programs}}"
 msgstr ""
 
+#. placeholder {0}: watch('intervalHours')
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "{0, plural, one {Scans run at this minute every hour.} other {Scans run at this time and every # hours after it, around the clock.}}"
+msgstr ""
+
 #. placeholder {0}: selectedMedia.length
 #: src/components/channel_config/SelectedProgrammingList.tsx
 msgid "{0, plural, one {Selected Item} other {Selected Items}}"
@@ -289,6 +294,10 @@ msgstr ""
 msgid "{hours, plural, one {# hour} other {# hours}}"
 msgstr ""
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "{hours, plural, one {Every hour} other {Every # hours}}"
+msgstr ""
+
 #: src/components/channels/ChannelStatusPill.tsx
 msgid "{label}, show sessions"
 msgstr ""
@@ -306,6 +315,10 @@ msgstr ""
 msgid "{more, plural, one {and # more} other {and # more}}"
 msgstr ""
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "{newWhilePaused, plural, one {Paused, # new line} other {Paused, # new lines}}"
+msgstr ""
+
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "{programCount} program(s)"
@@ -313,6 +326,10 @@ msgstr ""
 
 #: src/components/guide/TvGuide.tsx
 msgid "{remainingTime} left"
+msgstr ""
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "{shownCount, plural, one {Download last # line} other {Download last # lines}}"
 msgstr ""
 
 #: src/pages/channels/ChannelsPage.tsx
@@ -687,6 +704,7 @@ msgid "Albums"
 msgstr ""
 
 #: src/components/channels/ChannelsView.tsx
+#: src/components/library/TrashView.tsx
 msgid "All"
 msgstr ""
 
@@ -1122,6 +1140,7 @@ msgstr ""
 #: src/components/DeleteConfirmationDialog.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/fillers/FillerListsView.tsx
+#: src/components/library/TrashView.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBreaksModal.tsx
 #: src/components/programming_controls/AddFlexModal.tsx
@@ -1146,8 +1165,11 @@ msgstr ""
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
-#: src/pages/library/TrashPage.tsx
 msgid "Cancel"
+msgstr ""
+
+#: src/components/library/TrashView.tsx
+msgid "Cancelling: <0>{count}</0> removed"
 msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
@@ -1377,7 +1399,7 @@ msgstr ""
 msgid "Completely randomizes the order of programs."
 msgstr ""
 
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Component"
 msgstr ""
 
@@ -1460,6 +1482,10 @@ msgstr ""
 msgid "contains"
 msgstr ""
 
+#: src/components/system/system-logs/LogDetail.tsx
+msgid "Context"
+msgstr ""
+
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Continue"
 msgstr ""
@@ -1503,6 +1529,10 @@ msgstr ""
 msgid "Copied M3U URL to clipboard"
 msgstr ""
 
+#: src/components/system/system-logs/LogDetail.tsx
+msgid "Copied the log line"
+msgstr ""
+
 #: src/hooks/useCopyToClipboard.ts
 msgid "Copied to clipboard!"
 msgstr ""
@@ -1535,6 +1565,10 @@ msgstr ""
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Copy of {0}"
+msgstr ""
+
+#: src/components/system/system-logs/LogDetail.tsx
+msgid "Copy raw line"
 msgstr ""
 
 #: src/pages/system/TroubleshootPage.tsx
@@ -1605,6 +1639,14 @@ msgstr ""
 
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Creates a new collection"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Cron expression"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Custom (cron)"
 msgstr ""
 
 #: src/components/guide/TvGuide.tsx
@@ -1684,6 +1726,11 @@ msgstr ""
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 msgid "Day"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Days"
 msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
@@ -1886,6 +1933,7 @@ msgid "Deselect All"
 msgstr ""
 
 #: src/components/channels/ChannelNowPlayingCard.tsx
+#: src/components/ui/table/ExpandRowButton.tsx
 msgid "Details"
 msgstr ""
 
@@ -1932,10 +1980,9 @@ msgstr ""
 msgid "Display Watermark on Leading Edge"
 msgstr ""
 
-#. placeholder {0}: logBuf.length
 #: src/pages/system/SystemLogsPage.tsx
-msgid "Displays the last {0} system log events. Use the buttons below to export these logs or download the entire log file for debugging."
-msgstr ""
+#~ msgid "Displays the last {0} system log events. Use the buttons below to export these logs or download the entire log file for debugging."
+#~ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
@@ -1971,7 +2018,7 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Download all logs"
 msgstr ""
 
@@ -1983,11 +2030,9 @@ msgstr ""
 msgid "Download JSON"
 msgstr ""
 
-#. placeholder {0}: table.getRowCount()
-#. placeholder {1}: table.getRowCount()
 #: src/pages/system/SystemLogsPage.tsx
-msgid "Download last {0} {1, plural, one {# row} other {# rows}}"
-msgstr ""
+#~ msgid "Download last {0} {1, plural, one {# row} other {# rows}}"
+#~ msgstr ""
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -2155,8 +2200,12 @@ msgstr ""
 msgid "Emptied trash. Removed {0} item(s)."
 msgstr ""
 
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Empty Trash"
+msgstr ""
+
+#: src/components/library/TrashView.tsx
+msgid "Empty trash progress"
 msgstr ""
 
 #: src/hooks/useEmptyTrash.ts
@@ -2167,10 +2216,12 @@ msgstr ""
 msgid "Emptying trash in the background. You can keep using Tunarr."
 msgstr ""
 
-#. placeholder {0}: status.deleted
-#. placeholder {1}: status.total
 #: src/pages/library/TrashPage.tsx
-msgid "Emptying trash: {0} / {1}"
+#~ msgid "Emptying trash: {0} / {1}"
+#~ msgstr ""
+
+#: src/components/library/TrashView.tsx
+msgid "Emptying trash: <0>{count}</0>"
 msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
@@ -2254,6 +2305,10 @@ msgstr ""
 msgid "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate."
 msgstr ""
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Enter a cron expression."
+msgstr ""
+
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter a name for your Emby Server"
 msgstr ""
@@ -2296,9 +2351,13 @@ msgstr ""
 msgid "Episode Order"
 msgstr ""
 
+#: src/components/library/TrashView.tsx
 #: src/components/programs/Episodes.tsx
-#: src/pages/library/TrashPage.tsx
 msgid "Episodes"
+msgstr ""
+
+#: src/components/system/system-logs/LogDetail.tsx
+msgid "Error"
 msgstr ""
 
 #: src/hooks/useBulkAssignFillers.tsx
@@ -2418,6 +2477,10 @@ msgstr ""
 msgid "Every"
 msgstr ""
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Every few hours"
+msgstr ""
+
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "Everything using this profile will fall back to the next profile in the resolution order (usually the channel's profile, or the default)."
 msgstr ""
@@ -2484,7 +2547,11 @@ msgid "Failed to save feature flags."
 msgstr ""
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "Failed to update Media Source settings. Please check server and browser logs for details."
+#~ msgid "Failed to update Media Source settings. Please check server and browser logs for details."
+#~ msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Failed to update scanner settings. {message}"
 msgstr ""
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
@@ -2703,6 +2770,14 @@ msgstr ""
 msgid "First Episode"
 msgstr ""
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "First scan at"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Five fields, or six with seconds first. For example, \"0 4 * * 0\" scans at 4:00 AM every Sunday."
+msgstr ""
+
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Fix the errors in the rules above to run a test."
 msgstr ""
@@ -2771,6 +2846,8 @@ msgid "Frame Rate"
 msgstr ""
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Frequency"
 msgstr ""
 
@@ -2879,6 +2956,15 @@ msgstr ""
 msgid "Hide Advanced"
 msgstr ""
 
+#. placeholder {0}: line.msg
+#: src/components/system/system-logs/LogEntry.tsx
+msgid "Hide details for {0}"
+msgstr ""
+
+#: src/components/ui/table/ExpandRowButton.tsx
+msgid "Hide details for {label}"
+msgstr ""
+
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Hide Watermark After (minutes)"
 msgstr ""
@@ -2905,8 +2991,8 @@ msgid "How far past its boundary can a slot's content extend? 'One extra item' a
 msgstr ""
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "How frequently libraries should be scanned (starting from midnight)."
-msgstr ""
+#~ msgid "How frequently libraries should be scanned (starting from midnight)."
+#~ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "How long each commercial break lasts"
@@ -3053,8 +3139,16 @@ msgstr ""
 msgid "is not"
 msgstr ""
 
+#: src/components/library/TrashView.tsx
+msgid "Item types"
+msgstr ""
+
 #: src/components/channel_config/MediaGridItem.tsx
 msgid "Item was not present during the last scan"
+msgstr ""
+
+#: src/components/library/TrashView.tsx
+msgid "Items a recent scan couldn't find, because the file is missing or the media server no longer returns them. They can't play in channels. Emptying the trash replaces them with flex."
 msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
@@ -3130,7 +3224,7 @@ msgstr ""
 #~ msgid "Let's get started..."
 #~ msgstr ""
 
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Level"
 msgstr ""
 
@@ -3181,6 +3275,10 @@ msgstr ""
 msgid "Linear"
 msgstr ""
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Lines show here as the server writes them."
+msgstr ""
+
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Link Mode"
@@ -3197,6 +3295,10 @@ msgstr ""
 #: src/components/base/ProgramViewToggleButton.tsx
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "List"
+msgstr ""
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Live"
 msgstr ""
 
 #: src/components/programs/Actors.tsx
@@ -3262,7 +3364,9 @@ msgid "Logging"
 msgstr ""
 
 #: src/components/shell/useShellNav.tsx
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Logs"
 msgstr ""
 
@@ -3448,7 +3552,7 @@ msgstr ""
 msgid "Media..."
 msgstr ""
 
-#: src/pages/system/SystemLogsPage.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Message"
 msgstr ""
 
@@ -3544,7 +3648,7 @@ msgid "Movie, {0}"
 msgstr ""
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Movies"
 msgstr ""
 
@@ -3561,7 +3665,7 @@ msgid "Music Video"
 msgstr ""
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Music Videos"
 msgstr ""
 
@@ -3678,6 +3782,10 @@ msgstr ""
 msgid "Next run"
 msgstr ""
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Next scan: {next} (your time zone)"
+msgstr ""
+
 #: src/components/system/tasks/TasksView.tsx
 msgid "Next Scheduled Execution"
 msgstr ""
@@ -3719,6 +3827,10 @@ msgstr ""
 
 #: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
 msgid "No libraries enabled"
+msgstr ""
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "No log lines yet"
 msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
@@ -3878,6 +3990,14 @@ msgstr ""
 msgid "of the following"
 msgstr ""
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Off"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "On selected days"
+msgstr ""
+
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/components/channels/ChannelCard.tsx
 #: src/components/channels/ChannelsView.tsx
@@ -3962,7 +4082,7 @@ msgid "Other Video"
 msgstr ""
 
 #: src/components/channels/ChannelPrograms.tsx
-#: src/pages/library/TrashPage.tsx
+#: src/components/library/TrashView.tsx
 msgid "Other Videos"
 msgstr ""
 
@@ -4057,6 +4177,14 @@ msgstr ""
 msgid "Path Replacements"
 msgstr ""
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Pause"
+msgstr ""
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Paused"
+msgstr ""
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Percentage-Based"
 msgstr ""
@@ -4064,6 +4192,10 @@ msgstr ""
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Period"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Pick at least one day."
 msgstr ""
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
@@ -4150,6 +4282,10 @@ msgstr ""
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 #~ msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first."
 #~ msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Please check server and browser logs for details."
+msgstr ""
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
@@ -4379,8 +4515,8 @@ msgstr ""
 msgid "Redirect duration"
 msgstr ""
 
-#. placeholder {0}: p.channelName
 #. placeholder {0}: p.name
+#. placeholder {0}: program.channelName
 #: src/hooks/programming_controls/useSlotProgramOptions.ts
 #: src/hooks/useProgramTitleFormatter.ts
 msgid "Redirect to \"{0}\""
@@ -4580,8 +4716,8 @@ msgstr ""
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "Rescan Interval (hours)"
-msgstr ""
+#~ msgid "Rescan Interval (hours)"
+#~ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
@@ -4647,6 +4783,10 @@ msgstr ""
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
 msgid "Results"
+msgstr ""
+
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Resume"
 msgstr ""
 
 #: src/components/channels/BulkAssignFillersDialog.tsx
@@ -4789,6 +4929,14 @@ msgstr ""
 msgid "Scan {0}"
 msgstr ""
 
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scan times use the server's time zone, which can differ from yours."
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+#~ msgid "Scan times use the server's time zone, which can differ from yours. The next scan below is shown in your time zone."
+#~ msgstr ""
+
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Scan your libraries"
 msgstr ""
@@ -4800,6 +4948,10 @@ msgstr ""
 #: src/components/MediaSourceLibraryTable.tsx
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Scanning"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scans every enabled library on this schedule. Collection and playlist sync from media servers run on the same schedule."
 msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
@@ -4816,6 +4968,15 @@ msgstr ""
 
 #: src/components/system/tasks/TaskStatusPill.tsx
 msgid "Scheduled"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scheduled scans"
+msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Scheduled scans are off. You can still scan a library by hand from its media source."
 msgstr ""
 
 #: src/components/ui/table/DataTable.tsx
@@ -4946,6 +5107,10 @@ msgstr ""
 msgid "Server Listen Port"
 msgstr ""
 
+#: src/components/system/system-logs/SystemLogsView.tsx
+msgid "Server log lines as they arrive, newest first. Download the log file to attach it to a bug report."
+msgstr ""
+
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 msgid "Server Path"
 msgstr ""
@@ -5007,6 +5172,15 @@ msgstr ""
 
 #: src/components/channels/ChannelsView.tsx
 msgid "Show all channels"
+msgstr ""
+
+#. placeholder {0}: line.msg
+#: src/components/system/system-logs/LogEntry.tsx
+msgid "Show details for {0}"
+msgstr ""
+
+#: src/components/ui/table/ExpandRowButton.tsx
+msgid "Show details for {label}"
 msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx
@@ -5402,7 +5576,11 @@ msgstr ""
 #~ msgstr ""
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "Successfully updated Media Source settings."
+#~ msgid "Successfully updated Media Source settings."
+#~ msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Successfully updated scanner settings."
 msgstr ""
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
@@ -5576,7 +5754,11 @@ msgid "There was an error generating time slots. Check the browser console log f
 msgstr ""
 
 #: src/pages/settings/ScannerSettingsPage.tsx
-msgid "There was an error submitting the request to update Media Source settings. Please check the form and try again"
+#~ msgid "There was an error submitting the request to update Media Source settings. Please check the form and try again"
+#~ msgstr ""
+
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "There was an error submitting the request to update scanner settings. Please check the form and try again"
 msgstr ""
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
@@ -5738,6 +5920,12 @@ msgstr ""
 msgid "Thumbnail URL"
 msgstr ""
 
+#: src/components/system/system-logs/LogDetail.tsx
+#: src/components/system/system-logs/SystemLogsView.tsx
+#: src/pages/settings/ScannerSettingsPage.tsx
+msgid "Time"
+msgstr ""
+
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Time before first break"
 msgstr ""
@@ -5771,8 +5959,8 @@ msgid "Time Slots..."
 msgstr ""
 
 #: src/pages/system/SystemLogsPage.tsx
-msgid "Timestamp"
-msgstr ""
+#~ msgid "Timestamp"
+#~ msgstr ""
 
 #: src/components/profiles/condition/ConditionClauseEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -5845,8 +6033,8 @@ msgstr ""
 msgid "Track"
 msgstr ""
 
+#: src/components/library/TrashView.tsx
 #: src/components/programs/Tracks.tsx
-#: src/pages/library/TrashPage.tsx
 msgid "Tracks"
 msgstr ""
 
@@ -5879,15 +6067,15 @@ msgstr ""
 msgid "Transcoding Settings"
 msgstr ""
 
+#: src/components/library/TrashView.tsx
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
-#: src/pages/library/TrashPage.tsx
 msgid "Trash"
 msgstr ""
 
 #: src/pages/library/TrashPage.tsx
-msgid "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
-msgstr ""
+#~ msgid "Trashed items are items that were previously scanned, but not found in a recent scan. This could be due to missing files or a media server no longer returning the item from its API. These items will be unplayable in channels in their current state. When the trash is emptied, their spots in channels will be replaced with flex."
+#~ msgstr ""
 
 #: src/components/shell/useShellNav.tsx
 msgid "Troubleshoot"

@@ -11,27 +11,36 @@ import {
   VideoFile,
 } from '@mui/icons-material';
 import type { ProgramOrFolder } from '@tunarr/types';
-import React from 'react';
-import { match } from 'ts-pattern';
 
 type Props = {
   programType: ProgramOrFolder['type'];
 };
 
 export const ProgramTypeIcon = ({ programType }: Props) => {
-  return match(programType)
-    .returnType<React.ReactElement>()
-    .with('movie', () => <Movie />)
-    .with('show', () => <Tv />)
-    .with('season', () => <Tv />)
-    .with('episode', () => <Tv />)
-    .with('track', () => <MusicNote />)
-    .with('artist', () => <Person />)
-    .with('album', () => <Album />)
-    .with('other_video', () => <VideoFile />)
-    .with('music_video', () => <MusicVideo />)
-    .with('collection', () => <Collections />)
-    .with('folder', () => <Folder />)
-    .with('playlist', () => <PlaylistAdd />)
-    .exhaustive();
+  switch (programType) {
+    case 'movie':
+      return <Movie />;
+    case 'show':
+      return <Tv />;
+    case 'season':
+      return <Tv />;
+    case 'episode':
+      return <Tv />;
+    case 'track':
+      return <MusicNote />;
+    case 'artist':
+      return <Person />;
+    case 'album':
+      return <Album />;
+    case 'other_video':
+      return <VideoFile />;
+    case 'music_video':
+      return <MusicVideo />;
+    case 'collection':
+      return <Collections />;
+    case 'folder':
+      return <Folder />;
+    case 'playlist':
+      return <PlaylistAdd />;
+  }
 };

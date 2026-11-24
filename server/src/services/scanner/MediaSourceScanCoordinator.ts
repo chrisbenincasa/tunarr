@@ -8,6 +8,7 @@ import { ReconcileProgramDurationsTask } from '../../tasks/ReconcileProgramDurat
 import { autoFactoryKey, KEYS } from '../../types/inject.ts';
 import { Result } from '../../types/result.ts';
 import type { Maybe } from '../../types/util.ts';
+import { trackWork } from '../../util/activeWork.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { EntityMutex } from '../EntityMutex.ts';
@@ -81,16 +82,18 @@ export class MediaSourceScanCoordinator {
       const controller = new AbortController();
       MediaSourceScanCoordinator.signalById.set(mediaSource.uuid, controller);
       MediaSourceScanCoordinator.queue
-        .add(async () => {
-          try {
-            controller.signal.addEventListener('abort', () => {
-              scanner.cancel();
-            });
-            await scanner.scan({ mediaSource, force: forceScan, pathFilter });
-          } finally {
-            releaser();
-          }
-        })
+        .add(() =>
+          trackWork(`Media source scan: ${mediaSource.name}`, async () => {
+            try {
+              controller.signal.addEventListener('abort', () => {
+                scanner.cancel();
+              });
+              await scanner.scan({ mediaSource, force: forceScan, pathFilter });
+            } finally {
+              releaser();
+            }
+          }),
+        )
         .catch((e) =>
           this.logger.error(
             e,
@@ -173,22 +176,24 @@ export class MediaSourceScanCoordinator {
       const controller = new AbortController();
       MediaSourceScanCoordinator.signalById.set(library.uuid, controller);
       MediaSourceScanCoordinator.queue
-        .add(async () => {
-          try {
-            controller.signal.addEventListener('abort', () => {
-              scanner.cancel(library.uuid);
-            });
-            await scanner.scan({ library, force: forceScan, pathFilter });
-            if (collectionScanner) {
-              await collectionScanner.scanLibrary({
-                libraryId: library.uuid,
-                force: forceScan,
+        .add(() =>
+          trackWork(`Library scan: ${library.name}`, async () => {
+            try {
+              controller.signal.addEventListener('abort', () => {
+                scanner.cancel(library.uuid);
               });
+              await scanner.scan({ library, force: forceScan, pathFilter });
+              if (collectionScanner) {
+                await collectionScanner.scanLibrary({
+                  libraryId: library.uuid,
+                  force: forceScan,
+                });
+              }
+            } finally {
+              releaser();
             }
-          } finally {
-            releaser();
-          }
-        })
+          }),
+        )
         .catch((e) =>
           this.logger.error(e, 'Error scanning library %s', library.uuid),
         )

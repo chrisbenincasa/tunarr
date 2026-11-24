@@ -258,4 +258,46 @@ describe('SettingsDBFactory', () => {
       expect((await readSettings()).migration.onboardingComplete).toBe(false);
     });
   });
+
+  describe('scan schedule migration', () => {
+    type WrittenSettings = {
+      settings: { mediaSource: Record<string, unknown> };
+    };
+
+    const readSettings = async () =>
+      JSON.parse(await fs.readFile(settingsPath, 'utf-8')) as WrittenSettings;
+
+    test('converts rescanIntervalHours and drops it from the file', async () => {
+      const SettingsDBFactory = await loadFactory();
+      new SettingsDBFactory(options).get();
+      const legacy = await readSettings();
+      legacy.settings.mediaSource = { rescanIntervalHours: 12 };
+      await fs.writeFile(settingsPath, JSON.stringify(legacy));
+      vi.resetModules();
+      const RestartedFactory = await loadFactory();
+
+      const settings = new RestartedFactory(options).get();
+
+      expect(settings.globalMediaSourceSettings().scanSchedule).toEqual({
+        type: 'interval',
+        hours: 12,
+        minute: 30,
+      });
+      expect((await readSettings()).settings.mediaSource).toEqual({
+        scanSchedule: { type: 'interval', hours: 12, minute: 30 },
+      });
+    });
+
+    test('new installs scan every 6 hours at minute 30', async () => {
+      const SettingsDBFactory = await loadFactory();
+
+      const settings = new SettingsDBFactory(options).get();
+
+      expect(settings.globalMediaSourceSettings().scanSchedule).toEqual({
+        type: 'interval',
+        hours: 6,
+        minute: 30,
+      });
+    });
+  });
 });

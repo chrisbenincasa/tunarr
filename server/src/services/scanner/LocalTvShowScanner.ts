@@ -22,7 +22,6 @@ import {
 import type { Dirent } from 'node:fs';
 import fs from 'node:fs/promises';
 import path, { basename, dirname, extname } from 'node:path';
-import { match } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
@@ -844,12 +843,26 @@ export class LocalTvShowScanner extends FileSystemScanner {
     artworkType: ArtworkType,
     force: boolean = false,
   ) {
-    const artworkFileNames = match(artworkType)
-      .with('poster', () => ['poster', 'folder'])
-      .with('fanart', () => ['fanart'])
-      .with('thumbnail', () => ['thumb'])
-      .with('banner', () => ['banner'])
-      .otherwise(() => []);
+    let artworkFileNames: string[];
+    switch (artworkType) {
+      case 'poster':
+        artworkFileNames = ['poster', 'folder'];
+        break;
+      case 'fanart':
+        artworkFileNames = ['fanart'];
+        break;
+      case 'thumbnail':
+        artworkFileNames = ['thumb'];
+        break;
+      case 'banner':
+        artworkFileNames = ['banner'];
+        break;
+      case 'logo':
+      case 'watermark':
+      case 'landscape':
+        artworkFileNames = [];
+        break;
+    }
 
     if (artworkFileNames.length === 0) {
       this.logger.warn(
@@ -898,9 +911,20 @@ export class LocalTvShowScanner extends FileSystemScanner {
     artworkType: ArtworkType,
     force: boolean = false,
   ) {
-    const artworkFileNames = match(artworkType)
-      .with('poster', () => ['poster'])
-      .otherwise(() => []);
+    let artworkFileNames: string[];
+    switch (artworkType) {
+      case 'poster':
+        artworkFileNames = ['poster'];
+        break;
+      case 'thumbnail':
+      case 'logo':
+      case 'fanart':
+      case 'watermark':
+      case 'banner':
+      case 'landscape':
+        artworkFileNames = [];
+        break;
+    }
     if (artworkFileNames.length === 0) {
       this.logger.warn(
         'Tried to scan unsupported artwork type for show: %s',
@@ -958,9 +982,20 @@ export class LocalTvShowScanner extends FileSystemScanner {
     artworkType: ArtworkType,
     force: boolean = false,
   ) {
-    const artworkFileNames = match(artworkType)
-      .with('thumbnail', () => ['thumb'])
-      .otherwise(() => []);
+    let artworkFileNames: string[];
+    switch (artworkType) {
+      case 'thumbnail':
+        artworkFileNames = ['thumb'];
+        break;
+      case 'poster':
+      case 'logo':
+      case 'fanart':
+      case 'watermark':
+      case 'banner':
+      case 'landscape':
+        artworkFileNames = [];
+        break;
+    }
     if (artworkFileNames.length === 0) {
       this.logger.warn(
         'Tried to scan unsupported artwork type for show: %s',

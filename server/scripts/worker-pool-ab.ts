@@ -20,7 +20,11 @@
  * under vitest is vitest's own entry point.
  *
  *   pnpm bench:worker-pool
- *   pnpm bench:worker-pool -- --programs 4000 --days 60 --slots-per-day 48
+ *   pnpm bench:worker-pool --programs 4000 --days 60 --slots-per-day 48
+ *   pnpm bench:worker-pool --days 365 --program-minutes 1
+ *
+ * Pass flags without a `--` separator. `parseArgs` treats everything after `--`
+ * as positionals, so the flags would be ignored.
  */
 import Sqlite from 'better-sqlite3';
 import http from 'node:http';
@@ -51,6 +55,7 @@ const { values } = parseArgs({
     programs: { type: 'string', default: '3000' },
     days: { type: 'string', default: '45' },
     'slots-per-day': { type: 'string', default: '48' },
+    'program-minutes': { type: 'string', default: '30' },
     'pool-size': { type: 'string', default: '2' },
     'probe-interval': { type: 'string', default: '10' },
     'slow-threshold': { type: 'string', default: '25' },
@@ -63,6 +68,8 @@ const { values } = parseArgs({
 const PROGRAM_COUNT = Number.parseInt(values.programs, 10);
 const MAX_DAYS = Number.parseInt(values.days, 10);
 const SLOTS_PER_DAY = Number.parseInt(values['slots-per-day'], 10);
+const PROGRAM_DURATION_MS =
+  Number.parseInt(values['program-minutes'], 10) * 60 * 1000;
 const POOL_SIZE = Number.parseInt(values['pool-size'], 10);
 const PROBE_INTERVAL_MS = Number.parseInt(values['probe-interval'], 10);
 const SLOW_THRESHOLD_MS = Number.parseInt(values['slow-threshold'], 10);
@@ -71,7 +78,6 @@ const TRIALS = Number.parseInt(values.trials, 10);
 
 const BOOT_TIMEOUT_MS = 240_000;
 const SAVE_TIMEOUT_MS = 600_000;
-const HALF_HOUR_MS = 30 * 60 * 1000;
 /**
  * Probing continues this long after the save returns. The lineup save fires the
  * guide refresh without awaiting it, so the response comes back before the
@@ -165,7 +171,7 @@ function seedPrograms(dbPath: string, count: number): Seed {
       createdAt: now,
       updatedAt: now,
       title: `Bench Movie ${i}`,
-      duration: HALF_HOUR_MS,
+      duration: PROGRAM_DURATION_MS,
       type: 'movie' as const,
       sourceType: 'plex' as const,
       externalKey: `ext-${uuid}`,

@@ -10,7 +10,6 @@ import dayjs from 'dayjs';
 import { isUndefined } from 'lodash-es';
 import events from 'node:events';
 import { PassThrough } from 'node:stream';
-import { match, P } from 'ts-pattern';
 import type {
   ContentBackedStreamLineupItem,
   ErrorStreamLineupItem,
@@ -85,18 +84,20 @@ export class ProgramStream extends events.EventEmitter<ProgramStreamEvents> {
 
   protected async setupInternal(): Promise<Result<TranscodeSessionResult>> {
     const { lineupItem } = this.context;
-    return match(lineupItem)
-      .with({ type: P.union('program', 'commercial', 'fallback') }, (item) =>
-        this.setupContentItem(item),
-      )
-      .with({ type: 'offline' }, (item) => this.setupOfflineItem(item))
-      .with({ type: 'error' }, (item) => this.setupErrorItem(item))
-      .with({ type: 'redirect' }, (item) =>
-        Result.failure<TranscodeSessionResult>(
-          `ProgramStream cannot direct play a direct item: ${JSON.stringify(item)}`,
-        ),
-      )
-      .exhaustive();
+    switch (lineupItem.type) {
+      case 'program':
+      case 'commercial':
+      case 'fallback':
+        return this.setupContentItem(lineupItem);
+      case 'offline':
+        return this.setupOfflineItem(lineupItem);
+      case 'error':
+        return this.setupErrorItem(lineupItem);
+      case 'redirect':
+        return Result.failure<TranscodeSessionResult>(
+          `ProgramStream cannot direct play a direct item: ${JSON.stringify(lineupItem)}`,
+        );
+    }
   }
 
   private async setupContentItem(

@@ -3,11 +3,6 @@ import type { ChannelDB } from '@/db/ChannelDB.js';
 import type { ProgramDB } from '@/db/ProgramDB.js';
 import { ProgramConverter } from '@/db/converters/ProgramConverter.js';
 import type { Lineup, LineupItem } from '@/db/derived_types/Lineup.js';
-import {
-  isContentItem,
-  isOfflineItem,
-  isRedirectItem,
-} from '@/db/derived_types/Lineup.js';
 import type { OpenDateTimeRange } from '@/types/OpenDateTimeRange.js';
 import { KEYS } from '@/types/inject.js';
 import type { Maybe } from '@/types/util.js';
@@ -51,7 +46,6 @@ import {
   uniq,
   uniqBy,
 } from 'lodash-es';
-import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { MaterializeProgramsCommand } from '../commands/MaterializeProgramsCommand.ts';
 import type { ISettingsDB } from '../db/interfaces/ISettingsDB.ts';
@@ -1247,15 +1241,15 @@ export class TVGuideService {
     );
 
     return map(lineups, ({ channel, programs: guideItems }) => {
-      const programs = guideItems.map((guideItem) => {
-        const channelItem = match(guideItem.lineupItem)
-          .when(isOfflineItem, (item) =>
-            this.programConverter.offlineLineupItemToProgram(channel, item),
-          )
-          .when(isRedirectItem, (item) => {
-            // const redirectChannel = find(channelReferences, { uuid: item.channel });
+      const toChannelProgram = (item: LineupItem): ChannelProgram => {
+        switch (item.type) {
+          case 'offline':
+            return this.programConverter.offlineLineupItemToProgram(
+              channel,
+              item,
+            );
+          case 'redirect': {
             const targetChannel = channelsById[item.channel];
-
             if (isNil(targetChannel)) {
               this.logger.warn(
                 'Dangling redirect channel reference. Source channel = %s, target channel = %s',
@@ -1271,8 +1265,8 @@ export class TVGuideService {
               item,
               targetChannel,
             );
-          })
-          .when(isContentItem, (item) => {
+          }
+          case 'content': {
             const program = materializedProgramById[item.id];
             if (!program) {
               this.logger.warn(
@@ -1287,11 +1281,17 @@ export class TVGuideService {
             return this.programConverter.materializedProgramToContentProgram(
               program,
             );
-          })
-          .exhaustive();
+          }
+        }
+      };
 
-        return this.guideItemToProgram(channel, guideItem, channelItem);
-      });
+      const programs = guideItems.map((guideItem) =>
+        this.guideItemToProgram(
+          channel,
+          guideItem,
+          toChannelProgram(guideItem.lineupItem),
+        ),
+      );
 
       return {
         icon: channel.icon,
@@ -1330,35 +1330,41 @@ export class TVGuideService {
       : (resolveIconUrl(channel.icon, makeLocalUrl('/images/tunarr.png')) ??
         makeLocalUrl('/images/tunarr.png'));
 
-    const program = match(materializedItem)
-      .returnType<TvGuideProgram>()
-      .with({ type: 'flex' }, (flex) => ({
-        ...baseItem,
-        ...flex,
-        type: 'flex',
-        icon,
-        title: isNonEmptyString(channel.guideFlexTitle)
-          ? channel.guideFlexTitle
-          : channel.name,
-      }))
-      .with({ type: 'content', id: P.string }, (content) => ({
-        ...baseItem,
-        ...content,
-        type: 'content',
-      }))
-      .with({ type: 'redirect' }, (redirect) => ({
-        ...baseItem,
-        ...redirect,
-        type: 'redirect',
-      }))
-      .otherwise(() => ({
-        ...baseItem,
-        type: 'flex',
-        icon,
-        title: isNonEmptyString(channel.guideFlexTitle)
-          ? channel.guideFlexTitle
-          : channel.name,
-      }));
+    const flexTitle = isNonEmptyString(channel.guideFlexTitle)
+      ? channel.guideFlexTitle
+      : channel.name;
+
+    let program: TvGuideProgram;
+    switch (materializedItem.type) {
+      case 'flex':
+        program = {
+          ...baseItem,
+          ...materializedItem,
+          type: 'flex',
+          icon,
+          title: flexTitle,
+        };
+        break;
+      case 'redirect':
+        program = { ...baseItem, ...materializedItem, type: 'redirect' };
+        break;
+      case 'content':
+        if (materializedItem.id !== undefined) {
+          program = {
+            ...baseItem,
+            ...materializedItem,
+            id: materializedItem.id,
+            type: 'content',
+          };
+          break;
+        }
+        program = { ...baseItem, type: 'flex', icon, title: flexTitle };
+        break;
+      case 'custom':
+      case 'filler':
+        program = { ...baseItem, type: 'flex', icon, title: flexTitle };
+        break;
+    }
 
     if (
       guideItem.isPaused &&
@@ -1415,10 +1421,10 @@ export class TVGuideService {
       isPaused,
     } as const;
 
-    return match(currentProgram.lineupItem)
-      .returnType<MaterializedGuideItem>()
-      .with({ type: 'content' }, (content) => {
-        const backingProgram = materializedPrograms[content.id];
+    const lineupItem = currentProgram.lineupItem;
+    switch (lineupItem.type) {
+      case 'content': {
+        const backingProgram = materializedPrograms[lineupItem.id];
 
         let programming: ProgramGuideItem | FlexGuideItem;
         if (!backingProgram) {
@@ -1432,14 +1438,17 @@ export class TVGuideService {
           };
         }
 
-        let title = match(programming)
-          .with({ type: 'flex' }, () =>
-            isNonEmptyString(channel.guideFlexTitle)
+        let title: string;
+        switch (programming.type) {
+          case 'flex':
+            title = isNonEmptyString(channel.guideFlexTitle)
               ? channel.guideFlexTitle
-              : channel.name,
-          )
-          .with({ type: 'program' }, (p) => p.program.title)
-          .exhaustive();
+              : channel.name;
+            break;
+          case 'program':
+            title = programming.program.title;
+            break;
+        }
         if (isPaused) {
           title += ' (paused)';
         }
@@ -1449,10 +1458,10 @@ export class TVGuideService {
           title,
           programming,
         };
-      })
-      .with({ type: 'offline' }, (offlineItem) => {
+      }
+      case 'offline': {
         let title: string;
-        if (offlineItem.fillerConfig?.origin === 'midroll') {
+        if (lineupItem.fillerConfig?.origin === 'midroll') {
           title = 'Commercial Break';
         } else {
           title = isNonEmptyString(channel.guideFlexTitle)
@@ -1470,11 +1479,11 @@ export class TVGuideService {
             type: 'flex',
           },
         };
-      })
-      .with({ type: 'redirect' }, (redirect) => {
+      }
+      case 'redirect': {
         // XMLTV is also written outside a guide build, when channelsById is
         // empty, so resolve the target from the guide cache.
-        const backingChannel = this.cachedGuide[redirect.channel]?.channel;
+        const backingChannel = this.cachedGuide[lineupItem.channel]?.channel;
         if (!backingChannel) {
           return {
             ...baseItem,
@@ -1496,8 +1505,8 @@ export class TVGuideService {
             type: 'redirect',
           },
         };
-      })
-      .exhaustive();
+      }
+    }
   }
 
   private async makePlaceholderChannel(): Promise<ChannelPrograms> {

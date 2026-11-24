@@ -3,7 +3,6 @@ import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { LoggerFactory } from '@/util/logging/LoggerFactory.js';
 import { isNonEmptyString } from '@tunarr/shared/util';
 import type { ProgramLike, TerminalProgram } from '@tunarr/types';
-import { match, P } from 'ts-pattern';
 import { asyncPool, unfurlPool } from '../util/asyncPool.ts';
 
 export class PlexHierarchyTraversal {
@@ -31,50 +30,51 @@ export class PlexHierarchyTraversal {
     item: TerminalProgram,
     seenItems: Map<string, ProgramLike>,
   ): Promise<TerminalProgram> {
-    return match(item)
-      .with({ type: P.union('movie', 'music_video', 'other_video') }, (m) =>
-        Promise.resolve(m),
-      )
-      .with({ type: 'episode' }, async (ep) => {
-        const seasonId = ep.season?.externalId;
+    switch (item.type) {
+      case 'movie':
+      case 'music_video':
+      case 'other_video':
+        return item;
+      case 'episode': {
+        const seasonId = item.season?.externalId;
         if (isNonEmptyString(seasonId)) {
           const existing = seenItems.get(seasonId);
           if (existing?.type === 'season') {
-            ep.season = existing;
+            item.season = existing;
           } else {
             const seasonResult = await this.plex.getSeason(seasonId);
             seasonResult.either(
               (season) => {
                 seenItems.set(season.externalId, season);
-                ep.season = season;
+                item.season = season;
               },
               (err) => {
                 this.#logger.error(
                   err,
                   'Error querying Plex season %s for episode %s',
                   seasonId,
-                  ep.externalId,
+                  item.externalId,
                 );
               },
             );
           }
         }
 
-        const showId = ep.show?.externalId ?? ep.season?.show?.externalId;
+        const showId = item.show?.externalId ?? item.season?.show?.externalId;
         if (isNonEmptyString(showId)) {
           const existing = seenItems.get(showId);
           if (existing?.type === 'show') {
-            ep.show = existing;
-            if (ep.season) {
-              ep.season.show = existing;
+            item.show = existing;
+            if (item.season) {
+              item.season.show = existing;
             }
           } else {
             const showResult = await this.plex.getShow(showId);
             showResult.either(
               (show) => {
-                ep.show = show;
-                if (ep.season) {
-                  ep.season.show = show;
+                item.show = show;
+                if (item.season) {
+                  item.season.show = show;
                 }
                 seenItems.set(show.externalId, show);
               },
@@ -83,28 +83,28 @@ export class PlexHierarchyTraversal {
                   err,
                   'Error querying Plex show %s for episode %s',
                   showId,
-                  ep.externalId,
+                  item.externalId,
                 );
               },
             );
           }
         }
 
-        return ep;
-      })
-      .with({ type: 'track' }, async (track) => {
-        const albumId = track.album?.externalId;
+        return item;
+      }
+      case 'track': {
+        const albumId = item.album?.externalId;
         const artistId =
-          track.artist?.externalId ?? track.album?.artist?.externalId;
+          item.artist?.externalId ?? item.album?.artist?.externalId;
         if (isNonEmptyString(albumId)) {
           const existing = seenItems.get(albumId);
           if (existing?.type === 'album') {
-            track.album = existing;
+            item.album = existing;
           } else {
             const albumResult = await this.plex.getMusicAlbum(albumId);
             albumResult.either(
               (album) => {
-                track.album = album;
+                item.album = album;
                 seenItems.set(album.externalId, album);
               },
               (err) => {
@@ -112,7 +112,7 @@ export class PlexHierarchyTraversal {
                   err,
                   'Error querying Plex album %s for track %s',
                   albumId,
-                  track.externalId,
+                  item.externalId,
                 );
               },
             );
@@ -122,17 +122,17 @@ export class PlexHierarchyTraversal {
         if (isNonEmptyString(artistId)) {
           const existing = seenItems.get(artistId);
           if (existing?.type === 'artist') {
-            track.artist = existing;
-            if (track.album) {
-              track.album.artist = existing;
+            item.artist = existing;
+            if (item.album) {
+              item.album.artist = existing;
             }
           } else {
             const artistResult = await this.plex.getMusicArtist(artistId);
             artistResult.either(
               (artist) => {
-                track.artist = artist;
-                if (track.album) {
-                  track.album.artist = artist;
+                item.artist = artist;
+                if (item.album) {
+                  item.album.artist = artist;
                 }
                 seenItems.set(artist.externalId, artist);
               },
@@ -141,15 +141,15 @@ export class PlexHierarchyTraversal {
                   err,
                   'Error querying Plex artist %s for track %s',
                   artistId,
-                  track.externalId,
+                  item.externalId,
                 );
               },
             );
           }
         }
 
-        return track;
-      })
-      .exhaustive();
+        return item;
+      }
+    }
   }
 }
