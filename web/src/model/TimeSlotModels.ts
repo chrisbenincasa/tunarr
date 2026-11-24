@@ -76,4 +76,6 @@ export type TimeSlotForm = {
   period: 'day' | 'week';
   slots: TimeSlotViewModel[];
   type: 'time';
+  // Saved on the lineup, not the schedule. Stripped before any request.
+  rebuildEachCycle: boolean;
 };

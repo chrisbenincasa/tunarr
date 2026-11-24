@@ -22,6 +22,8 @@ See below for an example of our schedule now that we have Flex after our two epi
 
 ![Time Slots preview with flex](../../assets/scheduling-tools-time_slots_previewflex.png)
 
+To get a new shuffle every cycle and keep ordered shows moving forward, turn on [Rebuild each cycle](concepts.md#rebuild-each-cycle).
+
 ## Slot Requirements
 
 Tunarr checks these rules when you save or preview a schedule, and rejects a schedule that breaks one with HTTP 400.

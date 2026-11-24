@@ -2,6 +2,7 @@ import { describe, expect, test } from 'vitest';
 import type { ProgramOption } from './slotSchedulerUtil.ts';
 import {
   customShowAvailability,
+  initialRebuildEachCycle,
   isSelectableForNewSlot,
   nextSlotStartTime,
   OneDayMillis,
@@ -186,5 +187,31 @@ describe('offsets stay inside the schedule period', () => {
     expect(withSlotTimeOfDay(2 * OneDayMillis, 9, 0, 'week')).toBe(
       2 * OneDayMillis + 9 * HOUR,
     );
+  });
+});
+
+describe('initialRebuildEachCycle', () => {
+  test('a new slot schedule rebuilds', () => {
+    expect(initialRebuildEachCycle({}, false)).toBe(true);
+  });
+
+  test('an existing schedule keeps its setting', () => {
+    expect(
+      initialRebuildEachCycle({ schedule: {}, rebuildEachCycle: false }, false),
+    ).toBe(false);
+    expect(
+      initialRebuildEachCycle({ schedule: {}, rebuildEachCycle: true }, false),
+    ).toBe(true);
+  });
+
+  test('an existing schedule without the field stays off', () => {
+    expect(initialRebuildEachCycle({ schedule: {} }, false)).toBe(false);
+  });
+
+  test('an on-demand channel never rebuilds', () => {
+    expect(initialRebuildEachCycle({}, true)).toBe(false);
+    expect(
+      initialRebuildEachCycle({ schedule: {}, rebuildEachCycle: true }, true),
+    ).toBe(false);
   });
 });

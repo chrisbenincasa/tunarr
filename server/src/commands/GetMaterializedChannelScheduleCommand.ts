@@ -14,6 +14,7 @@ import type {
 import { inject, injectable } from 'inversify';
 import { uniq } from 'lodash-es';
 import { ormChannelToApiChannel } from '../db/converters/channelConverters.ts';
+import type { Lineup } from '../db/derived_types/Lineup.ts';
 import type { ProgramGroupingOrmWithRelations } from '../db/schema/derivedTypes.ts';
 import { ServerContext } from '../ServerContext.ts';
 
@@ -25,6 +26,11 @@ import { MaterializeProgramGroupings } from './MaterializeProgramGroupings.ts';
 
 type GetMaterializedChannelScheduleRequest = {
   channelId: string;
+};
+
+type MaterializedChannelSchedule = {
+  schedule: MaterializedSchedule;
+  rebuildEachCycle: boolean;
 };
 
 @injectable()
@@ -39,16 +45,24 @@ export class GetMaterializedChannelScheduleCommand {
 
   async execute(
     request: GetMaterializedChannelScheduleRequest,
-  ): Promise<Maybe<MaterializedSchedule>> {
+  ): Promise<Maybe<MaterializedChannelSchedule>> {
     const lineup = await this.serverContext.channelDB.loadLineup(
       request.channelId,
     );
-    const schedule = lineup.schedule;
 
-    if (!schedule) {
+    if (!lineup.schedule) {
       return;
     }
 
+    return {
+      schedule: await this.materialize(lineup.schedule),
+      rebuildEachCycle: lineup.rebuildEachCycle ?? false,
+    };
+  }
+
+  private async materialize(
+    schedule: NonNullable<Lineup['schedule']>,
+  ): Promise<MaterializedSchedule> {
     if (schedule.type === 'time') {
       const slotsByType = seq.groupBy(schedule.slots, (slot) => slot.type);
 

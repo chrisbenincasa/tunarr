@@ -1148,6 +1148,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         response: {
           200: z.object({
             schedule: MaterializedSchedule.optional(),
+            rebuildEachCycle: z.boolean().optional(),
           }),
         },
       },
@@ -1163,7 +1164,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.send();
       }
 
-      return res.serializer(JSON.stringify).send({ schedule: result });
+      return res.serializer(JSON.stringify).send(result);
     },
   );
 };

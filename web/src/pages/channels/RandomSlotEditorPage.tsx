@@ -52,9 +52,11 @@ import { getProgramGroupingKey } from '../../helpers/programUtil.ts';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { getApiErrorMessage } from '../../helpers/apiError.ts';
 import {
+  initialRebuildEachCycle,
   lineupItemAppearsInSchedule,
   unavailableCustomShowSlotIndexes,
 } from '../../helpers/slotSchedulerUtil';
+import { useScheduleEditNotice } from '../../hooks/slot_scheduler/useScheduleEditNotice.ts';
 import { useChannelSchedule } from '../../hooks/useChannelSchedule.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup';
 import type { RandomSlotForm } from '../../model/SlotModels.ts';
@@ -69,6 +71,7 @@ export default function RandomSlotEditorPage() {
 
   const { t } = useLingui();
   const snackbar = useSnackbar();
+  const notifyScheduleEdit = useScheduleEditNotice();
   const queryClient = useQueryClient();
   const updateLineupMutation = useUpdateLineup({
     onSuccess() {
@@ -97,8 +100,8 @@ export default function RandomSlotEditorPage() {
   const hasExistingTimeSlotSchedule = channelSchedule.schedule?.type === 'time';
 
   const randomSlotForm = useForm<RandomSlotForm>({
-    defaultValues:
-      channelSchedule.schedule?.type === 'random'
+    defaultValues: {
+      ...(channelSchedule.schedule?.type === 'random'
         ? {
             ...channelSchedule.schedule,
             slots: orderBy(
@@ -113,7 +116,12 @@ export default function RandomSlotEditorPage() {
                     channelSchedule.schedule.slots.map((slot) => slot.weight),
                   ) > 100,
           }
-        : defaultRandomSlotSchedule,
+        : defaultRandomSlotSchedule),
+      rebuildEachCycle: initialRebuildEachCycle(
+        channelSchedule,
+        channel?.onDemand.enabled ?? false,
+      ),
+    },
   });
 
   const { control, getValues, formState, reset } = randomSlotForm;
@@ -138,7 +146,7 @@ export default function RandomSlotEditorPage() {
   }, [reset]);
 
   const onSave = () => {
-    const value = getValues();
+    const { rebuildEachCycle, ...value } = getValues();
     const schedule: RandomSlotSchedule = {
       ...value,
       // Index is controlled by the field array functions
@@ -149,31 +157,39 @@ export default function RandomSlotEditorPage() {
 
     // Find programs that have active slots
     const filteredLineup = filter(newLineup, (item) =>
-      lineupItemAppearsInSchedule(getValues('slots'), item),
+      lineupItemAppearsInSchedule(value.slots, item),
     );
 
-    updateLineupMutation.mutate({
-      path: {
-        id: channel!.id,
+    updateLineupMutation.mutate(
+      {
+        path: {
+          id: channel!.id,
+        },
+        body: {
+          type: 'random',
+          schedule,
+          programs: seq.collect(filteredLineup, (l) => {
+            switch (l.type) {
+              case 'custom':
+              case 'content':
+                return l.id;
+              case 'redirect':
+              case 'flex':
+              case 'filler':
+                return null;
+            }
+          }),
+          seed: randomState?.seed,
+          discardCount: randomState?.discardCount,
+          rebuildEachCycle,
+        },
       },
-      body: {
-        type: 'random',
-        schedule,
-        programs: seq.collect(filteredLineup, (l) => {
-          switch (l.type) {
-            case 'custom':
-            case 'content':
-              return l.id;
-            case 'redirect':
-            case 'flex':
-            case 'filler':
-              return null;
-          }
-        }),
-        seed: randomState?.seed,
-        discardCount: randomState?.discardCount,
+      {
+        onSuccess(data) {
+          notifyScheduleEdit(data.scheduleEdit);
+        },
       },
-    });
+    );
   };
 
   const programFrequency = useMemo(() => {

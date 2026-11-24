@@ -319,7 +319,7 @@ export function EditChannelForm({
           onSubmit={formMethods.handleSubmit(onSubmit, onInvalid)}
         >
           <EditChannelTabPanel value="properties" currentValue={currentTab}>
-            <ChannelPropertiesEditor />
+            <ChannelPropertiesEditor isNew={isNew} />
           </EditChannelTabPanel>
           <EditChannelTabPanel value="flex" currentValue={currentTab}>
             <ChannelFlexConfig />

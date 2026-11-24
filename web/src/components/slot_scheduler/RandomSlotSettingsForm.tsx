@@ -25,6 +25,7 @@ import { useToggle } from '@uidotdev/usehooks';
 import { Controller, useFormContext } from 'react-hook-form';
 import { useScheduleSlots } from '../../hooks/slot_scheduler/useScheduleSlots.ts';
 import { RotatingLoopIcon } from '../base/LoadingIcon';
+import { RebuildEachCycleField } from './RebuildEachCycleField.tsx';
 import {
   CheckboxFormController,
   NumericFormControllerText,
@@ -84,6 +85,18 @@ export const RandomSlotSettingsForm = ({
         <Trans>Settings</Trans>
       </Typography>
       <Grid container columnSpacing={2} justifyContent={'flex-start'}>
+        <Grid size={{ sm: 12 }} sx={{ mt: 2 }}>
+          <Controller
+            control={control}
+            name="rebuildEachCycle"
+            render={({ field }) => (
+              <RebuildEachCycleField
+                value={field.value}
+                onChange={field.onChange}
+              />
+            )}
+          />
+        </Grid>
         <Grid size={{ sm: 12, md: 6 }}>
           <FormControl fullWidth margin="normal">
             <InputLabel>{t`Pad Times`}</InputLabel>

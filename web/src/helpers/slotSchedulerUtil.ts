@@ -380,6 +380,18 @@ export function unavailableCustomShowSlotIndexes(
   return indexes;
 }
 
+// A new slot schedule rebuilds each cycle. An existing one keeps its setting,
+// and an on-demand channel never rebuilds.
+export function initialRebuildEachCycle(
+  saved: { schedule?: unknown; rebuildEachCycle?: boolean },
+  onDemand: boolean,
+): boolean {
+  if (onDemand) {
+    return false;
+  }
+  return saved.schedule ? (saved.rebuildEachCycle ?? false) : true;
+}
+
 export const ProgramOptionTypes: DropdownOption<ProgramOptionType>[] = [
   {
     value: 'flex',
