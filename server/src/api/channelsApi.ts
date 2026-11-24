@@ -44,6 +44,7 @@ import {
   TerminalProgramSchema,
   TranscodeConfigSchema,
   TvGuideProgramSchema,
+  UpdateChannelProgrammingResponseSchema,
   UpdateChannelRequestSchema,
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
@@ -609,7 +610,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         tags: ['Channels'],
         body: UpdateChannelProgrammingRequestSchema,
         response: {
-          200: CondensedChannelProgrammingSchema,
+          200: UpdateChannelProgrammingResponseSchema,
           400: z.string(),
           404: z.void(),
           500: z.void(),

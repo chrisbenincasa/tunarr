@@ -4298,10 +4298,6 @@ export type GetApiChannelsByIdProgrammingResponses = {
             }>;
             enabled: boolean;
         };
-        scheduleEdit?: {
-            placesCarried: boolean;
-            reason?: 'no_schedule' | 'no_seed' | 'replay_mismatch' | 'not_started';
-        };
     };
 };
 
@@ -5396,8 +5392,10 @@ export type PostApiChannelsByIdProgrammingResponses = {
             enabled: boolean;
         };
         scheduleEdit?: {
-            placesCarried: boolean;
-            reason?: 'no_schedule' | 'no_seed' | 'replay_mismatch' | 'not_started';
+            placesCarried: true;
+        } | {
+            placesCarried: false;
+            reason: 'no_schedule' | 'no_seed' | 'replay_mismatch' | 'not_started';
         };
     };
 };

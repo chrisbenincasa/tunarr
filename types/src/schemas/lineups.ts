@@ -42,12 +42,18 @@ export const CondensedChannelProgramSchema = z.discriminatedUnion('type', [
 ]);
 
 // What a slot save on a rebuilding channel did with each slot's place.
-export const ScheduleEditOutcomeSchema = z.object({
-  placesCarried: z.boolean(),
-  reason: z
-    .enum(['no_schedule', 'no_seed', 'replay_mismatch', 'not_started'])
-    .optional(),
-});
+export const ScheduleEditOutcomeSchema = z.discriminatedUnion('placesCarried', [
+  z.object({ placesCarried: z.literal(true) }),
+  z.object({
+    placesCarried: z.literal(false),
+    reason: z.enum([
+      'no_schedule',
+      'no_seed',
+      'replay_mismatch',
+      'not_started',
+    ]),
+  }),
+]);
 
 export const CondensedChannelProgrammingSchema = z.object({
   icon: ChannelIconSchema.optional(),
@@ -59,6 +65,10 @@ export const CondensedChannelProgrammingSchema = z.object({
   startTimeOffsets: z.array(z.number()),
   schedule: LineupScheduleSchema.optional(),
   dynamicContentConfig: DynamicContentConfigSchema.optional(),
-  // Set only in the response to a slot save that rebuilds each cycle.
-  scheduleEdit: ScheduleEditOutcomeSchema.optional(),
 });
+
+export const UpdateChannelProgrammingResponseSchema =
+  CondensedChannelProgrammingSchema.extend({
+    // Set only when the save is a slot schedule that rebuilds each cycle.
+    scheduleEdit: ScheduleEditOutcomeSchema.optional(),
+  });
