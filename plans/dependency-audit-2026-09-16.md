@@ -1,5 +1,7 @@
 **Dependency audit — 16 September 2026**
 
+> **Status (11/22/2026):** Partial. TypeScript 7.0.2 (`2d607b148`), pnpm 12.15 (#2376), the Meilisearch client and engine (#2509), Zod 4.5 (#2083), and Node 22.23.4 (#2369) are done. The rest still sit at their audit versions, including Axios, Fastify, HLS.js, TanStack Query and Router, better-sqlite3, Kysely, Drizzle, Vite, React 18, and MUI 7.0.
+
 Tunarr can get meaningful reliability and maintenance improvements without upgrading everything at once. Prioritize HTTP/XML fixes, HLS.js, and the TanStack Query/Router families; handle database, compiler, and UI migrations as separate changes. The largest barriers are custom native packaging, the Kysely patch, generated client compatibility, and older UI APIs.
 
 This is a research and source-inspection audit of checkout `bed4ffb7`, not an upgrade or proof of compatibility. No dependencies were changed and no application tests were run. Existing test/config edits were preserved. Versions below are resolved versions, checked against `pnpm-lock.yaml`, with npm registry `latest` tags queried on the audit date. “Latest” is an inventory value, not an automatic recommendation. For 0.x packages, minor increments can break compatibility. All effort/risk judgments below are estimates from inspected integration points.

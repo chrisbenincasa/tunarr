@@ -1,6 +1,8 @@
 # Scheduling input safety (GitHub #2087)
 
-Implementation is proposed; no production fixes have been applied. The investigation compared v1.3.14 (`9c063763`) with main (`288d633a`).
+> **Status (11/22/2026):** Done. Steps 1–4 shipped in #2089 (`0fd0ca578`, 09/25/2026) and step 5 in #2090 (`c0ca3e039`). Issue #2087 closed 10/08/2026. The unverified restart report stays deferred.
+
+The investigation compared v1.3.14 (`9c063763`) with main (`288d633a`).
 
 - The issue is [#2087](https://github.com/chrisbenincasa/tunarr/issues/2087).
 - The [reply draft](issue-2087-reply-draft.md) is separate and has not been posted.

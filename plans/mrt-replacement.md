@@ -1,5 +1,7 @@
 # Replace material-react-table with TanStack Table and an in-house MUI wrapper
 
+> **Status (11/22/2026):** Partial. Phase 0 (#2350) and Phase 1 (#2411, 11/05/2026) merged. In Phase 2, `ChannelsPage` is ported (#2414, #2421) and `ChannelSubtitlePreferencesTable` no longer exists. Next is `MediaSourceLibraryTable`, then Phase 3 (`useRowReorder` and the slot tables) and the Phase 4 removal of MRT from `web/package.json`.
+
 ## Why
 
 - `material-react-table` (MRT) 3.2.1 is the last release. It was published 03/01/2025 and nothing newer is in progress on npm.
@@ -13,13 +15,13 @@
   - The v9 spike hit none of the fallback triggers. No casts, no internals, no `useLegacyTable`.
   - The parity spec passed on MRT for 8 pages, and on the wrapper for `/library/fillers`. Settings saved by the MRT build load unchanged.
   - The ban is in `web/.oxlintrc.json`. It started with 15 legacy table files.
-- **Phase 1 in review (11/01/2026).** Branch `feat/mrt-phase-1`, PR #2411. One commit per table. It runs alongside `plans/web-redesign.md` Phase 3 and does not touch `ChannelsPage`.
+- **Phase 1 shipped (11/05/2026).** PR #2411. One commit per table. It runs alongside `plans/web-redesign.md` Phase 3 and does not touch `ChannelsPage`.
   - All six tables use `DataTable`. Each left the oxlint legacy list in its port commit, so 9 table files remain on it.
   - The parity spec passes with `ported: true` on 7 pages. The full e2e sweep passes.
   - A new spec test loads MRT-saved settings that hide TranscodeConfigs' `Resolution` column. It fails if that column's id changes.
   - The "Cannot update a component while rendering" warning no longer fires on `/settings/ffmpeg`, `/settings/sources`, `/library/custom-shows` or `/library/smart_collections`. Those routes left its `knownIssues.ts` entry, which now lists only pages that still use MRT.
-- `ChannelsPage` is the pilot for `plans/web-redesign.md` Phase 3 and this plan's Phase 2. Coordinate with that work before starting Phase 2.
-- Next: Phase 2.
+- **Phase 2 under way.** `ChannelsPage` shipped as the `plans/web-redesign.md` Phase 3 pilot (#2414, #2421). `ChannelSubtitlePreferencesTable` no longer exists.
+- Next: `MediaSourceLibraryTable`.
 
 ### Phase 1 notes
 

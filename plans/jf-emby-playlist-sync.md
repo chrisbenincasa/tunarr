@@ -1,5 +1,7 @@
 # Jellyfin & Emby playlist sync for custom shows
 
+> **Status (11/22/2026):** Not started. Custom show sync still accepts only Plex (`CustomShowSyncMediaSourceTypeSchema` in `types/src/schemas/customShowsSchema.ts`). Issue #1879 is open.
+
 ## Context
 
 Custom shows can currently sync from Plex playlists only (commit `c07da89b6` and fixes #1888, #1895, `629ba248f`). Users on Jellyfin and Emby want the same thing: link a custom show to a server playlist, keep it in sync on the library rescan schedule, and preserve playlist order.

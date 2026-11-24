@@ -1,6 +1,6 @@
 # ErsatzTV next — upstream blockers track
 
-> **Status (10/13/2026):** The ship condition in §6 is met. Upstream built B2's retry and fallback duration (#322), B6 (#320) and B8 (#321) itself and released them in `v0.2.1`. Tunarr pins `v0.2.2` (`31658e23b`) and uses all three (`c87cdaecf`, `f157db68d`, `615a11b9e`). The B2 failure budget is filed as [ErsatzTV/next#332](https://github.com/ErsatzTV/next/issues/332). It does not gate shipping. Next step is the §5 follow-ups that remain.
+> **Status (11/22/2026):** Mostly done. The §6 ship condition is met, and ETV next shipped in #2121. Tunarr pins `v0.2.7` and uses B3, B6, B8, B2's retry, and C9's `describe`. The §5 follow-ups are left. They are the resolver deadline, the B2 failure budget (blocked on ErsatzTV/next#332), the B5 test, lifting B7 copy mode, the `frame_rate` mapping, and a review of PID-file orphan reaping. A2 is upstream work. The §4 tracker row for C9 is stale.
 
 Offshoot of [`ersatztv-next-integration-2026-09-19.md`](ersatztv-next-integration-2026-09-19.md), called "the main plan" below. The main plan owns the Tunarr side. This plan owns everything that has to change in [ErsatzTV/next](https://github.com/ErsatzTV/next) before Tunarr can ship the backend.
 
@@ -100,17 +100,17 @@ Make the case without Tunarr. A backend that cannot tell "this item failed" from
 - 🟡 Not done upstream. Fully designed and grilled here, so it is ready to file.
 - 🔴 Not done upstream, and not yet grilled here. A plan file may exist, but it has not been stress-tested.
 
-| ID  | Change                                | Form      | Upstream         | Status       | Plan                                                           | Tunarr stopgap today                                                                                  |
-| --- | ------------------------------------- | --------- | ---------------- | ------------ | -------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| B7  | DTS/TrueHD → AC-3 under copy          | —         | #280, #281       | 🟢 done      | —                                                              | Copy audio refused. The mapper never emits `mode: "copy"`                                             |
-| G5  | VAAPI device and driver defaults      | Issue     | #246             | 🟢 done      | —                                                              | None. Workaround deleted at pin `091e174`                                                             |
-| B3  | Tagged releases                       | Ask       | #309, #310, #312 | 🟢 done      | [plan](ersatztv-next-b3-tagged-releases-2026-09-30.md)         | `v0.2.2` pinned by tag and SHA-256 (`31658e23b`). Bundled worker off the pin is refused (`8b19291e5`) |
-| B2  | Retry and fallback duration           | —         | #322             | 🟢 done      | [plan](ersatztv-next-b2-callback-failure-budget-2026-09-30.md) | None. Retry fields emitted in `c87cdaecf`                                                             |
-| B2  | Failure budget                        | Issue, PR | #332             | 🟡 filed     | [plan](ersatztv-next-b2-callback-failure-budget-2026-09-30.md) | Resolver-silence watchdog, `EtvNextSession.ts:55` (5-minute grace)                                    |
-| B6  | Scaling-algorithm field               | —         | #320             | 🟢 done      | [plan](ersatztv-next-b6-scaling-algorithm-2026-09-30.md)       | None. Flags emitted in `f157db68d`                                                                    |
-| B8  | Silent audio for video-only sources   | —         | #321             | 🟢 done      | [plan](ersatztv-next-b8-silent-audio-2026-09-30.md)            | None. Forced `anullsrc` removed in `615a11b9e`                                                        |
-| B5  | In/out points on every source variant | PR        | —                | 🔴 re-scoped | [plan](ersatztv-next-b5-in-out-points-2026-09-30.md)           | Mapper attaches in/out points only to `local` and `http` sources (`EtvNextPlayoutItemMapper.ts:229`)  |
-| C9  | `--describe` capability handshake     | Issue     | —                | 🔴 planned   | [plan](ersatztv-next-c9-describe-handshake-2026-09-30.md)      | Hardcoded validation rules in the mapper                                                              |
+| ID  | Change                                | Form      | Upstream         | Status       | Plan                                                              | Tunarr stopgap today                                                                                  |
+| --- | ------------------------------------- | --------- | ---------------- | ------------ | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| B7  | DTS/TrueHD → AC-3 under copy          | —         | #280, #281       | 🟢 done      | —                                                                 | Copy audio refused. The mapper never emits `mode: "copy"`                                             |
+| G5  | VAAPI device and driver defaults      | Issue     | #246             | 🟢 done      | —                                                                 | None. Workaround deleted at pin `091e174`                                                             |
+| B3  | Tagged releases                       | Ask       | #309, #310, #312 | 🟢 done      | [plan](ersatztv-next-b3-tagged-releases-2026-09-30.md)            | `v0.2.2` pinned by tag and SHA-256 (`31658e23b`). Bundled worker off the pin is refused (`8b19291e5`) |
+| B2  | Retry and fallback duration           | —         | #322             | 🟢 done      | [plan](ersatztv-next-b2-callback-failure-budget-2026-09-30.md)    | None. Retry fields emitted in `c87cdaecf`                                                             |
+| B2  | Failure budget                        | Issue, PR | #332             | 🟡 filed     | [plan](ersatztv-next-b2-callback-failure-budget-2026-09-30.md)    | Resolver-silence watchdog, `EtvNextSession.ts:55` (5-minute grace)                                    |
+| B6  | Scaling-algorithm field               | —         | #320             | 🟢 done      | [plan](complete/ersatztv-next-b6-scaling-algorithm-2026-09-30.md) | None. Flags emitted in `f157db68d`                                                                    |
+| B8  | Silent audio for video-only sources   | —         | #321             | 🟢 done      | [plan](complete/ersatztv-next-b8-silent-audio-2026-09-30.md)      | None. Forced `anullsrc` removed in `615a11b9e`                                                        |
+| B5  | In/out points on every source variant | PR        | —                | 🔴 re-scoped | [plan](ersatztv-next-b5-in-out-points-2026-09-30.md)              | Mapper attaches in/out points only to `local` and `http` sources (`EtvNextPlayoutItemMapper.ts:229`)  |
+| C9  | `--describe` capability handshake     | Issue     | —                | 🔴 planned   | [plan](ersatztv-next-c9-describe-handshake-2026-09-30.md)         | Hardcoded validation rules in the mapper                                                              |
 
 ---
 

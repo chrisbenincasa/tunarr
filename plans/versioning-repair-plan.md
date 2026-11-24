@@ -4,9 +4,7 @@ Decision recorded 2026-08-24, revised same day after Phases 1 and 3 were built.
 Written from `main`. Every claim below was verified by reading the repo; file:line
 references are given so each can be re-checked.
 
-**Status:** Phase 3 done (`faee0050`, branch `feat/pre-migration-snapshot`).
-Phase 1 built in PR #2051 (branch `ci/calver-release-flow`), including release comments
-and removal of the old release tooling. Phases 2 and 4 not started.
+> **Status (11/22/2026):** Mostly done. Phase 1 merged in #2051 (plus #2106 and #2107) and Phase 3 in #2053 (`1936114bf`). Phase 2 is not started, because `GenerateOpenApiCommand.ts` still uses `getTunarrVersion()` and `release.yml` generates no per-version specs. Phase 4 is partial. Snapshot rollback is documented in `docs/configure/system/backup.md`, but the compatibility contract is not written.
 
 ## Decision
 

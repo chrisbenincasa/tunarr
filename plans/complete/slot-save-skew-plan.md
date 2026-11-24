@@ -1,3 +1,5 @@
+> **Status (11/22/2026):** Done. All four items are on main. Item 2 shipped with #2089, item 3 with #1994 (worker pool by default), and item 4 with #2231 and #2531. The corrections block below predates items 2–4. Issue #1991 stays open for its drift half, covered by `plans/obsolete/time-slot-drift-investigation.md`.
+
 > **CORRECTIONS — read before acting on anything below.** Written 2026-08-22,
 > after items were implemented and further code was read.
 >
@@ -25,7 +27,7 @@ channel on lineup update`. It needed more than the one-liner sketched below:
 > - **Dropping `async` from `scheduleTimeSlots` does not reduce blocking.** It
 >   removes a promise wrapper; the body still runs to completion in one tick.
 >   Only a worker thread or in-loop yields change that.
-> - The drift half was split out to `time-slot-drift-investigation.md`.
+> - The drift half was split out to `../obsolete/time-slot-drift-investigation.md`.
 
 ---
 

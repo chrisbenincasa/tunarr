@@ -174,6 +174,6 @@ One transaction per adoption:
 
 - #1962: bug report (Plex rating key rotation)
 - #1121: auto-match changed media
-- #1973 / `plans/library-reconciliation-cascade-fix-plan.md`: trash and cascade deletion
+- #1973 / `plans/complete/library-reconciliation-cascade-fix-plan.md`: trash and cascade deletion
 - #2208 / `plans/local-scan-item-fingerprint.md`: local per-item fingerprint
 - #2485: dead `plexStream` settings (split from #1962)
