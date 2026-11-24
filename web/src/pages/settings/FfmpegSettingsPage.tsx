@@ -285,7 +285,7 @@ export default function FfmpegSettingsPage() {
               TextFieldProps={{
                 label: t`FFMPEG Log Files to Keep`,
                 fullWidth: true,
-                helperText: t`Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour, whatever the log method. Error logs are written in every mode. Files still being written are never deleted.`,
+                helperText: t`Tunarr deletes the oldest ffmpeg report and error log files beyond this count every hour, whatever the log method. Error logs are written in every mode. Files written in the last 10 minutes, and reports of ffmpeg processes this Tunarr process started, are never deleted.`,
               }}
             />
           </Box>
