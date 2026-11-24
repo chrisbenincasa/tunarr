@@ -1,6 +1,6 @@
 # Entry Points
 
-*Last Updated: 2026-11-16*
+*Last Updated: 2026-11-24*
 
 ## Process start
 
@@ -40,6 +40,8 @@ force scan). They are called from services and APIs, not from the CLI.
 - Notable tasks: `ScanLibrariesTask`, `UpdateXmlTvTask`, `RefreshMediaSourceLibraryTask`,
   `ReconcileProgramDurationsTask`, `SubtitleExtractorTask`, `OnDemandChannelStateTask`.
 - `services/startup/ScheduleJobsStartupTask.ts` schedules the recurring tasks at boot.
+  `PruneFfmpegLogsTask` runs there hourly and keeps the newest `fileLogRetentionCount` ffmpeg
+  report and error log files in the logs directory.
 - `services/libraryScanSchedule.ts` schedules `ScanLibrariesTask`, `SyncCollectionsTask`, and
   `SyncCustomShowsTask` on one cron from the global `scanSchedule` setting (off, interval, days, or
   cron). It runs at boot and again on `PUT /api/settings/media-source`, so changes apply without a restart.

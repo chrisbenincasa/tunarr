@@ -9483,6 +9483,7 @@ export type GetApiFfmpegSettingsResponses = {
         ffprobeExecutablePath: string;
         enableLogging: boolean;
         enableFileLogging: boolean;
+        fileLogRetentionCount: number;
         logLevel: 'panic' | 'fatal' | 'error' | 'warning' | 'info' | 'verbose' | 'debug' | 'trace';
         languagePreferences: {
             preferences: Array<{
@@ -9529,6 +9530,7 @@ export type PostApiFfmpegSettingsResponses = {
         ffprobeExecutablePath: string;
         enableLogging: boolean;
         enableFileLogging: boolean;
+        fileLogRetentionCount: number;
         logLevel: 'panic' | 'fatal' | 'error' | 'warning' | 'info' | 'verbose' | 'debug' | 'trace';
         languagePreferences: {
             preferences: Array<{
@@ -9554,6 +9556,7 @@ export type PutApiFfmpegSettingsData = {
         ffprobeExecutablePath?: string;
         enableLogging?: boolean;
         enableFileLogging?: boolean;
+        fileLogRetentionCount?: number;
         logLevel?: 'panic' | 'fatal' | 'error' | 'warning' | 'info' | 'verbose' | 'debug' | 'trace';
         languagePreferences?: {
             preferences: Array<{
@@ -9596,6 +9599,7 @@ export type PutApiFfmpegSettingsResponses = {
         ffprobeExecutablePath: string;
         enableLogging: boolean;
         enableFileLogging: boolean;
+        fileLogRetentionCount: number;
         logLevel: 'panic' | 'fatal' | 'error' | 'warning' | 'info' | 'verbose' | 'debug' | 'trace';
         languagePreferences: {
             preferences: Array<{

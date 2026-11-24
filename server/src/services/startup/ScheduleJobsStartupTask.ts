@@ -4,6 +4,7 @@ import { container } from '../../container.ts';
 import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { CleanupSessionsTask } from '../../tasks/CleanupSessionsTask.ts';
 import { OnDemandChannelStateTask } from '../../tasks/OnDemandChannelStateTask.ts';
+import { PruneFfmpegLogsTask } from '../../tasks/PruneFfmpegLogsTask.ts';
 import { RefreshMediaSourceLibraryTask } from '../../tasks/RefreshMediaSourceLibraryTask.ts';
 import { ScheduledTask } from '../../tasks/ScheduledTask.ts';
 import { SubtitleExtractorTask } from '../../tasks/SubtitleExtractorTask.ts';
@@ -99,6 +100,17 @@ export class ScheduleJobsStartupTask extends SimpleStartupTask {
 
     scheduleLibraryScanJobs(
       this.settingsDB.globalMediaSourceSettings().scanSchedule,
+    );
+
+    GlobalScheduler.scheduleTask(
+      PruneFfmpegLogsTask.ID,
+      new ScheduledTask(
+        PruneFfmpegLogsTask,
+        hoursCrontab(1),
+        () => container.get<PruneFfmpegLogsTask>(PruneFfmpegLogsTask),
+        undefined,
+        { runAtStartup: true },
+      ),
     );
 
     scheduleBackupJobs(this.settingsDB.backup);
