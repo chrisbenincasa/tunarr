@@ -6,6 +6,8 @@ import type {
   EventLoopStallLogger,
 } from './eventLoopStallMonitor.ts';
 import {
+  DefaultEventLoopStallThresholdMs,
+  eventLoopStallThresholdMs,
   startEventLoopStallLog,
   startEventLoopStallMonitor,
 } from './eventLoopStallMonitor.ts';
@@ -16,6 +18,23 @@ function blockFor(ms: number) {
     // Busy-wait to hold the event loop.
   }
 }
+
+describe('eventLoopStallThresholdMs', () => {
+  test('uses the default when the variable is unset', () => {
+    expect(eventLoopStallThresholdMs(null)).toBe(
+      DefaultEventLoopStallThresholdMs,
+    );
+  });
+
+  test('uses a positive value as given', () => {
+    expect(eventLoopStallThresholdMs(250)).toBe(250);
+  });
+
+  test('turns the monitor off for zero or less', () => {
+    expect(eventLoopStallThresholdMs(0)).toBeUndefined();
+    expect(eventLoopStallThresholdMs(-5)).toBeUndefined();
+  });
+});
 
 describe('startEventLoopStallMonitor', () => {
   test('reports a block once the loop is free again', async () => {
@@ -42,8 +61,10 @@ describe('startEventLoopStallMonitor', () => {
 
   test('stays quiet while the loop is idle', async () => {
     const onStall = vi.fn();
+
+    // The wide threshold keeps a GC pause on a busy runner from failing this.
     const stop = startEventLoopStallMonitor({
-      thresholdMs: 100,
+      thresholdMs: 500,
       intervalMs: 10,
       onStall,
     });

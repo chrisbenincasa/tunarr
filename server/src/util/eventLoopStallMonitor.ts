@@ -1,4 +1,5 @@
 import { performance } from 'node:perf_hooks';
+import type { Maybe, Nullable } from '../types/util.ts';
 import { workBetween } from './activeWork.ts';
 
 export type EventLoopStall = {
@@ -25,6 +26,23 @@ export type EventLoopStallLogger = {
 };
 
 const DefaultIntervalMs = 100;
+
+export const DefaultEventLoopStallThresholdMs = 1_000;
+
+/**
+ * Turns the `TUNARR_EVENT_LOOP_STALL_THRESHOLD_MS` value into a threshold.
+ * An unset or unparseable value uses the default. Zero or less turns the
+ * monitor off and returns `undefined`.
+ */
+export function eventLoopStallThresholdMs(
+  envValue: Nullable<number>,
+): Maybe<number> {
+  const thresholdMs = envValue ?? DefaultEventLoopStallThresholdMs;
+  if (thresholdMs <= 0) {
+    return;
+  }
+  return thresholdMs;
+}
 
 /**
  * Reports each time synchronous work blocks the event loop for at least
