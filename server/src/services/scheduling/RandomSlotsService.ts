@@ -27,6 +27,8 @@ import type { Nilable } from '../../types/util.ts';
 import { isNonEmptyArray, zipWithIndex } from '../../util/index.ts';
 import { type IterationState } from './ProgramIterator.ts';
 import { RandomSlotImpl } from './RandomSlotImpl.ts';
+import type { SlotCheckpoint } from './slotCheckpoints.ts';
+import { SlotCheckpointRecorder } from './slotCheckpoints.ts';
 import type {
   SlotCycleOptions,
   SlotIteratorState,
@@ -61,6 +63,7 @@ dayjs.extend(dayjsMod);
 
 export type RandomSlotCycleResult = SlotScheduleResult & {
   iteratorState: SlotIteratorState;
+  checkpoints?: SlotCheckpoint[];
 };
 
 class ScheduleContext {
@@ -83,6 +86,7 @@ class ScheduleContext {
     seed: number[] = createEntropy(),
     discardCount: number = 0,
     iteratorState?: SlotIteratorState,
+    stableShuffle?: boolean,
   ) {
     this.#seed = seed;
     this.#engine = MersenneTwister19937.seedWithArray(this.#seed).discard(
@@ -105,6 +109,7 @@ class ScheduleContext {
       programMap,
       this.#random,
       iteratorState,
+      { stable: stableShuffle },
     );
     this.#snapshotIterators = snapshotIterators;
     this.#startTime = this.#timeCursor = startTime;
@@ -217,17 +222,25 @@ class ScheduleContext {
     return this.#unschedulablePrograms;
   }
 
+  get discardCount(): number {
+    return this.#engine.getUseCount();
+  }
+
+  get iteratorState(): SlotIteratorState {
+    return {
+      ...this.#snapshotIterators(),
+      nextSlotIndex: this.#currentSlotIndex,
+      slotLastPlayedMs: Object.fromEntries(this.#slotLastPlayed),
+    };
+  }
+
   get result(): RandomSlotCycleResult {
     return {
       lineup: this.lineup,
       seed: this.#seed,
       startTime: +this.#startTime,
-      discardCount: this.#engine.getUseCount(),
-      iteratorState: {
-        ...this.#snapshotIterators(),
-        nextSlotIndex: this.#currentSlotIndex,
-        slotLastPlayedMs: Object.fromEntries(this.#slotLastPlayed),
-      },
+      discardCount: this.discardCount,
+      iteratorState: this.iteratorState,
     };
   }
 }
@@ -261,6 +274,7 @@ export class RandomSlotScheduler {
       seed,
       discardCount,
       cycle.iteratorState,
+      cycle.stableShuffle,
     );
 
     const { maxDays, padMs, padStyle, flexPreference, randomDistribution } =
@@ -283,11 +297,24 @@ export class RandomSlotScheduler {
     const reportedEmptySlotIndexes = new Set<number>();
     let emptySlotCursorMs = +context.timeCursor;
 
+    // The first pass at each time starts from state the scheduler can be
+    // restarted with. Later passes at the same time also carry the slots that
+    // just came up empty, which a restart would not know about.
+    const checkpoints = cycle.checkpoints
+      ? new SlotCheckpointRecorder(cycle.iteratorState)
+      : undefined;
+
     while (context.timeCursor.isBefore(upperLimit)) {
       if (+context.timeCursor !== emptySlotCursorMs) {
         emptySlotIndexes.clear();
         emptySlotCursorMs = +context.timeCursor;
       }
+
+      checkpoints?.record(
+        +context.timeCursor - +t0,
+        context.discardCount,
+        context.iteratorState,
+      );
 
       // Pad to the local wall clock.
       const m = +context.timeCursor.mod(padMs, true);
@@ -485,7 +512,10 @@ export class RandomSlotScheduler {
       }
     }
 
-    return context.result;
+    const result = context.result;
+    return checkpoints
+      ? { ...result, checkpoints: checkpoints.checkpoints }
+      : result;
   }
 
   private validateSchedule() {

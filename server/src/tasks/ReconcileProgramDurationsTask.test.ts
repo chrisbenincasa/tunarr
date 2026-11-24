@@ -77,6 +77,7 @@ function setup({
     runWithChannelLock: vi.fn((_id: string, cb: () => Promise<unknown>) =>
       cb(),
     ),
+    runWithoutChannelLock: vi.fn((cb: () => unknown) => cb()),
   } as unknown as OnDemandChannelService;
 
   const regenerateLineup = {

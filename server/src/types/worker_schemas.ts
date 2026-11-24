@@ -5,6 +5,7 @@ import {
   ProgramsSlotScheduleRequest,
 } from '../services/scheduling/RandomSlotSchedulerService.ts';
 import { SlotIteratorStateSchema } from '../services/scheduling/slotIteratorState.ts';
+import { SlotCheckpointSchema } from '../services/scheduling/slotCheckpoints.ts';
 import {
   ChannelTimeSlotScheduleRequest,
   ProgramsTimeSlotScheduleRequest,
@@ -84,6 +85,7 @@ export const WorkerTimeSlotScheduleReply = z.object({
   result: z.object({
     ...TimeSlotScheduleResult.shape,
     iteratorState: SlotIteratorStateSchema,
+    checkpoints: SlotCheckpointSchema.array().optional(),
   }),
 });
 
@@ -96,6 +98,7 @@ const WorkerSlotScheduleReply = z.object({
   result: z.object({
     ...SlotScheduleResult.shape,
     iteratorState: SlotIteratorStateSchema,
+    checkpoints: SlotCheckpointSchema.array().optional(),
   }),
 });
 

@@ -1,6 +1,9 @@
 # Reshuffle Schedules on Loop
 
-> **Status (11/22/2026):** Partial. Prerequisites #2301 and #2308 (fixes #2306) and the scheduler plumbing (#2311, `slotIteratorState.ts`) merged. The boundary service, the `rebuildEachCycle` toggle, and the web UI are in open PR #2312. Phase 2 (manual lineups) is deferred.
+> **Status (11/24/2026):** Prerequisites #2301, #2308 and #2311 merged. Slice 3 (boundary service,
+> `rebuildEachCycle`, chunked cycles, cut-over after the program on air) is in PR #2312, in re-review.
+> Carrying show places when the toggle turns on is PR #2564, stacked on #2312. Slice 4 (web toggle and
+> user docs) is on `feat/slot-cycle-web-toggle`, stacked on #2564. Phase 2 (manual lineups) is deferred.
 
 Stopgap for dynamic schedules (Tunarr v2). A slot channel's lineup holds one cycle of content at a
 time. Before a cycle ends, the server builds the next one from the same schedule, continuing the RNG
@@ -51,10 +54,10 @@ stream and each iterator's state. Users get a fresh shuffle every cycle without 
 
 ### Length
 
-| Schedule     | Cycle                                                            |
-| ------------ | ---------------------------------------------------------------- |
-| Time slots   | One `schedule.period` (day, week or month). `maxDays` is ignored |
-| Random slots | `maxDays`                                                        |
+- A cycle is a chunk of `xmlTvSettings().programmingHours`, capped at 24 h (`chunkLengthMs`).
+- `maxDays` and `schedule.period` don't set the length. The cap is never longer than a period or a
+  random schedule's minimum `maxDays`, so a chunk needs no second limit.
+- Built chunks keep their recorded lengths when `programmingHours` changes.
 
 - A cycle ends where its last program ends, so lengths vary and are not whole minutes.
 - The program crossing the end time airs in that cycle. A random fixed-duration slot airs its whole
@@ -63,7 +66,13 @@ stream and each iterator's state. Users get a fresh shuffle every cycle without 
   fills its whole window. When the last slot's window wraps past the period boundary (slots at
   06:00 and 18:00, say), the cycle ends at 06:00, and the next cycle starts there.
 - Each cycle starts exactly where the previous one ended.
-- Each time-slot cycle is generated from its own `t0`, so DST is handled per cycle.
+- Each time-slot cycle is generated from its own `t0`, but measures DST from the start of the
+  period it falls in. Slot offsets count from the period start, so a mid-period chunk would
+  otherwise shift slots by an hour on a clock-change day.
+- Cycle start and end times are computed in the server's local timezone, not the schedule's
+  `timeZoneOffset`. Nothing else on the server reads that field; the scheduler itself derives
+  period boundaries from `dayjs(startTime)` in local time, so any other zone would desync a cycle
+  boundary from the slots laid against it.
 
 ### Build ahead
 
@@ -88,13 +97,14 @@ Each cycle stores a snapshot of the state it started from:
 - `discardCount`, the RNG skip count into the channel's `scheduleSeed`.
 - Ordered iterators, including `ordered_shuffle`: `lastProgramId`. A rotation keeps the sorted
   list's cyclic order, so `ordered_shuffle` needs no stored offset.
-- Shuffle iterators: the IDs played in the current pass.
+- Shuffle iterators: the IDs played in the current pass, plus the iterator's own seed and pass
+  number (stable shuffle, below).
 - Random slots: the next slot for sequential distribution, and each slot's last-played time for
   cooldowns.
 - All-rerun groups: how many of the group's slots have aired the current program, so a pair split
   across cycles finishes instead of airing the program again.
-- Mixed-group replay buffers restart each cycle. Only the iterator they wrap carries over, so a
-  rerun slot that opens a cycle flexes until a continue slot has played.
+- Mixed link groups: the programs the continue slots played that the rerun slots haven't replayed
+  yet, plus each rerun slot's place (`periodPlays`). Time slots clear it when a period starts.
 - Iterators are keyed by slot position or link group, not slot ID, because duplicate slot IDs are
   replaced with random ones on every build. Filler iterators are not carried over.
 - `playedIds` grows to every program played in the current pass. A large library means thousands
@@ -105,10 +115,38 @@ Each cycle stores a snapshot of the state it started from:
 
 One seed per channel, with skip counts, keeps every cycle reproducible from the channel's seed.
 
-### Rebuilds cascade
+Each cycle also stores checkpoints, one per point the scheduler can restart from. That's every slot
+start for time slots and every cursor advance for random slots. A checkpoint stores only what
+changed since the one before it, so the state at any checkpoint is the cycle's start snapshot with
+the changes replayed (`slotCheckpoints.ts`).
 
-- `RegenerateChannelLineupCommand` replays the airing cycle from its snapshot, then rebuilds every
-  built-ahead cycle from the new end state. One write.
+Rebuilding channels use a stable shuffle (`stableShuffle`, set only by `BuildSlotCycleCommand`):
+
+- Each shuffle iterator draws its own seed once and stores it with a pass number.
+- A pass orders programs by a hash of seed, pass and program ID. The rest of a pass is every
+  unplayed program in that order, so a restore continues the exact order.
+- Each program's rank depends only on its own ID. Adding or removing programs leaves the rest in
+  order. A program added behind the pass's cursor plays at the end of the pass.
+- The seed carries through saves with the slot's place, so a save doesn't reshuffle.
+- Classic slot channels keep the shared-RNG shuffle, so their output is unchanged.
+
+A snapshot leaves out filler weights and cooldowns. So a rebuild from a checkpoint airs the same
+programs but can pick different filler after its first build.
+
+### Changes cut over after the program on air
+
+- A change applies from the first restart point at or after the end of the program on air. Restart
+  points are cycle starts, checkpoints, and the end of the built content.
+- Everything before that point stays, including `startTime`. The cut cycle is truncated there. A
+  flex item can cross the cut and is split; a program never does.
+- Regeneration (rescans, guide settings, purges) rebuilds from that point with the state recorded
+  there.
+- A slot save rebuilds from that point on the edited schedule. Each slot keeps its place when the
+  edit left its content, order, direction and season filters alone (`slotIteratorRemap.ts`).
+  Moving, retiming or linking a slot keeps it. The new seed starts the RNG over.
+- If every built cycle has already aired, both catch up instead, as the task does after downtime.
+  A save carries the places into the catch-up.
+- Empty trash and media source deletes rebuild every rebuilding channel that lost a program.
 - Slot lineups with a seed are already regenerated, not patched, by `ReconcileProgramDurationsTask`,
   so the reconciler's patch rules never touch these lineups.
 
@@ -116,7 +154,8 @@ One seed per channel, with skip counts, keeps every cycle reproducible from the 
 
 - While the server is down past a boundary, the old cycles wrap and replay until the task runs.
 - The task runs once at startup. It starts a new cycle from the last aired cycle's end snapshot.
-- Time slots: the new cycle starts at the start of the current period.
+- Time slots: the new cycle starts at the start of the current day. A week-long period would
+  otherwise need up to seven chunks to reach `now`.
 - Random slots: the new cycle starts at `now`, rounded to the minute.
 - Missed cycles are not simulated, so no unaired episodes are skipped.
 
@@ -125,7 +164,10 @@ One seed per channel, with skip counts, keeps every cycle reproducible from the 
 ### Data (lineup JSON, all optional)
 
 - `rebuildEachCycle: boolean`. Missing reads as off.
-- `cycles: Array<{ itemCount, durationMs, snapshot }>`, in lineup order.
+- `cycles: Array<{ itemCount, durationMs, snapshot, checkpoints? }>`, in lineup order.
+- `nextCycleSnapshot`, the end snapshot of the last built cycle. Cycles store their own _start_
+  snapshot, so the end snapshot of the last one needs its own field or the last cycle would need
+  a non-deterministic rebuild to recover it.
 
 New optional fields need no `ChannelLineupMigrator` step.
 
@@ -136,22 +178,27 @@ New optional fields need no `ChannelLineupMigrator` step.
 - Ordered iterators resume just after `lastProgramId` in sort order. A missing program means
   starting at 0.
 - `ordered_shuffle` resumes after `lastProgramId` in sorted order, skipping its random rotation.
-- Shuffle iterators shuffle only unplayed programs. When those run out, a new pass starts. New
-  library programs join the unplayed pool, and deleted ones drop out.
+- Shuffle iterators play only unplayed programs. When those run out, a new pass starts. New
+  library programs join the unplayed pool, and deleted ones drop out. Stable shuffles keep the
+  pass's order; classic ones reshuffle the remainder.
 
 ### Regeneration
 
 - `RegenerateChannelLineupCommand`, or a sibling command, builds one cycle from a start time and a
   snapshot, and returns items plus the end snapshot without saving.
-- The boundary service owns build-ahead, trim, cascade and catch-up writes.
+- The boundary service owns build-ahead, trim, cut-over and catch-up writes.
 
 ### Opt-in
 
 - Toggle label: "Rebuild each cycle".
-- On by default for new slot schedules. Existing slot channels stay off until the owner turns it on.
+- The server does not default `rebuildEachCycle` on when a save request omits it, because slice 4's
+  web toggle hasn't landed yet and a server-side default would silently enable rebuilding with no
+  UI to see or turn it off. The web form defaults the toggle on for new slot schedules once it ships;
+  existing slot channels stay off until the owner turns it on.
 - Helper text says that shuffles change each cycle, ordered shows continue, and time slots ignore
   `maxDays`.
-- A slot save keeps the toggle state and resets seed, cycles, snapshots and `startTime`.
+- A slot save keeps the toggle state, the program on air and each unchanged slot's place. It
+  resets the seed.
 - A manual save clears the toggle and all cycle state. The saved items become a fixed manual lineup.
 
 ### Web
@@ -165,9 +212,12 @@ New optional fields need no `ChannelLineupMigrator` step.
 
 - Build ahead and trim keep the channel position unchanged at every step.
 - A cycle shorter than the horizon builds enough cycles to cover it.
-- Cascade: rebuilding the airing cycle rebuilds the next one from the new end state.
+- A rebuild keeps the program on air and starts from the state at the next restart point.
+- A save carries each slot's place onto the edited slots.
+- A mixed link group resumed between its continue and rerun slots replays the same programs.
 - Ordered shows continue across cycles. `ordered_shuffle` keeps its place.
 - Shuffled programs do not repeat within a pass across cycles.
+- A stable shuffle restored at any point continues the same order, and a save keeps it.
 - Catch-up starts from the last snapshot at the period start (time slots) or `now` (random slots).
 - Same seed and library give the same sequence of cycles.
 

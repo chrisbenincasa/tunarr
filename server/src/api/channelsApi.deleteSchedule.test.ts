@@ -28,9 +28,14 @@ vi.mock('@/util/logging/LoggerFactory.js', () => {
   };
 });
 
-vi.mock('../container.ts', () => ({
-  container: { get: () => ({}) },
-}));
+// The route takes the channel lineup lock from the container.
+vi.mock('../container.ts', async () => {
+  const { ChannelLineupLock } = await import(
+    '../services/ChannelLineupLock.ts'
+  );
+  const lock = new ChannelLineupLock();
+  return { container: { get: () => lock } };
+});
 
 import { channelsApi } from './channelsApi.js';
 

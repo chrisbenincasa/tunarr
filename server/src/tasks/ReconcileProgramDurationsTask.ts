@@ -226,11 +226,15 @@ export class ReconcileProgramDurationsTask extends Task2<
     });
   }
 
+  // Detached: this runs under the channel lock, and the timer would otherwise
+  // inherit it and fire believing it still holds it.
   private scheduleXmlTvUpdate(channelId: string) {
-    GlobalScheduler.scheduleOneOffTask(
-      KEYS.UpdateXmlTvTaskFactory,
-      dayjs().add(1, 'second'),
-      { channelId },
+    this.onDemandService.runWithoutChannelLock(() =>
+      GlobalScheduler.scheduleOneOffTask(
+        KEYS.UpdateXmlTvTaskFactory,
+        dayjs().add(1, 'second'),
+        { channelId },
+      ),
     );
   }
 

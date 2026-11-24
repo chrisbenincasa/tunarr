@@ -185,6 +185,10 @@ export class ChannelDB implements IChannelDB {
     this.channelProgram.replaceChannelPrograms(channelId, programIds);
   }
 
+  addChannelPrograms(channelId: string, programIds: string[]): void {
+    this.channelProgram.addChannelPrograms(channelId, programIds);
+  }
+
   findChannelsForProgramId(programId: string): Promise<ChannelOrm[]> {
     return this.channelProgram.findChannelsForProgramId(programId);
   }
@@ -303,7 +307,7 @@ export class ChannelDB implements IChannelDB {
 
   removeProgramsFromAllLineups(
     programIds: ReadonlySet<string> | string[],
-  ): Promise<number> {
+  ): Promise<string[]> {
     return this.lineup.removeProgramsFromAllLineups(programIds);
   }
 

@@ -3,6 +3,7 @@ import { KEYS } from '@/types/inject.js';
 import { MutexMap } from '@/util/mutexMap.js';
 import { Container } from 'inversify';
 import { setTestGlobalOptions } from '../testing/getFakeSettingsDb.ts';
+import { ChannelLineupLock } from './ChannelLineupLock.ts';
 import { OnDemandChannelService } from './OnDemandChannelService.ts';
 
 beforeAll(async () => {
@@ -15,6 +16,8 @@ beforeAll(async () => {
 function containerLikeProduction() {
   const container = new Container({ autobind: true });
   container.bind<MutexMap>(KEYS.MutexMap).toDynamicValue(() => new MutexMap());
+  container.bind(ChannelLineupLock).toSelf().inSingletonScope();
+  container.bind(KEYS.ChannelLineupLock).toService(ChannelLineupLock);
   container.bind<IChannelDB>(KEYS.ChannelDB).toConstantValue({} as IChannelDB);
   return container;
 }

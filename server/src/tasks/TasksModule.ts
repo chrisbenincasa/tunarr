@@ -33,6 +33,7 @@ import { RefreshMediaSourceLibraryTask } from './RefreshMediaSourceLibraryTask.t
 import { RemoveDanglingProgramsFromSearchTask } from './RemoveDanglingProgramsFromSearchTask.ts';
 import { RollLogFileTask } from './RollLogFileTask.ts';
 import { ScanLibrariesTask } from './ScanLibrariesTask.ts';
+import { SlotCycleBoundaryTask } from './SlotCycleBoundaryTask.ts';
 import { SubtitleExtractorTask } from './SubtitleExtractorTask.ts';
 import { SyncCollectionsTask } from './SyncCollectionsTask.ts';
 import { SyncCustomShowsTask } from './SyncCustomShowsTask.ts';
@@ -49,6 +50,9 @@ const TasksModule = new ContainerModule(({ bind }) => {
 
   bind(ScanLibrariesTask).toSelf();
   bindAutoFactory(bind, ScanLibrariesTask.KEY, ScanLibrariesTask);
+
+  bind(SlotCycleBoundaryTask).toSelf();
+  bindAutoFactory(bind, SlotCycleBoundaryTask.KEY, SlotCycleBoundaryTask);
 
   bind(SyncCollectionsTask).toSelf();
   bindAutoFactory(bind, SyncCollectionsTask.KEY, SyncCollectionsTask);
