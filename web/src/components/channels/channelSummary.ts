@@ -103,30 +103,32 @@ export const summarizeNowPlaying = (
   const length = program.stop - program.start;
   const progress = length > 0 ? clamp((now - program.start) / length, 0, 1) : 0;
 
-  return match(program)
-    .returnType<NowPlayingSummary>()
-    .with({ type: 'content' }, (p) => ({
-      kind: p.type,
-      progress,
-      ...describeProgram(p.program),
-      artworkUrl: programArtworkUrl(backendUri, p.program),
-    }))
-    .with({ type: 'custom' }, (p) => {
-      const inner = p.program?.program;
+  switch (program.type) {
+    case 'content':
       return {
-        kind: p.type,
+        kind: program.type,
+        progress,
+        ...describeProgram(program.program),
+        artworkUrl: programArtworkUrl(backendUri, program.program),
+      };
+    case 'custom': {
+      const inner = program.program?.program;
+      return {
+        kind: program.type,
         progress,
         ...(inner ? describeProgram(inner) : {}),
         artworkUrl: inner ? programArtworkUrl(backendUri, inner) : undefined,
       };
-    })
-    .with({ type: 'flex' }, (p) => ({ kind: p.type, progress, title: p.title }))
-    .with({ type: 'redirect' }, (p) => ({
-      kind: p.type,
-      progress,
-      redirectChannel: p.channelNumber,
-    }))
-    .exhaustive();
+    }
+    case 'flex':
+      return { kind: program.type, progress, title: program.title };
+    case 'redirect':
+      return {
+        kind: program.type,
+        progress,
+        redirectChannel: program.channelNumber,
+      };
+  }
 };
 
 // The program each channel airs at `at`, keyed by channel id. Falls back to a

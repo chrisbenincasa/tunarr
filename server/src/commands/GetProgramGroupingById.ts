@@ -3,7 +3,6 @@ import { inject, injectable } from 'inversify';
 import type { DrizzleDBAccess } from '../db/schema/index.ts';
 
 import { head } from 'lodash-es';
-import { match } from 'ts-pattern';
 import { ProgramGroupingType } from '../db/schema/ProgramGrouping.ts';
 import { KEYS } from '../types/inject.ts';
 import type { Maybe } from '../types/util.ts';
@@ -67,55 +66,59 @@ export class GetProgramGroupingById {
       await this.materializeProgramGroupings.execute([dbRes]),
     );
 
-    if (recursive) {
-      await match(result)
-        .with({ type: 'show' }, async (show) => {
+    if (recursive && result) {
+      switch (result.type) {
+        case 'show': {
           const seasons = await this.getProgramGroupingChildren.execute(
-            show.uuid,
+            result.uuid,
             ProgramGroupingType.Show,
           );
-          show.seasons = seasons;
-        })
-        .with({ type: 'artist' }, async (artist) => {
+          result.seasons = seasons;
+          break;
+        }
+        case 'artist': {
           const albums = await this.getProgramGroupingChildren.execute(
-            artist.uuid,
+            result.uuid,
             ProgramGroupingType.Artist,
           );
-          artist.albums = albums;
-        })
-        .with({ type: 'season' }, async (season) => {
+          result.albums = albums;
+          break;
+        }
+        case 'season': {
           const [maybeShow, episodes] = await Promise.all([
             dbRes.showUuid
               ? this.execute(dbRes.showUuid, false, depth + 1)
               : Promise.resolve(undefined),
             this.getProgramGroupingChildren.execute(
-              season.uuid,
+              result.uuid,
               ProgramGroupingType.Season,
             ),
           ]);
 
           if (maybeShow?.type === ProgramGroupingType.Show) {
-            season.show = maybeShow;
+            result.show = maybeShow;
           }
 
-          season.episodes = episodes;
-        })
-        .with({ type: 'album' }, async (album) => {
+          result.episodes = episodes;
+          break;
+        }
+        case 'album': {
           const [maybeArtist, tracks] = await Promise.all([
             dbRes.artistUuid
               ? this.execute(dbRes.artistUuid, false, depth + 1)
               : Promise.resolve(),
             this.getProgramGroupingChildren.execute(
-              album.uuid,
+              result.uuid,
               ProgramGroupingType.Album,
             ),
           ]);
           if (maybeArtist?.type === 'artist') {
-            album.artist = maybeArtist;
+            result.artist = maybeArtist;
           }
-          album.tracks = tracks;
-        })
-        .otherwise(() => Promise.resolve(void 0));
+          result.tracks = tracks;
+          break;
+        }
+      }
     }
 
     return result;

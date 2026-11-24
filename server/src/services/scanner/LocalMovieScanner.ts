@@ -6,7 +6,6 @@ import { inject, injectable, LazyServiceIdentifier } from 'inversify';
 import { chunk, compact, isEmpty, isUndefined } from 'lodash-es';
 import fs from 'node:fs/promises';
 import path, { basename, dirname } from 'node:path';
-import { match, P } from 'ts-pattern';
 import { v4 } from 'uuid';
 import { LocalMediaDB } from '../../db/LocalMediaDB.ts';
 import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
@@ -548,14 +547,19 @@ export class LocalMovieScanner extends FileSystemScanner {
     artworkType: ArtworkType,
     inMovieFolder: boolean,
   ) {
-    const filename = match(artworkType)
-      .with(P.union('poster', 'fanart', 'banner', 'landscape'), (s) => s)
-      .otherwise(() => null);
-    if (!filename) {
-      return;
+    switch (artworkType) {
+      case 'poster':
+      case 'fanart':
+      case 'banner':
+      case 'landscape':
+        break;
+      case 'thumbnail':
+      case 'logo':
+      case 'watermark':
+        return;
     }
 
-    return locateMovieArtwork(fullMoviePath, filename, {
+    return locateMovieArtwork(fullMoviePath, artworkType, {
       allowShortNames: inMovieFolder,
     });
   }

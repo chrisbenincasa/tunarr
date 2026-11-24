@@ -1,194 +1,60 @@
-import { Plural, Trans, useLingui } from '@lingui/react/macro';
-import { Download } from '@mui/icons-material';
-import { Button, Stack, Typography } from '@mui/material';
-import type { TupleToUnion } from '@tunarr/types';
-import { attempt, isError, isNil, isObject, isString } from 'lodash-es';
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { DataTable } from '../../components/ui/table/DataTable.tsx';
+import { isString } from 'lodash-es';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { SystemLogsView } from '../../components/system/system-logs/SystemLogsView.tsx';
 import {
-  createAppColumnHelper,
-  useTunarrTable,
-} from '../../components/ui/table/tunarrTable.ts';
+  type LogLine,
+  parseLogLine,
+} from '../../components/system/system-logs/logLine.ts';
 import { useSettings } from '../../store/settings/selectors.ts';
 
-const ValidLogLevels = [
-  'fatal',
-  'error',
-  'warn',
-  'info',
-  'debug',
-  'trace',
-  'http',
-];
-
-function isValidLogLevel(s: string): s is TupleToUnion<typeof ValidLogLevels> {
-  return ValidLogLevels.includes(s);
-}
-
-function getLogLevelString(
-  level: number,
-): TupleToUnion<typeof ValidLogLevels> | null {
-  switch (level) {
-    case 10:
-      return 'trace';
-    case 20:
-      return 'debug';
-    case 25:
-      return 'http';
-    case 30:
-      return 'info';
-    case 40:
-      return 'warn';
-    case 50:
-      return 'error';
-    case 60:
-      return 'fatal';
-    default:
-      return null;
-  }
-}
-
-type LogLine = {
-  fullLine: string;
-  message: string;
-  timestamp: string;
-  level: TupleToUnion<typeof ValidLogLevels>;
-  component?: string;
-  extraData?: unknown;
-};
-
-type ParsedLogLine = {
-  level: number;
-  caller?: string;
-  msg: string;
-  time: number;
-};
-
-const columnHelper = createAppColumnHelper<LogLine>();
+const MaxLines = 1000;
 
 export function SystemLogsPage() {
-  const { t } = useLingui();
   const { backendUri } = useSettings();
-  const source = useRef<EventSource | null>(null);
-  const [logBuf, setLogBuf] = useState<LogLine[]>([]);
+  const [lines, setLines] = useState<LogLine[]>([]);
+
+  // The lines on screen while paused. The stream keeps filling `lines`.
+  const [snapshot, setSnapshot] = useState<LogLine[] | null>(null);
+  const nextId = useRef(0);
 
   useEffect(() => {
-    let es: EventSource | undefined;
-    if (!source.current) {
-      es = new EventSource(`${backendUri}/api/system/debug/logs`);
-      source.current = es;
+    const source = new EventSource(`${backendUri}/api/system/debug/logs`);
+    source.addEventListener('message', ({ data }: MessageEvent) => {
+      if (!isString(data)) {
+        return;
+      }
+      const line = parseLogLine(data, nextId.current);
+      if (!line) {
+        return;
+      }
+      nextId.current += 1;
+      setLines((prev) => [line, ...prev].slice(0, MaxLines));
+    });
+    return () => source.close();
+  }, [backendUri]);
 
-      es.addEventListener('message', ({ data }) => {
-        if (isString(data)) {
-          const parsed = attempt(
-            () => JSON.parse(data) as unknown as ParsedLogLine,
-          );
-          if (isError(parsed) || isNil(parsed) || !isObject(parsed)) {
-            return;
-          }
-
-          const date = new Date(parsed.time);
-          const level = getLogLevelString(parsed.level);
-          const component = parsed.caller;
-
-          if (date && level && isValidLogLevel(level)) {
-            setLogBuf((prev) => {
-              const n = [
-                {
-                  fullLine: data,
-                  timestamp: date.toISOString(),
-                  level,
-                  component,
-                  message: parsed.msg,
-                } satisfies LogLine,
-                ...prev,
-              ];
-              const rem = n.length - 1000;
-              if (rem <= 0) {
-                return n;
-              }
-
-              return n.slice(0, 1000);
-            });
-          }
-        }
-      });
-    }
-
-    return () => {
-      source.current = null;
-      // listeners.current = {};
-      es?.close();
-    };
-  }, [backendUri, source]);
-
-  const columns = useMemo(
-    () =>
-      columnHelper.columns([
-        columnHelper.accessor('timestamp', { header: t`Timestamp` }),
-        columnHelper.accessor('level', {
-          header: t`Level`,
-          filterFn: 'arrHas',
-          meta: {
-            filterVariant: 'multi-select',
-            filterOptions: ValidLogLevels,
-          },
-        }),
-        columnHelper.accessor('component', { header: t`Component` }),
-        columnHelper.accessor('message', { header: t`Message` }),
-      ]),
-    [t],
+  const togglePause = useCallback(
+    () => setSnapshot((current) => (current ? null : lines)),
+    [lines],
   );
 
-  const table = useTunarrTable({
-    columns,
-    data: logBuf,
-    initialState: {
-      pagination: {
-        pageSize: 50,
-        pageIndex: 0,
-      },
-    },
-  });
+  const downloadUrl = useCallback(
+    (lineLimit?: number) =>
+      `${backendUri}/api/system/debug/logs?download=true&pretty=true${
+        lineLimit ? `&lineLimit=${lineLimit}` : ''
+      }`,
+    [backendUri],
+  );
+
+  const newestId = (buffer: LogLine[]) => buffer[0]?.id ?? -1;
 
   return (
-    <>
-      <Typography sx={{ pb: 2 }}>
-        <Trans>
-          Displays the last {logBuf.length} system log events. Use the buttons
-          below to export these logs or download the entire log file for
-          debugging.
-        </Trans>
-      </Typography>
-      <DataTable
-        table={table}
-        aria-label={t`Logs`}
-        toolbarActions={
-          <Stack direction="row" sx={{ gap: 2 }}>
-            <Button
-              startIcon={<Download />}
-              component="a"
-              href={`${backendUri}/api/system/debug/logs?download=true&pretty=true&lineLimit=${table.getRowCount()}`}
-            >
-              <Trans>
-                Download last {table.getRowCount()}{' '}
-                <Plural
-                  value={table.getRowCount()}
-                  one="# row"
-                  other="# rows"
-                />
-              </Trans>
-            </Button>
-            <Button
-              startIcon={<Download />}
-              component="a"
-              href={`${backendUri}/api/system/debug/logs?download=true&pretty=true`}
-            >
-              <Trans>Download all logs</Trans>
-            </Button>
-          </Stack>
-        }
-      />
-    </>
+    <SystemLogsView
+      lines={snapshot ?? lines}
+      paused={snapshot !== null}
+      newWhilePaused={snapshot ? newestId(lines) - newestId(snapshot) : 0}
+      onTogglePause={togglePause}
+      downloadUrl={downloadUrl}
+    />
   );
 }

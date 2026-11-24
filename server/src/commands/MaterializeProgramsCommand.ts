@@ -2,7 +2,6 @@ import type { MediaSourceId } from '@tunarr/shared';
 import type { TerminalProgram } from '@tunarr/types';
 import { untag } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
-import { match } from 'ts-pattern';
 import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
 import { MediaSourceDB } from '../db/mediaSourceDB.ts';
 import type { ProgramWithRelationsOrm } from '../db/schema/derivedTypes.ts';
@@ -95,41 +94,44 @@ export class MaterializeProgramsCommand {
       }
 
       // ApiProgramConverters.convertProgramGrouping()
-      match([apiItem, program])
-        .with(
-          [{ type: 'episode' }, { type: 'episode' }],
-          ([apiItem, dbItem]) => {
-            if (dbItem.season) {
-              const convertedSeason =
-                ApiProgramConverters.convertProgramGrouping(
-                  dbItem.season,
-                  undefined,
-                  undefined,
-                  ms,
-                  library,
-                );
-              if (convertedSeason?.type === 'season') {
-                apiItem.season = convertedSeason;
-              }
+      switch (apiItem.type) {
+        case 'episode': {
+          if (program.type !== 'episode') {
+            break;
+          }
+          if (program.season) {
+            const convertedSeason = ApiProgramConverters.convertProgramGrouping(
+              program.season,
+              undefined,
+              undefined,
+              ms,
+              library,
+            );
+            if (convertedSeason?.type === 'season') {
+              apiItem.season = convertedSeason;
             }
-            if (dbItem.show) {
-              const convertedShow = ApiProgramConverters.convertProgramGrouping(
-                dbItem.show,
-                undefined,
-                undefined,
-                ms,
-                library,
-              );
-              if (convertedShow?.type === 'show') {
-                apiItem.show = convertedShow;
-              }
+          }
+          if (program.show) {
+            const convertedShow = ApiProgramConverters.convertProgramGrouping(
+              program.show,
+              undefined,
+              undefined,
+              ms,
+              library,
+            );
+            if (convertedShow?.type === 'show') {
+              apiItem.show = convertedShow;
             }
-          },
-        )
-        .with([{ type: 'track' }, { type: 'track' }], ([apiItem, dbItem]) => {
-          if (dbItem.album) {
+          }
+          break;
+        }
+        case 'track': {
+          if (program.type !== 'track') {
+            break;
+          }
+          if (program.album) {
             const convertedAlbum = ApiProgramConverters.convertProgramGrouping(
-              dbItem.album,
+              program.album,
               undefined,
               undefined,
               ms,
@@ -139,10 +141,9 @@ export class MaterializeProgramsCommand {
               apiItem.album = convertedAlbum;
             }
           }
-
-          if (dbItem.artist) {
+          if (program.artist) {
             const convertedArtist = ApiProgramConverters.convertProgramGrouping(
-              dbItem.artist,
+              program.artist,
               undefined,
               undefined,
               ms,
@@ -152,8 +153,13 @@ export class MaterializeProgramsCommand {
               apiItem.artist = convertedArtist;
             }
           }
-        })
-        .otherwise(() => void 0);
+          break;
+        }
+        case 'movie':
+        case 'music_video':
+        case 'other_video':
+          break;
+      }
 
       apiGroups.push(apiItem);
     }

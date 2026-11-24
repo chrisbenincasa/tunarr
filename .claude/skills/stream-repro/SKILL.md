@@ -1,6 +1,6 @@
 ---
 name: stream-repro
-description: Reproduce and measure Tunarr stream bugs on an isolated server. Boots a throwaway Tunarr server, builds a channel from synthetic clips (or a copy of the dev database), captures a bounded HLS or MPEG-TS sample, and reports per-segment tracks, A/V start offsets, timestamp gaps and overlaps, and the exact ffmpeg commands the server ran. Use this whenever a user report or issue describes playback symptoms such as duplicate or missing audio/subtitle tracks, audio out of sync or starting late, stutter or freezes at program transitions, streams that fail to start, or wrong resolution/codec after a program change, and whenever you need evidence that a streaming or ffmpeg pipeline change fixed such a symptom, even if the user only says "look into this stream issue". Also use it for time-slot schedule bugs (wrong start times, redirect slots, custom-show slots, guide entries), since --schedule builds slot channels and reports their saved lineup and guide.
+description: Reproduce and measure Tunarr stream bugs on an isolated server. Boots a throwaway Tunarr server, builds a channel from synthetic clips (or a copy of the dev database), captures a bounded HLS or MPEG-TS sample from Tunarr's own pipeline or the ErsatzTV next (etv_next) worker, and reports per-segment tracks, A/V start offsets, timestamp gaps and overlaps, and the exact ffmpeg commands the server ran. Use this whenever a user report or issue describes playback symptoms such as duplicate or missing audio/subtitle tracks, audio out of sync or starting late, stutter or freezes at program transitions, streams that fail to start, or wrong resolution/codec after a program change, and whenever you need evidence that a streaming or ffmpeg pipeline change fixed such a symptom, even if the user only says "look into this stream issue". Also use it for time-slot schedule bugs (wrong start times, redirect slots, custom-show slots, guide entries), since --schedule builds slot channels and reports their saved lineup and guide.
 ---
 
 # Stream repro
@@ -45,6 +45,40 @@ node .claude/skills/stream-repro/scripts/repro.mjs [options]
 | `--sar-override VALUE` | | `synthetic` only. After the scan, set every program's saved sample aspect ratio to VALUE, such as `0:0`. Needs the `sqlite3` CLI |
 | `--schedule FILE` | | `synthetic` only. Build custom shows and time-slot channels from a JSON spec, and report their saved lineups and guide (see below) |
 | `--seconds 0` | | Skip the stream capture. Use with `--schedule` when only the schedule matters |
+| `--etv-next` | off | Stream through the ErsatzTV next worker instead of Tunarr's own pipeline. Needs `--mode hls`, `hls_direct_v2`, or `mpegts` (see below) |
+
+## ErsatzTV next
+
+`--etv-next` boots the server with `TUNARR_ERSATZTV_NEXT_ENABLED=true`, the env override for the
+`ersatzTvNextEnabled` feature flag, so every channel routes to the `ersatztv-channel` worker. The worker
+only serves `hls`, `hls_direct_v2`, and `mpegts` (`server/src/stream/etv/EtvNextRouting.ts`). HLS captures
+read the worker's own playlist at `/stream/channels/<id>/etv_next/live.m3u8`. MPEG-TS captures go through
+Tunarr's concat session, which wraps the worker's playlist.
+
+The worker binary comes from `server/bin/`. If it is missing, run `pnpm download-ersatztv-next` in
+`server/`. The server refuses a binary whose version differs from the pin in `server/package.json`, so a
+checkout must have the matching download.
+
+A copied database can route to the worker without the flag, through its own `ersatzTvNextEnabled`
+setting or the channel's `useEtvNext` opt-in. The script asks the server either way, and `report.etvNext`
+says whether the run went through the worker and why. It is `false` when it did not.
+
+A worker run adds this to the output:
+
+- `etv-next-worker.log`: the worker's stderr. A shell wrapper around the binary writes it, because Tunarr
+  keeps worker output only when the worker crashes. With the wrapper in place, a crash's stderr lands
+  here rather than in `tunarr.log`.
+- `report.ffmpeg.commands` entries with `source: "etv-next"`: one per ffmpeg run the worker started, taken
+  from its `optimized pipeline:` log lines. Entries with `source: "tunarr"` are Tunarr's own, such as the
+  concat wrapper in MPEG-TS mode.
+- `etv-next/etv_<channel>_<session>/`: the worker's `channel.json` (Tunarr's settings after
+  `EtvNextChannelConfigMapper` translated them) and the playout windows it played from.
+- `report.etvNext.dossiers`: diagnostics the worker wrote under `db/etv-diagnostics/`, mostly on failures.
+  Reports from ffmpeg runs still in flight (`.in-flight-*`) are left out.
+
+The pipeline that builds worker commands lives in the ErsatzTV next repo, not in
+`server/src/ffmpeg/builder/`. To tie a finding to Tunarr code, compare `channel.json` and the playout
+window with what the transcode config and lineup asked for.
 
 Use `--flex-first` to test the offline placeholder stream, which plays during flex gaps and is built
 separately from program streams (`createOfflineSession` in `server/src/ffmpeg/FfmpegStreamFactory.ts`).
@@ -181,6 +215,8 @@ container and its data directory are not touched.
   preceded it, and `avStartOffsetMs` (first audio PTS minus first video PTS).
 - `findings`: one entry per detected anomaly, described below.
 - `ffmpeg.commands`: every ffmpeg argv the server started, in order. There is roughly one per program.
+  Each entry's `source` is `tunarr` or `etv-next`.
+- `etvNext`: `false`, or why the run went through the ErsatzTV next worker and where its files are.
 - `sessionRestarts`: times the HLS session died and the capture restarted it.
 - `capturePieces[].fetchedAtMs`: when the capture fetched each HLS segment, from capture start. A long gap between neighbors means the playlist stopped growing.
 

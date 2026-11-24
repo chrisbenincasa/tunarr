@@ -5,7 +5,6 @@ import type {
 } from '@tunarr/types/api';
 import { inject } from 'inversify';
 import { isEmpty } from 'lodash-es';
-import { match } from 'ts-pattern';
 import type z from 'zod';
 import { ApiProgramConverters } from '../api/ApiProgramConverters.ts';
 import type { IProgramDB } from '../db/interfaces/IProgramDB.ts';
@@ -146,24 +145,28 @@ export class SearchProgramsCommand {
           let parent: Maybe<ProgramGroupingOrmWithRelations>;
           let grandparent: Maybe<ProgramGroupingOrmWithRelations>;
           if (req.expandParents) {
-            match(program)
-              .with({ type: 'episode' }, (ep) => {
-                if (ep.seasonUuid) {
-                  parent = groupings[ep.seasonUuid];
+            switch (program.type) {
+              case 'episode':
+                if (program.seasonUuid) {
+                  parent = groupings[program.seasonUuid];
                 }
-                if (ep.tvShowUuid) {
-                  grandparent = groupings[ep.tvShowUuid];
+                if (program.tvShowUuid) {
+                  grandparent = groupings[program.tvShowUuid];
                 }
-              })
-              .with({ type: 'track' }, (track) => {
-                if (track.albumUuid) {
-                  parent = groupings[track.albumUuid];
+                break;
+              case 'track':
+                if (program.albumUuid) {
+                  parent = groupings[program.albumUuid];
                 }
-                if (track.artistUuid) {
-                  grandparent = groupings[track.artistUuid];
+                if (program.artistUuid) {
+                  grandparent = groupings[program.artistUuid];
                 }
-              })
-              .otherwise(() => void 0);
+                break;
+              case 'movie':
+              case 'music_video':
+              case 'other_video':
+                break;
+            }
           }
 
           return ApiProgramConverters.convertProgram(

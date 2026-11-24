@@ -4,6 +4,7 @@ import { isError, isString, round } from 'lodash-es';
 import z from 'zod';
 import { TypedError } from '../types/errors.ts';
 import { Result } from '../types/result.ts';
+import { trackWork } from '../util/activeWork.ts';
 import { InjectLogger } from '../util/inject.js';
 import type { LogLevels, Logger } from '../util/logging/LoggerFactory.js';
 
@@ -48,7 +49,13 @@ export abstract class Task2<
 
   constructor() {}
 
-  async run(request: z.infer<RequestSchema>): Promise<Result<ResultT>> {
+  run(request: z.infer<RequestSchema>): Promise<Result<ResultT>> {
+    return trackWork(this.name, () => this.runAndLog(request));
+  }
+
+  private async runAndLog(
+    request: z.infer<RequestSchema>,
+  ): Promise<Result<ResultT>> {
     this.logger[this._logLevel](
       'Running task %s',
       isNonEmptyString(this.constructor.name)

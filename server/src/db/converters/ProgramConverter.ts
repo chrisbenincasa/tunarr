@@ -33,7 +33,6 @@ import type { Kysely } from 'kysely';
 import { first, isNil, orderBy } from 'lodash-es';
 import { isPromise } from 'node:util/types';
 import type { DeepPartial, MarkRequired } from 'ts-essentials';
-import { match } from 'ts-pattern';
 import { ApiProgramConverters } from '../../api/ApiProgramConverters.ts';
 import type { MediaLocation } from '../../types/Media.ts';
 import { titleToSortTitle } from '../../util/programs.ts';
@@ -53,6 +52,18 @@ import type {
   TvShowWithExternalIds,
 } from '../schema/derivedTypes.ts';
 import type { MediaSourceLibrary } from '../schema/MediaSourceLibrary.ts';
+import type { ProgramChapterType } from '../schema/ProgramChapter.ts';
+
+function chapterTypeOrder(chapterType: ProgramChapterType) {
+  switch (chapterType) {
+    case 'chapter':
+      return 0;
+    case 'intro':
+      return 1;
+    case 'outro':
+      return 2;
+  }
+}
 
 /**
  * Converts DB types to API types
@@ -130,48 +141,50 @@ export class ProgramConverter {
       state: program.state,
     } satisfies Partial<TerminalProgram>;
 
-    const typed = match(program)
-      .returnType<TerminalProgram>()
-      .with(
-        { type: 'movie' },
-        (movie) =>
-          ({
-            ...base,
-            type: 'movie',
-            plot: movie.summary,
-            tagline: null,
-            writers:
-              program.credits
-                ?.filter((c) => c.type === 'writer')
-                .map((writer) => ({
-                  name: writer.name,
-                })) ?? [],
-            directors:
-              program.credits
-                ?.filter((c) => c.type === 'director')
-                .map((director) => ({
-                  name: director.name,
-                })) ?? [],
-          }) satisfies Movie,
-      )
-      .with(
-        { type: 'episode' },
-        (episode) =>
-          ({
-            ...base,
-            type: 'episode' as const,
-            summary: episode.summary,
-            episodeNumber: episode.episode ?? 0,
-          }) satisfies Episode,
-      )
-      .with({ type: 'track' }, (track) => ({
-        ...base,
-        type: 'track',
-        trackNumber: track.episode ?? 0,
-      }))
-      .with({ type: 'music_video' }, () => ({ ...base, type: 'music_video' }))
-      .with({ type: 'other_video' }, () => ({ ...base, type: 'other_video' }))
-      .exhaustive();
+    let typed: TerminalProgram;
+    switch (program.type) {
+      case 'movie':
+        typed = {
+          ...base,
+          type: 'movie',
+          plot: program.summary,
+          tagline: null,
+          writers:
+            program.credits
+              ?.filter((c) => c.type === 'writer')
+              .map((writer) => ({
+                name: writer.name,
+              })) ?? [],
+          directors:
+            program.credits
+              ?.filter((c) => c.type === 'director')
+              .map((director) => ({
+                name: director.name,
+              })) ?? [],
+        } satisfies Movie;
+        break;
+      case 'episode':
+        typed = {
+          ...base,
+          type: 'episode' as const,
+          summary: program.summary,
+          episodeNumber: program.episode ?? 0,
+        } satisfies Episode;
+        break;
+      case 'track':
+        typed = {
+          ...base,
+          type: 'track',
+          trackNumber: program.episode ?? 0,
+        };
+        break;
+      case 'music_video':
+        typed = { ...base, type: 'music_video' };
+        break;
+      case 'other_video':
+        typed = { ...base, type: 'other_video' };
+        break;
+    }
 
     const version = first(program.versions);
     if (version) {
@@ -191,14 +204,7 @@ export class ProgramConverter {
         ),
         chapters: orderBy(
           version.chapters,
-          (c) => [
-            match(c.chapterType)
-              .with('chapter', () => 0)
-              .with('intro', () => 1)
-              .with('outro', () => 2)
-              .exhaustive(),
-            c.index,
-          ],
+          (c) => [chapterTypeOrder(c.chapterType), c.index],
           ['asc', 'asc'],
         ),
         locations:
