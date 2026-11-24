@@ -51,6 +51,44 @@ describe('MediaSourceScanCoordinator', () => {
     expect(await scanned).toContain('Library scan: Anime Shows');
     await coordinator.awaitAllFinished();
   });
+
+  test('records a local media source scan as active work while it runs', async () => {
+    const { promise: scanned, resolve } = withResolvers<string[]>();
+    const scanner = {
+      scan: vi.fn(() => {
+        const now = performance.now();
+        resolve(workBetween(now, now));
+        return Promise.resolve();
+      }),
+      cancel: vi.fn(),
+    };
+
+    const coordinator = new MediaSourceScanCoordinator(
+      {
+        getById: vi.fn().mockResolvedValue({
+          uuid: 'source-1',
+          name: 'Home Movies',
+          type: 'local',
+          mediaType: 'movies',
+        }),
+      } as unknown as MediaSourceDB,
+      {
+        getLockForMediaSource: vi.fn().mockResolvedValue(new Mutex()),
+      } as unknown as EntityMutex,
+      (() => scanner) as unknown as GenericMediaSourceScannerFactory,
+      (() => scanner) as unknown as GenericLocalMediaSourceScannerFactory,
+      { scanQueued: vi.fn() } as unknown as MediaSourceProgressService,
+      () => undefined,
+      () => ({}) as ReconcileProgramDurationsTask,
+    );
+
+    await expect(
+      coordinator.addLocal({ mediaSourceId: 'source-1', forceScan: false }),
+    ).resolves.toBe(true);
+
+    expect(await scanned).toContain('Media source scan: Home Movies');
+    await coordinator.awaitAllFinished();
+  });
 });
 
 function withResolvers<T>() {
