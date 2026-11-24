@@ -724,6 +724,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
                   startTime: previous.channel.startTime,
                   lineup: previous.lineup,
                 },
+                Date.now(),
+                programmingRequest.type === 'manual'
+                  ? []
+                  : programmingRequest.programs,
               );
             } else {
               await boundaryService.initializeChannel(req.params.id);
@@ -819,6 +823,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           req.serverCtx.channelDB.saveLineup(req.params.id, {
             schedule: null,
             scheduleSeed: null,
+            scheduleProgramIds: null,
           }),
         );
 

@@ -145,6 +145,11 @@ export const LineupSchema = z.object({
   // items are edited by hand, so they no longer follow from the schedule.
   scheduleSeed: z.number().array().optional(),
 
+  // Program IDs the last classic build started from. Slot pools list these
+  // programs first, so a shuffle's order depends on them. Turning on rebuild
+  // each cycle replays that build to recover each show's place.
+  scheduleProgramIds: z.string().array().optional(),
+
   // These are precalculated offsets in milliseconds. The
   // array is a list of the running 'total' duration sum
   // of each of the lineup items. It can be used to quickly

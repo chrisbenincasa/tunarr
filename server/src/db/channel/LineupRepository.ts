@@ -324,6 +324,13 @@ export class LineupRepository {
         newLineup.scheduleSeed === null ? undefined : newLineup.scheduleSeed;
     }
 
+    if (isDefined(newLineup.scheduleProgramIds)) {
+      data.scheduleProgramIds =
+        newLineup.scheduleProgramIds === null
+          ? undefined
+          : newLineup.scheduleProgramIds;
+    }
+
     if (isDefined(newLineup.onDemandConfig)) {
       data.onDemandConfig =
         newLineup.onDemandConfig === null
@@ -1043,6 +1050,7 @@ export class LineupRepository {
         this.saveLineup(id, {
           items: newLineupItems,
           scheduleSeed: null,
+          scheduleProgramIds: null,
           onDemandConfig: isDefined(lineup.onDemandConfig)
             ? {
                 ...lineup.onDemandConfig,
@@ -1139,6 +1147,7 @@ export class LineupRepository {
         items: newLineup,
         schedule: req.schedule,
         scheduleSeed,
+        scheduleProgramIds: req.programs,
         rebuildEachCycle,
         // The new schedule and seed invalidate every cycle built from the old
         // ones. The caller rebuilds from the first cycle.

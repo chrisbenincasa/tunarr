@@ -72,7 +72,7 @@ describe('DELETE /channels/:id/schedule (#937)', () => {
     await app.close();
   });
 
-  it('clears the schedule and seed without touching the lineup items', async () => {
+  it('clears the schedule, seed, and program list without touching the lineup items', async () => {
     const res = await app.inject({
       method: 'DELETE',
       url: `/channels/${channelId}/schedule`,
@@ -82,6 +82,7 @@ describe('DELETE /channels/:id/schedule (#937)', () => {
     expect(saveLineup).toHaveBeenCalledExactlyOnceWith(channelId, {
       schedule: null,
       scheduleSeed: null,
+      scheduleProgramIds: null,
     });
   });
 

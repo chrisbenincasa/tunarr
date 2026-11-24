@@ -29,6 +29,7 @@ import {
   advanceCycles,
   chunkLengthMs,
   classicPassState,
+  classicReplayInputs,
   cycleStartTime,
   dropFirstCycleCheckpoints,
   firstRestartAfterAiring,
@@ -1285,5 +1286,36 @@ describe('dropFirstCycleCheckpoints', () => {
 
     expect(dropped.cycles[0]).not.toHaveProperty('checkpoints');
     expect(dropped.cycles[1]?.checkpoints).toEqual([checkpoint]);
+  });
+});
+
+describe('classicReplayInputs', () => {
+  const items: LineupItem[] = [
+    { type: 'content', id: 'a', durationMs: 1 },
+    { type: 'offline', durationMs: 1 },
+    { type: 'content', id: 'b', durationMs: 1 },
+    { type: 'content', id: 'a', durationMs: 1 },
+  ];
+
+  test('a recorded program list is the only input', () => {
+    expect(
+      classicReplayInputs({ items, scheduleProgramIds: ['z', 'a'] }, ['q']),
+    ).toEqual([['z', 'a']]);
+  });
+
+  test('an older lineup tries the aired programs, none, then the saved list', () => {
+    expect(classicReplayInputs({ items }, ['q'])).toEqual([
+      ['a', 'b'],
+      [],
+      ['q'],
+    ]);
+  });
+
+  test('a list that repeats an earlier one is tried once', () => {
+    expect(classicReplayInputs({ items }, ['a', 'b'])).toEqual([
+      ['a', 'b'],
+      [],
+    ]);
+    expect(classicReplayInputs({ items: [] }, [])).toEqual([[]]);
   });
 });

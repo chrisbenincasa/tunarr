@@ -62,6 +62,10 @@ export class RegenerateChannelLineupCommand {
     }
 
     if (schedule) {
+      // The worker builds from the channel's programs, which this rebuild
+      // replaces below.
+      const scheduleProgramIds =
+        await this.channelDB.getChannelProgramIds(channelId);
       const request = {
         type: 'channel' as const,
         channelId,
@@ -99,6 +103,7 @@ export class RegenerateChannelLineupCommand {
       await this.channelDB.saveLineup(channelId, {
         items: lineupItems,
         scheduleSeed: result.seed,
+        scheduleProgramIds,
       });
       await this.channelDB.updateChannelDuration(
         channelId,

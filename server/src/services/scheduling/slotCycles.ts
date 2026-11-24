@@ -1,7 +1,9 @@
 import type { RandomSlotSchedule, TimeSlotSchedule } from '@tunarr/types/api';
-import { mapValues, sumBy } from 'lodash-es';
+import { seq } from '@tunarr/shared/util';
+import { mapValues, sumBy, uniq, uniqBy } from 'lodash-es';
 import type {
   CycleSnapshot,
+  Lineup,
   LineupCycle,
   LineupItem,
 } from '../../db/derived_types/Lineup.ts';
@@ -419,6 +421,29 @@ export async function rebuildAfterAiring(
     cycles: [...kept.cycles, ...built.cycles],
     nextSnapshot: built.nextSnapshot,
   };
+}
+
+/**
+ * The program lists a classic build may have started from, to replay it with.
+ *
+ * A lineup that records `scheduleProgramIds` has one exact answer. Older
+ * lineups don't, so the replay tries the programs that aired, no programs, and
+ * the list the current save sent. `classicPassState` rejects a wrong guess.
+ */
+export function classicReplayInputs(
+  lineup: Pick<Lineup, 'items' | 'scheduleProgramIds'>,
+  savedProgramIds: readonly string[],
+): (readonly string[])[] {
+  if (lineup.scheduleProgramIds) {
+    return [lineup.scheduleProgramIds];
+  }
+
+  const aired = uniq(
+    seq.collect(lineup.items, (item) =>
+      item.type === 'content' ? item.id : null,
+    ),
+  );
+  return uniqBy([aired, [], savedProgramIds], (ids) => ids.join(','));
 }
 
 export type ClassicPassFallback = 'not_started' | 'replay_mismatch';

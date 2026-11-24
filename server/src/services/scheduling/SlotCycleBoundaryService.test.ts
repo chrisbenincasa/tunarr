@@ -130,10 +130,15 @@ type FakeBuilder = {
     discardCount: number;
     iteratorState: SlotIteratorState | undefined;
   }[];
-  replays: { startTime: number }[];
-  // Changes what a classic replay produces. By default it reproduces the
-  // stored items exactly.
-  replayItems?: (stored: LineupItem[]) => LineupItem[];
+  replays: { startTime: number; programIds: readonly string[] }[];
+  // The classic pass a replay reproduces.
+  passItems: LineupItem[];
+  // Changes what a classic replay produces. By default it reproduces
+  // `passItems` exactly.
+  replayItems?: (
+    stored: LineupItem[],
+    programIds: readonly string[],
+  ) => LineupItem[];
 };
 
 // A classic pass of ten one-hour programs. Each one names the time its pass
@@ -146,6 +151,13 @@ function classicItems(passStart: number): LineupItem[] {
     id: `c${i}@${passStart}#${i}`,
     durationMs: oneHour,
   }));
+}
+
+function contentId(item: LineupItem): string {
+  if (item.type !== 'content') {
+    throw new Error('expected a content item');
+  }
+  return item.id;
 }
 
 // The replayed pass checkpoints every two hours. Show A in the first slot has
@@ -219,18 +231,22 @@ function createFakeBuildCommand(): FakeBuilder {
     command: undefined as unknown as BuildSlotCycleCommand,
     calls,
     replays: [],
+    passItems: [],
   };
 
   const replayClassic = async (req: {
-    lineup: { items: readonly LineupItem[] };
+    programIds: readonly string[];
     startTime: number;
   }): Promise<BuiltCycle> => {
-    builder.replays.push({ startTime: req.startTime });
+    builder.replays.push({
+      startTime: req.startTime,
+      programIds: req.programIds,
+    });
     await tick(1);
-    const stored = [...req.lineup.items];
+    const stored = builder.passItems;
     return classicReplay(
       req.startTime,
-      builder.replayItems?.(stored) ?? stored,
+      builder.replayItems?.(stored, req.programIds) ?? stored,
     );
   };
 
@@ -586,6 +602,7 @@ describe('SlotCycleBoundaryService', () => {
       );
       ctx.channelDB.state.channel.startTime = startTime;
       ctx.channelDB.state.channel.duration = classicPassMs;
+      ctx.builder.passItems = classicItems(passStart);
       return { ...ctx, startTime, passStart };
     }
 
@@ -603,7 +620,9 @@ describe('SlotCycleBoundaryService', () => {
       );
 
       expect(outcome).toEqual({ placesCarried: true });
-      expect(builder.replays).toEqual([{ startTime }]);
+      expect(builder.replays).toEqual([
+        { startTime, programIds: classicItems(passStart).map(contentId) },
+      ]);
 
       // c3 is on air. The pass is kept through it, and the edited schedule
       // takes over at the 4 hour checkpoint with the state recorded there.
@@ -623,6 +642,51 @@ describe('SlotCycleBoundaryService', () => {
           slotLastPlayedMs: { '0': passStart + 3 * oneHour },
         },
       });
+      expectConsistentState(channelDB, now0);
+    });
+
+    test('a recorded program list is the only one replayed', async () => {
+      const { service, channelDB, builder, startTime } =
+        await enableOnClassicChannel({ scheduleProgramIds: ['p2', 'p1'] });
+      const previous = await editAndSave(channelDB, turnOn);
+
+      const outcome = await service.applyScheduleEdit(
+        channelId,
+        previous,
+        now0,
+        ['p9'],
+      );
+
+      expect(outcome).toEqual({ placesCarried: true });
+      expect(builder.replays).toEqual([
+        { startTime, programIds: ['p2', 'p1'] },
+      ]);
+    });
+
+    test('an older lineup tries each program list until one replays what aired', async () => {
+      const { service, channelDB, builder, passStart } =
+        await enableOnClassicChannel();
+      builder.replayItems = (items, programIds) =>
+        programIds.join() === 'p9'
+          ? items
+          : items.map((item, i) =>
+              i === 1 ? { type: 'offline', durationMs: item.durationMs } : item,
+            );
+      const previous = await editAndSave(channelDB, turnOn);
+
+      const outcome = await service.applyScheduleEdit(
+        channelId,
+        previous,
+        now0,
+        ['p9'],
+      );
+
+      expect(outcome).toEqual({ placesCarried: true });
+      expect(builder.replays.map(({ programIds }) => programIds)).toEqual([
+        classicItems(passStart).map(contentId),
+        [],
+        ['p9'],
+      ]);
       expectConsistentState(channelDB, now0);
     });
 

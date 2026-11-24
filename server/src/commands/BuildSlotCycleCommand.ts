@@ -1,7 +1,7 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import type { CondensedChannelProgram } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
-import { sumBy, uniq } from 'lodash-es';
+import { sumBy } from 'lodash-es';
 import type { MarkRequired } from 'ts-essentials';
 import { condensedProgramToLineupItem } from '../db/channel/lineupItemConversion.ts';
 import type {
@@ -32,9 +32,11 @@ type Request = {
 
 type ClassicReplayRequest = {
   lineup: MarkRequired<
-    Pick<Lineup, 'items' | 'schedule' | 'scheduleSeed'>,
+    Pick<Lineup, 'schedule' | 'scheduleSeed'>,
     'schedule' | 'scheduleSeed'
   >;
+  // The program IDs the classic build started from, in their original order.
+  programIds: readonly string[];
   startTime: number;
 };
 
@@ -98,23 +100,16 @@ export class BuildSlotCycleCommand {
    * Replays the pass a classic slot channel loops, with checkpoints.
    *
    * It uses the classic build's seed and options, so it reproduces the stored
-   * lineup when the library hasn't changed since. The programs come from the
-   * stored lineup, because a save may already have replaced the channel's
-   * program list.
+   * lineup when `programIds` and the library match the original build.
    */
   async replayClassic({
     lineup,
+    programIds,
     startTime,
   }: ClassicReplayRequest): Promise<BuiltCycle> {
-    const programIds = uniq(
-      seq.collect(lineup.items, (item) =>
-        item.type === 'content' ? item.id : null,
-      ),
-    );
-
     return this.build(lineup.schedule, {
       type: 'programs',
-      programIds,
+      programIds: [...programIds],
       startTime,
       seed: lineup.scheduleSeed,
       checkpoints: true,

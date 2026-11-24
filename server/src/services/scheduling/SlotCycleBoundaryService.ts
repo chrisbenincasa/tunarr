@@ -12,6 +12,7 @@ import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import type { ChannelLineupLock } from '../ChannelLineupLock.ts';
 import { TVGuideService } from '../TvGuideService.ts';
 import type {
+  ClassicPass,
   ClassicPassFallback,
   CycleOptions,
   CycleSnapshot,
@@ -21,6 +22,7 @@ import {
   advanceCycles,
   chunkLengthMs,
   classicPassState,
+  classicReplayInputs,
   cycleStartTime,
   dropFirstCycleCheckpoints,
   initializeCycles,
@@ -146,11 +148,13 @@ export class SlotCycleBoundaryService {
    * same carried places.
    *
    * `previous` is the channel's start time and lineup from before the save.
+   * `savedProgramIds` is the program list the save sent.
    */
   async applyScheduleEdit(
     channelId: string,
     previous: { startTime: number; lineup: Lineup },
     now: number = Date.now(),
+    savedProgramIds: readonly string[] = [],
   ): Promise<ScheduleEditOutcome> {
     return this.lineupLock.run(channelId, async () => {
       const loaded = await this.loadRebuildingChannel(channelId);
@@ -209,19 +213,25 @@ export class SlotCycleBoundaryService {
         return this.startOver(channelId, now, 'no_seed');
       }
 
-      const replay = await this.buildCycle.replayClassic({
-        lineup: {
-          items: previous.lineup.items,
-          schedule: previousSchedule,
-          scheduleSeed,
-        },
-        startTime: previous.startTime,
-      });
-      const pass = classicPassState(
-        { startTime: previous.startTime, items: previous.lineup.items },
-        replay,
-        now,
-      );
+      let pass: ClassicPass = { fallback: 'replay_mismatch' };
+      for (const programIds of classicReplayInputs(
+        previous.lineup,
+        savedProgramIds,
+      )) {
+        const replay = await this.buildCycle.replayClassic({
+          lineup: { schedule: previousSchedule, scheduleSeed },
+          programIds,
+          startTime: previous.startTime,
+        });
+        pass = classicPassState(
+          { startTime: previous.startTime, items: previous.lineup.items },
+          replay,
+          now,
+        );
+        if (!('fallback' in pass) || pass.fallback === 'not_started') {
+          break;
+        }
+      }
       if ('fallback' in pass) {
         return this.startOver(channelId, now, pass.fallback);
       }

@@ -216,9 +216,14 @@ holds the old schedule, `scheduleSeed` and items, which is everything a replay n
 1. Replay the classic build (`BuildSlotCycleCommand.replayClassic`): `previous.lineup.schedule`,
    `previous.lineup.scheduleSeed`, `previous.startTime`, classic options (`maxDays`,
    `startTomorrow`, shared-RNG shuffle), plus `checkpoints: true`. No `endTime`.
-   - The request passes the stored lineup's content IDs (`type: 'programs'`). The save has already
-     replaced the channel's program list, and a classic shuffle depends on the order its programs
-     arrive in.
+   - The request passes a program list (`type: 'programs'`). A classic build puts the programs it
+     was given first in each slot's pool, so a shuffle's order depends on that list. The save has
+     already replaced the channel's program list, so it can't be read back.
+   - Classic builds record that list as `scheduleProgramIds`: the request's `programs` on a slot
+     save, the channel's programs on a regenerate. With it, the replay is exact.
+   - A lineup saved before `scheduleProgramIds` existed tries the aired programs, no programs, and
+     the turn-on save's `programs`, in that order (`classicReplayInputs`). Step 2 rejects a wrong
+     guess, so the first match wins and the rest fall back.
 2. Check the replay against `previous.lineup.items`, comparing type, ID and duration per item, from
    the start of the build up to the restart point. The carried state describes every item before
    it, and later items are discarded at the cut-over. On any mismatch, fall back.
@@ -260,7 +265,8 @@ Fall back to `initializeChannel` and log a warning with the reason when:
 - `no_seed`: `previous.lineup.scheduleSeed` is missing. Regenerate picks a fresh seed for these,
   so a replay can't reproduce the lineup. Seeds arrived in v2026.10.2 with no migration, but every
   regenerate writes one, so only channels not saved or rescanned since then lack it.
-- `replay_mismatch`: the replay doesn't match the stored items up to the restart point.
+- `replay_mismatch`: no replay matches the stored items up to the restart point. With a recorded
+  program list, this means the library changed since the classic build.
 - `not_started`: `now < previous.startTime`, so nothing has aired.
 
 A lineup with no slot schedule before the save (manual or on-demand) reports `no_schedule`. It had
@@ -271,8 +277,8 @@ no places to keep, so the UI should not warn about it.
 - After the cut-over, the synthetic cycle ends at the restart point. Regenerate and later saves
   restart from points after it, so nothing ever rebuilds it with `stableShuffle` on.
 - `trimAiredCycles` drops it once it has aired.
-- The replay costs one regenerate and runs once per channel. The persisted cycle keeps no
-  checkpoints.
+- The replay costs one regenerate and runs once per channel, or up to three for a lineup without
+  a recorded program list. The persisted cycle keeps no checkpoints.
 
 #### Tests
 
@@ -282,6 +288,9 @@ Integration (`server/tests/slotCycleCarryClassic.test.ts`):
 - A shuffle finishes its current pass with no repeats.
 - A slot added in the same save starts at its first program.
 - A seedless channel falls back and the response says `no_seed`.
+- A shuffle that never aired its whole playlist keeps its place: with the save's recorded list,
+  after a regenerate, and on a lineup with no recorded list.
+- Random-slot channels, sequential and weighted with a cooldown, in their second loop.
 
 Unit (`slotCycles.test.ts`):
 
