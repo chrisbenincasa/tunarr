@@ -118,6 +118,31 @@ describe('withSlowQueryLog', () => {
     expect(reports[0]?.callStack[0]).toContain('prepareSlowStatement');
   });
 
+  test('names the code that iterated the query', () => {
+    const { db, reports } = setup();
+
+    function iterateSlowRows() {
+      return [...db.prepare('SELECT advance(600) AS ms').iterate()];
+    }
+
+    expect(iterateSlowRows()).toEqual([{ ms: 600 }]);
+    expect(reports).toHaveLength(1);
+    expect(reports[0]?.callStack[0]).toContain('iterateSlowRows');
+  });
+
+  test('reports an iteration that throws, and closes it', () => {
+    const { db, reports } = setup();
+
+    expect(() => [
+      ...db
+        .prepare("SELECT json(CASE WHEN advance(600) THEN 'bad' END)")
+        .iterate(),
+    ]).toThrow(/JSON/);
+
+    expect(reports.map((r) => r.durationMs)).toEqual([600]);
+    expect(db.prepare('SELECT 1 AS one').get()).toEqual({ one: 1 });
+  });
+
   test('times exec and returns the wrapped connection', () => {
     const { db, reports } = setup();
 
@@ -133,7 +158,8 @@ describe('withSlowQueryLog', () => {
     expect(() =>
       db.prepare('SELECT advance(600), * FROM missing_table').get(),
     ).toThrow();
-    // Preparing fails before anything runs, so nothing is timed.
+    // The fake clock stands still while SQLite prepares, so the failed
+    // prepare stays under the threshold.
     expect(reports).toEqual([]);
 
     db.exec('CREATE TABLE t (n INTEGER NOT NULL)');

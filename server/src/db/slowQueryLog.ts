@@ -71,26 +71,52 @@ export function withSlowQueryLog(
     });
   }
 
-  function* timeIterator<T>(
+  function timeIterator<T>(
     iterator: IterableIterator<T>,
     sql: string,
-  ): Generator<T, void, undefined> {
+  ): IterableIterator<T> {
     let elapsed = 0;
-    try {
-      for (;;) {
+    let finished = false;
+
+    // Reports once, when the rows run out, the read throws, or the consumer
+    // stops early. Named functions keep the wrapper out of the call stack.
+    function end(above: AnyFunction) {
+      if (finished) {
+        return;
+      }
+      finished = true;
+      finish(sql, elapsed, above);
+    }
+
+    const timed: IterableIterator<T> = {
+      next: function timedNext() {
         const startedAt = now();
-        const next = iterator.next();
+        let next: IteratorResult<T>;
+        try {
+          next = iterator.next();
+        } catch (error) {
+          elapsed += now() - startedAt;
+          iterator.return?.();
+          end(timedNext);
+          throw error;
+        }
         elapsed += now() - startedAt;
         if (next.done) {
-          return;
+          end(timedNext);
         }
-        yield next.value;
-      }
-    } finally {
-      // Closes the statement when the consumer stops early.
-      iterator.return?.();
-      finish(sql, elapsed);
-    }
+        return next;
+      },
+      return: function timedReturn() {
+        // Closes the statement when the consumer stops early.
+        iterator.return?.();
+        end(timedReturn);
+        return { done: true, value: undefined };
+      },
+      [Symbol.iterator]() {
+        return timed;
+      },
+    };
+    return timed;
   }
 
   function timeStatement(stmt: Sqlite.Statement): Sqlite.Statement {
