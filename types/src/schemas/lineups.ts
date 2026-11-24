@@ -41,6 +41,14 @@ export const CondensedChannelProgramSchema = z.discriminatedUnion('type', [
   FlexProgramSchema,
 ]);
 
+// What a slot save on a rebuilding channel did with each slot's place.
+export const ScheduleEditOutcomeSchema = z.object({
+  placesCarried: z.boolean(),
+  reason: z
+    .enum(['no_schedule', 'no_seed', 'replay_mismatch', 'not_started'])
+    .optional(),
+});
+
 export const CondensedChannelProgrammingSchema = z.object({
   icon: ChannelIconSchema.optional(),
   name: z.string().optional(),
@@ -51,4 +59,6 @@ export const CondensedChannelProgrammingSchema = z.object({
   startTimeOffsets: z.array(z.number()),
   schedule: LineupScheduleSchema.optional(),
   dynamicContentConfig: DynamicContentConfigSchema.optional(),
+  // Set only in the response to a slot save that rebuilds each cycle.
+  scheduleEdit: ScheduleEditOutcomeSchema.optional(),
 });

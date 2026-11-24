@@ -86,7 +86,14 @@ describe('saving a schedule that rebuilds each cycle', () => {
       .loadCondensedLineup(channelId);
 
     expect(reloaded).not.toBeNull();
-    expect(saveResponse).toEqual(JSON.parse(JSON.stringify(reloaded)));
+    const { scheduleEdit, ...lineup } = saveResponse as Record<string, unknown>;
+    expect(lineup).toEqual(JSON.parse(JSON.stringify(reloaded)));
+
+    // A new channel had no schedule before this save, so no places to keep.
+    expect(scheduleEdit).toEqual({
+      placesCarried: false,
+      reason: 'no_schedule',
+    });
   }, 60_000);
 });
 

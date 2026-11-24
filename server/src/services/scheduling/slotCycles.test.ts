@@ -28,11 +28,14 @@ import type { SlotCheckpoint } from './slotCheckpoints.ts';
 import {
   advanceCycles,
   chunkLengthMs,
+  classicPassState,
   cycleStartTime,
+  dropFirstCycleCheckpoints,
   firstRestartAfterAiring,
   initializeCycles,
   MaxChunkMs,
   rebuildAfterAiring,
+  shiftSnapshotTimes,
   truncateAt,
 } from './slotCycles.ts';
 import type { SlotSchedulerProgram } from './slotSchedulerUtil.ts';
@@ -1118,5 +1121,169 @@ describe('content across cycles', () => {
 
     expect(first.cycles.length).toBeGreaterThanOrEqual(3);
     expect(second).toEqual(first);
+  });
+});
+
+describe('classicPassState', () => {
+  // A classic pass of ten one-hour programs with a checkpoint every two hours.
+  const passItems: LineupItem[] = Array.from({ length: 10 }, (_, i) => ({
+    type: 'content',
+    id: `p${i}`,
+    durationMs: oneHour,
+  }));
+  const passMs = 10 * oneHour;
+
+  function replayOf(
+    items: LineupItem[] = passItems,
+    lastPlayedMs = oddStart,
+  ): BuiltCycle {
+    return {
+      items,
+      durationMs: totalDurationMs(items),
+      endSnapshot: {
+        discardCount: 3,
+        iteratorState: {
+          iterators: { 'slot:0': { type: 'ordered', lastProgramId: 'p9' } },
+          slotLastPlayedMs: { '0': lastPlayedMs },
+        },
+      },
+      checkpoints: [2, 4, 6, 8].map((hours) => ({
+        offsetMs: hours * oneHour,
+        discardCount: hours,
+      })),
+    };
+  }
+
+  const stored = { startTime: oddStart, items: passItems };
+
+  function withProgram(index: number, id: string): LineupItem[] {
+    return passItems.map((item, i) =>
+      i === index ? { type: 'content', id, durationMs: oneHour } : item,
+    );
+  }
+
+  test('wraps the pass as one cycle with the replay checkpoints', () => {
+    const pass = classicPassState(stored, replayOf(), oddStart + 3.5 * oneHour);
+
+    expect(pass).not.toHaveProperty('fallback');
+    if ('fallback' in pass) return;
+    expect(pass.shiftMs).toBe(0);
+    expect(pass.state.startTime).toBe(oddStart);
+    expect(pass.state.items).toEqual(passItems);
+    expect(pass.state.cycles).toHaveLength(1);
+    expect(pass.state.cycles[0]).toMatchObject({
+      itemCount: 10,
+      durationMs: passMs,
+    });
+    expect(pass.state.cycles[0]?.checkpoints).toHaveLength(4);
+    expect(pass.state.nextSnapshot?.discardCount).toBe(3);
+
+    const point = firstRestartAfterAiring(pass.state, oddStart + 3.5 * oneHour);
+    expect(point?.timeMs).toBe(oddStart + 4 * oneHour);
+  });
+
+  test('a looping channel starts the cycle at the current pass', () => {
+    const now = oddStart + 2 * passMs + 3.5 * oneHour;
+    const pass = classicPassState(stored, replayOf(), now);
+
+    if ('fallback' in pass) throw new Error(pass.fallback);
+    expect(pass.shiftMs).toBe(2 * passMs);
+    expect(pass.state.startTime).toBe(oddStart + 2 * passMs);
+    expect(firstRestartAfterAiring(pass.state, now)?.timeMs).toBe(
+      oddStart + 2 * passMs + 4 * oneHour,
+    );
+  });
+
+  test('a channel that has not started falls back', () => {
+    expect(classicPassState(stored, replayOf(), oddStart - 1)).toEqual({
+      fallback: 'not_started',
+    });
+  });
+
+  test('a replay that differs before the restart point falls back', () => {
+    const replay = replayOf(withProgram(1, 'other'));
+
+    expect(classicPassState(stored, replay, oddStart + 3.5 * oneHour)).toEqual({
+      fallback: 'replay_mismatch',
+    });
+  });
+
+  test('a replay that differs after the restart point is trusted', () => {
+    const replay = replayOf(withProgram(8, 'other'));
+    const pass = classicPassState(stored, replay, oddStart + 3.5 * oneHour);
+
+    expect(pass).not.toHaveProperty('fallback');
+  });
+
+  test('the last program airing checks the whole pass', () => {
+    const replay = replayOf(withProgram(9, 'other'));
+
+    expect(classicPassState(stored, replay, oddStart + 9.5 * oneHour)).toEqual({
+      fallback: 'replay_mismatch',
+    });
+  });
+});
+
+describe('shiftSnapshotTimes', () => {
+  test('moves random-slot cooldowns and nothing else', () => {
+    const snapshot: CycleSnapshot = {
+      discardCount: 7,
+      iteratorState: {
+        iterators: { 'slot:0': { type: 'ordered', lastProgramId: 'p1' } },
+        nextSlotIndex: 2,
+        slotLastPlayedMs: { '0': 1_000, '1': 5_000 },
+      },
+    };
+
+    expect(shiftSnapshotTimes(snapshot, oneDay)).toEqual({
+      ...snapshot,
+      iteratorState: {
+        ...snapshot.iteratorState,
+        slotLastPlayedMs: { '0': 1_000 + oneDay, '1': 5_000 + oneDay },
+      },
+    });
+  });
+
+  test('a snapshot without cooldowns is unchanged', () => {
+    const snapshot: CycleSnapshot = {
+      discardCount: 0,
+      iteratorState: { iterators: {} },
+    };
+
+    expect(shiftSnapshotTimes(snapshot, oneDay)).toBe(snapshot);
+  });
+});
+
+describe('dropFirstCycleCheckpoints', () => {
+  test('keeps every other cycle as it is', () => {
+    const checkpoint: SlotCheckpoint = { offsetMs: oneHour, discardCount: 1 };
+    const snapshot: CycleSnapshot = {
+      discardCount: 0,
+      iteratorState: { iterators: {} },
+    };
+    const state: CycleState = {
+      startTime: oddStart,
+      items: [],
+      cycles: [
+        {
+          itemCount: 0,
+          durationMs: oneHour,
+          snapshot,
+          checkpoints: [checkpoint],
+        },
+        {
+          itemCount: 0,
+          durationMs: oneHour,
+          snapshot,
+          checkpoints: [checkpoint],
+        },
+      ],
+      nextSnapshot: undefined,
+    };
+
+    const dropped = dropFirstCycleCheckpoints(state);
+
+    expect(dropped.cycles[0]).not.toHaveProperty('checkpoints');
+    expect(dropped.cycles[1]?.checkpoints).toEqual([checkpoint]);
   });
 });

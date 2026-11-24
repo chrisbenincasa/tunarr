@@ -5,7 +5,10 @@ import {
 import { globalOptions } from '@/globals.js';
 import type { ChannelLineupLock } from '@/services/ChannelLineupLock.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
-import { SlotCycleBoundaryService } from '@/services/scheduling/SlotCycleBoundaryService.js';
+import {
+  SlotCycleBoundaryService,
+  type ScheduleEditOutcome,
+} from '@/services/scheduling/SlotCycleBoundaryService.js';
 import { validateSlotGroups } from '@/services/scheduling/slotGroupValidator.js';
 import type { UpdateXmlTvTaskRequest } from '@/tasks/UpdateXmlTvTask.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
@@ -684,6 +687,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         };
       }
 
+      let scheduleEdit: ScheduleEditOutcome | undefined;
+
       // One lock across the save and the first cycle build, so nothing reads
       // or rewrites the lineup between the two writes.
       const updateResult = await Result.attemptAsync(() =>
@@ -712,10 +717,13 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
               SlotCycleBoundaryService,
             );
             if (previous) {
-              await boundaryService.applyScheduleEdit(req.params.id, {
-                startTime: previous.channel.startTime,
-                lineup: previous.lineup,
-              });
+              scheduleEdit = await boundaryService.applyScheduleEdit(
+                req.params.id,
+                {
+                  startTime: previous.channel.startTime,
+                  lineup: previous.lineup,
+                },
+              );
             } else {
               await boundaryService.initializeChannel(req.params.id);
             }
@@ -777,7 +785,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(500).send();
       }
 
-      return res.status(200).serializer(JSON.stringify).send(newLineup);
+      return res
+        .status(200)
+        .serializer(JSON.stringify)
+        .send(scheduleEdit ? { ...newLineup, scheduleEdit } : newLineup);
     },
   );
 

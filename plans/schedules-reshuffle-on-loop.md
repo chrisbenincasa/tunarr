@@ -5,6 +5,9 @@
 > after the program on air and keep each show's place. Design check:
 > `plans/schedules-reshuffle-vs-infinite-output-check-2026-11-22.md`. Next: maintainer review of the
 > rework, then the PR body. Slice 4 (web toggle) follows. Phase 2 (manual lineups) is deferred.
+>
+> **11/23/2026:** Carrying a classic channel's places into rebuild each cycle (#2545) built on
+> `feat/slot-cycle-carry-classic`, stacked on #2312. See "Turning it on for an existing channel".
 
 Stopgap for dynamic schedules (Tunarr v2). A slot channel's lineup holds one cycle of content at a
 time. Before a cycle ends, the server builds the next one from the same schedule, continuing the RNG
@@ -201,6 +204,113 @@ New optional fields need no `ChannelLineupMigrator` step.
 - A slot save keeps the toggle state, the program on air and each unchanged slot's place. It
   resets the seed.
 - A manual save clears the toggle and all cycle state. The saved items become a fixed manual lineup.
+
+### Turning it on for an existing channel
+
+Today a slot save that turns the toggle on calls `initializeChannel`, which starts every show over.
+Long-running channels lose their places (#2545). Instead, rebuild the scheduler state of the classic
+lineup at the moment of the save and hand it to the same cut-over path edits use.
+
+#### Mechanism
+
+`applyScheduleEdit` already receives `previous` (start time and lineup before the save). That lineup
+holds the old schedule, `scheduleSeed` and items, which is everything a replay needs.
+
+1. Replay the classic build (`BuildSlotCycleCommand.replayClassic`): `previous.lineup.schedule`,
+   `previous.lineup.scheduleSeed`, `previous.startTime`, classic options (`maxDays`,
+   `startTomorrow`, shared-RNG shuffle), plus `checkpoints: true`. No `endTime`.
+   - The request passes the stored lineup's content IDs (`type: 'programs'`). The save has already
+     replaced the channel's program list, and a classic shuffle depends on the order its programs
+     arrive in.
+2. Check the replay against `previous.lineup.items`, comparing type, ID and duration per item, from
+   the start of the build up to the restart point. The carried state describes every item before
+   it, and later items are discarded at the cut-over. On any mismatch, fall back.
+3. Find the current pass: `duration = sum(previous items)`,
+   `k = floor((now - previous.startTime) / duration)`, `passStart = previous.startTime + k × duration`.
+4. Build a synthetic `CycleState`:
+   - `startTime: passStart`
+   - `items: previous.lineup.items`
+   - `cycles: [{ itemCount, durationMs: duration, snapshot: empty, checkpoints }]`
+   - `nextSnapshot`: the replay's end state, for when the program on air is the last of the pass
+5. Shift `slotLastPlayedMs` by `k × duration`. It is the only absolute timestamp in the state.
+   Checkpoint offsets are relative to the cycle start and need no shift.
+6. Pass the synthetic state into the existing `rebuildAfterAiring` path with `carry`. That keeps
+   the program on air, cuts over at the next restart point and remaps slots for edits made in the
+   same save.
+7. Drop the synthetic cycle's checkpoints before persisting. Every later restart comes after the
+   cut, so they are never read, and a year-long pass has thousands.
+
+A rebuilding channel with no stored cycles takes the same path, since its items are a classic pass.
+Steps 2 through 5 live in `classicPassState` (`slotCycles.ts`).
+
+#### What carries
+
+| Slot order                | Result                                                                |
+| ------------------------- | --------------------------------------------------------------------- |
+| `next`, `ordered_shuffle` | Continues from the program on air                                     |
+| `shuffle`                 | Finishes the current pass in a new order (new seed, same `playedIds`) |
+| Random-slot sequencing    | Slot cursor and cooldowns continue                                    |
+| New slot in the same save | Starts at episode 1                                                   |
+| Filler                    | Not carried (same as every rebuild)                                   |
+
+The state reflects the current loop pass. A channel that looped has replayed its build, so earlier
+passes are not recoverable.
+
+#### Fallback
+
+Fall back to `initializeChannel` and log a warning with the reason when:
+
+- `no_seed`: `previous.lineup.scheduleSeed` is missing. Regenerate picks a fresh seed for these,
+  so a replay can't reproduce the lineup. Seeds arrived in v2026.10.2 with no migration, but every
+  regenerate writes one, so only channels not saved or rescanned since then lack it.
+- `replay_mismatch`: the replay doesn't match the stored items up to the restart point.
+- `not_started`: `now < previous.startTime`, so nothing has aired.
+
+A lineup with no slot schedule before the save (manual or on-demand) reports `no_schedule`. It had
+no places to keep, so the UI should not warn about it.
+
+#### Safety
+
+- After the cut-over, the synthetic cycle ends at the restart point. Regenerate and later saves
+  restart from points after it, so nothing ever rebuilds it with `stableShuffle` on.
+- `trimAiredCycles` drops it once it has aired.
+- The replay costs one regenerate and runs once per channel. The persisted cycle keeps no
+  checkpoints.
+
+#### Tests
+
+Integration (`server/tests/slotCycleCarryClassic.test.ts`):
+
+- An ordered show continues from the program on air after the toggle turns on mid-pass.
+- A shuffle finishes its current pass with no repeats.
+- A slot added in the same save starts at its first program.
+- A seedless channel falls back and the response says `no_seed`.
+
+Unit (`slotCycles.test.ts`):
+
+- The pass wraps as one cycle with the replay's checkpoints.
+- A channel on loop pass `k > 0` starts the cycle at the current pass.
+- A mismatch before the restart point falls back. One after it is trusted.
+- The last program airing checks the whole pass, because the cut-over uses `nextSnapshot`.
+- A not-yet-started channel falls back.
+- Cooldowns move by the shift. Nothing else does.
+
+#### Decisions (11/23/2026)
+
+- Ships as a follow-up PR stacked on #2312. It must merge before slice 4, because slice 4 is the
+  first way to turn the toggle on.
+- The slot-save response carries `scheduleEdit: { placesCarried, reason? }` on rebuilding saves.
+  `applyScheduleEdit` returns it. Slice 4 shows a snackbar from it, except for `no_schedule`. The
+  server also logs the fallback.
+- No recovery of ordered-show places from stored items when the replay fails. Programs don't
+  record their slot, and the fallback is rare.
+
+#### Known limit
+
+Classic random-slot builds drop the group that crosses the build end after its iterators advanced.
+The replay's end state counts that group as played. When the program on air is the last of the
+pass, the cut-over uses that end state, so each affected slot skips one group. This needs the
+toggle turned on during the last program of a pass, so it is accepted, not fixed.
 
 ### Web
 
