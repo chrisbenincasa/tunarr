@@ -59,7 +59,7 @@ Tunarr has various command line / environment variables for configuration. These
 | -------------------- | ----------------- | ------- | ----------- |
 | `TUNARR_LOG_LEVEL` | N/A | `info` | Sets the log level. Valid values: `trace`, `debug`, `info`, `warn`, `error`, `fatal`, `silent`. Overrides the UI setting. |
 | `LOG_DIRECTORY` | N/A | (data dir) | Sets a custom directory for log files. |
-| `TUNARR_EVENT_LOOP_STALL_THRESHOLD_MS` | N/A | `1000` | Logs a warning each time the server is blocked for at least this many milliseconds, with the tasks and scans that ran during the block. Streams and requests wait while the server is blocked, so these warnings explain freezes and stalls. Set to `0` to turn them off. |
+| `TUNARR_EVENT_LOOP_STALL_THRESHOLD_MS` | N/A | `1000` | Logs a warning each time the server is blocked for this many milliseconds or longer, with the tasks and scans that ran during the block. The check runs every 100 ms, so a block less than 100 ms over the threshold may not be logged. Streams and requests wait while the server is blocked, so these warnings explain freezes and stalls. Set to `0` to turn them off. |
 
 ### Streaming
 | Environment Variable | Command Line Flag | Default | Description |
