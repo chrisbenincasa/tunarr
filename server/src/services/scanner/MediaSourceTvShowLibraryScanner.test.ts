@@ -8,8 +8,8 @@ import { v4 } from 'uuid';
 import { test as baseTest, describe, expect, vi } from 'vitest';
 import { bootstrapTunarr } from '../../bootstrap.ts';
 import type { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
-import type { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
-import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
+import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
+import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { DBAccess } from '../../db/DBAccess.ts';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
@@ -301,6 +301,7 @@ function makeSearchService() {
   const searchService = {
     indexShow: vi.fn().mockResolvedValue(undefined),
     indexSeason: vi.fn().mockResolvedValue(undefined),
+    indexEpisodes: vi.fn().mockResolvedValue(undefined),
     updatePrograms,
   } as unknown as MeilisearchService;
   return { searchService, updatePrograms };
@@ -432,5 +433,219 @@ describe('MediaSourceTvShowLibraryScanner grouping trash state', () => {
     expect(await groupingStates(drizzle, [seeded.showUuid])).toEqual({
       [seeded.showUuid]: 'missing',
     });
+  });
+});
+
+const rescanShowKey = 'rescan-show';
+const rescanSeasonKey = 'rescan-season';
+const rescanEpisodeKey = 'rescan-episode';
+
+/**
+ * A server whose show has one season with one episode. Used to assert that a
+ * single-show rescan walks past the show row itself.
+ */
+class SingleShowScanner extends MediaSourceTvShowLibraryScanner<
+  'jellyfin',
+  MediaSourceApiClient,
+  JellyfinShow,
+  JellyfinSeason,
+  JellyfinEpisode
+> {
+  readonly mediaSourceType = 'jellyfin' as const;
+
+  constructor(
+    programDb: IProgramDB,
+    searchService: MeilisearchService,
+    mediaSource: MediaSourceOrm,
+  ) {
+    super(
+      {
+        getById: () => Promise.resolve(mediaSource),
+        setLibraryLastScannedTime: () => Promise.resolve(),
+      } as unknown as MediaSourceDB,
+      programDb,
+      new ProgramGroupingMinter(),
+      new ProgramDaoMinter(),
+      searchService,
+      {
+        scanStarted: vi.fn(),
+        scanProgress: vi.fn(),
+        scanEnded: vi.fn(),
+      } as unknown as MediaSourceProgressService,
+      {
+        execute: (uuid: string) => programDb.getProgramGrouping(uuid),
+      } as unknown as GetProgramGroupingById,
+      {} as ExternalSubtitleDownloader,
+    );
+  }
+
+  protected getApiClient(): Promise<MediaSourceApiClient> {
+    return Promise.resolve({} as MediaSourceApiClient);
+  }
+
+  protected getLibrarySize(): Promise<number> {
+    return Promise.resolve(1);
+  }
+
+  protected getSubtitles(): never {
+    throw new Error('not implemented for test');
+  }
+
+  protected async *getTvShowLibraryContents(): AsyncIterable<JellyfinShow> {
+    yield { externalId: rescanShowKey } as JellyfinShow;
+  }
+
+  protected async *getTvShowSeasons(): AsyncIterable<JellyfinSeason> {
+    yield { externalId: rescanSeasonKey } as JellyfinSeason;
+  }
+
+  protected async *getSeasonEpisodes(): AsyncIterable<JellyfinEpisode> {
+    yield { externalId: rescanEpisodeKey } as JellyfinEpisode;
+  }
+
+  protected getEntityExternalKey(
+    item: JellyfinShow | JellyfinSeason | JellyfinEpisode,
+  ): string {
+    return item.externalId;
+  }
+
+  protected getFullEpisodeMetadata(
+    episode: JellyfinEpisode,
+  ): Promise<Result<JellyfinEpisode>> {
+    return Promise.resolve(
+      Result.success({
+        ...episode,
+        canonicalId: `canonical-${episode.externalId}`,
+        title: 'Episode 1',
+        duration: 30000,
+        episodeNumber: 1,
+        sourceType: 'jellyfin',
+        season: { index: 1 },
+        identifiers: [],
+        artwork: [],
+        actors: [],
+        genres: [],
+        studios: [],
+        tags: [],
+      } as JellyfinEpisode),
+    );
+  }
+
+  protected getFullTvShowMetadata(
+    externalId: string,
+  ): Promise<Result<JellyfinShow>> {
+    return Promise.resolve(
+      Result.success({
+        externalId,
+        canonicalId: `canonical-${externalId}`,
+        title: 'Show',
+        identifiers: [],
+        artwork: [],
+        actors: [],
+        genres: [],
+        studios: [],
+        tags: [],
+      } as JellyfinShow),
+    );
+  }
+
+  protected getFullTvSeasonMetadata(
+    externalId: string,
+  ): Promise<Result<JellyfinSeason>> {
+    return Promise.resolve(
+      Result.success({
+        externalId,
+        canonicalId: `canonical-${externalId}`,
+        title: 'Season 1',
+        index: 1,
+        identifiers: [],
+        artwork: [],
+        genres: [],
+        studios: [],
+        tags: [],
+      } as JellyfinSeason),
+    );
+  }
+
+  protected isShowT(grouping: ApiProgramGrouping): grouping is JellyfinShow {
+    return grouping.type === 'show';
+  }
+
+  protected isSeasonT(
+    grouping: ApiProgramGrouping,
+  ): grouping is JellyfinSeason {
+    return grouping.type === 'season';
+  }
+}
+
+async function seedMediaSourceLibrary(
+  drizzle: DrizzleDBAccess,
+): Promise<{ mediaSource: MediaSourceOrm; library: MediaSourceLibraryOrm }> {
+  const mediaSource = {
+    uuid: v4() as MediaSourceId,
+    name: tag(faker.string.alpha(10)),
+    type: 'jellyfin',
+    createdAt: +dayjs(),
+    updatedAt: +dayjs(),
+    uri: 'http://localhost:8096',
+    accessToken: 'test-token',
+    clientIdentifier: null,
+    index: 0,
+    sendChannelUpdates: false,
+    sendGuideUpdates: false,
+    username: null,
+    userId: null,
+    mediaType: null,
+  } satisfies MediaSourceOrm;
+  await drizzle.insert(MediaSource).values(mediaSource);
+
+  const library = {
+    uuid: v4(),
+    name: faker.word.words(2),
+    mediaSourceId: mediaSource.uuid,
+    mediaType: 'shows' as const,
+    lastScannedAt: null,
+    externalKey: faker.string.alphanumeric(10),
+    enabled: true,
+  } satisfies MediaSourceLibraryOrm;
+  await drizzle.insert(MediaSourceLibrary).values(library);
+
+  return { mediaSource, library };
+}
+
+describe('MediaSourceTvShowLibraryScanner single-show rescan depth', () => {
+  test("imports the show's seasons and episodes", async ({
+    drizzle,
+    programDb,
+  }) => {
+    const { mediaSource, library } = await seedMediaSourceLibrary(drizzle);
+    const { searchService } = makeSearchService();
+    const scanner = new SingleShowScanner(
+      programDb,
+      searchService,
+      mediaSource,
+    );
+
+    const result = await scanner.scanSingle({
+      library,
+      force: true,
+      externalId: rescanShowKey,
+    });
+
+    expect(result.isSuccess()).toBe(true);
+
+    const showRow = await drizzle.query.programGrouping.findFirst({
+      where: eq(ProgramGrouping.externalKey, rescanShowKey),
+    });
+    const seasonRow = await drizzle.query.programGrouping.findFirst({
+      where: eq(ProgramGrouping.externalKey, rescanSeasonKey),
+    });
+    const episodeRow = await drizzle.query.program.findFirst({
+      where: eq(Program.externalKey, rescanEpisodeKey),
+    });
+
+    expect(seasonRow?.showUuid).toBe(showRow?.uuid);
+    expect(episodeRow?.seasonUuid).toBe(seasonRow?.uuid);
+    expect(episodeRow?.tvShowUuid).toBe(showRow?.uuid);
   });
 });

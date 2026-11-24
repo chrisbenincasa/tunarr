@@ -8,7 +8,7 @@ import { test as baseTest, expect, vi } from 'vitest';
 import { bootstrapTunarr } from '../../bootstrap.ts';
 import type { GetProgramGroupingById } from '../../commands/GetProgramGroupingById.ts';
 import { ProgramGroupingMinter } from '../../db/converters/ProgramGroupingMinter.ts';
-import type { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
+import { ProgramDaoMinter } from '../../db/converters/ProgramMinter.ts';
 import { DBAccess } from '../../db/DBAccess.ts';
 import type { IProgramDB } from '../../db/interfaces/IProgramDB.ts';
 import type { MediaSourceDB } from '../../db/mediaSourceDB.ts';
@@ -707,5 +707,173 @@ describe('MediaSourceMusicArtistScanner single-artist rescan', () => {
     expect(result.isSuccess()).toBe(true);
     expect(mintArtist).not.toHaveBeenCalled();
     expect(searchService.indexMusicArtist).not.toHaveBeenCalled();
+  });
+});
+
+const rescanArtistKey = 'rescan-artist';
+const rescanAlbumKey = 'rescan-album';
+const rescanTrackKey = 'rescan-track';
+
+/**
+ * A server whose artist has one album with one track. Used to assert that a
+ * single-artist rescan walks past the artist row itself.
+ */
+class SingleArtistScanner extends MediaSourceMusicArtistScanner<
+  'plex',
+  PlexArtist,
+  PlexAlbum,
+  PlexTrack,
+  PlexApiClient
+> {
+  readonly mediaSourceType = 'plex' as const;
+
+  constructor(
+    programDb: IProgramDB,
+    searchService: MeilisearchService,
+    mediaSource: MediaSourceOrm,
+  ) {
+    super(
+      {
+        getById: () => Promise.resolve(mediaSource),
+        setLibraryLastScannedTime: () => Promise.resolve(),
+      } as unknown as MediaSourceDB,
+      programDb,
+      new ProgramGroupingMinter(),
+      new ProgramDaoMinter(),
+      searchService,
+      {
+        scanStarted: vi.fn(),
+        scanProgress: vi.fn(),
+        scanEnded: vi.fn(),
+      } as unknown as MediaSourceProgressService,
+      {
+        execute: (uuid: string) => programDb.getProgramGrouping(uuid),
+      } as unknown as GetProgramGroupingById,
+      {} as ExternalSubtitleDownloader,
+    );
+  }
+
+  protected getApiClient(): Promise<PlexApiClient> {
+    return Promise.resolve({
+      getMusicArtist: (externalId: string) =>
+        Promise.resolve(
+          Result.success({
+            externalId,
+            canonicalId: `canonical-${externalId}`,
+            title: 'Artist',
+            identifiers: [],
+            artwork: [],
+            genres: [],
+            tags: [],
+          } as PlexArtist),
+        ),
+      getMusicAlbum: (externalId: string) =>
+        Promise.resolve(
+          Result.success({
+            externalId,
+            canonicalId: `canonical-${externalId}`,
+            title: 'Album',
+            index: 1,
+            identifiers: [],
+            artwork: [],
+            genres: [],
+            studios: [],
+            tags: [],
+          } as PlexAlbum),
+        ),
+      getMusicTrack: (externalId: string) =>
+        Promise.resolve(
+          Result.success({
+            externalId,
+            canonicalId: `canonical-${externalId}`,
+            title: 'Track 1',
+            duration: 30000,
+            trackNumber: 1,
+            sourceType: 'plex',
+            identifiers: [],
+            artwork: [],
+            genres: [],
+            studios: [],
+            tags: [],
+          } as PlexTrack),
+        ),
+    } as unknown as PlexApiClient);
+  }
+
+  protected getLibrarySize(): Promise<number> {
+    return Promise.resolve(1);
+  }
+
+  protected getSubtitles(): never {
+    throw new Error('not implemented for test');
+  }
+
+  protected async *getArtists(): AsyncIterable<PlexArtist> {
+    yield { externalId: rescanArtistKey } as PlexArtist;
+  }
+
+  protected async *getAlbums(): AsyncIterable<PlexAlbum> {
+    yield { externalId: rescanAlbumKey } as PlexAlbum;
+  }
+
+  protected async *getAlbumTracks(): AsyncIterable<PlexTrack> {
+    yield { externalId: rescanTrackKey } as PlexTrack;
+  }
+
+  protected getFullArtistMetadata(
+    externalId: string,
+  ): Promise<Result<PlexArtist>> {
+    return Promise.resolve(
+      Result.success({
+        externalId,
+        canonicalId: `canonical-${externalId}`,
+      } as PlexArtist),
+    );
+  }
+
+  protected getFullTrackMetadata(): Promise<Result<PlexTrack>> {
+    throw new Error('not implemented for test');
+  }
+
+  protected getEntityExternalKey(item: PlexArtist | PlexAlbum | PlexTrack) {
+    return item.externalId;
+  }
+}
+
+describe('MediaSourceMusicArtistScanner single-artist rescan depth', () => {
+  test("imports the artist's albums and tracks", async ({
+    drizzle,
+    programDb,
+  }) => {
+    const { mediaSource, library } =
+      await createTestMediaSourceLibrary(drizzle);
+    const { searchService } = makeMusicSearchService();
+    const scanner = new SingleArtistScanner(
+      programDb,
+      searchService,
+      mediaSource,
+    );
+
+    const result = await scanner.scanSingle({
+      library,
+      force: true,
+      externalId: rescanArtistKey,
+    });
+
+    expect(result.isSuccess()).toBe(true);
+
+    const artistRow = await drizzle.query.programGrouping.findFirst({
+      where: eq(ProgramGrouping.externalKey, rescanArtistKey),
+    });
+    const albumRow = await drizzle.query.programGrouping.findFirst({
+      where: eq(ProgramGrouping.externalKey, rescanAlbumKey),
+    });
+    const trackRow = await drizzle.query.program.findFirst({
+      where: eq(Program.externalKey, rescanTrackKey),
+    });
+
+    expect(albumRow?.artistUuid).toBe(artistRow?.uuid);
+    expect(trackRow?.albumUuid).toBe(albumRow?.uuid);
+    expect(trackRow?.artistUuid).toBe(artistRow?.uuid);
   });
 });
