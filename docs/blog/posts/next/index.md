@@ -4,32 +4,32 @@ categories:
   - Releases
 ---
 
-# Tunarr 2026.11.3: Continuous Channels and Auto Create
+# Tunarr 2026.11.3: Continuous Schedules and Auto Create
 
-Slot channels can now run **continuously**. A continuous channel keeps building its schedule as time passes, instead of building it once and looping it. Shows pick up where they left off, shuffles play every program before repeating, and schedule changes take effect after the program on air. This is the first step toward infinite schedules, the scheduler that will replace time slots and random slots.
+Slot schedules no longer have to loop. With the new **Rebuild each cycle** option, a time slot or random slot channel keeps building fresh programming as time passes. Shows pick up where they left off, shuffles play every program before repeating, and schedule changes take effect after the program on air. New slot schedules have it on by default. This is the first step toward infinite schedules, the scheduler that will replace time slots and random slots.
 
 This release also adds **Auto Create**, an experimental wizard that builds a whole channel from a preset. Other highlights include custom library scan schedules, the rename of Custom Shows to Playlists, card layouts for more pages, and lower memory use.
 
 <!-- more -->
 
-<!-- TODO screenshot: the slot editor with the continuous channel option turned on -->
-
-## Continuous channels
+## Continuous schedules
 
 Until now, a time slot or random slot channel built its lineup once and played it on a loop. Every loop played the same shuffle, and ordered shows started over at episode 1. Channels with a short schedule length repeated within days.
 
-<!-- TODO: confirm the option's label and where it lives once the editor change merges -->
+Turn on **Rebuild each cycle** under **Settings** in the **Time Slots** editor or the **Slot Editor**, and the channel never loops. Tunarr builds new programming before the current stretch runs out, at most a day at a time, so the guide always covers your **EPG (Hours)** setting.
 
-Turn on **Continuous** in the Time Slots editor or the Slot Editor, and the channel never loops. Tunarr builds the schedule a chunk at a time, far enough ahead to fill the guide, and drops the parts that have aired.
+![The Time Slots editor with four evening slots and the Rebuild each cycle switch turned on under Settings](rebuild-each-cycle.png)
 
 - **Shows continue.** An ordered show plays its next episode, not episode 1.
-- **Shuffles finish their pass.** A shuffled show plays every program once before any repeats. Programs you add join the current pass, and programs you remove drop out.
-- **Changes wait for the program on air.** Saving the schedule, rescanning a library, or emptying the trash takes effect after the current program ends. Each show keeps its place, even when you move or retime its slot.
-- **Downtime is handled.** If Tunarr was off long enough for the schedule to run out, it starts a new chunk when it comes back.
+- **Shuffles finish their pass.** A shuffled slot plays every program once before any repeats, then starts a new order. Programs you add join the current pass, and programs you remove drop out.
+- **Changes wait for the program on air.** Saving the schedule, scanning a library, or emptying the trash takes effect after the current program ends. Each slot keeps its place when you move or retime it.
+- **Downtime is handled.** When Tunarr starts after being down, each show continues where it left off, so nothing is skipped. Time slot channels pick up at the start of the current day, and Slot Editor channels pick up right away.
 
-Existing slot channels don't change until you turn the option on. After a rebuild, the filler Tunarr picks can differ from what the guide showed earlier, but the programs and their order stay the same.
+Existing slot channels don't change until you turn the option on. When you do, the program on air keeps playing and each show keeps its place. If Tunarr can't keep the places, for example because an older version saved the schedule, it shows a message and the shows start from the beginning.
 
-<!-- TODO: link the guide page for continuous channels once it exists -->
+With the option on, **Programming Start** on the channel's properties page becomes read-only, because Tunarr moves it forward as programs air. **Days to Precalculate** only sets how far the editor previews. On-demand channels can't use the option, because they replay their saved lineup. After a rebuild, the filler Tunarr picks can differ from what the guide showed earlier, but the programs and their order stay the same.
+
+See [Rebuild Each Cycle](../../../configure/scheduling/concepts.md#rebuild-each-cycle) for the details.
 
 ## Auto Create
 
