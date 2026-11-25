@@ -157,6 +157,21 @@ export abstract class MediaSourceMusicArtistScanner<
       lookupResult,
       ctx,
     );
+
+    if (result.isSuccess()) {
+      const scannedArtist = result.get();
+      if (scannedArtist) {
+        const scanAlbumsResult = await this.scanAlbums(scannedArtist, ctx);
+        if (scanAlbumsResult.isFailure()) {
+          this.logger.warn(
+            scanAlbumsResult.error,
+            'Error scanning albums for artist: %s',
+            scannedArtist.title,
+          );
+        }
+      }
+    }
+
     await this.syncGroupingStates(library.uuid);
     return result.map(() => void 0);
   }

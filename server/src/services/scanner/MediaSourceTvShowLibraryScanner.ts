@@ -128,6 +128,21 @@ export abstract class MediaSourceTvShowLibraryScanner<
     }
 
     const result = await this.scanShow(incomingShow.get(), lookupResult, ctx);
+
+    if (result.isSuccess()) {
+      const scannedShow = result.get();
+      if (scannedShow) {
+        const scanSeasonsResult = await this.scanSeasons(scannedShow, ctx);
+        if (scanSeasonsResult.isFailure()) {
+          this.logger.warn(
+            scanSeasonsResult.error,
+            'Error scanning seasons for show: %s',
+            scannedShow.title,
+          );
+        }
+      }
+    }
+
     await this.syncGroupingStates(library.uuid);
     return result.map(() => void 0);
   }
