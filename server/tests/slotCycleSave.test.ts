@@ -191,7 +191,7 @@ describe('deleting a schedule', () => {
 
   test('stops the channel rebuilding each cycle', async () => {
     const channelId = await createChannelViaApi(app, {
-      number: 4006,
+      number: 4007,
       transcodeConfigId,
     });
     const saved = await saveTimeSlotSchedule(
