@@ -1,12 +1,17 @@
+import type { ChannelProgram } from '@tunarr/types';
+import type { RandomSlotSchedule, TimeSlotSchedule } from '@tunarr/types/api';
 import { describe, expect, test } from 'vitest';
 import type { ProgramOption } from './slotSchedulerUtil.ts';
 import {
   customShowAvailability,
+  initialRebuildEachCycle,
   isSelectableForNewSlot,
+  isStartTimeLocked,
   nextSlotStartTime,
   OneDayMillis,
   slotDayOfWeek,
   slotPeriodMillis,
+  slotScheduleSaveRequest,
   slotsForDayColumn,
   unavailableCustomShowSlotIndexes,
   withSlotDayOfWeek,
@@ -186,5 +191,124 @@ describe('offsets stay inside the schedule period', () => {
     expect(withSlotTimeOfDay(2 * OneDayMillis, 9, 0, 'week')).toBe(
       2 * OneDayMillis + 9 * HOUR,
     );
+  });
+});
+
+describe('initialRebuildEachCycle', () => {
+  test('a new slot schedule rebuilds', () => {
+    expect(initialRebuildEachCycle({}, false)).toBe(true);
+  });
+
+  test('an existing schedule keeps its setting', () => {
+    expect(
+      initialRebuildEachCycle({ schedule: {}, rebuildEachCycle: false }, false),
+    ).toBe(false);
+    expect(
+      initialRebuildEachCycle({ schedule: {}, rebuildEachCycle: true }, false),
+    ).toBe(true);
+  });
+
+  test('an existing schedule without the field stays off', () => {
+    expect(initialRebuildEachCycle({ schedule: {} }, false)).toBe(false);
+  });
+
+  test('an on-demand channel never rebuilds', () => {
+    expect(initialRebuildEachCycle({}, true)).toBe(false);
+    expect(
+      initialRebuildEachCycle({ schedule: {}, rebuildEachCycle: true }, true),
+    ).toBe(false);
+  });
+});
+
+describe('slotScheduleSaveRequest', () => {
+  const showId = '22222222-2222-4222-8222-222222222222';
+  const otherShowId = '33333333-3333-4333-8333-333333333333';
+
+  const timeSchedule: TimeSlotSchedule = {
+    type: 'time',
+    flexPreference: 'distribute',
+    latenessMs: 0,
+    maxDays: 7,
+    overflow: { type: 'duration', maxMs: 0 },
+    padMs: 0,
+    period: 'day',
+    slots: [
+      {
+        type: 'custom-show',
+        customShowId: showId,
+        order: 'next',
+        direction: 'asc',
+        id: '44444444-4444-4444-8444-444444444444',
+        startTime: 0,
+      },
+    ],
+    timeZoneOffset: 0,
+  };
+
+  const randomSchedule: RandomSlotSchedule = {
+    type: 'random',
+    flexPreference: 'distribute',
+    maxDays: 7,
+    padMs: 0,
+    padStyle: 'slot',
+    slots: [],
+    randomDistribution: 'uniform',
+    lockWeights: false,
+  };
+
+  const custom = (id: string, customShowId: string): ChannelProgram => ({
+    type: 'custom',
+    id,
+    customShowId,
+    index: 0,
+    duration: 1000,
+  });
+
+  const lineup: ChannelProgram[] = [
+    custom('in-slot', showId),
+    custom('other-show', otherShowId),
+    { type: 'flex', duration: 1000 },
+  ];
+
+  test('sends the schedule with the rebuild setting the user chose', () => {
+    const seed = { seed: [1, 2], discardCount: 3 };
+
+    expect(slotScheduleSaveRequest(timeSchedule, lineup, seed, false)).toEqual({
+      type: 'time',
+      schedule: timeSchedule,
+      programs: ['in-slot'],
+      seed: [1, 2],
+      discardCount: 3,
+      rebuildEachCycle: false,
+    });
+    expect(
+      slotScheduleSaveRequest(timeSchedule, lineup, undefined, true)
+        .rebuildEachCycle,
+    ).toBe(true);
+  });
+
+  test('tags a random schedule as random', () => {
+    expect(
+      slotScheduleSaveRequest(randomSchedule, lineup, undefined, true),
+    ).toMatchObject({
+      type: 'random',
+      schedule: randomSchedule,
+      rebuildEachCycle: true,
+    });
+  });
+});
+
+describe('isStartTimeLocked', () => {
+  test('a new channel always sets its own start time', () => {
+    expect(isStartTimeLocked(true, false, false)).toBe(false);
+  });
+
+  test('an existing channel waits for its schedule to load', () => {
+    expect(isStartTimeLocked(false, false, false)).toBe(true);
+  });
+
+  test('a loaded schedule locks the start time only while it rebuilds', () => {
+    expect(isStartTimeLocked(false, true, false)).toBe(false);
+    expect(isStartTimeLocked(false, true, true)).toBe(true);
   });
 });

@@ -6179,6 +6179,7 @@ export type GetApiChannelsByIdScheduleResponses = {
             periodMs?: number;
             lockWeights: boolean;
         };
+        rebuildEachCycle?: boolean;
     };
 };
 

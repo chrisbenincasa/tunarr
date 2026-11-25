@@ -95,6 +95,46 @@ describe('saving a schedule that rebuilds each cycle', () => {
       reason: 'no_schedule',
     });
   }, 60_000);
+
+  test('the schedule endpoint reports the toggle', async () => {
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/channels/${channelId}/schedule`,
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({
+      schedule: { type: 'time' },
+      rebuildEachCycle: true,
+    });
+  });
+});
+
+describe('the schedule endpoint on a classic channel', () => {
+  test('reports the toggle off', async () => {
+    const channelId = await createChannelViaApi(app, {
+      number: 4006,
+      transcodeConfigId,
+    });
+    const saved = await saveTimeSlotSchedule(
+      app,
+      channelId,
+      programIds,
+      schedule(),
+    );
+    expect(saved.statusCode).toBe(200);
+
+    const res = await app.inject({
+      method: 'GET',
+      url: `/api/channels/${channelId}/schedule`,
+    });
+
+    expect(res.statusCode).toBe(200);
+    expect(res.json()).toMatchObject({
+      schedule: { type: 'time' },
+      rebuildEachCycle: false,
+    });
+  }, 120_000);
 });
 
 describe('the rebuild toggle on a slot save', () => {

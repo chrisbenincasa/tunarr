@@ -24,6 +24,36 @@
 
     A filler list that has no programs in it is ignored when the schedule is generated: the slot simply gets no filler from that list (and the empty list is noted in the server log). The slot editor marks such lists so they can be spotted before saving.
 
+## Rebuild Each Cycle
+
+Without this option, a slot schedule is built once when you save it, then the saved lineup loops forever. The same shuffle repeats each time around, and shows in order start over at the first episode.
+
+Turn on **Rebuild each cycle** in the Slot Editor or the Time Slots editor to keep building new programming from the schedule instead. New slot schedules have it on by default.
+
+With it on:
+
+* Tunarr builds the next stretch of programming before the current one runs out, at most a day at a time. The guide always covers at least the **EPG (Hours)** setting in the XMLTV settings.
+* Shuffled slots get a new order each cycle. In a shuffled slot, every program plays once before any repeats.
+* Ordered shows continue where they left off instead of starting over.
+* **Days to Precalculate** only sets how much of the schedule the editor previews.
+* **Programming Start** on the channel's properties page is read-only. The schedule moves it forward as programs air.
+
+### Changes to a Rebuilding Channel
+
+Saving the schedule, scanning a library, or removing programs takes effect after the program on air ends. The program on air keeps playing, and each slot you didn't change keeps its place. A slot keeps its place when you move or retime it, but not when you change what it plays, its order, its direction, or its season filters.
+
+When the server starts after being down, the channel continues from where its shows left off. Time slot channels pick up at the start of the current day, and Slot Editor channels pick up right away. Episodes that would have aired while the server was down are not skipped.
+
+### Turning It On for an Existing Channel
+
+Turning the option on keeps the program on air and each show's place. Tunarr shows a message when it can't, and the channel's shows start from the beginning instead:
+
+* The schedule was saved by an older version of Tunarr.
+* The saved lineup no longer matches its schedule.
+* Nothing has aired on the channel yet.
+
+On-demand channels replay their saved lineup, so they can't rebuild. Editing a channel's programming by hand or removing its schedule turns the option off, and the lineup loops as it is.
+
 ## Removing a Slot Schedule
 
 A channel saved from the Slot Editor or Time Slots editor keeps its schedule. The channel's programming page then shows a notice that manual edits will make the channel drift from that schedule. To return the channel to manual programming, click **Remove schedule** on that notice. The channel keeps its current programs, and the notice goes away.

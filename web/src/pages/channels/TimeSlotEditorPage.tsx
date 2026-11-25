@@ -1,5 +1,6 @@
 import { RotatingLoopIcon } from '@/components/base/LoadingIcon.tsx';
 import ChannelLineupList from '@/components/channel_config/ChannelLineupList.tsx';
+import { RebuildEachCycleField } from '@/components/slot_scheduler/RebuildEachCycleField.tsx';
 import { TimeSlotFormProvider } from '@/components/slot_scheduler/TimeSlotFormProvider.tsx';
 import { TimeSlotTable } from '@/components/slot_scheduler/TimeSlotTable.tsx';
 import {
@@ -7,11 +8,12 @@ import {
   OneWeekMillis,
   dropdownValueToOverflow,
   flexOptions,
+  initialRebuildEachCycle,
   latenessOptions,
-  lineupItemAppearsInSchedule,
   overflowOptions,
   overflowToDropdownValue,
   padOptions,
+  slotScheduleSaveRequest,
   unavailableCustomShowSlotIndexes,
 } from '@/helpers/slotSchedulerUtil.ts';
 import { v4 } from 'uuid';
@@ -45,7 +47,6 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { useQueryClient } from '@tanstack/react-query';
 import { dayjsMod } from '@tunarr/shared';
-import { seq } from '@tunarr/shared/util';
 import type {
   MaterializedTimeSlotSchedule,
   TimeSlotSchedule,
@@ -55,7 +56,6 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import {
-  filter,
   flatMap,
   groupBy,
   head,
@@ -78,6 +78,7 @@ import { useSlotProgramOptions } from '../../hooks/programming_controls/useSlotP
 import { NumericFormControllerText } from '../../components/util/TypedController.tsx';
 import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { toggle } from '../../helpers/util.ts';
+import { useScheduleEditNotice } from '../../hooks/slot_scheduler/useScheduleEditNotice.ts';
 import { useScheduleSlots } from '../../hooks/slot_scheduler/useScheduleSlots.ts';
 import { useChannelSchedule } from '../../hooks/useChannelSchedule.ts';
 import { useUpdateLineup } from '../../hooks/useUpdateLineup.ts';
@@ -102,7 +103,7 @@ const defaultTimeSlotSchedule: TimeSlotSchedule = {
 
 function convertToViewModel(
   schedule: MaterializedTimeSlotSchedule,
-): TimeSlotForm {
+): Omit<TimeSlotForm, 'rebuildEachCycle'> {
   return {
     ...schedule,
     slots: map(schedule.slots, (slot) => ({
@@ -136,10 +137,15 @@ export default function TimeSlotEditorPage() {
   const [isCalculatingSlots, toggleIsCalculatingSlots] = useToggle(false);
 
   const formMethods = useForm<TimeSlotForm>({
-    defaultValues:
-      channelSchedule.schedule?.type === 'time'
+    defaultValues: {
+      ...(channelSchedule.schedule?.type === 'time'
         ? convertToViewModel(channelSchedule.schedule)
-        : defaultTimeSlotSchedule,
+        : defaultTimeSlotSchedule),
+      rebuildEachCycle: initialRebuildEachCycle(
+        channelSchedule,
+        channel?.onDemand.enabled ?? false,
+      ),
+    },
     // mode: 'all',
   });
 
@@ -167,6 +173,7 @@ export default function TimeSlotEditorPage() {
 
   const queryClient = useQueryClient();
   const snackbar = useSnackbar();
+  const notifyScheduleEdit = useScheduleEditNotice();
   const updateLineupMutation = useUpdateLineup({
     onSuccess() {
       queryClient
@@ -189,43 +196,29 @@ export default function TimeSlotEditorPage() {
   }, [reset]);
 
   const onSave = () => {
+    const { rebuildEachCycle, ...form } = getValues();
     const schedule = {
-      ...getValues(),
+      ...form,
       timeZoneOffset: new Date().getTimezoneOffset(),
       type: 'time',
     } satisfies TimeSlotSchedule;
-
-    // Find programs that have active slots
-    const filteredLineup = filter(materializeOriginalProgramList(), (item) =>
-      lineupItemAppearsInSchedule(getValues('slots'), item),
-    );
 
     updateLineupMutation.mutate(
       {
         path: {
           id: channel!.id,
         },
-        body: {
-          type: 'time',
+        body: slotScheduleSaveRequest(
           schedule,
-          programs: seq.collect(filteredLineup, (l) => {
-            switch (l.type) {
-              case 'custom':
-              case 'content':
-                return l.id;
-              case 'redirect':
-              case 'flex':
-              case 'filler':
-                return null;
-            }
-          }),
-          seed: randomState?.seed,
-          discardCount: randomState?.discardCount,
-        },
+          materializeOriginalProgramList(),
+          randomState,
+          rebuildEachCycle,
+        ),
       },
       {
-        onSuccess() {
-          reset(schedule, { keepDirty: false });
+        onSuccess(data) {
+          notifyScheduleEdit(data.scheduleEdit);
+          reset({ ...schedule, rebuildEachCycle }, { keepDirty: false });
         },
       },
     );
@@ -340,6 +333,18 @@ export default function TimeSlotEditorPage() {
                 columns={16}
                 justifyContent={'flex-start'}
               >
+                <Grid size={{ sm: 16 }} sx={{ mt: 2 }}>
+                  <Controller
+                    control={control}
+                    name="rebuildEachCycle"
+                    render={({ field }) => (
+                      <RebuildEachCycleField
+                        value={field.value}
+                        onChange={field.onChange}
+                      />
+                    )}
+                  />
+                </Grid>
                 <Grid size={{ sm: 16, md: 5 }}>
                   <FormControl fullWidth margin="normal">
                     <InputLabel>

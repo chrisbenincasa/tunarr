@@ -76,7 +76,7 @@ Determines how flex is added to a slot to fill in leftover time, either due to b
 
 #### Days to Precalculate
 
-Currently, Tunarr can only statically precalculate a schedule. This option determines how far into the future the schedule will be calculated before saving the lineup for playback.
+This option determines how far into the future the schedule will be calculated before saving the lineup for playback. With [Rebuild each cycle](concepts.md#rebuild-each-cycle) on, it only sets how far the editor previews, because Tunarr keeps building new programming as the channel airs.
 
 ## Season Exclusion
 
