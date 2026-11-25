@@ -72,7 +72,7 @@ describe('DELETE /channels/:id/schedule (#937)', () => {
     await app.close();
   });
 
-  it('clears the schedule, seed, and program list without touching the lineup items', async () => {
+  it('clears the schedule and its rebuild state without touching the lineup items', async () => {
     const res = await app.inject({
       method: 'DELETE',
       url: `/channels/${channelId}/schedule`,
@@ -83,6 +83,9 @@ describe('DELETE /channels/:id/schedule (#937)', () => {
       schedule: null,
       scheduleSeed: null,
       scheduleProgramIds: null,
+      rebuildEachCycle: null,
+      cycles: null,
+      nextCycleSnapshot: null,
     });
   });
 

@@ -188,4 +188,33 @@ describe('deleting a schedule', () => {
     expect((await deleted).statusCode).toBe(204);
     expect((await loadLineup(channelId)).schedule).toBeUndefined();
   }, 120_000);
+
+  test('stops the channel rebuilding each cycle', async () => {
+    const channelId = await createChannelViaApi(app, {
+      number: 4006,
+      transcodeConfigId,
+    });
+    const saved = await saveTimeSlotSchedule(
+      app,
+      channelId,
+      programIds,
+      schedule(),
+      { rebuildEachCycle: true },
+    );
+    expect(saved.statusCode).toBe(200);
+    expect((await loadLineup(channelId)).cycles).toBeDefined();
+
+    const deleted = await app.inject({
+      method: 'DELETE',
+      url: `/api/channels/${channelId}/schedule`,
+    });
+    expect(deleted.statusCode).toBe(204);
+
+    // The channel update path ignores start time edits while this flag is set.
+    const lineup = await loadLineup(channelId);
+    expect(lineup.rebuildEachCycle).toBeUndefined();
+    expect(lineup.cycles).toBeUndefined();
+    expect(lineup.nextCycleSnapshot).toBeUndefined();
+    expect(lineup.items.length).toBeGreaterThan(0);
+  }, 120_000);
 });
