@@ -824,6 +824,12 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
             schedule: null,
             scheduleSeed: null,
             scheduleProgramIds: null,
+
+            // A manual lineup can't rebuild. A leftover flag would keep the
+            // server ignoring start time edits.
+            rebuildEachCycle: null,
+            cycles: null,
+            nextCycleSnapshot: null,
           }),
         );
 
