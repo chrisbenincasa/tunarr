@@ -1088,6 +1088,10 @@ msgstr "Buffer size effects how frequently ffmpeg reconsiders the output bitrate
 msgid "Builder"
 msgstr "Builder"
 
+#: src/components/slot_scheduler/RebuildEachCycleField.tsx
+msgid "Builds new programming before the current programming runs out. Shuffled slots get a new order each cycle, and ordered shows continue where they left off. Days to Precalculate only sets the preview length."
+msgstr "Builds new programming before the current programming runs out. Shuffled slots get a new order each cycle, and ordered shows continue where they left off. Days to Precalculate only sets the preview length."
+
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Built-in"
 msgstr "Built-in"
@@ -4004,6 +4008,10 @@ msgstr "On selected days"
 msgid "On-Demand"
 msgstr "On-Demand"
 
+#: src/components/slot_scheduler/RebuildEachCycleField.tsx
+msgid "On-demand channels replay their saved lineup, so they can't rebuild."
+msgstr "On-demand channels replay their saved lineup, so they can't rebuild."
+
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "On-Demand channels resume from where you left off. Programming is paused when the channel is not streaming.<0/><1>NOTE:</1> While the channel is inactive, the TV Guide for the channel will be empty."
 msgstr "On-Demand channels resume from where you left off. Programming is paused when the channel is not streaming.<0/><1>NOTE:</1> While the channel is inactive, the TV Guide for the channel will be empty."
@@ -4512,6 +4520,10 @@ msgstr "Read Less"
 #: src/components/programs/MediaDetailCard.tsx
 msgid "Read More"
 msgstr "Read More"
+
+#: src/components/slot_scheduler/RebuildEachCycleField.tsx
+msgid "Rebuild each cycle"
+msgstr "Rebuild each cycle"
 
 #: src/components/programming_controls/AddRedirectModal.tsx
 msgid "Redirect duration"
@@ -5243,6 +5255,18 @@ msgstr "Shows"
 msgid "Shows come up at random, one episode at a time. Each show's episodes stay in order, starting from a random episode."
 msgstr "Shows come up at random, one episode at a time. Each show's episodes stay in order, starting from a random episode."
 
+#: src/hooks/slot_scheduler/useScheduleEditNotice.ts
+msgid "Shows start from the beginning, because nothing has aired on this channel yet."
+msgstr "Shows start from the beginning, because nothing has aired on this channel yet."
+
+#: src/hooks/slot_scheduler/useScheduleEditNotice.ts
+msgid "Shows start from the beginning. The saved lineup no longer matches its schedule, so their places couldn't be recovered."
+msgstr "Shows start from the beginning. The saved lineup no longer matches its schedule, so their places couldn't be recovered."
+
+#: src/hooks/slot_scheduler/useScheduleEditNotice.ts
+msgid "Shows start from the beginning. This schedule was saved by an older version of Tunarr, so their places couldn't be recovered."
+msgstr "Shows start from the beginning. This schedule was saved by an older version of Tunarr, so their places couldn't be recovered."
+
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Shows take turns in a fixed order, each playing a block of episodes before the next show."
 msgstr "Shows take turns in a fixed order, each playing a block of episodes before the next show."
@@ -5691,6 +5715,10 @@ msgstr "Test Transcode"
 msgid "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours."
 msgstr "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours."
 
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "The channel's schedule didn't load, so the start time can't be changed. Reload the page to try again."
+msgstr "The channel's schedule didn't load, so the start time can't be changed. Reload the page to try again."
+
 #: src/components/channel_config/MediaItemGrid.tsx
 msgid "The End."
 msgstr "The End."
@@ -5801,6 +5829,10 @@ msgstr "This channel keeps its current programs but will no longer use its slot 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "This channel number has already been used"
 msgstr "This channel number has already been used"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "This channel rebuilds its schedule each cycle, so the schedule moves the start time forward as programs air."
+msgstr "This channel rebuilds its schedule each cycle, so the schedule moves the start time forward as programs air."
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "This could cause the following slot's programs to go unscheduled. Possible solutions include:"

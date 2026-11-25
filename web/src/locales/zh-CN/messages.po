@@ -1088,6 +1088,10 @@ msgstr "缓冲区大小影响 ffmpeg 重新评估输出码率的频率。<0>了�
 msgid "Builder"
 msgstr "编排器"
 
+#: src/components/slot_scheduler/RebuildEachCycleField.tsx
+msgid "Builds new programming before the current programming runs out. Shuffled slots get a new order each cycle, and ordered shows continue where they left off. Days to Precalculate only sets the preview length."
+msgstr ""
+
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Built-in"
 msgstr ""
@@ -4004,6 +4008,10 @@ msgstr ""
 msgid "On-Demand"
 msgstr "点播"
 
+#: src/components/slot_scheduler/RebuildEachCycleField.tsx
+msgid "On-demand channels replay their saved lineup, so they can't rebuild."
+msgstr ""
+
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "On-Demand channels resume from where you left off. Programming is paused when the channel is not streaming.<0/><1>NOTE:</1> While the channel is inactive, the TV Guide for the channel will be empty."
 msgstr "点播频道会从你上次观看的位置继续播放。频道停止播放时，节目进度会暂停。<0/><1>注意：</1>频道处于非活动状态时，其节目单将为空。"
@@ -4512,6 +4520,10 @@ msgstr "收起"
 #: src/components/programs/MediaDetailCard.tsx
 msgid "Read More"
 msgstr "展开阅读"
+
+#: src/components/slot_scheduler/RebuildEachCycleField.tsx
+msgid "Rebuild each cycle"
+msgstr ""
 
 #: src/components/programming_controls/AddRedirectModal.tsx
 msgid "Redirect duration"
@@ -5243,6 +5255,18 @@ msgstr "剧集"
 msgid "Shows come up at random, one episode at a time. Each show's episodes stay in order, starting from a random episode."
 msgstr ""
 
+#: src/hooks/slot_scheduler/useScheduleEditNotice.ts
+msgid "Shows start from the beginning, because nothing has aired on this channel yet."
+msgstr ""
+
+#: src/hooks/slot_scheduler/useScheduleEditNotice.ts
+msgid "Shows start from the beginning. The saved lineup no longer matches its schedule, so their places couldn't be recovered."
+msgstr ""
+
+#: src/hooks/slot_scheduler/useScheduleEditNotice.ts
+msgid "Shows start from the beginning. This schedule was saved by an older version of Tunarr, so their places couldn't be recovered."
+msgstr ""
+
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Shows take turns in a fixed order, each playing a block of episodes before the next show."
 msgstr ""
@@ -5691,6 +5715,10 @@ msgstr "测试转码"
 msgid "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours."
 msgstr "频道在指定时段内的常规节目安排，其余时间由弹性时间填充。"
 
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "The channel's schedule didn't load, so the start time can't be changed. Reload the page to try again."
+msgstr ""
+
 #: src/components/channel_config/MediaItemGrid.tsx
 msgid "The End."
 msgstr "结束。"
@@ -5801,6 +5829,10 @@ msgstr ""
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "This channel number has already been used"
 msgstr "该频道号已被占用"
+
+#: src/components/channel_config/ChannelPropertiesEditor.tsx
+msgid "This channel rebuilds its schedule each cycle, so the schedule moves the start time forward as programs air."
+msgstr ""
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "This could cause the following slot's programs to go unscheduled. Possible solutions include:"
