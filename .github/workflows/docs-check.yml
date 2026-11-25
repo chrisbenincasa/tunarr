@@ -1,0 +1,25 @@
+name: Check Docs
+on:
+  pull_request:
+    paths:
+      - docs/**
+      - mkdocs.yml
+      - .github/workflows/docs-check.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: 3.x
+      - run: pip install mkdocs-material mkdocs-glightbox
+
+      # Strict mode also fails on broken relative links, which the publish build tolerates.
+      - run: mkdocs build --strict
+        env:
+          NO_MKDOCS_2_WARNING: '1'

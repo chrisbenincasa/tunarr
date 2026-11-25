@@ -110,10 +110,14 @@ Path: `docs/blog/posts/next/index.md`, unless a draft already exists. Screenshot
 ```yaml
 ---
 draft: true
+date: 2026-01-01
 categories:
   - Releases
 ---
 ```
+
+Keep the `date` line. The blog plugin fails the docs build on a post without one, drafts
+included. Any date works, because the promotion workflow replaces it.
 
 Shape, following the 2026.11.2 post:
 
