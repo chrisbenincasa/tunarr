@@ -37,6 +37,8 @@ export function mapLineupItemToPlaybackItem(
 
   if (isContentBackedLineupItem(lineupItem)) {
     const program = lineupItem.program;
+    // The show title lives on the grouping; the flat column is the fallback.
+    const showTitle = program.show?.title ?? program.showTitle;
     return {
       type: 'content',
       itemStartedAtMs,
@@ -45,8 +47,8 @@ export function mapLineupItemToPlaybackItem(
       programId: program.uuid,
       // For TV episodes: show title is the primary title, episode title is secondary
       // For movies: program title is the primary title
-      title: program.showTitle ?? program.title,
-      episodeTitle: program.showTitle ? program.title : undefined,
+      title: showTitle ?? program.title,
+      episodeTitle: showTitle ? program.title : undefined,
       seasonNumber: program.seasonNumber ?? undefined,
       episodeNumber: program.episode ?? undefined,
       summary: program.summary ?? undefined,
