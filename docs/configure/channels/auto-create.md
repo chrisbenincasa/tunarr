@@ -37,7 +37,7 @@ Weighted Mix groups and Classic TV Day blocks have no picker. Give each one a fi
 
 - One smart collection per role, named `<channel name> - <role>`. Find them under **Library > Smart Collections**.
 - A channel in the `Auto-Created` group that uses the default transcode config.
-- A [slot schedule](programming.md) that points at those smart collections.
+- A [slot schedule](programming.md) that points at those smart collections, with [Rebuild Each Cycle](../scheduling/concepts.md#rebuild-each-cycle) turned on. The channel keeps building new programming instead of looping, and it picks up programs that start matching a collection after a library scan.
 
 After creation the channel is an ordinary channel. Edit its programming, properties, or collections as usual.
 
