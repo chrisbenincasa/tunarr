@@ -168,7 +168,7 @@ export class ProgramUpsertRepository {
         }
 
         for (const [programId, studios] of Object.entries(studiosToInsert)) {
-          await this.metadataRepo.upsertProgramStudios(programId, studios);
+          this.metadataRepo.upsertProgramStudios(programId, studios);
         }
 
         for (const [programId, tags] of Object.entries(tagsToInsert)) {
