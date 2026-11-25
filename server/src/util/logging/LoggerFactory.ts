@@ -224,6 +224,11 @@ class LoggerFactoryImpl {
     this.roller?.roll();
   }
 
+  closeRollingDestination() {
+    this.roller?.deinitialize();
+    this.roller = undefined;
+  }
+
   child(
     args: GetChildLoggerArgs,
     opts?: ChildLoggerOptions<LogLevels>,
