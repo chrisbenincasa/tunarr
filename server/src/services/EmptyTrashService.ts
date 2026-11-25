@@ -14,6 +14,7 @@ import { Mutex } from 'async-mutex';
 import { inject, injectable } from 'inversify';
 import { EventService } from './EventService.ts';
 import { MeilisearchService } from './MeilisearchService.ts';
+import { SlotCycleBoundaryService } from './scheduling/SlotCycleBoundaryService.ts';
 
 /** Programs deleted per synchronous DELETE statement. */
 export const EmptyTrashProgramBatchSize = 500;
@@ -70,7 +71,23 @@ export class EmptyTrashService {
     @inject(MeilisearchService) private search: MeilisearchService,
     @inject(KEYS.SettingsDB) private settings: ISettingsDB,
     @inject(EventService) private events: EventService,
+    @inject(SlotCycleBoundaryService)
+    private slotCycles: SlotCycleBoundaryService,
   ) {}
+
+  async #rebuildSlotCycles(channelIds: readonly string[]) {
+    for (const channelId of channelIds) {
+      try {
+        await this.slotCycles.regenerateChannel(channelId);
+      } catch (e) {
+        this.logger.error(
+          e,
+          'Failed to rebuild slot cycles for channel %s after emptying the trash',
+          channelId,
+        );
+      }
+    }
+  }
 
   getStatus(): EmptyTrashStatus {
     return { ...this.#status };
@@ -165,14 +182,14 @@ export class EmptyTrashService {
         await this.channelDB.removeProgramsFromAllLineups(ids);
       this.logger.debug(
         'Empty trash rewrote %d channel lineup(s) for %d trashed program(s)',
-        changedChannels,
+        changedChannels.length,
         ids.size,
       );
       ids.clear();
 
       // Lineups are final here even if the drain is cancelled later, so the
       // guide can be rebuilt now.
-      if (changedChannels > 0) {
+      if (changedChannels.length > 0) {
         this.#rebuildGuide();
       }
 
@@ -199,6 +216,13 @@ export class EmptyTrashService {
         // behind Meilisearch's indexing queue.
         void this.#deleteSearchDocuments(batch);
         await wait(EmptyTrashYieldMs);
+      }
+
+      // Rebuilding slot channels replace the purged programs after the one on
+      // air. Their slots still list trashed programs until phase 2 deletes
+      // them, so this waits for a finished phase 2.
+      if (!signal.aborted) {
+        await this.#rebuildSlotCycles(changedChannels);
       }
 
       // PHASE 3 - guarded, leaves-first grouping deletes.

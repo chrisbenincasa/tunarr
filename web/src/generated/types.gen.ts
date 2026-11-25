@@ -4578,6 +4578,7 @@ export type PostApiChannelsByIdProgrammingData = {
         };
         seed?: Array<number>;
         discardCount?: number;
+        rebuildEachCycle?: boolean;
     } | {
         type: 'random';
         programs: Array<string>;
@@ -4815,6 +4816,7 @@ export type PostApiChannelsByIdProgrammingData = {
         };
         seed?: Array<number>;
         discardCount?: number;
+        rebuildEachCycle?: boolean;
     };
     path: {
         id: string;
@@ -5388,6 +5390,12 @@ export type PostApiChannelsByIdProgrammingResponses = {
                 enabled: boolean;
             }>;
             enabled: boolean;
+        };
+        scheduleEdit?: {
+            placesCarried: true;
+        } | {
+            placesCarried: false;
+            reason: 'no_schedule' | 'no_seed' | 'replay_mismatch' | 'not_started';
         };
     };
 };
@@ -6171,6 +6179,7 @@ export type GetApiChannelsByIdScheduleResponses = {
             periodMs?: number;
             lockWeights: boolean;
         };
+        rebuildEachCycle?: boolean;
     };
 };
 

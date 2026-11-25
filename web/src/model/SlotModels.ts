@@ -74,6 +74,8 @@ export type RandomSlotForm = StrictOmit<
   'timeZoneOffset' | 'slots'
 > & {
   slots: SlotViewModel[];
+  // Saved on the lineup, not the schedule. Stripped before any request.
+  rebuildEachCycle: boolean;
 };
 
 export const defaultRandomSlotSchedule: RandomSlotForm = {
@@ -86,4 +88,5 @@ export const defaultRandomSlotSchedule: RandomSlotForm = {
   // UI mechanism
   lockWeights: true,
   type: 'random',
+  rebuildEachCycle: true,
 };

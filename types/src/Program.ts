@@ -3,6 +3,7 @@ import type {
   BaseProgramSchema,
   ChannelProgrammingSchema,
   ChannelProgramSchema,
+  CondensedChannelProgrammingSchema,
   CondensedChannelProgramSchema,
   CondensedContentProgramSchema,
   ContentProgramParentSchema,
@@ -13,10 +14,10 @@ import type {
   MusicAlbumContentProgramSchema,
   MusicArtistContentProgramSchema,
   RedirectProgramSchema,
+  ScheduleEditOutcomeSchema,
   TvSeasonContentProgramSchema,
   TvShowContentProgramSchema,
 } from './schemas/lineups.js';
-import { type CondensedChannelProgrammingSchema } from './schemas/lineups.js';
 import type {
   Actor,
   Collection,
@@ -147,6 +148,8 @@ export type CondensedChannelProgram = z.infer<
 export type CondensedChannelProgramming = z.infer<
   typeof CondensedChannelProgrammingSchema
 >;
+
+export type ScheduleEditOutcome = z.infer<typeof ScheduleEditOutcomeSchema>;
 
 export type ExternalId = z.infer<typeof ExternalIdSchema>;
 export type Identifier = z.infer<typeof IdentifierSchema>;

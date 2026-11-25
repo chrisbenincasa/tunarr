@@ -2467,6 +2467,42 @@ describe('TimeSlotService', () => {
       expect(wallClock.minute()).toBe(0);
     });
 
+    // Rebuilding channels build in chunks that start mid-period. Slot times
+    // count from the period start, so a chunk that starts after the clock
+    // change must still measure DST from before it.
+    test.each([
+      ['spring forward', '2025-03-09 12:00:00'],
+      ['fall back', '2025-11-02 12:00:00'],
+    ])(
+      '%s: a build that starts mid-day after the change keeps the 6 PM slot at 6 PM',
+      async (_name, start) => {
+        const { movies, episodes, episodeUuids } = makeDstPrograms();
+        const episodeUuidSet = new Set(episodeUuids);
+
+        const result = await scheduleTimeSlots(
+          makeDstSchedule(),
+          [...movies, ...episodes],
+          [1, 2, 3, 4],
+          undefined,
+          makeStartTime(start),
+          { endTime: makeStartTime(start).add(1, 'day') },
+        );
+
+        const episodeStarts = itemStartTimes(result)
+          .filter(
+            ({ item }) =>
+              item.type === 'content' && episodeUuidSet.has(item.id ?? ''),
+          )
+          .map(({ start }) => dayjs(start).tz(TZ));
+
+        expect(episodeStarts.length).toBeGreaterThan(0);
+        const first = episodeStarts[0];
+        expect(first?.format('YYYY-MM-DD HH:mm')).toBe(
+          `${start.slice(0, 10)} 18:00`,
+        );
+      },
+    );
+
     test('fall back: show slot does NOT appear at 5 PM (one hour early) without DST compensation', async () => {
       const { movies, episodes, episodeUuids } = makeDstPrograms();
       const episodeUuidSet = new Set(episodeUuids);

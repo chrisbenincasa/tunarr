@@ -1,11 +1,13 @@
 import { isNonEmptyString, seq } from '@tunarr/shared/util';
 import type { CondensedChannelProgram } from '@tunarr/types';
 import { inject, injectable } from 'inversify';
-import { sum } from 'lodash-es';
+import { isUndefined, sum } from 'lodash-es';
 import { condensedProgramToLineupItem } from '../db/channel/lineupItemConversion.ts';
 import type { LineupItem } from '../db/derived_types/Lineup.ts';
 import type { IChannelDB } from '../db/interfaces/IChannelDB.ts';
 import type { IWorkerPool } from '../interfaces/IWorkerPool.ts';
+import type { ChannelLineupLock } from '../services/ChannelLineupLock.ts';
+import { SlotCycleBoundaryService } from '../services/scheduling/SlotCycleBoundaryService.ts';
 import { TVGuideService } from '../services/TvGuideService.ts';
 import { KEYS } from '../types/inject.ts';
 import type { Nullable } from '../types/util.ts';
@@ -25,9 +27,21 @@ export class RegenerateChannelLineupCommand {
     @inject(KEYS.WorkerPoolFactory)
     private workerPoolProvider: () => IWorkerPool,
     @inject(TVGuideService) private tvGuideService: TVGuideService,
+    @inject(KEYS.ChannelLineupLock) private lineupLock: ChannelLineupLock,
+    @inject(SlotCycleBoundaryService)
+    private boundaryService: SlotCycleBoundaryService,
   ) {}
 
-  async execute({ channelId }: Request) {
+  execute(request: Request) {
+    // The lock covers the read, the rebuild and both writes. It is reentrant,
+    // so a caller that already holds it -- the duration reconciler does --
+    // passes straight through.
+    return this.lineupLock.run(request.channelId, () =>
+      this.regenerate(request),
+    );
+  }
+
+  private async regenerate({ channelId }: Request) {
     const channelAndLineup =
       await this.channelDB.loadChannelAndLineupOrm(channelId);
     if (!channelAndLineup) {
@@ -35,8 +49,23 @@ export class RegenerateChannelLineupCommand {
       return;
     }
 
-    const { schedule, scheduleSeed } = channelAndLineup.lineup;
+    const { schedule, scheduleSeed, rebuildEachCycle, onDemandConfig } =
+      channelAndLineup.lineup;
+
+    // A rebuilding channel's lineup is a run of cycles, not one loop, so it is
+    // rebuilt cycle by cycle. That path writes the guide update itself. An
+    // on-demand channel loops its lineup against a cursor, so it regenerates
+    // the ordinary way whatever the flag says.
+    if (rebuildEachCycle && schedule && isUndefined(onDemandConfig)) {
+      await this.boundaryService.regenerateChannel(channelId);
+      return;
+    }
+
     if (schedule) {
+      // The worker builds from the channel's programs, which this rebuild
+      // replaces below.
+      const scheduleProgramIds =
+        await this.channelDB.getChannelProgramIds(channelId);
       const request = {
         type: 'channel' as const,
         channelId,
@@ -74,6 +103,7 @@ export class RegenerateChannelLineupCommand {
       await this.channelDB.saveLineup(channelId, {
         items: lineupItems,
         scheduleSeed: result.seed,
+        scheduleProgramIds,
       });
       await this.channelDB.updateChannelDuration(
         channelId,

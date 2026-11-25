@@ -3,6 +3,8 @@ import { FillerType, OfflineFillerConfigSchema } from '@tunarr/types/schemas';
 import { first } from 'lodash-es';
 import type { DeepReadonly } from 'ts-essentials';
 import { z } from 'zod/v4';
+import { SlotCheckpointSchema } from '../../services/scheduling/slotCheckpoints.ts';
+import { SlotIteratorStateSchema } from '../../services/scheduling/slotIteratorState.ts';
 
 const BaseLineupItemSchema = z.object({
   durationMs: z.number().positive(), // Add a max
@@ -83,6 +85,28 @@ const OnDemandChannelConfigSchema = z.object({
 
 export type OnDemandChannelConfig = z.infer<typeof OnDemandChannelConfigSchema>;
 
+// Scheduler state a cycle starts from. `discardCount` is the RNG position in
+// the channel's `scheduleSeed`.
+export const CycleSnapshotSchema = z.object({
+  discardCount: z.number().nonnegative(),
+  iteratorState: SlotIteratorStateSchema,
+});
+
+export type CycleSnapshot = z.infer<typeof CycleSnapshotSchema>;
+
+// One built cycle of a rebuilding channel. `itemCount` items of the lineup
+// belong to it, and `snapshot` is the state it was built from. `checkpoints`
+// are the points inside it where the schedule can restart, so a change can
+// take effect right after the program on air instead of at the cycle start.
+export const LineupCycleSchema = z.object({
+  itemCount: z.number().int().nonnegative(),
+  durationMs: z.number(),
+  snapshot: CycleSnapshotSchema,
+  checkpoints: SlotCheckpointSchema.array().optional(),
+});
+
+export type LineupCycle = z.infer<typeof LineupCycleSchema>;
+
 export const CurrentLineupSchemaVersion = 7;
 
 export const LineupSchema = z.object({
@@ -121,6 +145,11 @@ export const LineupSchema = z.object({
   // items are edited by hand, so they no longer follow from the schedule.
   scheduleSeed: z.number().array().optional(),
 
+  // Program IDs the last classic build started from. Slot pools list these
+  // programs first, so a shuffle's order depends on them. Turning on rebuild
+  // each cycle replays that build to recover each show's place.
+  scheduleProgramIds: z.string().array().optional(),
+
   // These are precalculated offsets in milliseconds. The
   // array is a list of the running 'total' duration sum
   // of each of the lineup items. It can be used to quickly
@@ -132,6 +161,19 @@ export const LineupSchema = z.object({
   // OnDemand configuration for this channel. If empty, the channel
   // is not configured as on-demand.
   onDemandConfig: OnDemandChannelConfigSchema.optional(),
+
+  // Rebuild the schedule at every cycle boundary rather than looping `items`.
+  // Missing reads as off. Never on together with `onDemandConfig`: an
+  // on-demand channel tracks its position with a cursor into a looping
+  // lineup, which a rebuild would move out from under it.
+  rebuildEachCycle: z.boolean().optional(),
+
+  // The built cycles that make up `items`, in lineup order. Only set while
+  // `rebuildEachCycle` is on.
+  cycles: LineupCycleSchema.array().optional(),
+
+  // End state of the last built cycle, which the next one starts from.
+  nextCycleSnapshot: CycleSnapshotSchema.optional(),
 });
 
 export type Lineup = z.infer<typeof LineupSchema>;

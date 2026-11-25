@@ -28,6 +28,9 @@ export interface ProgramIterator<
   fork(): ProgramIterator<ProgramT>;
   // Iterators without resumable state leave this out.
   snapshot?(): ProgramIteratorSnapshot | undefined;
+  // The program this iterator would play for an ID, or null when it has no
+  // such program. Restores a recording from stored IDs.
+  programById?(programId: string): Nullable<ProgramT>;
 }
 
 abstract class BaseProgramIterator<ProgramT extends CondensedChannelProgram>
@@ -55,15 +58,29 @@ export abstract class IndexBasedProgramIterator<
 
   current(): ProgramT | null {
     const curr = nth(this.programs, this.position);
-    if (!curr) {
-      return null;
-    }
-    const cached = this.mintCache.get(curr.uuid);
+    return curr ? this.minted(curr) : null;
+  }
+
+  programById(programId: string): ProgramT | null {
+    const program = this.allPrograms().find(
+      (candidate) => candidate.uuid === programId,
+    );
+    return program ? this.minted(program) : null;
+  }
+
+  // Every program this iterator can play, including any a resumed pass has
+  // left out of `programs`.
+  protected allPrograms(): SlotSchedulerProgram[] {
+    return this.programs;
+  }
+
+  private minted(program: SlotSchedulerProgram): ProgramT {
+    const cached = this.mintCache.get(program.uuid);
     if (cached) {
       return cached;
     }
-    const minted = this.mint(curr);
-    this.mintCache.set(curr.uuid, minted);
+    const minted = this.mint(program);
+    this.mintCache.set(program.uuid, minted);
     return minted;
   }
 
@@ -191,6 +208,22 @@ export class RecordingProgramIterator<
     return this.#periodBuffer;
   }
 
+  // Restores a stored recording. Returns, for each stored ID, the index it
+  // landed at, or undefined when the program is gone.
+  restorePeriod(programIds: readonly string[]): (number | undefined)[] {
+    const buffer: ProgramT[] = [];
+    const positions = programIds.map((programId) => {
+      const program = this.inner.programById?.(programId);
+      if (!program) {
+        return;
+      }
+      buffer.push(program);
+      return buffer.length - 1;
+    });
+    this.#periodBuffer = buffer;
+    return positions;
+  }
+
   fork(): ProgramIterator<ProgramT> {
     return this;
   }
@@ -212,10 +245,20 @@ export class ReplayProgramIterator<
   #replayCursor = 0;
   #overflowed = false;
 
+  // `replayCursor` resumes a stored place in the recorder's buffer. The
+  // overflow flag is not stored, because current() sets it before every
+  // next() that reads it.
   constructor(
     private recorder: RecordingProgramIterator<ProgramT>,
     private overflowMode: 'flex' | 'continue' = 'flex',
-  ) {}
+    replayCursor = 0,
+  ) {
+    this.#replayCursor = replayCursor;
+  }
+
+  get replayCursor() {
+    return this.#replayCursor;
+  }
 
   current(state: IterationState): ProgramT | null {
     const buffer = this.recorder.periodBuffer;

@@ -135,6 +135,15 @@ export interface IChannelDB {
    */
   replaceChannelPrograms(channelId: string, programIds: string[]): void;
 
+  getChannelProgramIds(channelId: string): Promise<string[]>;
+
+  /**
+   * Associate programs with a channel, keeping the ones already there.
+   * @param channelId
+   * @param programIds
+   */
+  addChannelPrograms(channelId: string, programIds: string[]): void;
+
   updateLineup(
     id: string,
     req: UpdateChannelProgrammingRequest,
@@ -173,7 +182,7 @@ export interface IChannelDB {
 
   removeProgramsFromAllLineups(
     programIds: ReadonlySet<string> | string[],
-  ): Promise<number>;
+  ): Promise<string[]>;
 
   loadAllLineupConfigs(
     forceRead?: boolean,
@@ -210,8 +219,21 @@ export interface IChannelDB {
   findChannelsForProgramId(programId: string): Promise<ChannelOrm[]>;
 }
 export type UpdateChannelLineupRequest = MarkOptional<
-  MarkNullable<Omit<Lineup, 'lastUpdated'>, 'schedule' | 'scheduleSeed'>,
-  'version' | 'onDemandConfig' | 'items' | 'startTimeOffsets' | 'scheduleSeed'
+  MarkNullable<
+    Omit<Lineup, 'lastUpdated'>,
+    | 'schedule'
+    | 'scheduleSeed'
+    | 'scheduleProgramIds'
+    | 'rebuildEachCycle'
+    | 'cycles'
+    | 'nextCycleSnapshot'
+  >,
+  | 'version'
+  | 'onDemandConfig'
+  | 'items'
+  | 'startTimeOffsets'
+  | 'scheduleSeed'
+  | 'scheduleProgramIds'
 >;
 
 export type PageParams = {

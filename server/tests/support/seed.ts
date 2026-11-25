@@ -366,11 +366,19 @@ export type CreateChannelOptions = {
   number: number;
   name?: string;
   transcodeConfigId: string;
+  onDemand?: boolean;
+  startTime?: number;
 };
 
 export async function createChannelViaApi(
   app: FastifyInstance,
-  { number, name, transcodeConfigId }: CreateChannelOptions,
+  {
+    number,
+    name,
+    transcodeConfigId,
+    onDemand,
+    startTime = Date.now(),
+  }: CreateChannelOptions,
 ): Promise<string> {
   const res = await app.inject({
     method: 'POST',
@@ -385,13 +393,14 @@ export async function createChannelViaApi(
         guideMinimumDuration: 30000,
         icon: { path: '', width: 0, duration: 0, position: 'bottom-right' },
         id: '00000000-0000-0000-0000-000000000000',
-        startTime: Date.now(),
+        startTime,
         stealth: false,
         offline: { mode: 'pic' },
         streamMode: 'hls',
         transcodeConfigId,
         disableFillerOverlay: false,
         subtitlesEnabled: false,
+        ...(onDemand ? { onDemand: { enabled: true } } : {}),
       },
     },
   });
@@ -495,6 +504,7 @@ export function saveTimeSlotSchedule(
   channelId: string,
   programIds: string[],
   schedule: TimeSlotSchedule,
+  extra: { rebuildEachCycle?: boolean } = {},
 ) {
   return app.inject({
     method: 'POST',
@@ -504,6 +514,7 @@ export function saveTimeSlotSchedule(
       programs: programIds,
       schedule,
       seed: [1, 2, 3, 4],
+      ...extra,
     },
   });
 }

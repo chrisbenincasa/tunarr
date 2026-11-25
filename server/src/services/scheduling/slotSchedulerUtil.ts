@@ -51,6 +51,7 @@ import { v4 } from 'uuid';
 import type { ProgramWithRelationsOrm } from '../../db/schema/derivedTypes.ts';
 import type { Nullable } from '../../types/util.ts';
 import {
+  isDefined,
   isNonEmptyArray,
   retrySimple,
   zipWithIndex,
@@ -83,9 +84,11 @@ import {
   ContentProgramShuffleIterator,
   CustomProgramShuffleIterator,
   ProgramShuffleIteratorImpl,
+  type ShuffleOptions,
 } from './ShuffleProgramIterator.ts';
 import type { SlotImpl } from './SlotImpl.ts';
 import type {
+  PeriodPlays,
   ProgramIteratorSnapshot,
   SlotIteratorState,
 } from './slotIteratorState.ts';
@@ -378,6 +381,7 @@ export function createSlotProgramIterator(
   programBySlotType: ProgramMapping,
   random: Random,
   resume?: ProgramIteratorSnapshot,
+  shuffle?: ShuffleOptions,
 ): ProgramIterator {
   return match(slot)
     .with(
@@ -415,6 +419,7 @@ export function createSlotProgramIterator(
           programBySlotType.custom[customShowSlotId(slot.customShowId)] ?? [],
           random,
           resume,
+          shuffle,
         ),
     )
     .with({ type: 'custom-show', order: 'ordered_shuffle' }, (slot) => {
@@ -463,7 +468,7 @@ export function createSlotProgramIterator(
       return createFillerShuffleIterator(programs, slot.fillerListId, random);
     })
     .with({ type: 'show' }, (slot) =>
-      getShowProgramIterator(programBySlotType, slot, random, resume),
+      getShowProgramIterator(programBySlotType, slot, random, resume, shuffle),
     )
     .with({ type: 'smart-collection' }, (slot) => {
       const programs =
@@ -481,7 +486,12 @@ export function createSlotProgramIterator(
             resume,
           );
         case 'shuffle':
-          return new ContentProgramShuffleIterator(programs, random, resume);
+          return new ContentProgramShuffleIterator(
+            programs,
+            random,
+            resume,
+            shuffle,
+          );
         case 'ordered_shuffle':
           return new ContentProgramChunkedShuffle(
             programs,
@@ -506,7 +516,7 @@ type GroupClassification = 'all-rerun' | 'all-continue' | 'mixed';
 
 type SlotIteratorResumeState = Pick<
   SlotIteratorState,
-  'iterators' | 'rerunPlays'
+  'iterators' | 'rerunPlays' | 'periodPlays'
 >;
 
 /**
@@ -529,32 +539,14 @@ export function deduplicateSlotIds<T extends BaseSlot>(slots: T[]): T[] {
   return slots;
 }
 
-export function createSlotIterators(
-  slots: BaseSlot[],
-  programBySlotType: ProgramMapping,
-  random: Random,
-  resumeFrom: SlotIteratorResumeState = { iterators: {} },
-): SlotIteratorResult {
-  const result = new Map<string, ProgramIterator>();
-  const resetPeriodCallbacks: (() => void)[] = [];
+type IterationGroupInfo = {
+  groupClassification: Map<string, GroupClassification>;
+  rerunGroupMeta: Map<string, { count: number }>;
+};
 
-  // Every base iterator gets a key from its slot's position or its link
-  // group. Slot IDs would not work, because duplicate IDs are replaced with
-  // random ones on every build.
-  const keyedIterators = new Map<string, ProgramIterator>();
-  const rerunIterators = new Map<string, RerunProgramIterator>();
-  const createKeyedIterator = (key: string, slot: BaseSlot) => {
-    const iterator = createSlotProgramIterator(
-      slot,
-      programBySlotType,
-      random,
-      resumeFrom.iterators[key],
-    );
-    keyedIterators.set(key, iterator);
-    return iterator;
-  };
-
-  // Phase 1: Classify each group by its mix of linkMode values.
+// Sorts each link group by its mix of linkMode values, and counts the slots
+// in each all-rerun group.
+function classifyIterationGroups(slots: BaseSlot[]): IterationGroupInfo {
   const groupModes = new Map<string, Set<string>>();
   const rerunGroupMeta = new Map<string, { count: number }>();
 
@@ -592,21 +584,116 @@ export function createSlotIterators(
     }
   }
 
+  return { groupClassification, rerunGroupMeta };
+}
+
+/**
+ * The iterator key `createSlotIterators` gives each slot, in slot order.
+ * Slots that share an iterator share a key.
+ */
+export function assignIteratorKeys(slots: BaseSlot[]): string[] {
+  const { groupClassification } = classifyIterationGroups(slots);
+  return slots.map((slot, slotIndex) => {
+    const group = slotIsLinkable(slot) ? slot.iterationGroup : undefined;
+    if (!group) {
+      return `slot:${slotIndex}`;
+    }
+    switch (groupClassification.get(group)) {
+      case 'all-continue':
+        return `group:${group}::${slotIteratorKey(slot)}`;
+      case 'all-rerun':
+      case 'mixed':
+      case undefined:
+        return `group:${group}`;
+    }
+  });
+}
+
+// Only content iterators sit in link groups, so a recording never holds flex
+// or a redirect.
+function recordedProgramId(
+  program: CondensedChannelProgram,
+): string | undefined {
+  switch (program.type) {
+    case 'content':
+    case 'custom':
+    case 'filler':
+      return program.id;
+    case 'redirect':
+    case 'flex':
+      return;
+  }
+}
+
+export function createSlotIterators(
+  slots: BaseSlot[],
+  programBySlotType: ProgramMapping,
+  random: Random,
+  resumeFrom: SlotIteratorResumeState = { iterators: {} },
+  shuffle?: ShuffleOptions,
+): SlotIteratorResult {
+  const result = new Map<string, ProgramIterator>();
+  const resetPeriodCallbacks: (() => void)[] = [];
+
+  // Every base iterator gets a key from its slot's position or its link
+  // group. Slot IDs would not work, because duplicate IDs are replaced with
+  // random ones on every build.
+  const keyedIterators = new Map<string, ProgramIterator>();
+  const rerunIterators = new Map<string, RerunProgramIterator>();
+  const createKeyedIterator = (key: string, slot: BaseSlot) => {
+    const iterator = createSlotProgramIterator(
+      slot,
+      programBySlotType,
+      random,
+      resumeFrom.iterators[key],
+      shuffle,
+    );
+    keyedIterators.set(key, iterator);
+    return iterator;
+  };
+
+  // Phase 1: Classify each group by its mix of linkMode values.
+  const { groupClassification, rerunGroupMeta } =
+    classifyIterationGroups(slots);
+
   // Phase 2: Build iterators per group classification.
   const groupIterators = new Map<string, ProgramIterator>();
-  const groupRecorders = new Map<string, RecordingProgramIterator>();
+  const groupRecorders = new Map<
+    string,
+    {
+      recorder: RecordingProgramIterator;
+      replays: ReplayProgramIterator[];
+      // Where each stored ID landed in the restored buffer.
+      restored: (number | undefined)[];
+    }
+  >();
 
-  const getOrCreateRecorder = (
-    group: string,
-    slot: BaseSlot,
-  ): RecordingProgramIterator => {
+  const getOrCreateRecorder = (group: string, slot: BaseSlot) => {
     const existing = groupRecorders.get(group);
     if (existing) return existing;
-    const base = createKeyedIterator(`group:${group}`, slot);
+    const key = `group:${group}`;
+    const base = createKeyedIterator(key, slot);
     const recorder = new RecordingProgramIterator(base);
-    groupRecorders.set(group, recorder);
+    const restored = recorder.restorePeriod(
+      resumeFrom.periodPlays?.[key]?.programIds ?? [],
+    );
+    const entry = { recorder, replays: [], restored };
+    groupRecorders.set(group, entry);
     resetPeriodCallbacks.push(() => recorder.resetPeriod());
-    return recorder;
+    return entry;
+  };
+
+  // A stored cursor counts stored IDs. Programs that have left the library
+  // drop out of the buffer, so the cursor moves back past them.
+  const restoredCursor = (
+    group: string,
+    restored: (number | undefined)[],
+    replayIndex: number,
+  ) => {
+    const cursor =
+      resumeFrom.periodPlays?.[`group:${group}`]?.replayCursors[replayIndex] ??
+      0;
+    return restored.slice(0, cursor).filter(isDefined).length;
   };
 
   for (const [slot, slotIndex] of zipWithIndex(slots)) {
@@ -656,15 +743,20 @@ export function createSlotIterators(
 
       // Mixed group: continue slots get a RecordingProgramIterator,
       // rerun slots get a ReplayProgramIterator.
-      const recorder = getOrCreateRecorder(group, slot);
+      const entry = getOrCreateRecorder(group, slot);
 
       if (mode === 'continue') {
-        return recorder;
+        return entry.recorder;
       }
 
       // mode === 'rerun'
       const overflowMode = linkable?.rerunOverflow ?? 'flex';
-      const replay = new ReplayProgramIterator(recorder, overflowMode);
+      const replay = new ReplayProgramIterator(
+        entry.recorder,
+        overflowMode,
+        restoredCursor(group, entry.restored, entry.replays.length),
+      );
+      entry.replays.push(replay);
       resetPeriodCallbacks.push(() => replay.resetPeriod());
       return replay;
     })();
@@ -690,7 +782,32 @@ export function createSlotIterators(
       }
     }
 
-    return isEmpty(rerunPlays) ? { iterators } : { iterators, rerunPlays };
+    // Programs every rerun slot has replayed are never read again, so only
+    // the rest is stored.
+    const periodPlays: Record<string, PeriodPlays> = {};
+    for (const [group, { recorder, replays }] of groupRecorders) {
+      const cursors = replays.map((replay) => replay.replayCursor);
+      const replayed = Math.min(...cursors);
+      const [first, ...rest] = recorder.periodBuffer
+        .slice(replayed)
+        .flatMap((program) => {
+          const programId = recordedProgramId(program);
+          return programId ? [programId] : [];
+        });
+      if (first === undefined) {
+        continue;
+      }
+      periodPlays[`group:${group}`] = {
+        programIds: [first, ...rest],
+        replayCursors: cursors.map((cursor) => cursor - replayed),
+      };
+    }
+
+    return {
+      iterators,
+      ...(isEmpty(rerunPlays) ? {} : { rerunPlays }),
+      ...(isEmpty(periodPlays) ? {} : { periodPlays }),
+    };
   };
 
   return { iterators: result, resetPeriodCallbacks, snapshotIterators };
@@ -742,6 +859,7 @@ function getShowProgramIterator(
   slot: BaseShowProgrammingSlot,
   random: Random,
   resume?: ProgramIteratorSnapshot,
+  shuffle?: ShuffleOptions,
 ) {
   let programs = uniqBy(
     programBySlotType.content[`show.${slot.showId}`] ?? [],
@@ -772,7 +890,12 @@ function getShowProgramIterator(
         resume,
       );
     case 'shuffle':
-      return new ContentProgramShuffleIterator(programs, random, resume);
+      return new ContentProgramShuffleIterator(
+        programs,
+        random,
+        resume,
+        shuffle,
+      );
     case 'ordered_shuffle':
       return new ContentProgramChunkedShuffle(
         programs,

@@ -13,10 +13,13 @@ import {
   Typography,
 } from '@mui/material';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
+import { useQuery } from '@tanstack/react-query';
 import dayjs from 'dayjs';
 import { Trans, useLingui } from '@lingui/react/macro';
 import { useCallback, useEffect, useRef } from 'react';
 import { Controller } from 'react-hook-form';
+import { getApiChannelsByIdScheduleOptions } from '../../generated/@tanstack/react-query.gen.ts';
+import { isStartTimeLocked } from '../../helpers/slotSchedulerUtil.ts';
 import { useChannelFormContext } from '../../hooks/useChannelFormContext.ts';
 import { useChannels } from '../../hooks/useChannels.ts';
 import useStore from '../../store/index.ts';
@@ -24,7 +27,11 @@ import TunarrLogo from '../TunarrLogo.tsx';
 import { ImageUploadInput } from '../settings/ImageUploadInput.tsx';
 import { NumericFormControllerText } from '../util/TypedController.tsx';
 
-export function ChannelPropertiesEditor() {
+type Props = {
+  isNew: boolean;
+};
+
+export function ChannelPropertiesEditor({ isNew }: Props) {
   const { t } = useLingui();
   const imgRef = useRef<HTMLImageElement | null>(null);
   const channel = useStore((s) => s.channelEditor.currentEntity);
@@ -36,6 +43,19 @@ export function ChannelPropertiesEditor() {
     formState: { defaultValues },
   } = useChannelFormContext();
   const { data: channels } = useChannels();
+
+  // A rebuilding channel's schedule moves its start time forward as cycles
+  // air, so the start time isn't the user's to set.
+  const {
+    data: channelSchedule,
+    isSuccess: scheduleLoaded,
+    isError: scheduleFailed,
+  } = useQuery({
+    ...getApiChannelsByIdScheduleOptions({ path: { id: channel?.id ?? '' } }),
+    enabled: !isNew && !!channel,
+  });
+  const rebuilding = channelSchedule?.rebuildEachCycle ?? false;
+  const startTimeLocked = isStartTimeLocked(isNew, scheduleLoaded, rebuilding);
 
   const onloadstart = () => {};
 
@@ -183,11 +203,17 @@ export function ChannelPropertiesEditor() {
                 render={({ field }) => (
                   <DateTimePicker
                     label={t`Programming Start`}
+                    disabled={startTimeLocked}
                     slotProps={{
                       textField: {
                         margin: 'normal',
                         fullWidth: true,
                         onBlur: field.onBlur,
+                        helperText: rebuilding
+                          ? t`This channel rebuilds its schedule each cycle, so the schedule moves the start time forward as programs air.`
+                          : scheduleFailed
+                            ? t`The channel's schedule didn't load, so the start time can't be changed. Reload the page to try again.`
+                            : undefined,
                       },
                     }}
                     value={dayjs(field.value)}

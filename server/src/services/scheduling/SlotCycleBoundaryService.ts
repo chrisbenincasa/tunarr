@@ -1,0 +1,447 @@
+import { bindingScopeValues, inject, injectable, unmanaged } from 'inversify';
+import { uniq } from 'lodash-es';
+import { BuildSlotCycleCommand } from '../../commands/BuildSlotCycleCommand.ts';
+import type { Lineup, LineupItem } from '../../db/derived_types/Lineup.ts';
+import { isContentItem } from '../../db/derived_types/Lineup.ts';
+import type { IChannelDB } from '../../db/interfaces/IChannelDB.ts';
+import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
+import { KEYS } from '../../types/inject.ts';
+import { isDefined } from '../../util/index.ts';
+import type { Logger } from '../../util/logging/LoggerFactory.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
+import type { ChannelLineupLock } from '../ChannelLineupLock.ts';
+import { TVGuideService } from '../TvGuideService.ts';
+import type {
+  ClassicPass,
+  ClassicPassFallback,
+  CycleOptions,
+  CycleSnapshot,
+  CycleState,
+} from './slotCycles.ts';
+import {
+  advanceCycles,
+  chunkLengthMs,
+  classicPassState,
+  classicReplayInputs,
+  cycleStartTime,
+  dropFirstCycleCheckpoints,
+  initializeCycles,
+  rebuildAfterAiring,
+  shiftSnapshotTimes,
+} from './slotCycles.ts';
+import { remapIteratorState } from './slotIteratorRemap.ts';
+
+const OneHourMs = 60 * 60 * 1000;
+
+/**
+ * Whether a slot save kept each slot's place in the schedule.
+ *
+ * - `no_schedule`: the lineup before the save had no slot schedule, so there
+ *   were no places to keep.
+ * - `no_seed`: the classic lineup has no seed, so it can't be replayed.
+ * - `replay_mismatch`: the replayed classic pass differs from what aired.
+ * - `not_started`: the classic lineup hasn't started airing.
+ */
+export type ScheduleEditOutcome =
+  | { placesCarried: true; reason?: undefined }
+  | {
+      placesCarried: false;
+      reason: 'no_schedule' | 'no_seed' | ClassicPassFallback;
+    };
+
+/**
+ * Keeps rebuilding slot channels one cycle ahead of the guide.
+ *
+ * A rebuilding channel's lineup is a run of built cycles rather than a loop.
+ * This service builds the next cycle before the guide needs it, drops the
+ * cycles that have aired, rebuilds everything when the library changes, and
+ * restarts the schedule when the server was down past the end of the last
+ * built cycle.
+ *
+ * Every method holds the channel's lineup lock across the whole read, build
+ * and write, so a concurrent save or regeneration cannot land in between.
+ */
+@injectable(bindingScopeValues.Singleton)
+export class SlotCycleBoundaryService {
+  // Channels already reported as unbuildable or as on-demand, so the
+  // five-minute pass says it once instead of forever.
+  #quietChannels = new Set<string>();
+  #advanceAllRunning = false;
+
+  constructor(
+    @inject(KEYS.ChannelDB) private readonly channelDB: IChannelDB,
+    @inject(KEYS.SettingsDB) private readonly settingsDB: ISettingsDB,
+    @inject(KEYS.ChannelLineupLock)
+    private readonly lineupLock: ChannelLineupLock,
+    @inject(BuildSlotCycleCommand)
+    private readonly buildCycle: BuildSlotCycleCommand,
+    @inject(TVGuideService) private readonly tvGuideService: TVGuideService,
+    @unmanaged()
+    private readonly logger: Logger = LoggerFactory.child({
+      className: SlotCycleBoundaryService.name,
+    }),
+  ) {}
+
+  /**
+   * Trims aired cycles and builds ahead to the guide horizon. Catches the
+   * channel up when every built cycle has already aired.
+   */
+  async advanceChannel(channelId: string, now: number = Date.now()) {
+    await this.lineupLock.run(channelId, async () => {
+      const loaded = await this.loadRebuildingChannel(channelId);
+      if (!loaded) {
+        return;
+      }
+
+      const { lineup, schedule, state } = loaded;
+      const opts = this.cycleOptions(channelId, lineup, now);
+
+      if (state.cycles.length === 0) {
+        const built = await initializeCycles(
+          cycleStartTime(schedule, now),
+          opts,
+        );
+        await this.persist(channelId, state, built);
+        return;
+      }
+
+      const { state: advanced, changed } = await advanceCycles(
+        state,
+        cycleStartTime(schedule, now),
+        opts,
+      );
+
+      if (changed) {
+        await this.persist(channelId, state, advanced);
+      }
+    });
+  }
+
+  /**
+   * Starts a channel's cycles from scratch. Used by a slot save on a channel
+   * that was not rebuilding before.
+   */
+  async initializeChannel(channelId: string, now: number = Date.now()) {
+    await this.lineupLock.run(channelId, async () => {
+      const loaded = await this.loadRebuildingChannel(channelId);
+      if (!loaded) {
+        return;
+      }
+
+      const { lineup, schedule, state } = loaded;
+      const built = await initializeCycles(
+        cycleStartTime(schedule, now),
+        this.cycleOptions(channelId, lineup, now),
+      );
+
+      await this.persist(channelId, state, built);
+    });
+  }
+
+  /**
+   * Applies a slot save to a channel that was already rebuilding.
+   *
+   * The program on air and everything before the next restart point stay.
+   * The edited schedule takes over from there, and each slot keeps its place
+   * when the edit left its content, order and direction alone. A channel
+   * whose cycles have all aired catches up on the edited schedule with the
+   * same carried places.
+   *
+   * `previous` is the channel's start time and lineup from before the save.
+   * `savedProgramIds` is the program list the save sent.
+   */
+  async applyScheduleEdit(
+    channelId: string,
+    previous: { startTime: number; lineup: Lineup },
+    now: number = Date.now(),
+    savedProgramIds: readonly string[] = [],
+  ): Promise<ScheduleEditOutcome> {
+    return this.lineupLock.run(channelId, async () => {
+      const loaded = await this.loadRebuildingChannel(channelId);
+      if (!loaded) {
+        return { placesCarried: false, reason: 'no_schedule' };
+      }
+
+      const { lineup, schedule, state } = loaded;
+      const previousSchedule = previous.lineup.schedule;
+      if (!previousSchedule || isDefined(previous.lineup.onDemandConfig)) {
+        await this.initializeChannel(channelId, now);
+        return { placesCarried: false, reason: 'no_schedule' };
+      }
+
+      // The save wrote a new seed, so the RNG starts over. The places carry.
+      const carry = (snapshot: CycleSnapshot): CycleSnapshot => ({
+        discardCount: 0,
+        iteratorState: remapIteratorState(
+          snapshot.iteratorState,
+          previousSchedule,
+          schedule,
+        ),
+      });
+      const opts = this.cycleOptions(channelId, lineup, now);
+
+      const previousCycles = previous.lineup.cycles ?? [];
+      if (previous.lineup.rebuildEachCycle && previousCycles.length > 0) {
+        const previousState: CycleState = {
+          startTime: previous.startTime,
+          items: [...previous.lineup.items],
+          cycles: previousCycles,
+          nextSnapshot: previous.lineup.nextCycleSnapshot,
+        };
+
+        const edited =
+          (await rebuildAfterAiring(previousState, opts, carry)) ??
+          (
+            await advanceCycles(
+              {
+                ...previousState,
+                nextSnapshot: previousState.nextSnapshot
+                  ? carry(previousState.nextSnapshot)
+                  : undefined,
+              },
+              cycleStartTime(schedule, now),
+              opts,
+            )
+          ).state;
+
+        await this.persist(channelId, state, edited);
+        return { placesCarried: true };
+      }
+
+      const scheduleSeed = previous.lineup.scheduleSeed;
+      if (!scheduleSeed) {
+        return this.startOver(channelId, now, 'no_seed');
+      }
+
+      let pass: ClassicPass = { fallback: 'replay_mismatch' };
+      for (const programIds of classicReplayInputs(
+        previous.lineup,
+        savedProgramIds,
+      )) {
+        const replay = await this.buildCycle.replayClassic({
+          lineup: { schedule: previousSchedule, scheduleSeed },
+          programIds,
+          startTime: previous.startTime,
+        });
+        pass = classicPassState(
+          { startTime: previous.startTime, items: previous.lineup.items },
+          replay,
+          now,
+        );
+        if (!('fallback' in pass) || pass.fallback === 'not_started') {
+          break;
+        }
+      }
+      if ('fallback' in pass) {
+        return this.startOver(channelId, now, pass.fallback);
+      }
+
+      const rebuilt = await rebuildAfterAiring(pass.state, opts, (snapshot) =>
+        carry(shiftSnapshotTimes(snapshot, pass.shiftMs)),
+      );
+      if (!rebuilt) {
+        return this.startOver(channelId, now, 'not_started');
+      }
+
+      await this.persist(channelId, state, dropFirstCycleCheckpoints(rebuilt));
+      return { placesCarried: true };
+    });
+  }
+
+  /**
+   * Rebuilds what follows the program on air after the library changed. The
+   * program on air, the channel's start time and its place in the schedule
+   * stay. A channel whose cycles have all aired catches up instead, as
+   * `advanceChannel` does.
+   */
+  async regenerateChannel(channelId: string, now: number = Date.now()) {
+    await this.lineupLock.run(channelId, async () => {
+      const loaded = await this.loadRebuildingChannel(channelId);
+      if (!loaded) {
+        return;
+      }
+
+      const { lineup, schedule, state } = loaded;
+      const opts = this.cycleOptions(channelId, lineup, now);
+
+      const rebuilt = await rebuildAfterAiring(state, opts);
+      if (rebuilt) {
+        await this.persist(channelId, state, rebuilt);
+        return;
+      }
+
+      const { state: caughtUp, changed } = await advanceCycles(
+        state,
+        cycleStartTime(schedule, now),
+        opts,
+      );
+      if (changed) {
+        await this.persist(channelId, state, caughtUp);
+      }
+    });
+  }
+
+  /**
+   * Advances every rebuilding channel. One channel's failure does not stop
+   * the rest.
+   *
+   * A pass that outlives its schedule interval skips the next one rather than
+   * queueing a second walk over every channel behind it.
+   */
+  async advanceAll(now: number = Date.now()) {
+    if (this.#advanceAllRunning) {
+      this.logger.warn(
+        'The previous slot cycle pass is still running; skipping this one',
+      );
+      return;
+    }
+
+    this.#advanceAllRunning = true;
+    try {
+      const channels = await this.channelDB.getAllChannels();
+
+      for (const channel of channels) {
+        try {
+          await this.advanceChannel(channel.uuid, now);
+        } catch (e) {
+          this.logger.error(
+            e,
+            'Error advancing slot cycles for channel %s',
+            channel.uuid,
+          );
+        }
+      }
+    } finally {
+      this.#advanceAllRunning = false;
+    }
+  }
+
+  private async loadRebuildingChannel(channelId: string) {
+    const channelAndLineup =
+      await this.channelDB.loadChannelAndLineup(channelId);
+    if (!channelAndLineup) {
+      this.logger.warn('Channel ID %s not found', channelId);
+      return;
+    }
+
+    const { channel, lineup } = channelAndLineup;
+    const schedule = lineup.schedule;
+    if (!lineup.rebuildEachCycle || !schedule) {
+      return;
+    }
+
+    // An on-demand channel's position is a cursor into a looping lineup, so a
+    // trim moves the lineup out from under it and every cycle write resets it
+    // to the start. The save path refuses the combination; this catches a
+    // channel that turned on-demand on afterwards.
+    if (isDefined(lineup.onDemandConfig)) {
+      this.warnOnce(channelId, () =>
+        this.logger.warn(
+          'Channel %s is on-demand, so its slot schedule loops instead of rebuilding each cycle',
+          channelId,
+        ),
+      );
+      return;
+    }
+
+    const state: CycleState = {
+      startTime: channel.startTime,
+      items: [...lineup.items],
+      cycles: lineup.cycles ?? [],
+      nextSnapshot: lineup.nextCycleSnapshot,
+    };
+
+    return { channel, lineup, schedule, state };
+  }
+
+  private cycleOptions(
+    channelId: string,
+    lineup: Lineup,
+    now: number,
+  ): CycleOptions {
+    const horizonMs =
+      this.settingsDB.xmlTvSettings().programmingHours * OneHourMs;
+    const chunkMs = chunkLengthMs(horizonMs);
+    return {
+      now,
+      horizonMs,
+      build: (startTime, snapshot) =>
+        this.buildCycle.execute({
+          channelId,
+          lineup,
+          startTime,
+          snapshot,
+          chunkMs,
+        }),
+    };
+  }
+
+  // Logs for a channel once, until the thing it reports goes away.
+  private async startOver(
+    channelId: string,
+    now: number,
+    reason: Exclude<ScheduleEditOutcome['reason'], undefined>,
+  ): Promise<ScheduleEditOutcome> {
+    this.logger.warn(
+      'Channel %s could not carry its places into rebuild each cycle (%s). Every slot starts over.',
+      channelId,
+      reason,
+    );
+    await this.initializeChannel(channelId, now);
+    return { placesCarried: false, reason };
+  }
+
+  private warnOnce(channelId: string, warn: () => void) {
+    if (this.#quietChannels.has(channelId)) {
+      return;
+    }
+    this.#quietChannels.add(channelId);
+    warn();
+  }
+
+  // The lineup file and channel.duration go first, then startTime, so a reader
+  // that catches the gap sees the old position of the new lineup rather than
+  // the new position of the old one.
+  private async persist(
+    channelId: string,
+    previous: CycleState,
+    next: CycleState,
+  ) {
+    if (next.cycles.length === 0) {
+      this.warnOnce(channelId, () =>
+        this.logger.warn(
+          'Slot schedule for channel %s produced no cycles; leaving its lineup alone',
+          channelId,
+        ),
+      );
+      return;
+    }
+
+    this.#quietChannels.delete(channelId);
+
+    // Programs a new cycle introduced have to reach the join table, or the
+    // duration reconciler and the library reference counts stop seeing this
+    // channel as one that plays them. The rows are unioned rather than
+    // replaced, because a trim drops aired items whose programs the next
+    // cycle may well pick again.
+    this.channelDB.addChannelPrograms(channelId, contentProgramIds(next.items));
+
+    await this.channelDB.saveLineup(channelId, {
+      items: next.items,
+      cycles: next.cycles,
+      nextCycleSnapshot: next.nextSnapshot ?? null,
+    });
+
+    if (next.startTime !== previous.startTime) {
+      await this.channelDB.updateChannelStartTime(channelId, next.startTime);
+    }
+
+    await this.tvGuideService.updateCachedChannel(channelId, true);
+  }
+}
+
+function contentProgramIds(items: readonly LineupItem[]): string[] {
+  return uniq(
+    items.filter((item) => isContentItem(item)).map((item) => item.id),
+  );
+}

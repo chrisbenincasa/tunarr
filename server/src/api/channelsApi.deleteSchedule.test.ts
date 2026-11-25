@@ -28,9 +28,14 @@ vi.mock('@/util/logging/LoggerFactory.js', () => {
   };
 });
 
-vi.mock('../container.ts', () => ({
-  container: { get: () => ({}) },
-}));
+// The route takes the channel lineup lock from the container.
+vi.mock('../container.ts', async () => {
+  const { ChannelLineupLock } = await import(
+    '../services/ChannelLineupLock.ts'
+  );
+  const lock = new ChannelLineupLock();
+  return { container: { get: () => lock } };
+});
 
 import { channelsApi } from './channelsApi.js';
 
@@ -67,7 +72,7 @@ describe('DELETE /channels/:id/schedule (#937)', () => {
     await app.close();
   });
 
-  it('clears the schedule and seed without touching the lineup items', async () => {
+  it('clears the schedule and its rebuild state without touching the lineup items', async () => {
     const res = await app.inject({
       method: 'DELETE',
       url: `/channels/${channelId}/schedule`,
@@ -77,6 +82,10 @@ describe('DELETE /channels/:id/schedule (#937)', () => {
     expect(saveLineup).toHaveBeenCalledExactlyOnceWith(channelId, {
       schedule: null,
       scheduleSeed: null,
+      scheduleProgramIds: null,
+      rebuildEachCycle: null,
+      cycles: null,
+      nextCycleSnapshot: null,
     });
   });
 

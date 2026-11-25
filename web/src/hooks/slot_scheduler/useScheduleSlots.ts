@@ -55,7 +55,10 @@ export const useScheduleSlots = () => {
   } = useChannelEditorLazy();
 
   const scheduleTimeSlotsMut = useMutation({
-    mutationFn: ({ channelId, values }: TimeSlotMutArgs) =>
+    mutationFn: ({
+      channelId,
+      values: { rebuildEachCycle: _, ...values },
+    }: TimeSlotMutArgs) =>
       postApiChannelsByChannelIdScheduleTimeSlots({
         path: { channelId },
         body: {
@@ -71,7 +74,10 @@ export const useScheduleSlots = () => {
   });
 
   const scheduleSlotsMut = useMutation({
-    mutationFn: ({ channelId, values }: SlotMutArgs) =>
+    mutationFn: ({
+      channelId,
+      values: { rebuildEachCycle: _, ...values },
+    }: SlotMutArgs) =>
       postApiChannelsByChannelIdScheduleSlots({
         path: { channelId },
         body: {
