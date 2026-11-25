@@ -52,7 +52,7 @@ Turning the option on keeps the program on air and each show's place. Tunarr sho
 * The saved lineup no longer matches its schedule.
 * Nothing has aired on the channel yet.
 
-On-demand channels replay their saved lineup, so they can't rebuild. Editing a channel's programming by hand turns the option off, and the edited lineup loops as it is.
+On-demand channels replay their saved lineup, so they can't rebuild. Editing a channel's programming by hand or removing its schedule turns the option off, and the lineup loops as it is.
 
 ## Removing a Slot Schedule
 
