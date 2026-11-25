@@ -9,7 +9,9 @@ import { BuiltInPresets } from '@tunarr/shared/channel-templates';
 import { AutoChannelCreateRequestSchema } from '@tunarr/types/api';
 import { describe, expect, test, vi } from 'vitest';
 import { AutoChannelService } from './AutoChannelService.ts';
+import type { ChannelLineupLock } from './ChannelLineupLock.ts';
 import type { MeilisearchService } from './MeilisearchService.ts';
+import type { SlotCycleBoundaryService } from './scheduling/SlotCycleBoundaryService.ts';
 
 vi.mock('@/services/Scheduler.js', () => ({
   GlobalScheduler: {
@@ -74,14 +76,30 @@ function makeService(opts: ServiceOptions = {}) {
     ),
   };
 
+  const lineupLock = {
+    run: vi.fn((_channelId: string, cb: () => Promise<unknown>) => cb()),
+  };
+  const slotCycleBoundaryService = {
+    initializeChannel: vi.fn(() => Promise.resolve()),
+  };
+
   const service = new AutoChannelService(
     searchService as unknown as MeilisearchService,
     smartCollectionsDB as unknown as SmartCollectionsDB,
     channelDB as unknown as ChannelDB,
     transcodeConfigDB as unknown as TranscodeConfigDB,
+    lineupLock as unknown as ChannelLineupLock,
+    slotCycleBoundaryService as unknown as SlotCycleBoundaryService,
   );
 
-  return { service, smartCollectionsDB, channelDB, searchService };
+  return {
+    service,
+    smartCollectionsDB,
+    channelDB,
+    searchService,
+    lineupLock,
+    slotCycleBoundaryService,
+  };
 }
 
 const shuffleRequest: AutoChannelCreateRequest = {
@@ -517,6 +535,61 @@ describe('AutoChannelService.createChannel', () => {
 
     await expect(service.createChannel(shuffleRequest)).rejects.toThrow(
       'bad schedule',
+    );
+
+    expect(channelDB.deleteChannel).toHaveBeenCalledWith(ChannelId);
+    expect(smartCollectionsDB.delete).toHaveBeenCalledWith(collectionId(1));
+  });
+
+  test.each([
+    ['random', shuffleRequest],
+    ['time', classicTvDayRequest([0, 12 * Hour])],
+  ] as const)(
+    'turns on rebuild each cycle for a %s slot channel',
+    async (type, request) => {
+      const { service, channelDB, lineupLock, slotCycleBoundaryService } =
+        makeService();
+
+      await service.createChannel(request);
+
+      expect(channelDB.updateLineup).toHaveBeenCalledWith(
+        ChannelId,
+        expect.objectContaining({ type, rebuildEachCycle: true }),
+      );
+      expect(lineupLock.run).toHaveBeenCalledWith(
+        ChannelId,
+        expect.any(Function),
+      );
+      expect(slotCycleBoundaryService.initializeChannel).toHaveBeenCalledWith(
+        ChannelId,
+      );
+      expect(channelDB.updateLineup.mock.invocationCallOrder[0]).toBeLessThan(
+        slotCycleBoundaryService.initializeChannel.mock
+          .invocationCallOrder[0] ?? 0,
+      );
+    },
+  );
+
+  test('skips the first cycle build when the lineup fails', async () => {
+    const { service, channelDB, slotCycleBoundaryService } = makeService();
+    channelDB.updateLineup.mockRejectedValueOnce(new Error('bad schedule'));
+
+    await expect(service.createChannel(shuffleRequest)).rejects.toThrow(
+      'bad schedule',
+    );
+
+    expect(slotCycleBoundaryService.initializeChannel).not.toHaveBeenCalled();
+  });
+
+  test('deletes the channel and collections when the first cycle fails', async () => {
+    const { service, smartCollectionsDB, channelDB, slotCycleBoundaryService } =
+      makeService();
+    slotCycleBoundaryService.initializeChannel.mockRejectedValueOnce(
+      new Error('worker failed'),
+    );
+
+    await expect(service.createChannel(shuffleRequest)).rejects.toThrow(
+      'worker failed',
     );
 
     expect(channelDB.deleteChannel).toHaveBeenCalledWith(ChannelId);

@@ -31,6 +31,7 @@ import { dbChannelToApiChannel } from '../db/converters/channelConverters.ts';
 import { SmartCollectionsDB } from '../db/SmartCollectionsDB.ts';
 import { TranscodeConfigDB } from '../db/TranscodeConfigDB.ts';
 import { UpdateXmlTvTask } from '../tasks/UpdateXmlTvTask.js';
+import { KEYS } from '../types/inject.ts';
 import { GenericBadRequestError } from '../types/errors.ts';
 
 import type {
@@ -40,6 +41,8 @@ import type {
 import { MeilisearchService } from './MeilisearchService.ts';
 import { resolveScheduleSkeleton } from './resolveScheduleSkeleton.ts';
 import { GlobalScheduler } from './Scheduler.js';
+import type { ChannelLineupLock } from './ChannelLineupLock.ts';
+import { SlotCycleBoundaryService } from './scheduling/SlotCycleBoundaryService.ts';
 
 @injectable()
 export class AutoChannelService {
@@ -50,6 +53,9 @@ export class AutoChannelService {
     @inject(SmartCollectionsDB) private smartCollectionsDB: SmartCollectionsDB,
     @inject(ChannelDB) private channelDB: ChannelDB,
     @inject(TranscodeConfigDB) private transcodeConfigDB: TranscodeConfigDB,
+    @inject(KEYS.ChannelLineupLock) private lineupLock: ChannelLineupLock,
+    @inject(SlotCycleBoundaryService)
+    private slotCycleBoundaryService: SlotCycleBoundaryService,
   ) {}
 
   getPresets(): ChannelPreset[] {
@@ -241,15 +247,23 @@ export class AutoChannelService {
               programs: allProgramIds,
               schedule: scheduleConfig,
               seed,
+              rebuildEachCycle: true,
             }
           : {
               type: 'random',
               programs: allProgramIds,
               schedule: scheduleConfig,
               seed,
+              rebuildEachCycle: true,
             };
 
-      await this.channelDB.updateLineup(createdChannelId, lineupRequest);
+      // The save writes one pass of the schedule. Building the first cycle
+      // replaces it, under the same lock so nothing reads the lineup between.
+      const channelId = createdChannelId;
+      await this.lineupLock.run(channelId, async () => {
+        await this.channelDB.updateLineup(channelId, lineupRequest);
+        await this.slotCycleBoundaryService.initializeChannel(channelId);
+      });
     } catch (err) {
       await this.rollBackCreate(createdChannelId, createdCollectionIds);
       throw err;
