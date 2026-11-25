@@ -57,6 +57,12 @@ test('sets date and slug, drops draft, and moves the folder', () => {
   assert.doesNotMatch(out, /draft:/);
 });
 
+test('replaces a placeholder date', () => {
+  const out = promote('---\ndraft: true\ndate: 2026-01-01\ncategories:\n  - Releases\n---\n\n# Tunarr next: Profiles\n');
+  assert.match(out, /^---\ndate: 2026-11-20\ncategories:\n {2}- Releases\nslug: "2026.11.3"\n---\n/);
+  assert.doesNotMatch(out, /2026-01-01/);
+});
+
 test('replaces a guessed version in the title', () => {
   const out = promote(`${frontMatter}# Tunarr 2026.11.3: Profiles\n`, '2026.12.0');
   assert.match(out, /\n# Tunarr 2026\.12\.0: Profiles\n/);

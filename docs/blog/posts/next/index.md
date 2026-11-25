@@ -1,5 +1,6 @@
 ---
 draft: true
+date: 2026-11-25
 categories:
   - Releases
 ---

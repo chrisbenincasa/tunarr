@@ -424,12 +424,14 @@ Write the post as a draft. Start `index.md` with this front matter:
 ```yaml
 ---
 draft: true
+date: 2026-01-01
 categories:
   - Releases
 ---
 ```
 
 - Name the folder anything, such as `next`. The release fills in the rest.
+- Keep the `date` line. The blog plugin fails the docs build on a post without one, drafts included. Any date works, because the release replaces it.
 - Title the post `# Tunarr <version>: <headline>`. Use the expected version or `next`, and the release replaces it with the real one.
 - Keep only one draft post at a time. The release workflow skips promotion when it finds more than one.
 - Everything above `<!-- more -->` is the excerpt on the Releases page.
