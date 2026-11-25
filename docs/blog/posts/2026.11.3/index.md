@@ -1,8 +1,8 @@
 ---
-draft: true
 date: 2026-11-25
 categories:
   - Releases
+slug: "2026.11.3"
 ---
 
 # Tunarr 2026.11.3: Continuous Schedules and Auto Create
