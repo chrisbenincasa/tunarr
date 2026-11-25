@@ -367,11 +367,18 @@ export type CreateChannelOptions = {
   name?: string;
   transcodeConfigId: string;
   onDemand?: boolean;
+  startTime?: number;
 };
 
 export async function createChannelViaApi(
   app: FastifyInstance,
-  { number, name, transcodeConfigId, onDemand }: CreateChannelOptions,
+  {
+    number,
+    name,
+    transcodeConfigId,
+    onDemand,
+    startTime = Date.now(),
+  }: CreateChannelOptions,
 ): Promise<string> {
   const res = await app.inject({
     method: 'POST',
@@ -386,7 +393,7 @@ export async function createChannelViaApi(
         guideMinimumDuration: 30000,
         icon: { path: '', width: 0, duration: 0, position: 'bottom-right' },
         id: '00000000-0000-0000-0000-000000000000',
-        startTime: Date.now(),
+        startTime,
         stealth: false,
         offline: { mode: 'pic' },
         streamMode: 'hls',

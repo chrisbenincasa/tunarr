@@ -1,0 +1,409 @@
+import type { RandomSlotSchedule, TimeSlotSchedule } from '@tunarr/types/api';
+import type { FastifyInstance } from 'fastify';
+import { randomUUID } from 'node:crypto';
+import { chunk, uniq } from 'lodash-es';
+import { afterAll, beforeAll, describe, expect, test } from 'vitest';
+import { container } from '../src/container.ts';
+import { RegenerateChannelLineupCommand } from '../src/commands/RegenerateChannelLineupCommand.ts';
+import { ChannelDB } from '../src/db/ChannelDB.ts';
+import type { LineupItem } from '../src/db/derived_types/Lineup.ts';
+import { getAvailablePort } from '../src/util/net.ts';
+import {
+  createChannelViaApi,
+  defaultTranscodeConfigId,
+  makeTimeSlotSchedule,
+  seedCustomShow,
+  seedPrograms,
+  setProgrammingHours,
+} from './support/seed.ts';
+import { initTestApp } from './testServer.js';
+
+const HourMs = 60 * 60 * 1000;
+const ProgramCount = 60;
+const CooldownMs = 6 * HourMs;
+
+let app: FastifyInstance;
+let programIds: string[];
+let customShowId: string;
+let otherProgramIds: string[];
+let otherCustomShowId: string;
+let largeProgramIds: string[];
+let largeCustomShowId: string;
+let transcodeConfigId: string;
+
+beforeAll(async () => {
+  app = await initTestApp(await getAvailablePort(), {
+    registerGuideTask: true,
+  });
+
+  programIds = await seedPrograms(ProgramCount);
+  customShowId = await seedCustomShow(programIds);
+  otherProgramIds = await seedPrograms(10, { titlePrefix: 'Other' });
+  otherCustomShowId = await seedCustomShow(otherProgramIds);
+  largeProgramIds = await seedPrograms(200, { titlePrefix: 'Large' });
+  largeCustomShowId = await seedCustomShow(largeProgramIds);
+  transcodeConfigId = await defaultTranscodeConfigId();
+
+  // Builds far enough ahead that a slot added after the cut-over has aired.
+  await setProgrammingHours(48);
+}, 120_000);
+
+afterAll(async () => {
+  await app?.close();
+});
+
+// One slot a day, so every program comes from a single iterator and the
+// channel's content is one walk through the playlist.
+function oneSlotSchedule(order: 'next' | 'shuffle'): TimeSlotSchedule {
+  const base = makeTimeSlotSchedule({
+    customShowId,
+    maxDays: 3,
+    slotsPerDay: 1,
+  });
+  return {
+    ...base,
+    slots: base.slots.map((slot) => ({ ...slot, order })),
+  };
+}
+
+// A shuffled 200-program playlist that one two-day pass can't air in full,
+// so the shuffle depends on the program list the build started from.
+function largeShuffleSchedule(): TimeSlotSchedule {
+  const base = makeTimeSlotSchedule({
+    customShowId: largeCustomShowId,
+    maxDays: 1,
+    slotsPerDay: 1,
+  });
+  return {
+    ...base,
+    slots: base.slots.map((slot) => ({ ...slot, order: 'shuffle' })),
+  };
+}
+
+// The one-slot schedule plus a slot for the other playlist at noon.
+function withNoonSlot(schedule: TimeSlotSchedule): TimeSlotSchedule {
+  return {
+    ...schedule,
+    slots: [
+      ...schedule.slots,
+      {
+        type: 'custom-show',
+        customShowId: otherCustomShowId,
+        startTime: 12 * HourMs,
+        order: 'next',
+        direction: 'asc',
+        id: randomUUID(),
+      },
+    ],
+  };
+}
+
+// Alternates one program from each playlist. `next` walks the slots in order;
+// `weighted` picks at random and keeps the other playlist on a cooldown.
+function randomSchedule(distribution: 'none' | 'weighted'): RandomSlotSchedule {
+  return {
+    type: 'random',
+    flexPreference: 'end',
+    maxDays: 3,
+    padMs: 1,
+    padStyle: 'slot',
+    randomDistribution: distribution,
+    lockWeights: false,
+    slots: [customShowId, otherCustomShowId].map((id, i) => ({
+      type: 'custom-show',
+      customShowId: id,
+      order: 'next',
+      direction: 'asc',
+      id: randomUUID(),
+      weight: 1,
+      cooldownMs: i === 1 && distribution === 'weighted' ? CooldownMs : 0,
+      durationSpec: { type: 'dynamic', programCount: 1 },
+    })),
+  };
+}
+
+function saveSchedule(
+  channelId: string,
+  schedule: TimeSlotSchedule | RandomSlotSchedule,
+  extra: { rebuildEachCycle?: boolean } = {},
+  programs = [...programIds, ...otherProgramIds],
+) {
+  return app.inject({
+    method: 'POST',
+    url: `/api/channels/${channelId}/programming`,
+    payload: {
+      type: schedule.type,
+      programs,
+      schedule,
+      seed: [1, 2, 3, 4],
+      ...extra,
+    },
+  });
+}
+
+type Airing = { startTime: number; items: readonly LineupItem[] };
+
+async function loadAiring(channelId: string): Promise<Airing> {
+  const channelDB = container.get(ChannelDB);
+  const channel = await channelDB.getChannel(channelId);
+  if (!channel) {
+    throw new Error(`Channel ${channelId} not found`);
+  }
+  const lineup = await channelDB.loadLineup(channelId);
+  return { startTime: channel.startTime, items: lineup.items };
+}
+
+function itemAiringAt({ startTime, items }: Airing, at: number) {
+  const total = items.reduce((sum, item) => sum + item.durationMs, 0);
+  let offset = (at - startTime) % total;
+  for (const item of items) {
+    if (offset < item.durationMs) {
+      return item;
+    }
+    offset -= item.durationMs;
+  }
+  throw new Error('No item airing');
+}
+
+function expectPlaylistOrder(ids: string[], playlist: string[]) {
+  let previous: string | undefined;
+  for (const id of ids) {
+    if (previous !== undefined) {
+      const next = (playlist.indexOf(previous) + 1) % playlist.length;
+      expect(playlist.indexOf(id)).toBe(next);
+    }
+    previous = id;
+  }
+}
+
+function startTimes(
+  { startTime, items }: Airing,
+  fromCustomShowId: string,
+): number[] {
+  const starts: number[] = [];
+  let at = startTime;
+  for (const item of items) {
+    if (item.type === 'content' && item.customShowId === fromCustomShowId) {
+      starts.push(at);
+    }
+    at += item.durationMs;
+  }
+  return starts;
+}
+
+function contentIds(
+  items: readonly LineupItem[],
+  fromCustomShowId = customShowId,
+): string[] {
+  return items.flatMap((item) =>
+    item.type === 'content' && item.customShowId === fromCustomShowId
+      ? [item.id]
+      : [],
+  );
+}
+
+// Builds a classic schedule that has been airing for 50 hours, then turns
+// the rebuild toggle on. A classic build airs flex until its first slot
+// starts, so 50 hours guarantees at least one full day of programs before
+// today. A fresh start would land on a different program.
+async function enableOnAiringChannel(
+  number: number,
+  classicSchedule: TimeSlotSchedule | RandomSlotSchedule,
+  {
+    enabledSchedule = classicSchedule,
+    beforeEnabling,
+    airedHours = 50,
+    classicPrograms,
+  }: {
+    enabledSchedule?: TimeSlotSchedule | RandomSlotSchedule;
+    beforeEnabling?: (channelId: string) => Promise<void>;
+    airedHours?: number;
+    classicPrograms?: string[];
+  } = {},
+) {
+  const channelId = await createChannelViaApi(app, {
+    number,
+    transcodeConfigId,
+    startTime: Date.now() - airedHours * HourMs,
+  });
+
+  const classic = await saveSchedule(
+    channelId,
+    classicSchedule,
+    {},
+    classicPrograms,
+  );
+  expect(classic.statusCode).toBe(200);
+  await beforeEnabling?.(channelId);
+  const before = await loadAiring(channelId);
+
+  const enabled = await saveSchedule(channelId, enabledSchedule, {
+    rebuildEachCycle: true,
+  });
+  expect(enabled.statusCode).toBe(200);
+  const after = await loadAiring(channelId);
+
+  return {
+    before,
+    after,
+    scheduleEdit: (enabled.json() as { scheduleEdit?: unknown }).scheduleEdit,
+  };
+}
+
+describe('turning on rebuild each cycle for an airing classic channel', () => {
+  test('an ordered show continues from the program on air', async () => {
+    const { before, after, scheduleEdit } = await enableOnAiringChannel(
+      4101,
+      oneSlotSchedule('next'),
+    );
+
+    expect(scheduleEdit).toEqual({ placesCarried: true });
+
+    const now = Date.now();
+    expect(itemAiringAt(after, now)).toEqual(itemAiringAt(before, now));
+
+    expectPlaylistOrder(contentIds(after.items), programIds);
+  }, 120_000);
+
+  test('a shuffle finishes its pass before repeating', async () => {
+    const { before, after, scheduleEdit } = await enableOnAiringChannel(
+      4102,
+      oneSlotSchedule('shuffle'),
+    );
+
+    expect(scheduleEdit).toEqual({ placesCarried: true });
+
+    const now = Date.now();
+    expect(itemAiringAt(after, now)).toEqual(itemAiringAt(before, now));
+
+    for (const pass of chunk(contentIds(after.items), ProgramCount)) {
+      expect(uniq(pass)).toHaveLength(pass.length);
+    }
+  }, 120_000);
+
+  test('a slot added in the same save starts at its first program', async () => {
+    const { after, scheduleEdit } = await enableOnAiringChannel(
+      4103,
+      oneSlotSchedule('next'),
+      { enabledSchedule: withNoonSlot(oneSlotSchedule('next')) },
+    );
+
+    expect(scheduleEdit).toEqual({ placesCarried: true });
+    expect(contentIds(after.items, otherCustomShowId)[0]).toBe(
+      otherProgramIds[0],
+    );
+  }, 120_000);
+
+  test.each([
+    ['in order', 'none', 4105],
+    ['at random with a cooldown', 'weighted', 4106],
+  ] as const)(
+    'random slots picked %s continue each playlist',
+    async (_, distribution, number) => {
+      // The classic pass is 96 hours, so the channel is in its second loop
+      // and cooldown times must shift by one loop.
+      const { before, after, scheduleEdit } = await enableOnAiringChannel(
+        number,
+        randomSchedule(distribution),
+        { airedHours: 100 },
+      );
+
+      expect(scheduleEdit).toEqual({ placesCarried: true });
+
+      const now = Date.now();
+      expect(itemAiringAt(after, now)).toEqual(itemAiringAt(before, now));
+
+      expectPlaylistOrder(contentIds(after.items), programIds);
+      expectPlaylistOrder(
+        contentIds(after.items, otherCustomShowId),
+        otherProgramIds,
+      );
+
+      if (distribution === 'weighted') {
+        let previous: number | undefined;
+        for (const start of startTimes(after, otherCustomShowId)) {
+          if (previous !== undefined) {
+            expect(start - previous).toBeGreaterThanOrEqual(CooldownMs);
+          }
+          previous = start;
+        }
+      }
+    },
+    120_000,
+  );
+
+  describe('a shuffle that never aired its whole playlist', () => {
+    async function expectCarried(
+      number: number,
+      options: Parameters<typeof enableOnAiringChannel>[2] = {},
+    ) {
+      const { before, after, scheduleEdit } = await enableOnAiringChannel(
+        number,
+        largeShuffleSchedule(),
+        options,
+      );
+
+      expect(
+        new Set(contentIds(before.items, largeCustomShowId)).size,
+      ).toBeLessThan(largeProgramIds.length);
+      expect(scheduleEdit).toEqual({ placesCarried: true });
+
+      const now = Date.now();
+      expect(itemAiringAt(after, now)).toEqual(itemAiringAt(before, now));
+    }
+
+    test('keeps its place', () => expectCarried(4107), 120_000);
+
+    // The classic save sent part of the playlist, which puts those programs
+    // first. The save that turns rebuilding on sends a different list.
+    test(
+      'keeps its place when the classic save sent part of the playlist',
+      () =>
+        expectCarried(4110, {
+          classicPrograms: [...programIds, ...largeProgramIds.slice(0, 50)],
+        }),
+      120_000,
+    );
+
+    test(
+      'keeps its place after a rescan rebuilt the lineup',
+      () =>
+        expectCarried(4108, {
+          beforeEnabling: (channelId) =>
+            container
+              .get(RegenerateChannelLineupCommand)
+              .execute({ channelId }),
+        }),
+      120_000,
+    );
+
+    test(
+      'keeps its place in a lineup saved before program lists were recorded',
+      () =>
+        expectCarried(4109, {
+          beforeEnabling: (channelId) =>
+            container
+              .get(ChannelDB)
+              .saveLineup(channelId, { scheduleProgramIds: null })
+              .then(() => undefined),
+        }),
+      120_000,
+    );
+  });
+
+  test('a classic lineup without a seed starts over', async () => {
+    const { scheduleEdit } = await enableOnAiringChannel(
+      4104,
+      oneSlotSchedule('next'),
+      {
+        beforeEnabling: (channelId) =>
+          container
+            .get(ChannelDB)
+            .saveLineup(channelId, { scheduleSeed: null })
+            .then(() => undefined),
+      },
+    );
+
+    expect(scheduleEdit).toEqual({ placesCarried: false, reason: 'no_seed' });
+  }, 120_000);
+});

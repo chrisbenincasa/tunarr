@@ -5391,6 +5391,12 @@ export type PostApiChannelsByIdProgrammingResponses = {
             }>;
             enabled: boolean;
         };
+        scheduleEdit?: {
+            placesCarried: true;
+        } | {
+            placesCarried: false;
+            reason: 'no_schedule' | 'no_seed' | 'replay_mismatch' | 'not_started';
+        };
     };
 };
 

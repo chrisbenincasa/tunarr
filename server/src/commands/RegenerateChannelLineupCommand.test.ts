@@ -28,6 +28,7 @@ function setup(
       },
     }),
     replaceChannelPrograms: vi.fn(),
+    getChannelProgramIds: vi.fn().mockResolvedValue(['p0', 'p1']),
     saveLineup: vi.fn().mockResolvedValue(undefined),
     updateChannelDuration: vi.fn().mockResolvedValue(undefined),
   };
@@ -79,6 +80,17 @@ describe('RegenerateChannelLineupCommand', () => {
     expect(channelDB.replaceChannelPrograms).toHaveBeenCalledWith('ch1', [
       'p1',
     ]);
+  });
+
+  test('stores the programs the build started from', async () => {
+    const { command, channelDB } = setup([1, 2, 3]);
+
+    await command.execute({ channelId: 'ch1' });
+
+    expect(channelDB.saveLineup).toHaveBeenCalledWith(
+      'ch1',
+      expect.objectContaining({ scheduleProgramIds: ['p0', 'p1'] }),
+    );
   });
 
   test('hands a rebuilding channel to the cycle boundary service', async () => {

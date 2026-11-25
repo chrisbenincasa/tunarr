@@ -1,6 +1,6 @@
 # Scheduling and Lineups
 
-*Last Updated: 2026-11-22*
+*Last Updated: 2026-11-24*
 
 Domain terms (slot, lineup, filler, flex) are defined in `CONTEXT.md` at the repo root.
 
@@ -28,8 +28,11 @@ separately from SQL migrations.
   `rebuildEachCycle` on, the command delegates to `SlotCycleBoundaryService.regenerateChannel`
   instead, which rebuilds everything after the program on air (see "Cycles" below).
 - Slot saves write `scheduleSeed` to the lineup file; manual saves clear it, along with the cycle
-  fields described below. Lineups saved before the field existed have no seed and are patched
-  until the next slot save or regeneration.
+  fields described below. Lineups saved before the seed existed have none and are patched until
+  the next slot save or regeneration.
+- Classic builds also record `scheduleProgramIds`, the program list they started from (the save's
+  `programs`, or the channel's programs on a regenerate). Slot pools list those programs first, so
+  a shuffle's order depends on them. Manual saves and schedule deletes clear it.
 - The patch rules live in `server/src/db/lineupDurationReconciler.ts`. Flex right after a changed item
   absorbs the difference; mid-roll segments are clamped, or the final one is extended; a dropped segment
   takes the mid-roll break before it along. The current position is kept by moving the on-demand
@@ -125,9 +128,11 @@ Opt-in reshuffle-on-loop for slot channels (design in `plans/schedules-reshuffle
 - Save rules: a slot save keeps `rebuildEachCycle` at its request value, falling back to the
   lineup's existing value, falling back to off — the server never defaults it on, since slice 4's
   web toggle doesn't exist yet. Every slot save assigns a new `scheduleSeed` and clears `cycles`.
-  Turning it on writes `startTime` to `cycleStartTime(now)` exactly before building the first
-  cycle. On a channel already rebuilding, `applyScheduleEdit` keeps `startTime` and the program on
-  air. A manual
+  Turning it on for an airing classic channel replays the classic build
+  (`BuildSlotCycleCommand.replayClassic`, `classicReplayInputs`, `classicPassState`) and cuts over
+  after the program on air with each show's place, falling back to a fresh start at
+  `cycleStartTime(now)`. On a channel already rebuilding, `applyScheduleEdit` keeps `startTime` and
+  the program on air. A manual
   save clears `rebuildEachCycle`, `cycles`, and `nextCycleSnapshot`.
 - Lineups with `onDemandConfig` never rebuild. `PUT /channels/:id` takes the lock and ignores an
   incoming `startTime` on rebuilding channels, because the server owns it. Each pass builds a capped

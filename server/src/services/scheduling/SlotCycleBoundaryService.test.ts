@@ -130,7 +130,59 @@ type FakeBuilder = {
     discardCount: number;
     iteratorState: SlotIteratorState | undefined;
   }[];
+  replays: { startTime: number; programIds: readonly string[] }[];
+  // The classic pass a replay reproduces.
+  passItems: LineupItem[];
+  // Changes what a classic replay produces. By default it reproduces
+  // `passItems` exactly.
+  replayItems?: (
+    stored: LineupItem[],
+    programIds: readonly string[],
+  ) => LineupItem[];
 };
+
+// A classic pass of ten one-hour programs. Each one names the time its pass
+// airs from, so expectConsistentState can check where the pass sits.
+const classicPassMs = 10 * oneHour;
+
+function classicItems(passStart: number): LineupItem[] {
+  return Array.from({ length: 10 }, (_, i) => ({
+    type: 'content',
+    id: `c${i}@${passStart}#${i}`,
+    durationMs: oneHour,
+  }));
+}
+
+function contentId(item: LineupItem): string {
+  if (item.type !== 'content') {
+    throw new Error('expected a content item');
+  }
+  return item.id;
+}
+
+// The replayed pass checkpoints every two hours. Show A in the first slot has
+// played c(n-1) by the checkpoint at n hours, and the first slot last played
+// an hour before it.
+function classicReplay(startTime: number, items: LineupItem[]): BuiltCycle {
+  return {
+    items,
+    durationMs: totalDurationMs(items),
+    endSnapshot: {
+      discardCount: 10,
+      iteratorState: {
+        iterators: { 'slot:0': { type: 'ordered', lastProgramId: 'c9' } },
+      },
+    },
+    checkpoints: [2, 4, 6, 8].map((hours) => ({
+      offsetMs: hours * oneHour,
+      discardCount: hours,
+      iterators: {
+        'slot:0': { type: 'ordered', lastProgramId: `c${hours - 1}` },
+      },
+      slotLastPlayedMs: { '0': startTime + (hours - 1) * oneHour },
+    })),
+  };
+}
 
 // Each cycle's items name the start time they were built for, so a lineup
 // stitched together from stale reads is detectable.
@@ -175,10 +227,34 @@ function createFakeBuildCommand(): FakeBuilder {
     };
   };
 
-  return {
-    command: { execute } as unknown as BuildSlotCycleCommand,
+  const builder: FakeBuilder = {
+    command: undefined as unknown as BuildSlotCycleCommand,
     calls,
+    replays: [],
+    passItems: [],
   };
+
+  const replayClassic = async (req: {
+    programIds: readonly string[];
+    startTime: number;
+  }): Promise<BuiltCycle> => {
+    builder.replays.push({
+      startTime: req.startTime,
+      programIds: req.programIds,
+    });
+    await tick(1);
+    const stored = builder.passItems;
+    return classicReplay(
+      req.startTime,
+      builder.replayItems?.(stored, req.programIds) ?? stored,
+    );
+  };
+
+  builder.command = {
+    execute,
+    replayClassic,
+  } as unknown as BuildSlotCycleCommand;
+  return builder;
 }
 
 function builtAt(item: LineupItem) {
@@ -512,16 +588,188 @@ describe('SlotCycleBoundaryService', () => {
       expectConsistentState(channelDB, now);
     });
 
-    test('a channel that was not rebuilding starts fresh', async () => {
+    // A classic channel one pass into its loop, 3.5 hours into the second
+    // pass, saved with the same schedule and the toggle on.
+    async function enableOnClassicChannel(lineup: Partial<Lineup> = {}) {
+      const startTime = now0 - classicPassMs - 3.5 * oneHour;
+      const passStart = startTime + classicPassMs;
+      const ctx = setup(
+        baseLineup({
+          rebuildEachCycle: false,
+          items: classicItems(passStart),
+          ...lineup,
+        }),
+      );
+      ctx.channelDB.state.channel.startTime = startTime;
+      ctx.channelDB.state.channel.duration = classicPassMs;
+      ctx.builder.passItems = classicItems(passStart);
+      return { ...ctx, startTime, passStart };
+    }
+
+    const turnOn = () => ({ rebuildEachCycle: true });
+
+    test('a classic channel carries each slot’s place from the replayed pass', async () => {
+      const { service, channelDB, builder, startTime, passStart } =
+        await enableOnClassicChannel();
+      const previous = await editAndSave(channelDB, turnOn);
+
+      const outcome = await service.applyScheduleEdit(
+        channelId,
+        previous,
+        now0,
+      );
+
+      expect(outcome).toEqual({ placesCarried: true });
+      expect(builder.replays).toEqual([
+        { startTime, programIds: classicItems(passStart).map(contentId) },
+      ]);
+
+      // c3 is on air. The pass is kept through it, and the edited schedule
+      // takes over at the 4 hour checkpoint with the state recorded there.
+      // The cooldown moves forward by the pass already looped.
+      expect(channelDB.state.channel.startTime).toBe(passStart);
+      expect(channelDB.state.lineup.items.slice(0, 4)).toEqual(
+        classicItems(passStart).slice(0, 4),
+      );
+      expect(channelDB.state.lineup.cycles?.[0]).not.toHaveProperty(
+        'checkpoints',
+      );
+      expect(builder.calls[0]).toEqual({
+        startTime: passStart + 4 * oneHour,
+        discardCount: 0,
+        iteratorState: {
+          iterators: { 'slot:0': { type: 'ordered', lastProgramId: 'c3' } },
+          slotLastPlayedMs: { '0': passStart + 3 * oneHour },
+        },
+      });
+      expectConsistentState(channelDB, now0);
+    });
+
+    // A rebuilding lineup with no stored cycles holds a classic pass, such as
+    // one saved before cycles existed.
+    test('a rebuilding channel without cycles carries places like a classic one', async () => {
+      const { service, channelDB, builder, startTime, passStart } =
+        await enableOnClassicChannel({ rebuildEachCycle: true });
+      const previous = await editAndSave(channelDB, turnOn);
+
+      const outcome = await service.applyScheduleEdit(
+        channelId,
+        previous,
+        now0,
+      );
+
+      expect(outcome).toEqual({ placesCarried: true });
+      expect(builder.replays).toHaveLength(1);
+      expect(builder.replays[0]?.startTime).toBe(startTime);
+      expect(channelDB.state.channel.startTime).toBe(passStart);
+      expect(channelDB.state.lineup.items.slice(0, 4)).toEqual(
+        classicItems(passStart).slice(0, 4),
+      );
+      expectConsistentState(channelDB, now0);
+    });
+
+    test('a recorded program list is the only one replayed', async () => {
+      const { service, channelDB, builder, startTime } =
+        await enableOnClassicChannel({ scheduleProgramIds: ['p2', 'p1'] });
+      const previous = await editAndSave(channelDB, turnOn);
+
+      const outcome = await service.applyScheduleEdit(
+        channelId,
+        previous,
+        now0,
+        ['p9'],
+      );
+
+      expect(outcome).toEqual({ placesCarried: true });
+      expect(builder.replays).toEqual([
+        { startTime, programIds: ['p2', 'p1'] },
+      ]);
+    });
+
+    test('an older lineup tries each program list until one replays what aired', async () => {
+      const { service, channelDB, builder, passStart } =
+        await enableOnClassicChannel();
+      builder.replayItems = (items, programIds) =>
+        programIds.join() === 'p9'
+          ? items
+          : items.map((item, i) =>
+              i === 1 ? { type: 'offline', durationMs: item.durationMs } : item,
+            );
+      const previous = await editAndSave(channelDB, turnOn);
+
+      const outcome = await service.applyScheduleEdit(
+        channelId,
+        previous,
+        now0,
+        ['p9'],
+      );
+
+      expect(outcome).toEqual({ placesCarried: true });
+      expect(builder.replays.map(({ programIds }) => programIds)).toEqual([
+        classicItems(passStart).map(contentId),
+        [],
+        ['p9'],
+      ]);
+      expectConsistentState(channelDB, now0);
+    });
+
+    test('a classic replay that differs from what aired starts fresh', async () => {
+      const { service, channelDB, builder } = await enableOnClassicChannel();
+      builder.replayItems = (items) =>
+        items.map((item, i) =>
+          i === 1 ? { type: 'offline', durationMs: item.durationMs } : item,
+        );
+      const previous = await editAndSave(channelDB, turnOn);
+
+      const outcome = await service.applyScheduleEdit(
+        channelId,
+        previous,
+        now0,
+      );
+
+      expect(outcome).toEqual({
+        placesCarried: false,
+        reason: 'replay_mismatch',
+      });
+      expect(builder.calls[0]).toEqual({
+        startTime: now0 - (now0 % oneMinute),
+        discardCount: 0,
+        iteratorState: undefined,
+      });
+      expectConsistentState(channelDB, now0);
+    });
+
+    test('a classic channel without a seed starts fresh without a replay', async () => {
+      const { service, channelDB, builder } = await enableOnClassicChannel({
+        scheduleSeed: undefined,
+      });
+      const previous = await editAndSave(channelDB, turnOn);
+
+      const outcome = await service.applyScheduleEdit(
+        channelId,
+        previous,
+        now0,
+      );
+
+      expect(outcome).toEqual({ placesCarried: false, reason: 'no_seed' });
+      expect(builder.replays).toEqual([]);
+      expect(builder.calls[0]?.iteratorState).toBeUndefined();
+      expectConsistentState(channelDB, now0);
+    });
+
+    test('a classic channel with nothing aired starts fresh', async () => {
       const { service, channelDB, builder } = setup(
         baseLineup({ rebuildEachCycle: false }),
       );
-      const previous = await editAndSave(channelDB, () => ({
-        rebuildEachCycle: true,
-      }));
+      const previous = await editAndSave(channelDB, turnOn);
 
-      await service.applyScheduleEdit(channelId, previous, now0);
+      const outcome = await service.applyScheduleEdit(
+        channelId,
+        previous,
+        now0,
+      );
 
+      expect(outcome).toEqual({ placesCarried: false, reason: 'not_started' });
       expect(builder.calls[0]).toEqual({
         startTime: now0 - (now0 % oneMinute),
         discardCount: 0,

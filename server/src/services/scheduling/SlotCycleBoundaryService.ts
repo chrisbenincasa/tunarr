@@ -11,17 +11,43 @@ import type { Logger } from '../../util/logging/LoggerFactory.ts';
 import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 import type { ChannelLineupLock } from '../ChannelLineupLock.ts';
 import { TVGuideService } from '../TvGuideService.ts';
-import type { CycleOptions, CycleSnapshot, CycleState } from './slotCycles.ts';
+import type {
+  ClassicPass,
+  ClassicPassFallback,
+  CycleOptions,
+  CycleSnapshot,
+  CycleState,
+} from './slotCycles.ts';
 import {
   advanceCycles,
   chunkLengthMs,
+  classicPassState,
+  classicReplayInputs,
   cycleStartTime,
+  dropFirstCycleCheckpoints,
   initializeCycles,
   rebuildAfterAiring,
+  shiftSnapshotTimes,
 } from './slotCycles.ts';
 import { remapIteratorState } from './slotIteratorRemap.ts';
 
 const OneHourMs = 60 * 60 * 1000;
+
+/**
+ * Whether a slot save kept each slot's place in the schedule.
+ *
+ * - `no_schedule`: the lineup before the save had no slot schedule, so there
+ *   were no places to keep.
+ * - `no_seed`: the classic lineup has no seed, so it can't be replayed.
+ * - `replay_mismatch`: the replayed classic pass differs from what aired.
+ * - `not_started`: the classic lineup hasn't started airing.
+ */
+export type ScheduleEditOutcome =
+  | { placesCarried: true; reason?: undefined }
+  | {
+      placesCarried: false;
+      reason: 'no_schedule' | 'no_seed' | ClassicPassFallback;
+    };
 
 /**
  * Keeps rebuilding slot channels one cycle ahead of the guide.
@@ -122,29 +148,25 @@ export class SlotCycleBoundaryService {
    * same carried places.
    *
    * `previous` is the channel's start time and lineup from before the save.
+   * `savedProgramIds` is the program list the save sent.
    */
   async applyScheduleEdit(
     channelId: string,
     previous: { startTime: number; lineup: Lineup },
     now: number = Date.now(),
-  ) {
-    await this.lineupLock.run(channelId, async () => {
+    savedProgramIds: readonly string[] = [],
+  ): Promise<ScheduleEditOutcome> {
+    return this.lineupLock.run(channelId, async () => {
       const loaded = await this.loadRebuildingChannel(channelId);
       if (!loaded) {
-        return;
+        return { placesCarried: false, reason: 'no_schedule' };
       }
 
       const { lineup, schedule, state } = loaded;
       const previousSchedule = previous.lineup.schedule;
-      const previousCycles = previous.lineup.cycles ?? [];
-      if (
-        !previous.lineup.rebuildEachCycle ||
-        !previousSchedule ||
-        isDefined(previous.lineup.onDemandConfig) ||
-        previousCycles.length === 0
-      ) {
+      if (!previousSchedule || isDefined(previous.lineup.onDemandConfig)) {
         await this.initializeChannel(channelId, now);
-        return;
+        return { placesCarried: false, reason: 'no_schedule' };
       }
 
       // The save wrote a new seed, so the RNG starts over. The places carry.
@@ -156,31 +178,73 @@ export class SlotCycleBoundaryService {
           schedule,
         ),
       });
-
-      const previousState: CycleState = {
-        startTime: previous.startTime,
-        items: [...previous.lineup.items],
-        cycles: previousCycles,
-        nextSnapshot: previous.lineup.nextCycleSnapshot,
-      };
       const opts = this.cycleOptions(channelId, lineup, now);
 
-      const edited =
-        (await rebuildAfterAiring(previousState, opts, carry)) ??
-        (
-          await advanceCycles(
-            {
-              ...previousState,
-              nextSnapshot: previousState.nextSnapshot
-                ? carry(previousState.nextSnapshot)
-                : undefined,
-            },
-            cycleStartTime(schedule, now),
-            opts,
-          )
-        ).state;
+      const previousCycles = previous.lineup.cycles ?? [];
+      if (previous.lineup.rebuildEachCycle && previousCycles.length > 0) {
+        const previousState: CycleState = {
+          startTime: previous.startTime,
+          items: [...previous.lineup.items],
+          cycles: previousCycles,
+          nextSnapshot: previous.lineup.nextCycleSnapshot,
+        };
 
-      await this.persist(channelId, state, edited);
+        const edited =
+          (await rebuildAfterAiring(previousState, opts, carry)) ??
+          (
+            await advanceCycles(
+              {
+                ...previousState,
+                nextSnapshot: previousState.nextSnapshot
+                  ? carry(previousState.nextSnapshot)
+                  : undefined,
+              },
+              cycleStartTime(schedule, now),
+              opts,
+            )
+          ).state;
+
+        await this.persist(channelId, state, edited);
+        return { placesCarried: true };
+      }
+
+      const scheduleSeed = previous.lineup.scheduleSeed;
+      if (!scheduleSeed) {
+        return this.startOver(channelId, now, 'no_seed');
+      }
+
+      let pass: ClassicPass = { fallback: 'replay_mismatch' };
+      for (const programIds of classicReplayInputs(
+        previous.lineup,
+        savedProgramIds,
+      )) {
+        const replay = await this.buildCycle.replayClassic({
+          lineup: { schedule: previousSchedule, scheduleSeed },
+          programIds,
+          startTime: previous.startTime,
+        });
+        pass = classicPassState(
+          { startTime: previous.startTime, items: previous.lineup.items },
+          replay,
+          now,
+        );
+        if (!('fallback' in pass) || pass.fallback === 'not_started') {
+          break;
+        }
+      }
+      if ('fallback' in pass) {
+        return this.startOver(channelId, now, pass.fallback);
+      }
+
+      const rebuilt = await rebuildAfterAiring(pass.state, opts, (snapshot) =>
+        carry(shiftSnapshotTimes(snapshot, pass.shiftMs)),
+      );
+      if (!rebuilt) {
+        return this.startOver(channelId, now, 'not_started');
+      }
+
+      await this.persist(channelId, state, dropFirstCycleCheckpoints(rebuilt));
+      return { placesCarried: true };
     });
   }
 
@@ -313,6 +377,20 @@ export class SlotCycleBoundaryService {
   }
 
   // Logs for a channel once, until the thing it reports goes away.
+  private async startOver(
+    channelId: string,
+    now: number,
+    reason: Exclude<ScheduleEditOutcome['reason'], undefined>,
+  ): Promise<ScheduleEditOutcome> {
+    this.logger.warn(
+      'Channel %s could not carry its places into rebuild each cycle (%s). Every slot starts over.',
+      channelId,
+      reason,
+    );
+    await this.initializeChannel(channelId, now);
+    return { placesCarried: false, reason };
+  }
+
   private warnOnce(channelId: string, warn: () => void) {
     if (this.#quietChannels.has(channelId)) {
       return;

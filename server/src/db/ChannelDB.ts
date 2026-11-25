@@ -185,6 +185,10 @@ export class ChannelDB implements IChannelDB {
     this.channelProgram.replaceChannelPrograms(channelId, programIds);
   }
 
+  getChannelProgramIds(channelId: string): Promise<string[]> {
+    return this.channelProgram.getChannelProgramIds(channelId);
+  }
+
   addChannelPrograms(channelId: string, programIds: string[]): void {
     this.channelProgram.addChannelPrograms(channelId, programIds);
   }

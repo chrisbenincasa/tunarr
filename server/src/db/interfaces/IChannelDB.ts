@@ -135,6 +135,8 @@ export interface IChannelDB {
    */
   replaceChannelPrograms(channelId: string, programIds: string[]): void;
 
+  getChannelProgramIds(channelId: string): Promise<string[]>;
+
   /**
    * Associate programs with a channel, keeping the ones already there.
    * @param channelId
@@ -221,11 +223,17 @@ export type UpdateChannelLineupRequest = MarkOptional<
     Omit<Lineup, 'lastUpdated'>,
     | 'schedule'
     | 'scheduleSeed'
+    | 'scheduleProgramIds'
     | 'rebuildEachCycle'
     | 'cycles'
     | 'nextCycleSnapshot'
   >,
-  'version' | 'onDemandConfig' | 'items' | 'startTimeOffsets' | 'scheduleSeed'
+  | 'version'
+  | 'onDemandConfig'
+  | 'items'
+  | 'startTimeOffsets'
+  | 'scheduleSeed'
+  | 'scheduleProgramIds'
 >;
 
 export type PageParams = {

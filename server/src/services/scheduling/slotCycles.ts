@@ -1,7 +1,9 @@
 import type { RandomSlotSchedule, TimeSlotSchedule } from '@tunarr/types/api';
-import { sumBy } from 'lodash-es';
+import { seq } from '@tunarr/shared/util';
+import { mapValues, sumBy, uniq, uniqBy } from 'lodash-es';
 import type {
   CycleSnapshot,
+  Lineup,
   LineupCycle,
   LineupItem,
 } from '../../db/derived_types/Lineup.ts';
@@ -419,4 +421,146 @@ export async function rebuildAfterAiring(
     cycles: [...kept.cycles, ...built.cycles],
     nextSnapshot: built.nextSnapshot,
   };
+}
+
+/**
+ * The program lists a classic build may have started from, to replay it with.
+ *
+ * A lineup that records `scheduleProgramIds` has one exact answer. Older
+ * lineups don't, so the replay tries the programs that aired, no programs, and
+ * the list the current save sent. `classicPassState` rejects a wrong guess.
+ */
+export function classicReplayInputs(
+  lineup: Pick<Lineup, 'items' | 'scheduleProgramIds'>,
+  savedProgramIds: readonly string[],
+): (readonly string[])[] {
+  if (lineup.scheduleProgramIds) {
+    return [lineup.scheduleProgramIds];
+  }
+
+  const aired = uniq(
+    seq.collect(lineup.items, (item) =>
+      item.type === 'content' ? item.id : null,
+    ),
+  );
+  return uniqBy([aired, [], savedProgramIds], (ids) => ids.join(','));
+}
+
+export type ClassicPassFallback = 'not_started' | 'replay_mismatch';
+
+export type ClassicPass =
+  | { state: CycleState; shiftMs: number }
+  | { fallback: ClassicPassFallback };
+
+/**
+ * Wraps the pass a classic slot channel is looping as one cycle, so turning
+ * on rebuild each cycle cuts over after the program on air like an edit does.
+ *
+ * `replay` is the classic pass rebuilt with checkpoints. Its state is trusted
+ * only when its items match the stored ones up to the restart point, because
+ * that state describes every program before it.
+ *
+ * `shiftMs` is how far the looping pass sits from the replayed one. Absolute
+ * timestamps in a snapshot taken from it must move by that much.
+ */
+export function classicPassState(
+  stored: { startTime: number; items: readonly LineupItem[] },
+  replay: BuiltCycle,
+  now: number,
+): ClassicPass {
+  const durationMs = sumBy(stored.items, (item) => item.durationMs);
+  if (now < stored.startTime || durationMs <= 0) {
+    return { fallback: 'not_started' };
+  }
+
+  const shiftMs =
+    Math.floor((now - stored.startTime) / durationMs) * durationMs;
+  const state: CycleState = {
+    startTime: stored.startTime + shiftMs,
+    items: [...stored.items],
+    cycles: [
+      {
+        itemCount: stored.items.length,
+        durationMs,
+        snapshot: freshSnapshot(),
+        ...(isNonEmptyArray(replay.checkpoints)
+          ? { checkpoints: replay.checkpoints }
+          : {}),
+      },
+    ],
+    nextSnapshot: replay.endSnapshot,
+  };
+
+  const point = firstRestartAfterAiring(state, now);
+  const checkedMs = point ? point.timeMs - state.startTime : durationMs;
+  if (!sameItemsBefore(stored.items, replay.items, checkedMs)) {
+    return { fallback: 'replay_mismatch' };
+  }
+
+  return { state, shiftMs };
+}
+
+function sameItemsBefore(
+  stored: readonly LineupItem[],
+  replayed: readonly LineupItem[],
+  offsetMs: number,
+): boolean {
+  let startMs = 0;
+  for (const [index, item] of stored.entries()) {
+    if (startMs >= offsetMs) {
+      return true;
+    }
+    const other = replayed[index];
+    if (!other || lineupItemKey(item) !== lineupItemKey(other)) {
+      return false;
+    }
+    startMs += item.durationMs;
+  }
+  return true;
+}
+
+function lineupItemKey(item: LineupItem): string {
+  switch (item.type) {
+    case 'content':
+      return `content:${item.id}:${item.durationMs}`;
+    case 'redirect':
+      return `redirect:${item.channel}:${item.durationMs}`;
+    case 'offline':
+      return `offline:${item.durationMs}`;
+  }
+}
+
+/**
+ * Moves the random-slot cooldown timestamps in a snapshot by `shiftMs`. They
+ * are the only absolute times in scheduler state.
+ */
+export function shiftSnapshotTimes(
+  snapshot: CycleSnapshot,
+  shiftMs: number,
+): CycleSnapshot {
+  const lastPlayed = snapshot.iteratorState.slotLastPlayedMs;
+  if (!lastPlayed || shiftMs === 0) {
+    return snapshot;
+  }
+  return {
+    ...snapshot,
+    iteratorState: {
+      ...snapshot.iteratorState,
+      slotLastPlayedMs: mapValues(lastPlayed, (playedMs) => playedMs + shiftMs),
+    },
+  };
+}
+
+/**
+ * Drops the checkpoints of a state's first cycle. After a classic pass is cut
+ * over, that cycle ends at the restart point and every later restart comes
+ * after it, so its checkpoints are never read. A long pass has thousands.
+ */
+export function dropFirstCycleCheckpoints(state: CycleState): CycleState {
+  const [first, ...rest] = state.cycles;
+  if (!first?.checkpoints) {
+    return state;
+  }
+  const { checkpoints: _, ...kept } = first;
+  return { ...state, cycles: [kept, ...rest] };
 }

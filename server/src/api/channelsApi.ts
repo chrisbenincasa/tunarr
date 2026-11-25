@@ -5,7 +5,10 @@ import {
 import { globalOptions } from '@/globals.js';
 import type { ChannelLineupLock } from '@/services/ChannelLineupLock.js';
 import { GlobalScheduler } from '@/services/Scheduler.js';
-import { SlotCycleBoundaryService } from '@/services/scheduling/SlotCycleBoundaryService.js';
+import {
+  SlotCycleBoundaryService,
+  type ScheduleEditOutcome,
+} from '@/services/scheduling/SlotCycleBoundaryService.js';
 import { validateSlotGroups } from '@/services/scheduling/slotGroupValidator.js';
 import type { UpdateXmlTvTaskRequest } from '@/tasks/UpdateXmlTvTask.js';
 import { UpdateXmlTvTask } from '@/tasks/UpdateXmlTvTask.js';
@@ -41,6 +44,7 @@ import {
   TerminalProgramSchema,
   TranscodeConfigSchema,
   TvGuideProgramSchema,
+  UpdateChannelProgrammingResponseSchema,
   UpdateChannelRequestSchema,
 } from '@tunarr/types/schemas';
 import dayjs from 'dayjs';
@@ -606,7 +610,7 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         tags: ['Channels'],
         body: UpdateChannelProgrammingRequestSchema,
         response: {
-          200: CondensedChannelProgrammingSchema,
+          200: UpdateChannelProgrammingResponseSchema,
           400: z.string(),
           404: z.void(),
           500: z.void(),
@@ -684,6 +688,8 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         };
       }
 
+      let scheduleEdit: ScheduleEditOutcome | undefined;
+
       // One lock across the save and the first cycle build, so nothing reads
       // or rewrites the lineup between the two writes.
       const updateResult = await Result.attemptAsync(() =>
@@ -712,10 +718,17 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
               SlotCycleBoundaryService,
             );
             if (previous) {
-              await boundaryService.applyScheduleEdit(req.params.id, {
-                startTime: previous.channel.startTime,
-                lineup: previous.lineup,
-              });
+              scheduleEdit = await boundaryService.applyScheduleEdit(
+                req.params.id,
+                {
+                  startTime: previous.channel.startTime,
+                  lineup: previous.lineup,
+                },
+                Date.now(),
+                programmingRequest.type === 'manual'
+                  ? []
+                  : programmingRequest.programs,
+              );
             } else {
               await boundaryService.initializeChannel(req.params.id);
             }
@@ -777,7 +790,10 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
         return res.status(500).send();
       }
 
-      return res.status(200).serializer(JSON.stringify).send(newLineup);
+      return res
+        .status(200)
+        .serializer(JSON.stringify)
+        .send(scheduleEdit ? { ...newLineup, scheduleEdit } : newLineup);
     },
   );
 
@@ -807,6 +823,13 @@ export const channelsApi: RouterPluginAsyncCallback = async (fastify) => {
           req.serverCtx.channelDB.saveLineup(req.params.id, {
             schedule: null,
             scheduleSeed: null,
+            scheduleProgramIds: null,
+
+            // A manual lineup can't rebuild. A leftover flag would keep the
+            // server ignoring start time edits.
+            rebuildEachCycle: null,
+            cycles: null,
+            nextCycleSnapshot: null,
           }),
         );
 

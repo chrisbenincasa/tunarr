@@ -382,6 +382,16 @@ export class ChannelProgramRepository {
     });
   }
 
+  // In the order getChannelAndPrograms loads them.
+  async getChannelProgramIds(channelId: string): Promise<string[]> {
+    const rows = await this.drizzleDB
+      .select({ programUuid: ChannelPrograms.programUuid })
+      .from(ChannelPrograms)
+      .where(eq(ChannelPrograms.channelUuid, channelId))
+      .orderBy(asc(ChannelPrograms.programUuid));
+    return rows.map((row) => row.programUuid);
+  }
+
   addChannelPrograms(channelId: string, programIds: string[]): void {
     const uniqueIds = uniq(programIds);
     if (isEmpty(uniqueIds)) {
