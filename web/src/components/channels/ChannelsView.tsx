@@ -14,6 +14,7 @@ import {
 import {
   Box,
   Button,
+  CircularProgress,
   LinearProgress,
   Stack,
   Tooltip,
@@ -72,6 +73,9 @@ export type ChannelsViewProps = {
   // The full playlist's URL. Bulk export adds the selected channel numbers.
   m3uUrl: string;
   onDuplicateChannels: (channels: Channel[]) => void;
+  // A duplicate copies channels one at a time, so the button stays disabled
+  // for as long as the run lasts and a second click cannot start another.
+  duplicating?: boolean;
   onAssignFillers: (channels: Channel[]) => void;
 
   // Called after the user confirms.
@@ -93,6 +97,7 @@ export const ChannelsView = ({
   renderMenu,
   m3uUrl,
   onDuplicateChannels,
+  duplicating = false,
   onAssignFillers,
   onDeleteChannels,
   layout,
@@ -318,7 +323,15 @@ export const ChannelsView = ({
       <Button
         size="small"
         variant="outlined"
-        startIcon={<ContentCopy />}
+        disabled={duplicating}
+        aria-busy={duplicating}
+        startIcon={
+          duplicating ? (
+            <CircularProgress size={16} color="inherit" />
+          ) : (
+            <ContentCopy />
+          )
+        }
         onClick={() => onDuplicateChannels(selected)}
       >
         <Trans>Duplicate</Trans>

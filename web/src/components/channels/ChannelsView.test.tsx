@@ -20,6 +20,7 @@ const renderView = async (
   layout: CollectionLayout,
   channels = storyChannels,
   onAssignFillers: (channels: Channel[]) => void = () => {},
+  duplicating = false,
 ) => {
   const rootRoute = createRootRoute({
     component: () => (
@@ -33,6 +34,7 @@ const renderView = async (
         layout={layout}
         m3uUrl="http://tunarr.test/api/channels.m3u"
         onDuplicateChannels={() => {}}
+        duplicating={duplicating}
         onAssignFillers={onAssignFillers}
         onDeleteChannels={() => {}}
       />
@@ -107,5 +109,26 @@ describe('ChannelsView', () => {
       expect.objectContaining({ name: 'Saturday Morning Cartoons' }),
       expect.objectContaining({ name: 'Classic Sitcoms' }),
     ]);
+  });
+
+  test('Duplicate is disabled and busy while a duplicate runs', async () => {
+    await renderView('table', storyChannels, () => {}, true);
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Select Classic Sitcoms' }),
+    );
+
+    const duplicate = screen.getByRole('button', { name: /^Duplicate$/ });
+
+    expect(duplicate).toBeDisabled();
+    expect(duplicate).toHaveAttribute('aria-busy', 'true');
+  });
+
+  test('Duplicate is available once no duplicate runs', async () => {
+    await renderView('table');
+    await userEvent.click(
+      screen.getByRole('checkbox', { name: 'Select Classic Sitcoms' }),
+    );
+
+    expect(screen.getByRole('button', { name: /^Duplicate$/ })).toBeEnabled();
   });
 });

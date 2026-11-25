@@ -6,7 +6,7 @@ import { useLingui } from '@lingui/react/macro';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Channel } from '@tunarr/types';
 import { useSnackbar } from 'notistack';
-import { useCallback } from 'react';
+import { useCallback, useRef, useState } from 'react';
 
 export type RunEachResult = { succeeded: number; failed: number };
 
@@ -33,6 +33,11 @@ export const useChannelBulkActions = () => {
   const snackbar = useSnackbar();
   const queryClient = useQueryClient();
   const createChannel = useCreateChannel();
+  const [isDuplicating, setIsDuplicating] = useState(false);
+  // The button is disabled while a duplicate runs, but a double click can land
+  // before React re-renders. This ref closes that window: the second call is
+  // dropped before it can start a second copy loop.
+  const duplicateInFlight = useRef(false);
 
   const report = useCallback(
     ({ succeeded, failed }: RunEachResult, done: string, broke: string) => {
@@ -48,19 +53,29 @@ export const useChannelBulkActions = () => {
   // Copies get the next free channel numbers, so they run one at a time.
   const duplicateChannels = useCallback(
     async (channels: Channel[]) => {
-      const result = await runEach(channels, (channel) =>
-        createChannel.mutateAsync({
-          body: { type: 'copy', channelId: channel.id },
-        }),
-      );
-      report(
-        result,
-        plural(result.succeeded, {
-          one: 'Duplicated # channel',
-          other: 'Duplicated # channels',
-        }),
-        t`${result.failed} of ${channels.length} channels failed to duplicate`,
-      );
+      if (duplicateInFlight.current) {
+        return;
+      }
+      duplicateInFlight.current = true;
+      setIsDuplicating(true);
+      try {
+        const result = await runEach(channels, (channel) =>
+          createChannel.mutateAsync({
+            body: { type: 'copy', channelId: channel.id },
+          }),
+        );
+        report(
+          result,
+          plural(result.succeeded, {
+            one: 'Duplicated # channel',
+            other: 'Duplicated # channels',
+          }),
+          t`${result.failed} of ${channels.length} channels failed to duplicate`,
+        );
+      } finally {
+        duplicateInFlight.current = false;
+        setIsDuplicating(false);
+      }
     },
     [createChannel, report, t],
   );
@@ -88,5 +103,5 @@ export const useChannelBulkActions = () => {
     [queryClient, report, t],
   );
 
-  return { duplicateChannels, deleteChannels };
+  return { duplicateChannels, deleteChannels, isDuplicating };
 };
