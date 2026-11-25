@@ -3,6 +3,7 @@ import type { CommandModule } from 'yargs';
 import { container } from '../../container.ts';
 import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { KEYS } from '../../types/inject.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 
 type SettingsViewCommandArgs = {
   pretty: boolean;
@@ -29,20 +30,24 @@ export const SettingsViewCommand: CommandModule<
       }),
   // eslint-disable-next-line @typescript-eslint/require-await
   handler: async (args) => {
-    const settings = container.get<ISettingsDB>(KEYS.SettingsDB);
-    let viewSettings: unknown;
-    if (!isEmpty(args.path)) {
-      viewSettings = at(settings.getAll(), args.path ?? []);
-    } else {
-      viewSettings = settings.getAll();
-    }
+    try {
+      const settings = container.get<ISettingsDB>(KEYS.SettingsDB);
+      let viewSettings: unknown;
+      if (!isEmpty(args.path)) {
+        viewSettings = at(settings.getAll(), args.path ?? []);
+      } else {
+        viewSettings = settings.getAll();
+      }
 
-    if (isArray(viewSettings) && !isEmpty(viewSettings)) {
-      viewSettings = viewSettings[0];
-    }
+      if (isArray(viewSettings) && !isEmpty(viewSettings)) {
+        viewSettings = viewSettings[0];
+      }
 
-    console.log(
-      JSON.stringify(viewSettings, null, args.pretty ? 4 : undefined),
-    );
+      console.log(
+        JSON.stringify(viewSettings, null, args.pretty ? 4 : undefined),
+      );
+    } finally {
+      LoggerFactory.closeRollingDestination();
+    }
   },
 };

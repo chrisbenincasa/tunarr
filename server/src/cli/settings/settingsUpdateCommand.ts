@@ -4,6 +4,7 @@ import type { CommandModule } from 'yargs';
 import { container } from '../../container.ts';
 import type { ISettingsDB } from '../../db/interfaces/ISettingsDB.ts';
 import { KEYS } from '../../types/inject.ts';
+import { LoggerFactory } from '../../util/logging/LoggerFactory.ts';
 
 type SettingsUpdateCommandArgs = {
   pretty: boolean;
@@ -34,21 +35,25 @@ export const SettingsUpdateCommand: CommandModule<
         ],
       ]),
   handler: async (args) => {
-    const settingsDB = container.get<ISettingsDB>(KEYS.SettingsDB);
-    const settings = settingsDB.getAll();
-    const newSettings = merge({}, settings.settings, args.settings);
-
     try {
-      const validSettings = SettingsSchema.parse(newSettings);
-      await settingsDB.directUpdate((prev) => {
-        prev.settings = validSettings;
-      });
+      const settingsDB = container.get<ISettingsDB>(KEYS.SettingsDB);
+      const settings = settingsDB.getAll();
+      const newSettings = merge({}, settings.settings, args.settings);
 
-      console.log(
-        JSON.stringify(validSettings, undefined, args.pretty ? 4 : undefined),
-      );
-    } catch (e) {
-      console.error(e);
+      try {
+        const validSettings = SettingsSchema.parse(newSettings);
+        await settingsDB.directUpdate((prev) => {
+          prev.settings = validSettings;
+        });
+
+        console.log(
+          JSON.stringify(validSettings, undefined, args.pretty ? 4 : undefined),
+        );
+      } catch (e) {
+        console.error(e);
+      }
+    } finally {
+      LoggerFactory.closeRollingDestination();
     }
   },
 };
