@@ -25,7 +25,6 @@ import { useToggle } from '@uidotdev/usehooks';
 import dayjs from 'dayjs';
 import duration from 'dayjs/plugin/duration';
 import {
-  filter,
   groupBy,
   isUndefined,
   keys,
@@ -53,7 +52,7 @@ import { invalidateTaggedQueries } from '../../helpers/queryUtil.ts';
 import { getApiErrorMessage } from '../../helpers/apiError.ts';
 import {
   initialRebuildEachCycle,
-  lineupItemAppearsInSchedule,
+  slotScheduleSaveRequest,
   unavailableCustomShowSlotIndexes,
 } from '../../helpers/slotSchedulerUtil';
 import { useScheduleEditNotice } from '../../hooks/slot_scheduler/useScheduleEditNotice.ts';
@@ -155,34 +154,17 @@ export default function RandomSlotEditorPage() {
       type: 'random',
     };
 
-    // Find programs that have active slots
-    const filteredLineup = filter(newLineup, (item) =>
-      lineupItemAppearsInSchedule(value.slots, item),
-    );
-
     updateLineupMutation.mutate(
       {
         path: {
           id: channel!.id,
         },
-        body: {
-          type: 'random',
+        body: slotScheduleSaveRequest(
           schedule,
-          programs: seq.collect(filteredLineup, (l) => {
-            switch (l.type) {
-              case 'custom':
-              case 'content':
-                return l.id;
-              case 'redirect':
-              case 'flex':
-              case 'filler':
-                return null;
-            }
-          }),
-          seed: randomState?.seed,
-          discardCount: randomState?.discardCount,
+          newLineup,
+          randomState,
           rebuildEachCycle,
-        },
+        ),
       },
       {
         onSuccess(data) {

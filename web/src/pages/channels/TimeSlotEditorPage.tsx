@@ -10,10 +10,10 @@ import {
   flexOptions,
   initialRebuildEachCycle,
   latenessOptions,
-  lineupItemAppearsInSchedule,
   overflowOptions,
   overflowToDropdownValue,
   padOptions,
+  slotScheduleSaveRequest,
   unavailableCustomShowSlotIndexes,
 } from '@/helpers/slotSchedulerUtil.ts';
 import { v4 } from 'uuid';
@@ -47,7 +47,6 @@ import {
 import { DateTimePicker } from '@mui/x-date-pickers';
 import { useQueryClient } from '@tanstack/react-query';
 import { dayjsMod } from '@tunarr/shared';
-import { seq } from '@tunarr/shared/util';
 import type {
   MaterializedTimeSlotSchedule,
   TimeSlotSchedule,
@@ -57,7 +56,6 @@ import dayjs from 'dayjs';
 import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import {
-  filter,
   flatMap,
   groupBy,
   head,
@@ -205,34 +203,17 @@ export default function TimeSlotEditorPage() {
       type: 'time',
     } satisfies TimeSlotSchedule;
 
-    // Find programs that have active slots
-    const filteredLineup = filter(materializeOriginalProgramList(), (item) =>
-      lineupItemAppearsInSchedule(form.slots, item),
-    );
-
     updateLineupMutation.mutate(
       {
         path: {
           id: channel!.id,
         },
-        body: {
-          type: 'time',
+        body: slotScheduleSaveRequest(
           schedule,
-          programs: seq.collect(filteredLineup, (l) => {
-            switch (l.type) {
-              case 'custom':
-              case 'content':
-                return l.id;
-              case 'redirect':
-              case 'flex':
-              case 'filler':
-                return null;
-            }
-          }),
-          seed: randomState?.seed,
-          discardCount: randomState?.discardCount,
+          materializeOriginalProgramList(),
+          randomState,
           rebuildEachCycle,
-        },
+        ),
       },
       {
         onSuccess(data) {
