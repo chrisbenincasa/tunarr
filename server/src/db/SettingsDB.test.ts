@@ -54,6 +54,28 @@ describe('pendingOperations', () => {
   });
 });
 
+describe('removed plexStream settings', () => {
+  test('a settings file that still has plexStream loads and drops it', () => {
+    const defaults = defaultSettings('/tmp/tunarr-test');
+
+    const parsed = SettingsFileSchema.parse({
+      ...defaults,
+      settings: {
+        ...defaults.settings,
+        plexStream: {
+          streamPath: 'direct',
+          updatePlayStatus: true,
+          pathReplace: 'C:\\media',
+          pathReplaceWith: '/media',
+        },
+      },
+    });
+
+    expect(parsed.settings).not.toHaveProperty('plexStream');
+    expect(parsed.settings).toEqual(defaults.settings);
+  });
+});
+
 describe('legacy media source settings', () => {
   const parseWithMediaSource = (mediaSource: Record<string, unknown>) =>
     SettingsFileSchema.parse({
