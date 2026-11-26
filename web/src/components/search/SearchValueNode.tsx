@@ -18,8 +18,7 @@ import type {
 import { OperatorsByType } from '@tunarr/types/schemas';
 import { find, isArray, isNumber } from 'lodash-es';
 import { useCallback, useMemo } from 'react';
-import type { ControllerRenderProps } from 'react-hook-form';
-import { Controller, useFormContext } from 'react-hook-form';
+import { Controller, useFormContext, useWatch } from 'react-hook-form';
 import { match, P } from 'ts-pattern';
 import {
   getOperatorLabel,
@@ -227,31 +226,22 @@ export function SearchValueNode(props: ValueNodeProps) {
     return;
   }, [getFieldName, libraryId, matchingSpec, mediaSourceId]);
 
-  const renderOperatorInput = useCallback(
-    (field: ControllerRenderProps<SearchForm, `${FieldPrefix}.fieldSpec`>) => {
-      const operators = seq.collect(
-        OperatorsByType[selfValue.fieldSpec.type],
-        (operator) => {
-          return (
-            <MenuItem key={operator} value={operator}>
-              {getOperatorLabel(selfValue.fieldSpec.type, operator)}
-            </MenuItem>
-          );
-        },
-      );
+  // useWatch matches parent and child paths, so the dropdown follows both a
+  // nested `fieldSpec.op` write and a whole-`fieldSpec` replacement. A
+  // Controller on either path subscribes exactly and misses one of them.
+  const currentOp = useWatch({
+    control,
+    name: getFieldName('fieldSpec.op'),
+  });
 
-      return (
-        <Select
-          label={t`Operator`}
-          {...field}
-          value={field.value.op}
-          onChange={(ev) => handleOpChange(ev.target.value)}
-        >
-          {operators}
-        </Select>
-      );
-    },
-    [handleOpChange, selfValue.fieldSpec.type, selfValue.fieldSpec.value],
+  const operatorItems = useMemo(
+    () =>
+      seq.collect(OperatorsByType[selfValue.fieldSpec.type], (operator) => (
+        <MenuItem key={operator} value={operator}>
+          {getOperatorLabel(selfValue.fieldSpec.type, operator)}
+        </MenuItem>
+      )),
+    [selfValue.fieldSpec.type],
   );
 
   return (
@@ -295,11 +285,13 @@ export function SearchValueNode(props: ValueNodeProps) {
       />
       <FormControl size="small" sx={{ minWidth: 200 }}>
         <InputLabel>{t`Operator`}</InputLabel>
-        <Controller
-          control={control}
-          name={getFieldName('fieldSpec')}
-          render={({ field }) => renderOperatorInput(field)}
-        />
+        <Select
+          label={t`Operator`}
+          value={currentOp}
+          onChange={(ev) => handleOpChange(ev.target.value)}
+        >
+          {operatorItems}
+        </Select>
       </FormControl>
 
       {/* value editor: wrap in a FormControl to enforce a width */}
