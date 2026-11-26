@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import type { MediaSourceId } from '@tunarr/shared';
 import { isEmpty, isNil } from 'lodash-es';
+import type { KeyboardEvent } from 'react';
 import { useCallback } from 'react';
 import type { FieldPathValue, Validate } from 'react-hook-form';
 import { Controller, useFormContext } from 'react-hook-form';
@@ -25,6 +26,18 @@ type SearchBuilderProps = {
   mediaSourceId?: MediaSourceId;
   libraryId?: string;
 };
+
+// Enter submits the search, as it did when this was a single-line input.
+// Shift+Enter inserts a newline.
+function submitOnEnter(e: KeyboardEvent<HTMLDivElement>) {
+  if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing) {
+    return;
+  }
+  if (e.target instanceof HTMLTextAreaElement && e.target.form) {
+    e.preventDefault();
+    e.target.form.requestSubmit();
+  }
+}
 
 export function SearchFilterBuilder({
   libraryId,
@@ -71,6 +84,10 @@ export function SearchFilterBuilder({
                   <>
                     <TextField
                       label={t`Filter`}
+                      multiline
+                      minRows={1}
+                      maxRows={8}
+                      onKeyDown={submitOnEnter}
                       error={!!fieldState.error}
                       helperText={
                         fieldState.error?.type === 'validExpression' ? (
