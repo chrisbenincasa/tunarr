@@ -76,4 +76,7 @@ export type SlotCycleOptions = {
   // Shuffle slots rank each pass by their own stored seed instead of the
   // shared RNG. See ShuffleOptions.
   stableShuffle?: boolean;
+  // Redirect slots that target one of these channels produce nothing, so the
+  // scheduler plays flex in their place.
+  missingRedirectChannelIds?: ReadonlySet<string>;
 };

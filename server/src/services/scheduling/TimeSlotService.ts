@@ -131,7 +131,10 @@ export async function scheduleTimeSlots(
       unschedulable.map((program) => program.uuid),
     );
   }
-  const programMap = createProgramMap(allPrograms);
+  const programMap = createProgramMap(
+    allPrograms,
+    cycle.missingRedirectChannelIds,
+  );
   const fillerIterators = createFillerIterators(
     schedule.slots,
     programMap,

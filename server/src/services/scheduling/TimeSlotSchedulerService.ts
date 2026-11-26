@@ -79,11 +79,19 @@ export class TimeSlotSchedulerService {
     const slotPrograms =
       await this.slotSchedulerHelper.collectSlotProgramming(request);
 
+    // Strict saves reject a redirect to a missing channel. Lenient
+    // regeneration plays flex in its place.
+    let missingRedirectChannelIds: Set<string> | undefined;
     if (request.strictValidation) {
       await this.slotSchedulerHelper.assertSlotReferences(
         request.schedule.slots,
         slotPrograms,
       );
+    } else {
+      missingRedirectChannelIds =
+        await this.slotSchedulerHelper.findMissingRedirectChannelIds(
+          request.schedule.slots,
+        );
     }
 
     return scheduleTimeSlots(
@@ -98,6 +106,7 @@ export class TimeSlotSchedulerService {
           request.endTime !== undefined ? dayjs(request.endTime) : undefined,
         checkpoints: request.checkpoints,
         stableShuffle: request.stableShuffle,
+        missingRedirectChannelIds,
       },
     );
   }
