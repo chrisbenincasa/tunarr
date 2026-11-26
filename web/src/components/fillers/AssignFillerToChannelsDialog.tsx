@@ -19,6 +19,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
+import { BulkAssignFillersMaxChannels } from '@tunarr/types/api';
 import { isEmpty } from 'lodash-es';
 import { useState } from 'react';
 import { getChannelsOptions } from '../../generated/@tanstack/react-query.gen.ts';
@@ -27,6 +28,7 @@ import {
   DefaultBulkFillerWeight,
   useBulkAssignFillers,
 } from '../../hooks/useBulkAssignFillers.tsx';
+import { BulkAssignChannelLimitAlert } from './BulkAssignChannelLimitAlert.tsx';
 
 type Props = {
   open: boolean;
@@ -52,6 +54,7 @@ export function AssignFillerToChannelsDialog({
     DefaultBulkFillerCooldownSeconds,
   );
   const mutation = useBulkAssignFillers(onClose);
+  const overLimit = selectedChannelIds.size > BulkAssignFillersMaxChannels;
 
   const toggleChannel = (channelId: string) => {
     setSelectedChannelIds((prev) => {
@@ -188,6 +191,11 @@ export function AssignFillerToChannelsDialog({
                 </ListItem>
               ))}
             </List>
+            {overLimit && (
+              <BulkAssignChannelLimitAlert
+                selectedCount={selectedChannelIds.size}
+              />
+            )}
           </>
         )}
       </DialogContent>
@@ -198,7 +206,9 @@ export function AssignFillerToChannelsDialog({
         <Button
           variant="contained"
           onClick={handleApply}
-          disabled={selectedChannelIds.size === 0 || mutation.isPending}
+          disabled={
+            selectedChannelIds.size === 0 || overLimit || mutation.isPending
+          }
         >
           <Trans>
             Apply to{' '}

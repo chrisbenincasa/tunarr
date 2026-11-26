@@ -602,9 +602,14 @@ export type UpdateFeatureFlagsRequest = z.infer<
   typeof UpdateFeatureFlagsRequestSchema
 >;
 
+export const BulkAssignFillersMaxChannels = 1_000;
+
 export const BulkAssignFillersRequestSchema = z
   .object({
-    channelIds: z.array(z.string().uuid()).min(1).max(1_000),
+    channelIds: z
+      .array(z.string().uuid())
+      .min(1)
+      .max(BulkAssignFillersMaxChannels),
     fillers: z
       .array(
         z.object({
