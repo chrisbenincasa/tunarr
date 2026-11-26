@@ -15,6 +15,7 @@ describe('lingui catalogs', () => {
     expect(Object.keys(catalogs).sort()).toEqual([
       './en/messages.po',
       './es/messages.po',
+      './it/messages.po',
       './pseudo-LOCALE/messages.po',
       './zh-CN/messages.po',
     ]);
