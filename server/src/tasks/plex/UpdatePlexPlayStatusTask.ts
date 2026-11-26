@@ -2,8 +2,6 @@ import { GlobalScheduler } from '@/services/Scheduler.js';
 import { ScheduledTask } from '@/tasks/ScheduledTask.js';
 import { Task2 } from '@/tasks/Task.js';
 import { run } from '@/util/index.js';
-import { getTunarrVersion } from '@/util/version.js';
-import { PlexClientIdentifier } from '@tunarr/shared/constants';
 import dayjs from 'dayjs';
 import { inject, injectable } from 'inversify';
 import { RecurrenceRule } from 'node-schedule';
@@ -11,12 +9,12 @@ import z from 'zod';
 import type { MediaSourceWithRelations } from '../../db/schema/derivedTypes.js';
 import { MediaSourceApiFactory } from '../../external/MediaSourceApiFactory.js';
 import { taskDef } from '../TaskRegistry.ts';
+import { buildPlexTimelineParams } from './plexTimelineParams.ts';
 
 export type UpdatePlexPlayStatusScheduleRequest = {
   ratingKey: string;
   startTime: number;
   duration: number;
-  channelNumber: number;
   updateIntervalSeconds?: number;
 };
 
@@ -24,7 +22,6 @@ const UpdatePlexPlayStatusScheduleRequest = z.object({
   ratingKey: z.string(),
   startTime: z.number(),
   duration: z.number(),
-  channelNumber: z.number(),
   updateIntervalSeconds: z.number().optional(),
 });
 
@@ -39,13 +36,6 @@ type UpdatePlexPlayStatusTaskInvocation = z.infer<
 >;
 
 type PlayState = 'playing' | 'stopped';
-
-const StaticPlexHeaders = {
-  'X-Plex-Product': 'Tunarr',
-  'X-Plex-Platform': 'Generic',
-  'X-Plex-Client-Platform': 'Generic',
-  'X-Plex-Client-Profile-Name': 'Generic',
-};
 
 export type UpdatePlexPlayStatusScheduledTaskFactory = (
   plexServer: MediaSourceWithRelations,
@@ -67,6 +57,7 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask<
     private plexServer: MediaSourceWithRelations,
     private request: UpdatePlexPlayStatusScheduleRequest,
     public sessionId: string,
+    private clientIdentifier: string,
   ) {
     super(
       UpdatePlexPlayStatusScheduledTask.name,
@@ -120,6 +111,7 @@ export class UpdatePlexPlayStatusScheduledTask extends ScheduledTask<
     const task = new UpdatePlexPlayStatusTask(
       this.mediaSourceApiFactory,
       this.plexServer,
+      this.clientIdentifier,
     );
 
     this.request = {
@@ -155,6 +147,7 @@ class UpdatePlexPlayStatusTask extends Task2<
     @inject(MediaSourceApiFactory)
     private mediaSourceApiFactory: MediaSourceApiFactory,
     private plexServer: MediaSourceWithRelations,
+    private clientIdentifier: string,
   ) {
     super();
   }
@@ -167,20 +160,7 @@ class UpdatePlexPlayStatusTask extends Task2<
         this.plexServer,
       );
 
-    const deviceName = `tunarr-channel-${request.channelNumber}`;
-    const params = {
-      ...StaticPlexHeaders,
-      ratingKey: request.ratingKey,
-      state: request.playState,
-      key: `/library/metadata/${request.ratingKey}`,
-      time: request.startTime,
-      duration: request.duration,
-      'X-Plex-Product': 'Tunarr',
-      'X-Plex-Version': getTunarrVersion(),
-      'X-Plex-Device-Name': deviceName,
-      'X-Plex-Device': deviceName,
-      'X-Plex-Client-Identifier': PlexClientIdentifier,
-    };
+    const params = buildPlexTimelineParams(request, this.clientIdentifier);
 
     try {
       await plex.doPost({ url: '/:/timeline', params });
