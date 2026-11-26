@@ -1312,6 +1312,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
             profile: (audioStream.Profile ?? '').toLowerCase(),
             channels: audioStream.Channels ?? 2,
             selected: audioStream.IsForced,
+            title: audioStream.Title ?? audioStream.DisplayTitle,
             languageCodeISO6392: nullToUndefined(audioStream.Language),
             index: Math.max(0, (audioStream.Index ?? 0) - streamIndexOffset),
           };
@@ -1332,6 +1333,7 @@ export class EmbyApiClient extends MediaSourceApiClient<EmbyItemTypes> {
             selected: subStream.IsForced,
             forced: subStream.IsForced,
             sdh: subStream.IsHearingImpaired,
+            title: subStream.Title ?? subStream.DisplayTitle,
             languageCodeISO6392: nullToUndefined(subStream.Language),
             index: Math.max(0, (subStream.Index ?? 0) - streamIndexOffset),
             // External subtitles live outside the container, so the adjusted

@@ -578,4 +578,92 @@ describe('PlexApiClient', () => {
       );
     });
   });
+
+  describe('stream titles', () => {
+    function movieWithStreams(streams: unknown[]) {
+      const metadata = makePlexMovieMetadata('1401', 1);
+      const media = metadata.Media[0];
+      if (!media) {
+        throw new Error('fixture has no Media');
+      }
+      return PlexMovieSchema.parse({
+        ...metadata,
+        Media: [
+          {
+            ...media,
+            Part: media.Part.map((part) => ({ ...part, Stream: streams })),
+          },
+        ],
+      });
+    }
+
+    const video = {
+      streamType: 1,
+      codec: 'h264',
+      index: 0,
+      height: 1080,
+      width: 1920,
+    };
+
+    function streamsOf(streams: unknown[]) {
+      const { client } = makeMinimalPlexClient();
+      const result = client.plexMediaStreamsInject(
+        '1401',
+        movieWithStreams(streams),
+      );
+      if (!result.isSuccess()) {
+        throw new Error('expected a success');
+      }
+      return result.get().streams;
+    }
+
+    it("stores the file's track title, not Plex's generated label", () => {
+      const streams = streamsOf([
+        video,
+        {
+          streamType: 2,
+          codec: 'aac',
+          index: 1,
+          channels: 2,
+          title: 'Commentary by director Barry Levinson',
+          displayTitle: 'English (AAC Stereo)',
+        },
+        {
+          streamType: 3,
+          codec: 'srt',
+          index: 2,
+          title: 'English SDH',
+          displayTitle: 'English (SRT)',
+        },
+      ]);
+
+      expect(streams.find((s) => s.streamType === 'audio')?.title).toBe(
+        'Commentary by director Barry Levinson',
+      );
+      expect(streams.find((s) => s.streamType === 'subtitles')?.title).toBe(
+        'English SDH',
+      );
+    });
+
+    it('falls back to the generated label when the track has no title', () => {
+      const streams = streamsOf([
+        video,
+        {
+          streamType: 2,
+          codec: 'ac3',
+          index: 1,
+          channels: 6,
+          displayTitle: 'English (AC3 5.1)',
+        },
+        { streamType: 3, codec: 'srt', index: 2, displayTitle: 'English' },
+      ]);
+
+      expect(streams.find((s) => s.streamType === 'audio')?.title).toBe(
+        'English (AC3 5.1)',
+      );
+      expect(streams.find((s) => s.streamType === 'subtitles')?.title).toBe(
+        'English',
+      );
+    });
+  });
 });

@@ -118,6 +118,9 @@ export const MigrationStateSchema = z.object({
   // Set once the legacy language/subtitle preferences have been converted
   // into stream selection profiles.
   hasMigratedLegacyStreamSelection: z.boolean().optional().default(false),
+  // Set once Plex and Emby programs have been queued for a rescan that
+  // rewrites their stored track titles.
+  hasQueuedTrackTitleRescan: z.boolean().optional().default(false),
 });
 
 export type MigrationState = z.infer<typeof MigrationStateSchema>;
@@ -162,6 +165,8 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
     hasEnabledLogRollByDefault: false,
     // Fresh installs have no legacy preferences to convert.
     hasMigratedLegacyStreamSelection: true,
+    // Fresh installs have no stored track titles to rewrite.
+    hasQueuedTrackTitleRescan: true,
   },
   settings: {
     clientId: uuidv4(),
