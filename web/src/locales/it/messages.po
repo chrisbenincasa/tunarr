@@ -18,7 +18,7 @@ msgstr " del giorno dopo."
 #. placeholder {0}: channel.name
 #: src/pages/watch/ChannelWatchPage.tsx
 msgid "\"{0}\" Live"
-msgstr ""
+msgstr "“{0}” in diretta"
 
 #. placeholder {0}: channel.name
 #: src/components/channels/ChannelSessionsDialog.tsx
@@ -73,7 +73,7 @@ msgstr "{0, plural, one {# spettatore} other {# spettatori}}"
 #: src/components/settings/general/BackupForm.tsx
 #: src/components/settings/general/LogRollForm.tsx
 msgid "{0, plural, one {Day} other {Days}}"
-msgstr ""
+msgstr "{0, plural, one {Giorno} other {Giorni}}"
 
 #. placeholder {0}: channels.length
 #: src/components/channels/ChannelsDeleteDialog.tsx
@@ -94,12 +94,12 @@ msgstr "{0, plural, one {# canale duplicato} other {# canali duplicati}}"
 #: src/components/settings/general/BackupForm.tsx
 #: src/components/settings/general/LogRollForm.tsx
 msgid "{0, plural, one {Hour} other {Hours}}"
-msgstr ""
+msgstr "{0, plural, one {Ora} other {Ore}}"
 
 #. placeholder {0}: paths.length
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "{0, plural, one {Path} other {Paths}}"
-msgstr ""
+msgstr "{0, plural, one {Percorso} other {Percorsi}}"
 
 #. placeholder {0}: channel.programCount
 #. placeholder {0}: filler.contentCount
@@ -114,7 +114,7 @@ msgstr "{0, plural, one {programma} other {programmi}}"
 #. placeholder {0}: watch('intervalHours')
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "{0, plural, one {Scans run at this minute every hour.} other {Scans run at this time and every # hours after it, around the clock.}}"
-msgstr ""
+msgstr "{0, plural, one {Le scansioni partono a questo minuto di ogni ora.} other {Le scansioni partono a quest'ora e poi ogni # ore, a ciclo continuo.}}"
 
 #. placeholder {0}: selectedMedia.length
 #: src/components/channel_config/SelectedProgrammingList.tsx
@@ -146,7 +146,7 @@ msgstr ""
 #. placeholder {0}: prettifySnakeCaseString(programType)
 #: src/components/programs/ProgramDetailsDialog.tsx
 msgid "{0} Info"
-msgstr ""
+msgstr "Informazioni: {0}"
 
 #. placeholder {0}: warning.programs.length
 #. placeholder {1}: slot.programCount
@@ -154,7 +154,7 @@ msgstr ""
 #. placeholder {3}: betterHumanize(dayjs.duration(slot.durationMs ?? 0))
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "{0} of {1} {2} exceed the length of this slot ({3})."
-msgstr ""
+msgstr "Programmi che superano la durata di questo slot ({3}): {0} su {1}."
 
 #. placeholder {0}: result.failed
 #. placeholder {1}: channels.length
@@ -176,7 +176,7 @@ msgstr ""
 #. placeholder {0}: program.title
 #: src/components/programs/MediaDetailCard.tsx
 msgid "{0} Poster"
-msgstr ""
+msgstr "Locandina di {0}"
 
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "{block} Hours"
@@ -186,22 +186,22 @@ msgstr "{block} ore"
 #. placeholder {1}: <> <MonoText>{count}</MonoText> selected </>
 #: src/components/ui/patterns/CollectionView/SelectionBar.tsx
 msgid "{count, plural, one {{0}} other {{1}}}"
-msgstr ""
+msgstr "{count, plural, one {{0}} other {{1}}}"
 
 #: src/components/library/extractSubtitle.tsx
 #: src/components/programs/ProgramInfoBar.tsx
 msgid "{count, plural, one {# album} other {# albums}}"
-msgstr ""
+msgstr "{count, plural, one {# album} other {# album}}"
 
 #: src/components/library/extractSubtitle.tsx
 #: src/components/programs/ProgramInfoBar.tsx
 msgid "{count, plural, one {# episode} other {# episodes}}"
-msgstr ""
+msgstr "{count, plural, one {# episodio} other {# episodi}}"
 
 #: src/components/library/extractSubtitle.tsx
 #: src/components/programs/ProgramInfoBar.tsx
 msgid "{count, plural, one {# item} other {# items}}"
-msgstr ""
+msgstr "{count, plural, one {# elemento} other {# elementi}}"
 
 #: src/components/slot_scheduler/ProgramCalendarView.tsx
 msgid "{count, plural, one {# program} other {# programs}}"
@@ -210,16 +210,16 @@ msgstr "{count, plural, one {# programma} other {# programmi}}"
 #: src/components/library/extractSubtitle.tsx
 #: src/components/programs/ProgramInfoBar.tsx
 msgid "{count, plural, one {# season} other {# seasons}}"
-msgstr ""
+msgstr "{count, plural, one {# stagione} other {# stagioni}}"
 
 #: src/components/library/extractSubtitle.tsx
 #: src/components/programs/ProgramInfoBar.tsx
 msgid "{count, plural, one {# track} other {# tracks}}"
-msgstr ""
+msgstr "{count, plural, one {# brano} other {# brani}}"
 
 #: src/helpers/dayjs.ts
 msgid "{count, plural, one {day} other {days}}"
-msgstr ""
+msgstr "{count, plural, one {giorno} other {giorni}}"
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "{count, plural, one {episode} other {episodes}}"
@@ -227,11 +227,11 @@ msgstr "{count, plural, one {episodio} other {episodi}}"
 
 #: src/helpers/dayjs.ts
 msgid "{count, plural, one {hour} other {hours}}"
-msgstr ""
+msgstr "{count, plural, one {ora} other {ore}}"
 
 #: src/helpers/dayjs.ts
 msgid "{count, plural, one {min} other {mins}}"
-msgstr ""
+msgstr "{count, plural, one {min} other {min}}"
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 #: src/components/programming_controls/RemoveShowsModal.tsx
@@ -240,7 +240,7 @@ msgstr "{count, plural, one {programma} other {programmi}}"
 
 #: src/helpers/dayjs.ts
 msgid "{count, plural, one {second} other {seconds}}"
-msgstr ""
+msgstr "{count, plural, one {secondo} other {secondi}}"
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "{count, plural, one {track} other {tracks}}"
@@ -257,11 +257,11 @@ msgstr "{days, plural, one {# giorno} other {# giorni}}"
 
 #: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
 msgid "{enabled} of {total} enabled"
-msgstr ""
+msgstr "{enabled} di {total} attive"
 
 #: src/components/ui/table/TablePager.tsx
 msgid "{from}–{to} of {count}"
-msgstr ""
+msgstr "{from}–{to} di {count}"
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{hours, plural, one {# hour} other {# hours}}"
@@ -269,7 +269,7 @@ msgstr "{hours, plural, one {# ora} other {# ore}}"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "{hours, plural, one {Every hour} other {Every # hours}}"
-msgstr ""
+msgstr "{hours, plural, one {Ogni ora} other {Ogni # ore}}"
 
 #: src/components/channels/ChannelStatusPill.tsx
 msgid "{label}, show sessions"
@@ -299,7 +299,7 @@ msgstr ""
 
 #: src/components/guide/TvGuide.tsx
 msgid "{remainingTime} left"
-msgstr ""
+msgstr "{remainingTime} rimanenti"
 
 #: src/components/system/system-logs/SystemLogsView.tsx
 msgid "{shownCount, plural, one {Download last # line} other {Download last # lines}}"
@@ -316,7 +316,7 @@ msgstr "{value, plural, one {# programma} other {# programmi}}"
 
 #: src/pages/settings/HdhrSettingsPage.tsx
 msgid "* Restart required"
-msgstr ""
+msgstr "* Richiede il riavvio"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "# of Programs"
@@ -330,7 +330,7 @@ msgstr "# Programmi"
 
 #: src/components/settings/media_source/MediaSourceLocation.tsx
 msgid "+{more} more"
-msgstr ""
+msgstr "+ altri {more}"
 
 #: src/components/channels/ChannelsView.tsx
 msgid "<0>{channelCount}</0> {channelCount, plural, one {channel} other {channels}} · <1>{streaming}</1> streaming"
@@ -338,33 +338,33 @@ msgstr "<0>{channelCount}</0> {channelCount, plural, one {canale} other {canali}
 
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "<0>{collectionCount}</0> {collectionCount, plural, one {smart collection} other {smart collections}}"
-msgstr ""
+msgstr "<0>{collectionCount}</0> {collectionCount, plural, one {raccolta smart} other {raccolte smart}}"
 
 #: src/components/fillers/FillerListsView.tsx
 msgid "<0>{fillerCount}</0> {fillerCount, plural, one {filler list} other {filler lists}}"
-msgstr ""
+msgstr "<0>{fillerCount}</0> {fillerCount, plural, one {lista filler} other {liste filler}}"
 
 #: src/components/custom-shows/CustomShowsView.tsx
 msgid "<0>{showCount}</0> {showCount, plural, one {playlist} other {playlists}}"
-msgstr ""
+msgstr "<0>{showCount}</0> {showCount, plural, one {playlist} other {playlist}}"
 
 #: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "<0>{sourceCount}</0> {sourceCount, plural, one {media source} other {media sources}}"
-msgstr ""
+msgstr "<0>{sourceCount}</0> {sourceCount, plural, one {sorgente multimediale} other {sorgenti multimediali}}"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "<0>Configure the directory where Tunarr writes HLS segment files when transcoding. Tunarr will create the target directory (but not intermediate directories) if it doesn't exist.<1/>Changing this field will only affect new sessions. Existing sessions will continue writing to the previous setting, but will clean out segments when the segment ends.<2/>When unset, Tunarr will write segments to its current working directory.</0>"
-msgstr ""
+msgstr "<0>Imposta la cartella in cui Tunarr scrive i segmenti HLS durante la transcodifica. Se non esiste, Tunarr crea la cartella finale (ma non quelle intermedie).<1/>La modifica vale solo per le nuove sessioni. Quelle già attive continuano a scrivere nella cartella precedente, ma eliminano i segmenti quando finiscono.<2/>Se il campo è vuoto, Tunarr scrive i segmenti nella sua cartella di lavoro.</0>"
 
 #. placeholder {0}: e.message
 #: src/pages/library/FillerListsPage.tsx
 msgid "<0>Error deleting filler list: {0}<1/>Please consider opening a bug with details!</0>"
-msgstr ""
+msgstr "<0>Errore durante l'eliminazione della lista filler: {0}<1/>Se puoi, segnala il bug con i dettagli!</0>"
 
 #. placeholder {0}: e.message
 #: src/pages/library/CustomShowsPage.tsx
 msgid "<0>Error deleting playlist: {0}<1/>Please consider opening a bug with details!</0>"
-msgstr ""
+msgstr "<0>Errore durante l'eliminazione della playlist: {0}<1/>Se puoi, segnala il bug con i dettagli!</0>"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "<0>None:</0> slots are picked in the order they are specified in the table (i.e. not randomly)<1/><2>Uniform:</2> all slots have an equal chance to be picked.<3/><4>Weighted:</4> each slot is picked with a specified probability"
@@ -377,7 +377,7 @@ msgstr "<0>Allinea slot:</0> allinea l'inizio degli slot all'orario scelto.<1/><
 #. placeholder {0}: new URL( '/api/xmltv.xml', isEmpty(backendUri) ? document.location.href : backendUri, ).href
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "<0>You can edit this location in your settings.json within your Tunarr data directory<1/><2>NOTE:</2> When manually adding the XMLTV location to a client like Plex, do not use this file directly. Instead, use the generated XMLTV from the Tunarr API endpoint: {0}</0>"
-msgstr ""
+msgstr "<0>Puoi cambiare questo percorso nel file settings.json, dentro la cartella dei dati di Tunarr<1/><2>NOTA:</2> quando aggiungi a mano l'XMLTV a un'app come Plex, non usare direttamente questo file, ma l'XMLTV generato dall'indirizzo API di Tunarr: {0}</0>"
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 #: src/helpers/dayjs.ts
@@ -394,19 +394,19 @@ msgstr "24 ore"
 
 #: src/components/fillers/FillerListsView.tsx
 msgid "A filler list holds videos that play during flex time, the parts of a channel with no program scheduled."
-msgstr ""
+msgstr "Una lista filler contiene i video da trasmettere durante il Flex, cioè nei momenti in cui sul canale non è programmato nulla."
 
 #: src/components/custom-shows/CustomShowsView.tsx
 msgid "A playlist is an ordered list of videos that channels schedule as if they were episodes of one TV show."
-msgstr ""
+msgstr "Una playlist è un elenco ordinato di video che i canali programmano come se fossero episodi di un'unica serie TV."
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "A root path to scan for media. Local sources can search many different paths."
-msgstr ""
+msgstr "Una cartella principale in cui cercare i contenuti. Le sorgenti locali possono usare più percorsi."
 
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "A smart collection saves a library search. It picks up new items that match as your library grows, but it doesn't change programming already on a channel."
-msgstr ""
+msgstr "Una raccolta smart salva una ricerca nella libreria. Man mano che la libreria cresce include i nuovi elementi che corrispondono, ma non modifica i programmi già presenti in un canale."
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "A stream selection profile chooses the audio and subtitle streams for programs on this channel. Filler lists and playlists can assign their own profile, which takes precedence."
@@ -424,7 +424,7 @@ msgstr "A-Z (decrescente)"
 
 #: src/helpers/dayjs.ts
 msgid "about "
-msgstr ""
+msgstr "circa "
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
@@ -433,11 +433,11 @@ msgstr ""
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Access Token"
-msgstr ""
+msgstr "Token di accesso"
 
 #: src/components/ui/table/ActionsHeader.tsx
 msgid "Actions"
-msgstr ""
+msgstr "Azioni"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 #: src/components/library/ProgramListItem.tsx
@@ -455,7 +455,7 @@ msgstr "Aggiungi"
 #. placeholder {0}: item.type
 #: src/components/library/ProgramListItem.tsx
 msgid "Add {0}"
-msgstr ""
+msgstr "Aggiungi {0}"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Add a Filler List"
@@ -463,7 +463,7 @@ msgstr "Aggiungi una lista filler"
 
 #: src/components/search/SearchFilterBuilder.tsx
 msgid "Add a filter expression to fine-tune results of the search"
-msgstr ""
+msgstr "Aggiungi un'espressione di filtro per affinare i risultati della ricerca"
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Add Breaks"
@@ -483,7 +483,7 @@ msgstr ""
 
 #: src/components/search/SearchGroupNode.tsx
 msgid "Add field"
-msgstr ""
+msgstr "Aggiungi campo"
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Add filler"
@@ -519,7 +519,7 @@ msgstr "Aggiungi programmazione"
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Add programming to playlist"
-msgstr ""
+msgstr "Aggiungi programmi alla playlist"
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Add Rule"
@@ -540,11 +540,11 @@ msgstr "Aggiungi slot"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Add these links to an IPTV client. Jellyfin and Emby can use Tunarr as either an M3U source or an HDHomeRun tuner. Plex can add Tunarr as an HDHomeRun tuner."
-msgstr ""
+msgstr "Aggiungi questi link a un'app IPTV. Jellyfin ed Emby possono usare Tunarr come sorgente M3U o come sintonizzatore HDHomeRun. Plex può aggiungere Tunarr come sintonizzatore HDHomeRun."
 
 #: src/components/filler/EditFillerListForm.tsx
 msgid "Add TV Shows or Movies to filler"
-msgstr ""
+msgstr "Aggiungi serie TV o film ai filler"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Add TV Shows or Movies to programming list."
@@ -555,7 +555,7 @@ msgstr "Aggiungi serie TV o film alla lista dei programmi."
 #. placeholder {2}: data.updated
 #: src/hooks/useBulkAssignFillers.tsx
 msgid "Added {0} {1, plural, one {assignment} other {assignments}}, updated {2}."
-msgstr ""
+msgstr "{1, plural, one {Aggiunta # assegnazione} other {Aggiunte # assegnazioni}}, aggiornate {2}."
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Adds a channel redirect. During this period of time, the channel will redirect to another channel."
@@ -583,7 +583,7 @@ msgstr "Aggiunge un singolo blocco di Flex. Per aggiungere Flex a tutto il palin
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Adjust the output volume (not recommended). Values higher than 100 will boost the audio."
-msgstr ""
+msgstr "Regola il volume in uscita (sconsigliato). Valori sopra 100 amplificano l'audio."
 
 #: src/components/programming_controls/AdjustWeightsModal.tsx
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx
@@ -593,16 +593,16 @@ msgstr "Regola i pesi"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Advanced options relating to audio. In general, do not change these unless you know what you are doing!"
-msgstr ""
+msgstr "Opzioni avanzate per l'audio. In generale, non modificarle se non sai bene cosa fai!"
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Advanced options relating to transcoding. In general, do not change these unless you know what you are doing! These settings exist in order to leave some parity with the old dizqueTV transcode pipeline as well as to provide mechanisms to aid in debugging streaming issues."
-msgstr ""
+msgstr "Opzioni avanzate per la transcodifica. In generale, non modificarle se non sai bene cosa fai! Servono per mantenere una certa compatibilità con la vecchia transcodifica di dizqueTV e per aiutare a individuare problemi di streaming."
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Advanced Video Options"
-msgstr ""
+msgstr "Opzioni video avanzate"
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "After Every"
@@ -614,7 +614,7 @@ msgstr "dopo ogni programma"
 
 #: src/components/programs/Albums.tsx
 msgid "Albums"
-msgstr ""
+msgstr "Album"
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/library/TrashView.tsx
@@ -628,11 +628,11 @@ msgstr ""
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "All channels assigned to this config will be set to use the default configuration. If this is the last configuration, a new default configuration will be created."
-msgstr ""
+msgstr "Tutti i canali che usano questa configurazione passeranno a quella predefinita. Se è l'ultima configurazione, ne verrà creata una nuova predefinita."
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "All folders"
-msgstr ""
+msgstr "Tutte le cartelle"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "All lists are used"
@@ -670,12 +670,12 @@ msgstr ""
 
 #: src/components/search/DateSearchValueNode.tsx
 msgid "Amount"
-msgstr ""
+msgstr "Quantità"
 
 #. placeholder {0}: error.message
 #: src/components/guide/TvGuide.tsx
 msgid "An error occurred: {0}"
-msgstr ""
+msgstr "Si è verificato un errore: {0}"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/ui/table/filters/BooleanFilter.tsx
@@ -704,12 +704,12 @@ msgstr "Applica ai tipi di programma (vuoto = tutti)"
 #: src/components/settings/general/BackupForm.tsx
 #: src/components/settings/general/BackupForm.tsx
 msgid "Archive Format"
-msgstr ""
+msgstr "Formato dell'archivio"
 
 #. placeholder {0}: pendingDelete?.name
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Are you sure you want to delete Smart Collection \"{0}\"?"
-msgstr ""
+msgstr "Vuoi davvero eliminare la raccolta smart “{0}”?"
 
 #: src/components/channels/ChannelPrograms.tsx
 msgid "Artists"
@@ -725,16 +725,16 @@ msgstr "Crescente"
 
 #: src/components/fillers/FillerListCard.tsx
 msgid "Assign"
-msgstr ""
+msgstr "Assegna"
 
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 msgid "Assign \"{fillerName}\" to Channels"
-msgstr ""
+msgstr "Assegna “{fillerName}” ai canali"
 
 #. placeholder {0}: filler.name
 #: src/components/fillers/FillerListCard.tsx
 msgid "Assign {0} to channels"
-msgstr ""
+msgstr "Assegna {0} ai canali"
 
 #: src/components/channels/ChannelsView.tsx
 msgid "Assign fillers"
@@ -748,7 +748,7 @@ msgstr "Assegna filler a {0, plural, one {# canale} other {# canali}}"
 #: src/components/fillers/FillerListsView.tsx
 #: src/components/fillers/FillerListsView.tsx
 msgid "Assign to Channels"
-msgstr ""
+msgstr "Assegna ai canali"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
@@ -770,7 +770,7 @@ msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Audio & Subtitle Options"
-msgstr ""
+msgstr "Opzioni audio e sottotitoli"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Audio & Subtitles"
@@ -782,11 +782,11 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Bitrate"
-msgstr ""
+msgstr "Bitrate audio"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Buffer Size"
-msgstr ""
+msgstr "Dimensione del buffer audio"
 
 #: src/components/profiles/condition/types.ts
 msgid "Audio channel count"
@@ -794,7 +794,7 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Channels"
-msgstr ""
+msgstr "Canali audio"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Audio file path or URL. It loops for as long as the fallback plays."
@@ -803,7 +803,7 @@ msgstr "Percorso o URL del file audio. Viene ripetuto per tutto il tempo in cui 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 msgid "Audio Format"
-msgstr ""
+msgstr "Formato audio"
 
 #: src/components/profiles/condition/types.ts
 msgid "Audio language"
@@ -812,15 +812,15 @@ msgstr ""
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Loudness Normalization"
-msgstr ""
+msgstr "Normalizzazione del volume audio"
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Audio Options"
-msgstr ""
+msgstr "Opzioni audio"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Sample Rate"
-msgstr ""
+msgstr "Frequenza di campionamento audio"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Audio Selection"
@@ -837,7 +837,7 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Audio Volume"
-msgstr ""
+msgstr "Volume audio"
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Audio:"
@@ -853,7 +853,7 @@ msgstr "Creazione automatica"
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Auto Deinterlace Video"
-msgstr ""
+msgstr "Deinterlacciamento automatico"
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Auto uses the time convention for the selected language."
@@ -861,7 +861,7 @@ msgstr "Auto usa il formato orario della lingua selezionata."
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Auto-Update Guide"
-msgstr ""
+msgstr "Aggiornamento automatico della guida"
 
 #: src/components/programming_controls/AdjustWeightsModal.tsx
 msgid "Automatic"
@@ -879,7 +879,7 @@ msgstr "Torna alla programmazione"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Backups"
-msgstr ""
+msgstr "Backup"
 
 #: src/pages/system/StatusPage.tsx
 msgid "Backups:"
@@ -907,7 +907,7 @@ msgstr ""
 
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Basic button group"
-msgstr ""
+msgstr "Gruppo di pulsanti"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Bit Depth"
@@ -915,7 +915,7 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Bitrate cannot be changed when copying input audio"
-msgstr ""
+msgstr "Il bitrate non si può cambiare se l'audio viene copiato senza modifiche"
 
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "Block"
@@ -947,11 +947,11 @@ msgstr "Posizione delle pause"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Buffer size cannot be changed when copying input audio"
-msgstr ""
+msgstr "La dimensione del buffer non si può cambiare se l'audio viene copiato senza modifiche"
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Buffer size effects how frequently ffmpeg reconsiders the output bitrate. <0>Read more</0>"
-msgstr ""
+msgstr "La dimensione del buffer stabilisce ogni quanto FFmpeg ricalcola il bitrate in uscita. <0>Maggiori informazioni</0>"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Builder"
@@ -971,7 +971,7 @@ msgstr ""
 
 #: src/components/settings/general/BackupForm.tsx
 msgid "By default, saves backups in the server's run directory, or, if running in Docker, to /config/tunarr/backups"
-msgstr ""
+msgstr "Di base i backup vengono salvati nella cartella da cui gira il server oppure, con Docker, in /config/tunarr/backups"
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "By default, time slots are time of the day-based, you can change it to time of the day + day of the week. That means scheduling 7x the number of time slots. If you change from daily to weekly, the current schedule will be repeated 7 times. If you change from weekly to daily, many of the slots will be deleted."
@@ -1039,18 +1039,18 @@ msgstr "Annulla"
 
 #: src/components/library/TrashView.tsx
 msgid "Cancelling: <0>{count}</0> removed"
-msgstr ""
+msgstr "Annullamento: <0>{count}</0> rimossi"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Cannot be empty"
-msgstr ""
+msgstr "Non può essere vuoto"
 
 #: src/components/MediaSourceLibraryTable.tsx
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
 msgid "Cannot disable libraries when they are locked"
-msgstr ""
+msgstr "Non puoi disattivare le librerie bloccate"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Cannot use a channel number <= 0"
@@ -1058,11 +1058,11 @@ msgstr "Il numero del canale deve essere maggiore di 0"
 
 #: src/components/programs/Actors.tsx
 msgid "Cast & Crew"
-msgstr ""
+msgstr "Cast e troupe"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Category Log Levels"
-msgstr ""
+msgstr "Livelli di log per categoria"
 
 #: src/components/profiles/condition/ConditionEditor.tsx
 msgid "CEL"
@@ -1078,7 +1078,7 @@ msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Change the verbosity of specific categories of logs. Useful if debugging a specific feature."
-msgstr ""
+msgstr "Cambia il livello di dettaglio di alcune categorie di log. Utile per indagare su una funzione specifica."
 
 #: src/components/programming_controls/AddRedirectModal.tsx
 #: src/components/programming_controls/AddRedirectModal.tsx
@@ -1154,7 +1154,7 @@ msgstr "Canali"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Channels configured to use the HLS Direct stream mode will output in the selected container format."
-msgstr ""
+msgstr "I canali in modalità HLS Direct useranno il formato contenitore selezionato."
 
 #: src/pages/system/StatusPage.tsx
 msgid "Channels M3U Link:"
@@ -1162,11 +1162,11 @@ msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Channels play your content on a schedule, like live TV."
-msgstr ""
+msgstr "I canali trasmettono i tuoi contenuti secondo un palinsesto, come la TV."
 
 #: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
 msgid "Channels using this config cannot stream on the ErsatzTV next backend"
-msgstr ""
+msgstr "I canali con questa configurazione non possono trasmettere con il backend ErsatzTV next"
 
 #: src/pages/system/SystemDebugPage.tsx
 #: src/pages/system/SystemDebugPage.tsx
@@ -1175,11 +1175,11 @@ msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Check FFmpeg"
-msgstr ""
+msgstr "Controlla FFmpeg"
 
 #: src/components/settings/media_source/MediaSourceHealthPill.tsx
 msgid "Checking"
-msgstr ""
+msgstr "Verifica in corso"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Choose the transcode configuration to use for this channel. Configure transcode configurations on the <0>FFmpeg settings page</0>."
@@ -1187,11 +1187,11 @@ msgstr "Scegli la configurazione di transcodifica da usare per questo canale. Le
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Chooses audio and subtitle streams for programs scheduled from this playlist."
-msgstr ""
+msgstr "Sceglie le tracce audio e i sottotitoli per i programmi di questa playlist."
 
 #: src/components/filler/EditFillerListForm.tsx
 msgid "Chooses audio and subtitle streams when programs from this list play as filler."
-msgstr ""
+msgstr "Sceglie le tracce audio e i sottotitoli quando i programmi di questa lista vanno in onda come filler."
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 #: src/components/search/SearchFieldRestrictMenu.tsx
@@ -1209,11 +1209,11 @@ msgstr "Svuota tutto"
 #: src/components/fillers/FillerListsView.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Clear filter"
-msgstr ""
+msgstr "Rimuovi filtro"
 
 #: src/components/ui/table/DataTable.tsx
 msgid "Clear filters"
-msgstr ""
+msgstr "Rimuovi filtri"
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Clear Schedule"
@@ -1289,7 +1289,7 @@ msgstr "Configura rotazione ciclica"
 #: src/pages/profiles/TranscodeConfigsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Configure transcoding settings for Tunarr's streams. Each channel is assigned one transcode configuration."
-msgstr ""
+msgstr "Imposta la transcodifica dei flussi di Tunarr. A ogni canale è assegnata una configurazione di transcodifica."
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Configure what appears on your channel when there is no suitable filler content available. Using channel fallbacks requires ffmpeg transcoding."
@@ -1297,7 +1297,7 @@ msgstr "Scegli cosa mostra il canale quando non ci sono filler adatti. Il conten
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Connect a media source"
-msgstr ""
+msgstr "Collega una sorgente multimediale"
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "Connect Media Source"
@@ -1305,7 +1305,7 @@ msgstr "Collega una sorgente multimediale"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Console"
-msgstr ""
+msgstr "Console"
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Consolidate"
@@ -1364,7 +1364,7 @@ msgstr ""
 
 #: src/hooks/useCopyToClipboard.ts
 msgid "Copied to clipboard!"
-msgstr ""
+msgstr "Copiato negli appunti!"
 
 #: src/components/shell/HelpMenuContainer.tsx
 msgid "Copied XMLTV URL to clipboard"
@@ -1407,7 +1407,7 @@ msgstr ""
 #: src/components/ProgramStreamDetails.tsx
 #: src/components/RawProgramDetails.tsx
 msgid "Copy to Clipboard"
-msgstr ""
+msgstr "Copia negli appunti"
 
 #: src/components/ui/patterns/AppShell/HelpMenu.tsx
 msgid "Copy XMLTV URL"
@@ -1415,15 +1415,15 @@ msgstr "Copia URL XMLTV"
 
 #: src/hooks/useEmptyTrash.ts
 msgid "Could not cancel emptying the trash."
-msgstr ""
+msgstr "Impossibile annullare lo svuotamento del cestino."
 
 #: src/components/search/SearchFilterBuilder.tsx
 msgid "Could not parse this filter expression. Check the <0>documentation</0> for information about filter expressions."
-msgstr ""
+msgstr "Impossibile interpretare questa espressione di filtro. Consulta la <0>documentazione</0> per sapere come scriverle."
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Could not save setup progress. {message}"
-msgstr ""
+msgstr "Impossibile salvare i progressi della configurazione. {message}"
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Counted from the start of each program. If a stream starts partway through a program, it counts from that point. Set to 0 for no limit."
@@ -1431,11 +1431,11 @@ msgstr "Si conta dall'inizio di ogni programma. Se la visione inizia a programma
 
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Create"
-msgstr ""
+msgstr "Crea"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Create a channel"
-msgstr ""
+msgstr "Crea un canale"
 
 #: src/components/channel_config/NoChannelsCreated.tsx
 #: src/components/channels/ChannelsView.tsx
@@ -1444,7 +1444,7 @@ msgstr "Crea un canale"
 
 #: src/components/fillers/FillerListsView.tsx
 msgid "Create a Filler List"
-msgstr ""
+msgstr "Crea una lista filler"
 
 #: src/components/profiles/StreamSelectionProfileSelect.tsx
 msgid "Create a new profile"
@@ -1452,7 +1452,7 @@ msgstr ""
 
 #: src/components/custom-shows/CustomShowsView.tsx
 msgid "Create a Playlist"
-msgstr ""
+msgstr "Crea una playlist"
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Create Profile"
@@ -1464,19 +1464,19 @@ msgstr "Crea blocco di repliche"
 
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Creates a new collection"
-msgstr ""
+msgstr "Crea una nuova raccolta"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Cron expression"
-msgstr ""
+msgstr "Espressione cron"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Custom (cron)"
-msgstr ""
+msgstr "Personalizzato (cron)"
 
 #: src/components/guide/TvGuide.tsx
 msgid "Custom Program"
-msgstr ""
+msgstr "Programma personalizzato"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Customize how movie blocks are sorted"
@@ -1513,7 +1513,7 @@ msgstr "Giorno"
 #: src/pages/settings/ScannerSettingsPage.tsx
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Days"
-msgstr ""
+msgstr "Giorni"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
@@ -1547,7 +1547,7 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 msgid "Default Config"
-msgstr ""
+msgstr "Configurazione predefinita"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Default only"
@@ -1588,7 +1588,7 @@ msgstr "Elimina"
 #. placeholder {0}: pendingDelete?.name
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Delete \"{0}\""
-msgstr ""
+msgstr "Elimina “{0}”"
 
 #. placeholder {0}: collection.name
 #. placeholder {0}: filler.name
@@ -1598,7 +1598,7 @@ msgstr ""
 #: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 msgid "Delete {0}"
-msgstr ""
+msgstr "Elimina {0}"
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Delete Channel"
@@ -1612,17 +1612,17 @@ msgstr "Eliminare il canale “{0}”?"
 #. placeholder {0}: pendingDelete?.name
 #: src/components/fillers/FillerListsView.tsx
 msgid "Delete Filler List \"{0}\"?"
-msgstr ""
+msgstr "Eliminare la lista filler “{0}”?"
 
 #. placeholder {0}: pendingDelete?.name
 #: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Delete Media Source \"{0}\"?"
-msgstr ""
+msgstr "Eliminare la sorgente multimediale “{0}”?"
 
 #. placeholder {0}: pendingDelete?.name
 #: src/components/custom-shows/CustomShowsView.tsx
 msgid "Delete Playlist \"{0}\"?"
-msgstr ""
+msgstr "Eliminare la playlist “{0}”?"
 
 #. placeholder {0}: confirmDelete?.name ?? ''
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -1639,7 +1639,7 @@ msgstr "Elimina slot"
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Delete Transcoding Config \"{0}\"?"
-msgstr ""
+msgstr "Eliminare la configurazione di transcodifica “{0}”?"
 
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
 msgid "Deleted playlist"
@@ -1655,15 +1655,15 @@ msgstr "Eliminando un canale si eliminano anche tutti i suoi programmi. L'operaz
 
 #: src/components/fillers/FillerListsView.tsx
 msgid "Deleting a Filler will remove all programming from the channel. This action cannot be undone."
-msgstr ""
+msgstr "Eliminando una lista filler i suoi programmi vengono rimossi dal canale. L'operazione non si può annullare."
 
 #: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Deleting a media source will remove all of its associated programs from Tunarr."
-msgstr ""
+msgstr "Eliminando una sorgente multimediale verranno rimossi da Tunarr tutti i programmi collegati."
 
 #: src/components/custom-shows/CustomShowsView.tsx
 msgid "Deleting a playlist will remove its programming from channels that use it. This action cannot be undone."
-msgstr ""
+msgstr "Eliminando una playlist i suoi programmi vengono rimossi dai canali che la usano. L'operazione non si può annullare."
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Dense"
@@ -1692,7 +1692,7 @@ msgstr ""
 
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 msgid "Deselect All"
-msgstr ""
+msgstr "Deseleziona tutto"
 
 #: src/components/channels/ChannelNowPlayingCard.tsx
 #: src/components/ui/table/ExpandRowButton.tsx
@@ -1701,7 +1701,7 @@ msgstr "Dettagli"
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Did not receive an accessToken or userId from Jellyfin server."
-msgstr ""
+msgstr "Il server Jellyfin non ha restituito un token di accesso o un ID utente."
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Disable"
@@ -1709,15 +1709,15 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
 msgid "Disable Hardware Decoding"
-msgstr ""
+msgstr "Disattiva la decodifica hardware"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
 msgid "Disable Hardware Encoding"
-msgstr ""
+msgstr "Disattiva la codifica hardware"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
 msgid "Disable Hardware Filters"
-msgstr ""
+msgstr "Disattiva i filtri hardware"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Disable Image Scaling"
@@ -1725,18 +1725,18 @@ msgstr "Disattiva il ridimensionamento dell'immagine"
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Disable Watermarks"
-msgstr ""
+msgstr "Disattiva il logo a schermo"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 #: src/pages/system/StatusPage.tsx
 msgid "Disabled"
-msgstr ""
+msgstr "Disattivato"
 
 #: src/hooks/useVersion.tsx
 msgid "Dismiss"
-msgstr ""
+msgstr "Ignora"
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Display Watermark on Leading Edge"
@@ -1757,7 +1757,7 @@ msgstr "Non raggruppa i programmi: mescolamento normale."
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Docs"
-msgstr ""
+msgstr "Documentazione"
 
 #: src/components/ui/patterns/AppShell/HelpMenu.tsx
 msgid "Documentation"
@@ -1861,7 +1861,7 @@ msgstr "Modifica"
 #: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/smart_collections/SmartCollectionCard.tsx
 msgid "Edit {0}"
-msgstr ""
+msgstr "Modifica {0}"
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Edit Channel"
@@ -1878,7 +1878,7 @@ msgstr "Modifica impostazioni del canale"
 
 #: src/pages/library/EditFillerPage.tsx
 msgid "Edit Filler List"
-msgstr ""
+msgstr "Modifica lista filler"
 
 #: src/components/programming_controls/AddFlexModal.tsx
 msgid "Edit Flex Time"
@@ -1888,17 +1888,17 @@ msgstr "Modifica Flex"
 #: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Edit Libraries"
-msgstr ""
+msgstr "Modifica librerie"
 
 #. placeholder {0}: source.name
 #: src/components/settings/media_source/MediaSourceCard.tsx
 msgid "Edit libraries of {0}"
-msgstr ""
+msgstr "Modifica le librerie di {0}"
 
 #: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Edit Media Source"
-msgstr ""
+msgstr "Modifica sorgente multimediale"
 
 #: src/components/profiles/StreamSelectionProfileSelect.tsx
 msgid "Edit profile"
@@ -1925,50 +1925,50 @@ msgstr "Modifica configurazione di transcodifica"
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "Editing \"{0}\""
-msgstr ""
+msgstr "Modifica di “{0}”"
 
 #. placeholder {0}: server.name
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Editing Plex Server \"{0}\""
-msgstr ""
+msgstr "Modifica del server Plex “{0}”"
 
 #. placeholder {0}: smartCollection.name
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
 msgid "Editing Smart Collection \"{0}\""
-msgstr ""
+msgstr "Modifica della raccolta smart “{0}”"
 
 #: src/components/settings/media_source/AddMediaSourceButton.tsx
 msgid "Emby"
-msgstr ""
+msgstr "Emby"
 
 #. placeholder {0}: ev.detail.deleted
 #: src/hooks/useEmptyTrash.ts
 msgid "Emptied trash. Removed {0} item(s)."
-msgstr ""
+msgstr "Cestino svuotato. Elementi rimossi: {0}."
 
 #: src/components/library/TrashView.tsx
 msgid "Empty Trash"
-msgstr ""
+msgstr "Svuota cestino"
 
 #: src/components/library/TrashView.tsx
 msgid "Empty trash progress"
-msgstr ""
+msgstr "Avanzamento dello svuotamento del cestino"
 
 #: src/hooks/useEmptyTrash.ts
 msgid "Emptying the trash failed. Check the server logs for details."
-msgstr ""
+msgstr "Svuotamento del cestino non riuscito. Controlla i log del server per i dettagli."
 
 #: src/hooks/useEmptyTrash.ts
 msgid "Emptying trash in the background. You can keep using Tunarr."
-msgstr ""
+msgstr "Svuotamento del cestino in corso in background. Puoi continuare a usare Tunarr."
 
 #: src/components/library/TrashView.tsx
 msgid "Emptying trash: <0>{count}</0>"
-msgstr ""
+msgstr "Svuotamento del cestino: <0>{count}</0>"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Enable <0>EBU R 128</0> loudness normalization via the <1>loudnorm</1> FFmpeg filter. May increase CPU usage during streaming."
-msgstr ""
+msgstr "Attiva la normalizzazione del volume <0>EBU R 128</0> con il filtro <1>loudnorm</1> di FFmpeg. Può aumentare l'uso della CPU durante lo streaming."
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Enable Animation"
@@ -1976,19 +1976,19 @@ msgstr "Attiva animazione"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Enable Backups"
-msgstr ""
+msgstr "Attiva i backup"
 
 #: src/components/settings/DarkModeButton.tsx
 msgid "Enable dark Mode"
-msgstr ""
+msgstr "Attiva il tema scuro"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Enable embedded subtitle extraction"
-msgstr ""
+msgstr "Attiva l'estrazione dei sottotitoli incorporati"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Enable ffmpeg logging to different sinks. Outputting to a file will create a new log file for every spawned ffmpeg process in the Tunarr log directory. These files are automatically cleaned up by a background process."
-msgstr ""
+msgstr "Attiva i log di FFmpeg verso diverse destinazioni. Con l'opzione File viene creato un file di log per ogni processo FFmpeg nella cartella dei log di Tunarr. Questi file vengono eliminati automaticamente in background."
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Enable if the watermark is an animated GIF or PNG. The watermark will loop according to the image's configuration. If this option is enabled and the image is not animated, there will be playback errors."
@@ -1996,19 +1996,19 @@ msgstr "Attivala se il logo è una GIF o un PNG animato: l'animazione verrà rip
 
 #: src/components/settings/DarkModeButton.tsx
 msgid "Enable light Mode"
-msgstr ""
+msgstr "Attiva il tema chiaro"
 
 #: src/components/settings/general/LogRollForm.tsx
 msgid "Enable Log File Rolling"
-msgstr ""
+msgstr "Attiva la rotazione dei file di log"
 
 #: src/components/settings/general/LogRollForm.tsx
 msgid "Enable rolling log files using time and/or size based criteria"
-msgstr ""
+msgstr "Ruota i file di log in base al tempo e/o alla dimensione"
 
 #: src/pages/settings/HdhrSettingsPage.tsx
 msgid "Enable SSDP server"
-msgstr ""
+msgstr "Attiva il server SSDP"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Enable Watermark"
@@ -2021,15 +2021,15 @@ msgstr "Attivo"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Enabled (loudnorm)"
-msgstr ""
+msgstr "Attiva (loudnorm)"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Enabling embedded subtitle extaction will periodically scan your upcoming programming for embedded text-based subtitle streams and extract them to a local cache. This is necessary in order to enable subtitle burning for text-based subtitles which are not external streams."
-msgstr ""
+msgstr "Con l'estrazione attiva, Tunarr controlla periodicamente i prossimi programmi in cerca di sottotitoli testuali incorporati e li salva in una cache locale. Serve per poter imprimere nel video i sottotitoli testuali che non sono file esterni."
 
 #: src/hooks/useEmptyTrash.ts
 msgid "Encountered an error when emptying trash. Check console logs for details."
-msgstr ""
+msgstr "Errore durante lo svuotamento del cestino. Controlla la console del browser per i dettagli."
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "End Time"
@@ -2045,19 +2045,19 @@ msgstr "Fa iniziare i programmi solo a intervalli precisi all'interno dell'ora, 
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Enter a cron expression."
-msgstr ""
+msgstr "Inserisci un'espressione cron."
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter a name for your Emby Server"
-msgstr ""
+msgstr "Inserisci un nome per il tuo server Emby"
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Enter a name for your Jellyfin Server"
-msgstr ""
+msgstr "Inserisci un nome per il tuo server Jellyfin"
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "Enter a name for your Local Media Source"
-msgstr ""
+msgstr "Inserisci un nome per la tua sorgente locale"
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Enter a number of minutes, 0 or more."
@@ -2065,11 +2065,11 @@ msgstr "Inserisci un numero di minuti, 0 o più."
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter your Emby password to generate a new access token."
-msgstr ""
+msgstr "Inserisci la password di Emby per generare un nuovo token di accesso."
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Enter your Jellyfin password to generate a new access token.<0/><1>NOTE:</1> These are never saved to the Tunarr DB. Instead they are sent to Jellyfin to exchange for a session token."
-msgstr ""
+msgstr "Inserisci la password di Jellyfin per generare un nuovo token di accesso.<0/><1>NOTA:</1> le credenziali non vengono mai salvate nel database di Tunarr: vengono inviate a Jellyfin per ottenere un token di sessione."
 
 #: src/components/channel_config/EditChannelForm.tsx
 msgid "EPG"
@@ -2078,7 +2078,7 @@ msgstr "EPG"
 #: src/pages/settings/XmlTvSettingsPage.tsx
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "EPG (Hours)"
-msgstr ""
+msgstr "EPG (ore)"
 
 #: src/components/profiles/condition/types.ts
 msgid "Episode"
@@ -2092,7 +2092,7 @@ msgstr "Ordine degli episodi"
 #: src/components/library/TrashView.tsx
 #: src/components/programs/Episodes.tsx
 msgid "Episodes"
-msgstr ""
+msgstr "Episodi"
 
 #: src/components/system/system-logs/LogDetail.tsx
 msgid "Error"
@@ -2100,11 +2100,11 @@ msgstr ""
 
 #: src/hooks/useBulkAssignFillers.tsx
 msgid "Error assigning fillers: {message}"
-msgstr ""
+msgstr "Errore durante l'assegnazione dei filler: {message}"
 
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
 msgid "Error Audio"
-msgstr ""
+msgstr "Audio di errore"
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Error copying channel m3u link to clipboard"
@@ -2112,7 +2112,7 @@ msgstr "Errore durante la copia del link M3U del canale"
 
 #: src/hooks/useCopyToClipboard.ts
 msgid "Error copying to clipboard!"
-msgstr ""
+msgstr "Errore durante la copia negli appunti!"
 
 #: src/components/programming_controls/AddRedirectModal.tsx
 msgid "Error occurred while loading channels, please try again soon."
@@ -2120,7 +2120,7 @@ msgstr "Errore durante il caricamento dei canali, riprova tra poco."
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Error Options"
-msgstr ""
+msgstr "Opzioni in caso di errore"
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "Error querying Plex. Check console log and consider reporting a bug!"
@@ -2132,15 +2132,15 @@ msgstr "Errore durante la rimozione del palinsesto. {message}"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Error saving new Emby server. See browser console and server logs for details"
-msgstr ""
+msgstr "Errore durante il salvataggio del nuovo server Emby. Controlla la console del browser e i log del server"
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Error saving new Jellyfin server. See browser console and server logs for details"
-msgstr ""
+msgstr "Errore durante il salvataggio del nuovo server Jellyfin. Controlla la console del browser e i log del server"
 
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Error saving new Smart Collection. Check server logs and browser console for details."
-msgstr ""
+msgstr "Errore durante il salvataggio della nuova raccolta smart. Controlla i log del server e la console del browser per i dettagli."
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "Error saving programs. {message}"
@@ -2153,7 +2153,7 @@ msgstr "Errore durante il salvataggio del palinsesto. {message}"
 
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
 msgid "Error Screen"
-msgstr ""
+msgstr "Schermata di errore"
 
 #: src/components/channel_config/ChannelEditActions.tsx
 msgid "Error updating channel.<0/>Check browser console for details"
@@ -2161,7 +2161,7 @@ msgstr "Errore durante l'aggiornamento del canale.<0/>Controlla la console del b
 
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
 msgid "Error updating Smart Collection. Check logs for details."
-msgstr ""
+msgstr "Errore durante l'aggiornamento della raccolta smart. Controlla i log per i dettagli."
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Error while copying to clipboard. Check browser logs for details"
@@ -2173,17 +2173,17 @@ msgstr ""
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Error while saving settings. Please check console for details."
-msgstr ""
+msgstr "Errore durante il salvataggio delle impostazioni. Controlla la console per i dettagli."
 
 #: src/components/settings/ffmpeg/useTranscodeConfigFormOptions.ts
 #: src/components/settings/ffmpeg/useTranscodeConfigFormOptions.ts
 msgid "Error while saving transcode config. See console log for details."
-msgstr ""
+msgstr "Errore durante il salvataggio della configurazione di transcodifica. Controlla la console per i dettagli."
 
 #. placeholder {0}: task.id
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Error while scheduling {0}. Check server logs for details"
-msgstr ""
+msgstr "Errore durante la pianificazione di {0}. Controlla i log del server"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Errors"
@@ -2200,16 +2200,16 @@ msgstr "Esc, chiudi la ricerca"
 
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Escape Hatches"
-msgstr ""
+msgstr "Opzioni di emergenza"
 
 #: src/components/settings/general/BackupForm.tsx
 #: src/components/settings/general/LogRollForm.tsx
 msgid "Every"
-msgstr ""
+msgstr "Ogni"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Every few hours"
-msgstr ""
+msgstr "Ogni tot ore"
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "Everything using this profile will fall back to the next profile in the resolution order (usually the channel's profile, or the default)."
@@ -2221,11 +2221,11 @@ msgstr "Escludi stagioni"
 
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Existing query: {filterString}"
-msgstr ""
+msgstr "Ricerca attuale: {filterString}"
 
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Experimental Features"
-msgstr ""
+msgstr "Funzionalità sperimentali"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Experimental: Make perfect schedule loop"
@@ -2250,11 +2250,11 @@ msgstr "Periodo di dissolvenza (min)"
 
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 msgid "Failed to load channels."
-msgstr ""
+msgstr "Impossibile caricare i canali."
 
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Failed to load feature flags."
-msgstr ""
+msgstr "Impossibile caricare le funzionalità."
 
 #: src/components/channels/BulkAssignFillersDialog.tsx
 msgid "Failed to load filler lists."
@@ -2262,23 +2262,23 @@ msgstr "Impossibile caricare le liste filler."
 
 #: src/components/programs/ProgramDetailsDialog.tsx
 msgid "Failed to load item details! Check logs for details"
-msgstr ""
+msgstr "Impossibile caricare i dettagli dell'elemento! Controlla i log"
 
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
 msgid "Failed to load Smart Collection"
-msgstr ""
+msgstr "Impossibile caricare la raccolta smart"
 
 #: src/components/programs/ProgramDetailsDialog.tsx
 msgid "Failed to load stream details! Check logs for details"
-msgstr ""
+msgstr "Impossibile caricare i dettagli del flusso! Controlla i log"
 
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Failed to save feature flags."
-msgstr ""
+msgstr "Impossibile salvare le funzionalità."
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Failed to update scanner settings. {message}"
-msgstr ""
+msgstr "Impossibile aggiornare le impostazioni di scansione. {message}"
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Failed to validate expression"
@@ -2295,7 +2295,7 @@ msgstr "Modalità di riserva"
 
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Feature flags saved!"
-msgstr ""
+msgstr "Funzionalità salvate!"
 
 #: src/components/shell/useShellNav.tsx
 msgid "Features"
@@ -2316,7 +2316,7 @@ msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "FFmpeg Executable Path"
-msgstr ""
+msgstr "Percorso dell'eseguibile di FFmpeg"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "FFmpeg Log"
@@ -2325,12 +2325,12 @@ msgstr ""
 #: src/pages/settings/FfmpegSettingsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "FFMPEG Log Level"
-msgstr ""
+msgstr "Livello di log di FFmpeg"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "FFMPEG Log Method"
-msgstr ""
+msgstr "Destinazione dei log di FFmpeg"
 
 #: src/App.tsx
 msgid "FFmpeg not found. For all features to work, we recommend installing FFmpeg 7.1+ or update your FFmpeg executable path in settings."
@@ -2342,19 +2342,19 @@ msgstr "Impostazioni FFmpeg"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "FFmpeg Transcode Path"
-msgstr ""
+msgstr "Cartella di transcodifica di FFmpeg"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "FFmpeg version 7.1+ recommended. Check your current version in the sidebar"
-msgstr ""
+msgstr "Si consiglia FFmpeg 7.1 o successivo. Puoi vedere la tua versione nella barra laterale"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "FFprobe Executable Path"
-msgstr ""
+msgstr "Percorso dell'eseguibile di FFprobe"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "FFprobe version 6.0+ recommended. Check your current version in the sidebar"
-msgstr ""
+msgstr "Si consiglia FFprobe 6.0 o successivo. Puoi vedere la tua versione nella barra laterale"
 
 #: src/components/profiles/condition/ConditionClauseEditor.tsx
 #: src/components/profiles/condition/ConditionClauseEditor.tsx
@@ -2367,11 +2367,11 @@ msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "File"
-msgstr ""
+msgstr "File"
 
 #: src/pages/ErrorPage.tsx
 msgid "File a Bug Report"
-msgstr ""
+msgstr "Segnala un bug"
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Fill with Flex"
@@ -2454,11 +2454,11 @@ msgstr ""
 #: src/components/ui/table/filters/TextFilter.tsx
 #: src/components/ui/table/filters/TextFilter.tsx
 msgid "Filter by {label}"
-msgstr ""
+msgstr "Filtra per {label}"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Finish"
-msgstr ""
+msgstr "Fine"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "First Episode"
@@ -2466,11 +2466,11 @@ msgstr "Primo episodio"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "First scan at"
-msgstr ""
+msgstr "Prima scansione alle"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Five fields, or six with seconds first. For example, \"0 4 * * 0\" scans at 4:00 AM every Sunday."
-msgstr ""
+msgstr "Cinque campi, o sei con i secondi per primi. Per esempio, “0 4 * * 0” esegue la scansione alle 4:00 di ogni domenica."
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Fix the errors in the rules above to run a test."
@@ -2509,15 +2509,15 @@ msgstr "Stile flex"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Follow these steps to set up your first channel. Each step will update upon completion. You can skip setup at any time and do all of this from the menu later."
-msgstr ""
+msgstr "Segui questi passaggi per creare il tuo primo canale. Ogni passaggio si aggiorna quando lo completi. Puoi saltare la configurazione in qualsiasi momento e fare tutto più tardi dal menu."
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "For more details on manually retrieving a Plex token, see <0>here</0>"
-msgstr ""
+msgstr "Per sapere come ottenere a mano un token di Plex, vedi <0>qui</0>"
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Force Scan"
-msgstr ""
+msgstr "Forza scansione"
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "forced"
@@ -2549,7 +2549,7 @@ msgstr "Generale"
 
 #: src/pages/ErrorPage.tsx
 msgid "Generating Bug Report Link..."
-msgstr ""
+msgstr "Creazione del link per la segnalazione..."
 
 #: src/components/profiles/condition/GenreAutocomplete.tsx
 #: src/components/profiles/condition/types.ts
@@ -2558,31 +2558,31 @@ msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Global Options"
-msgstr ""
+msgstr "Opzioni globali"
 
 #: src/routes/__root.tsx
 msgid "Go Home"
-msgstr ""
+msgstr "Torna alla home"
 
 #: src/components/ui/table/TablePager.tsx
 msgid "Go to first page"
-msgstr ""
+msgstr "Vai alla prima pagina"
 
 #: src/components/ui/table/TablePager.tsx
 msgid "Go to last page"
-msgstr ""
+msgstr "Vai all'ultima pagina"
 
 #: src/components/ui/table/TablePager.tsx
 msgid "Go to next page"
-msgstr ""
+msgstr "Vai alla pagina successiva"
 
 #: src/components/ui/table/TablePager.tsx
 msgid "Go to previous page"
-msgstr ""
+msgstr "Vai alla pagina precedente"
 
 #: src/components/base/ProgramViewToggleButton.tsx
 msgid "Grid"
-msgstr ""
+msgstr "Griglia"
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Group episode programs by their show."
@@ -2599,15 +2599,15 @@ msgstr "Guida"
 
 #: src/pages/guide/GuidePage.tsx
 msgid "Guide Start Time"
-msgstr ""
+msgstr "Ora di inizio della guida"
 
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 msgid "Hardware Accel."
-msgstr ""
+msgstr "Accel. hardware"
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Hardware Acceleration"
-msgstr ""
+msgstr "Accelerazione hardware"
 
 #: src/components/shell/useShellNav.tsx
 msgid "HDHR"
@@ -2615,7 +2615,7 @@ msgstr "HDHR"
 
 #: src/pages/settings/HdhrSettingsPage.tsx
 msgid "HDHR: Loading..."
-msgstr ""
+msgstr "HDHR: caricamento..."
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Head"
@@ -2623,11 +2623,11 @@ msgstr "Apertura"
 
 #: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Health"
-msgstr ""
+msgstr "Stato"
 
 #: src/components/settings/media_source/MediaSourceHealthPill.tsx
 msgid "Healthy"
-msgstr ""
+msgstr "Funzionante"
 
 #: src/components/ui/patterns/AppShell/HelpMenu.tsx
 #: src/components/ui/patterns/AppShell/HelpMenu.tsx
@@ -2645,7 +2645,7 @@ msgstr ""
 
 #: src/components/ui/table/ExpandRowButton.tsx
 msgid "Hide details for {label}"
-msgstr ""
+msgstr "Nascondi i dettagli di {label}"
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Hide Watermark After (minutes)"
@@ -2662,11 +2662,11 @@ msgstr "Raggiunto il limite, nasconde il logo per il resto del programma. Ha la 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "HLS Direct Output Format"
-msgstr ""
+msgstr "Formato di uscita HLS Direct"
 
 #: src/components/Video.tsx
 msgid "HLS not supported in this browser!"
-msgstr ""
+msgstr "HLS non è supportato da questo browser!"
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "How far past its boundary can a slot's content extend? 'One extra item' allows exactly one more program that crosses the boundary."
@@ -2678,7 +2678,7 @@ msgstr "Quanto dura ogni pausa pubblicitaria"
 
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "How often the XMLTV file is regenerated"
-msgstr ""
+msgstr "Ogni quanto viene rigenerato il file XMLTV"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "How often to insert a break"
@@ -2702,7 +2702,7 @@ msgstr "Se lo slot precedente è durato di più, questo slot deve andare in onda
 
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "If enabled, TV show episodes will use the poster of their show, instead of the individual episode poster."
-msgstr ""
+msgstr "Se attivo, gli episodi useranno la locandina della serie invece dell'immagine del singolo episodio."
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "If no more programs can fit into a duration-based slot, flex time is added to fill the gap. This setting determines how flex is added <0>within</0> the slot to ensure all time is filled.<1/><2>Between:</2> Flex time is added between videos within a slot, if there are multiple<3/><4>End:</4> Flex time is added at the end of the slot"
@@ -2711,7 +2711,7 @@ msgstr "Se in uno slot a durata non entrano altri programmi, il vuoto viene riem
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "If set, all watermark overlays will be disabled for channels assigned this transcode config."
-msgstr ""
+msgstr "Se attivo, il logo a schermo viene disattivato per tutti i canali con questa configurazione di transcodifica."
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "If set, any programming group with fewer episodes will be looped in order to make perfectly even blocks."
@@ -2719,7 +2719,7 @@ msgstr "Se attivo, i gruppi di programmi con meno episodi vengono ripetuti per o
 
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
 msgid "If there are issues playing a video, Tunarr will try to use an error screen as a placeholder while retrying loading the video every 60 seconds."
-msgstr ""
+msgstr "Se un video non si riproduce, Tunarr mostra una schermata di errore al suo posto e riprova a caricarlo ogni 60 secondi."
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "If true, adjusting the weight of one slot will scale the weights of other slots such that all weights total 100%. Otherwise, weights can be adjusted freely and the weight of each slot is only relative to the total weight."
@@ -2727,7 +2727,7 @@ msgstr "Se attivo, quando cambi il peso di uno slot gli altri pesi si adeguano i
 
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "If you proceed, all unsaved changes will be lost. Are you sure you want to proceed?"
-msgstr ""
+msgstr "Se continui, tutte le modifiche non salvate andranno perse. Vuoi davvero continuare?"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Image"
@@ -2759,7 +2759,7 @@ msgstr "Aumentare la durata dello slot."
 
 #: src/components/settings/general/BackupForm.tsx
 msgid "Increment"
-msgstr ""
+msgstr "Unità"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Initial Delay (minutes)"
@@ -2802,7 +2802,7 @@ msgstr ""
 
 #: src/components/library/TrashView.tsx
 msgid "Item types"
-msgstr ""
+msgstr "Tipi di elemento"
 
 #: src/components/channel_config/MediaGridItem.tsx
 msgid "Item was not present during the last scan"
@@ -2810,7 +2810,7 @@ msgstr "L'elemento non era presente nell'ultima scansione"
 
 #: src/components/library/TrashView.tsx
 msgid "Items a recent scan couldn't find, because the file is missing or the media server no longer returns them. They can't play in channels. Emptying the trash replaces them with flex."
-msgstr ""
+msgstr "Elementi che una scansione recente non ha trovato, perché il file manca o il server multimediale non li restituisce più. Non possono andare in onda nei canali. Svuotando il cestino vengono sostituiti con Flex."
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Items from any filler list will not be chosen more frequently than this cooldown setting."
@@ -2818,16 +2818,16 @@ msgstr "Gli elementi delle liste filler non verranno scelti più spesso di quant
 
 #: src/components/settings/media_source/AddMediaSourceButton.tsx
 msgid "Jellyfin"
-msgstr ""
+msgstr "Jellyfin"
 
 #: src/components/search/SearchInput.tsx
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Keywords"
-msgstr ""
+msgstr "Parole chiave"
 
 #: src/components/search/SearchInput.tsx
 msgid "Keywords perform full text search across all (or configured) fields"
-msgstr ""
+msgstr "Le parole chiave cercano il testo in tutti i campi (o in quelli scelti)"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -2854,7 +2854,7 @@ msgstr ""
 #. placeholder {0}: library.lastScannedAt ? dayjs(library.lastScannedAt)?.format() : t`never`
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
 msgid "Last Scanned: {0}"
-msgstr ""
+msgstr "Ultima scansione: {0}"
 
 #: src/components/system/tasks/TasksView.tsx
 msgid "Last Scheduled Execution"
@@ -2862,12 +2862,12 @@ msgstr ""
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Last Synced"
-msgstr ""
+msgstr "Ultima sincronizzazione"
 
 #. placeholder {0}: dayjs(customShow.lastSyncedAt).fromNow()
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Last synced {0}"
-msgstr ""
+msgstr "Ultima sincronizzazione {0}"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Lazy"
@@ -2910,7 +2910,7 @@ msgstr "Clip dalla libreria (non ancora disponibile)"
 #. placeholder {0}: library.name
 #: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx
 msgid "Library: {0}"
-msgstr ""
+msgstr "Libreria: {0}"
 
 #: src/components/settings/DarkModeButton.tsx
 msgid "Light"
@@ -2948,11 +2948,11 @@ msgstr ""
 
 #: src/components/programs/Actors.tsx
 msgid "Load More"
-msgstr ""
+msgstr "Carica altri"
 
 #: src/components/Video.tsx
 msgid "Load Stream"
-msgstr ""
+msgstr "Carica il flusso"
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 msgid "Loading"
@@ -2964,7 +2964,7 @@ msgstr "Caricamento versione…"
 
 #: src/components/ProgramSearchAutocomplete.tsx
 msgid "Loading..."
-msgstr ""
+msgstr "Caricamento..."
 
 #: src/components/ProgramSearchAutocomplete.tsx
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
@@ -2973,15 +2973,15 @@ msgstr "Caricamento…"
 
 #: src/components/settings/media_source/AddMediaSourceButton.tsx
 msgid "Local"
-msgstr ""
+msgstr "Locale"
 
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 msgid "Local Path"
-msgstr ""
+msgstr "Percorso locale"
 
 #: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Location"
-msgstr ""
+msgstr "Posizione"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Lock Weights"
@@ -2990,11 +2990,11 @@ msgstr "Blocca i pesi"
 #: src/components/settings/general/GeneralSettingsForm.tsx
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Log Level"
-msgstr ""
+msgstr "Livello di log"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Log level to pass to ffmpeg. Read more about ffmpeg's log levels <0>here</0>"
-msgstr ""
+msgstr "Livello di log da passare a FFmpeg. Maggiori informazioni sui livelli di log di FFmpeg <0>qui</0>"
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Logarithmic"
@@ -3006,7 +3006,7 @@ msgstr "Decadimento logaritmico, ponderazione più leggera."
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Logging"
-msgstr ""
+msgstr "Log"
 
 #: src/components/shell/useShellNav.tsx
 #: src/components/system/system-logs/SystemLogsView.tsx
@@ -3021,7 +3021,7 @@ msgstr ""
 
 #: src/pages/ErrorPage.tsx
 msgid "Looks like something went wrong."
-msgstr ""
+msgstr "Sembra che qualcosa sia andato storto."
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Loop Short Programs"
@@ -3029,19 +3029,19 @@ msgstr "Ripeti i programmi brevi"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Loudness Range Target"
-msgstr ""
+msgstr "Intervallo di loudness obiettivo"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Loudness Target"
-msgstr ""
+msgstr "Loudness obiettivo"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Loudnorm Options"
-msgstr ""
+msgstr "Opzioni loudnorm"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "M3U playlist"
-msgstr ""
+msgstr "Playlist M3U"
 
 #: src/components/ui/patterns/AppShell/PhoneNav.tsx
 #: src/components/ui/patterns/AppShell/ShellTopBar.tsx
@@ -3058,7 +3058,7 @@ msgstr "Crea più copie del palinsesto e le trasmette una dopo l'altra. Di solit
 
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
 msgid "Manage Libraries"
-msgstr ""
+msgstr "Gestisci librerie"
 
 #: src/components/profiles/StreamSelectionProfileSelect.tsx
 msgid "Manage profiles"
@@ -3074,11 +3074,11 @@ msgstr ""
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Manually add an access token from your Emby server"
-msgstr ""
+msgstr "Aggiungi a mano un token di accesso dal tuo server Emby"
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Manually add an access token from your Jellyfin server"
-msgstr ""
+msgstr "Aggiungi a mano un token di accesso dal tuo server Jellyfin"
 
 #: src/components/profiles/condition/ConditionGroupEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -3087,11 +3087,11 @@ msgstr ""
 
 #: src/components/search/SearchGroupNode.tsx
 msgid "Match all of"
-msgstr ""
+msgstr "Corrisponde a tutti"
 
 #: src/components/search/SearchGroupNode.tsx
 msgid "Match any of"
-msgstr ""
+msgstr "Corrisponde ad almeno uno"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Match audio streams whose title contains this text (case-insensitive)"
@@ -3103,16 +3103,16 @@ msgstr ""
 
 #: src/components/ui/table/filters/RangeFilter.tsx
 msgid "Max"
-msgstr ""
+msgstr "Max"
 
 #: src/components/ui/table/filters/RangeFilter.tsx
 msgid "Max {label}"
-msgstr ""
+msgstr "{label} massimo"
 
 #: src/components/settings/general/BackupForm.tsx
 #: src/components/settings/general/BackupForm.tsx
 msgid "Max Backups"
-msgstr ""
+msgstr "Numero massimo di backup"
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Max Duration"
@@ -3124,7 +3124,7 @@ msgstr "Durata massima (minuti)"
 
 #: src/components/settings/general/LogRollForm.tsx
 msgid "Max file size (bytes)"
-msgstr ""
+msgstr "Dimensione massima del file (byte)"
 
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
@@ -3142,7 +3142,7 @@ msgstr "Sforamento massimo"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Max True Peak"
-msgstr ""
+msgstr "Picco reale massimo"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Maximum number of breaks per program (0 = unlimited)"
@@ -3171,27 +3171,27 @@ msgstr "Sorgente multimediale"
 #: src/routes/media_sources_/$mediaSourceId/index.tsx
 #: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx
 msgid "Media Source: \"{0}\""
-msgstr ""
+msgstr "Sorgente multimediale: “{0}”"
 
 #: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Media Sources"
-msgstr ""
+msgstr "Sorgenti multimediali"
 
 #: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Media Sources are where Tunarr sources your content. Media can come from your filesystem or a remote server, like Plex or Jellyfin. At least one Media Source is necessary to create channels and play media in Tunarr."
-msgstr ""
+msgstr "Le sorgenti multimediali sono i posti da cui Tunarr prende i tuoi contenuti: il disco del computer o un server remoto come Plex o Jellyfin. Per creare canali e riprodurre contenuti serve almeno una sorgente."
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Media sources provide the content for your channels. Tunarr supports Plex, Jellyfin, Emby, and local folders."
-msgstr ""
+msgstr "Le sorgenti multimediali forniscono i contenuti per i tuoi canali. Tunarr supporta Plex, Jellyfin, Emby e cartelle locali."
 
 #: src/components/MediaSourceLibraryTable.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "Media Type"
-msgstr ""
+msgstr "Tipo di contenuto"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Media..."
@@ -3212,11 +3212,11 @@ msgstr "Pause durante il programma"
 
 #: src/components/ui/table/filters/RangeFilter.tsx
 msgid "Min"
-msgstr ""
+msgstr "Min"
 
 #: src/components/ui/table/filters/RangeFilter.tsx
 msgid "Min {label}"
-msgstr ""
+msgstr "{label} minimo"
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Min Duration"
@@ -3316,7 +3316,7 @@ msgstr "Video musicali"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Must use a valid URL, or empty."
-msgstr ""
+msgstr "Deve essere un URL valido, oppure vuoto."
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/custom-shows/CustomShowsView.tsx
@@ -3346,15 +3346,15 @@ msgstr "Nome"
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Name can only contain alphanumeric characters, dashes, and underscores"
-msgstr ""
+msgstr "Il nome può contenere solo lettere, numeri, trattini e trattini bassi"
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "Need at least one path"
-msgstr ""
+msgstr "Serve almeno un percorso"
 
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
 msgid "never"
-msgstr ""
+msgstr "mai"
 
 #: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/fillers/FillerListsView.tsx
@@ -3375,28 +3375,28 @@ msgstr "Nuovo canale"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "New Emby Media Source"
-msgstr ""
+msgstr "Nuova sorgente Emby"
 
 #: src/pages/library/NewFillerPage.tsx
 msgid "New Filler List"
-msgstr ""
+msgstr "Nuova lista filler"
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "New Local Media Source"
-msgstr ""
+msgstr "Nuova sorgente locale"
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "New Media Source"
-msgstr ""
+msgstr "Nuova sorgente multimediale"
 
 #: src/pages/library/EditCustomShowPage.tsx
 #: src/pages/library/NewCustomShowPage.tsx
 msgid "New Playlist"
-msgstr ""
+msgstr "Nuova playlist"
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "New Plex Server"
-msgstr ""
+msgstr "Nuovo server Plex"
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "New Profile"
@@ -3416,7 +3416,7 @@ msgstr ""
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Next scan: {next} (your time zone)"
-msgstr ""
+msgstr "Prossima scansione: {next} (tuo fuso orario)"
 
 #: src/components/system/tasks/TasksView.tsx
 msgid "Next Scheduled Execution"
@@ -3430,7 +3430,7 @@ msgstr "No"
 
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 msgid "No channels found. Create a channel first."
-msgstr ""
+msgstr "Nessun canale trovato. Crea prima un canale."
 
 #: src/components/channels/ChannelsView.tsx
 msgid "No channels match this filter."
@@ -3446,15 +3446,15 @@ msgstr "Nessuna lista filler trovata. Crea prima una lista filler."
 
 #: src/components/fillers/FillerListsView.tsx
 msgid "No filler lists match this filter."
-msgstr ""
+msgstr "Nessuna lista filler corrisponde a questo filtro."
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "No libraries are enabled yet. Tunarr only syncs content from enabled libraries, so choose at least one below."
-msgstr ""
+msgstr "Non hai ancora attivato nessuna libreria. Tunarr sincronizza solo i contenuti delle librerie attive, quindi scegline almeno una qui sotto."
 
 #: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
 msgid "No libraries enabled"
-msgstr ""
+msgstr "Nessuna libreria attiva"
 
 #: src/components/system/system-logs/SystemLogsView.tsx
 msgid "No log lines yet"
@@ -3470,7 +3470,7 @@ msgstr "Nessuna pagina o lista corrisponde."
 
 #: src/components/custom-shows/CustomShowsView.tsx
 msgid "No playlists match this filter."
-msgstr ""
+msgstr "Nessuna playlist corrisponde a questo filtro."
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "No preference"
@@ -3482,15 +3482,15 @@ msgstr "Non hai ancora aggiunto programmi"
 
 #: src/components/guide/TvGuide.tsx
 msgid "No Programming scheduled"
-msgstr ""
+msgstr "Nessun programma in palinsesto"
 
 #: src/components/guide/TvGuide.tsx
 msgid "No programming scheduled for this time period"
-msgstr ""
+msgstr "Nessun programma in palinsesto per questo periodo"
 
 #: src/components/ui/table/DataTable.tsx
 msgid "No records to display"
-msgstr ""
+msgstr "Nessun dato da mostrare"
 
 #: src/components/channel_config/MediaItemGrid.tsx
 #: src/components/channel_config/MediaItemList.tsx
@@ -3499,7 +3499,7 @@ msgstr "Nessun risultato"
 
 #: src/components/ui/table/DataTable.tsx
 msgid "No results found"
-msgstr ""
+msgstr "Nessun risultato trovato"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "No rule matched, continuing"
@@ -3511,7 +3511,7 @@ msgstr ""
 
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "No smart collections match this filter."
-msgstr ""
+msgstr "Nessuna raccolta smart corrisponde a questo filtro."
 
 #: src/components/system/tasks/TasksView.tsx
 msgid "No tasks are registered."
@@ -3539,7 +3539,7 @@ msgstr ""
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
 msgid "None (use the channel's profile)"
-msgstr ""
+msgstr "Nessuno (usa il profilo del canale)"
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "None:"
@@ -3547,7 +3547,7 @@ msgstr "Nessuno:"
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Normalize Frame Rate"
-msgstr ""
+msgstr "Normalizza il frame rate"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Not a valid number"
@@ -3557,7 +3557,7 @@ msgstr "Numero non valido"
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Not a valid URL"
-msgstr ""
+msgstr "URL non valido"
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "Not assigned"
@@ -3565,11 +3565,11 @@ msgstr ""
 
 #: src/routes/__root.tsx
 msgid "Not found!"
-msgstr ""
+msgstr "Pagina non trovata!"
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Not synced"
-msgstr ""
+msgstr "Non sincronizzata"
 
 #: src/components/channels/ChannelCard.tsx
 #: src/components/channels/ChannelsView.tsx
@@ -3586,7 +3586,7 @@ msgstr "Numero"
 
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "Number of hours to include in the XMLTV file"
-msgstr ""
+msgstr "Numero di ore da includere nel file XMLTV"
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
@@ -3603,11 +3603,11 @@ msgstr ""
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Off"
-msgstr ""
+msgstr "Disattivato"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "On selected days"
-msgstr ""
+msgstr "Nei giorni scelti"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/components/channels/ChannelCard.tsx
@@ -3625,7 +3625,7 @@ msgstr "I canali on demand riprendono da dove li avevi lasciati: i programmi res
 
 #: src/pages/ErrorPage.tsx
 msgid "Oops!"
-msgstr ""
+msgstr "Ops!"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Opacity"
@@ -3639,7 +3639,7 @@ msgstr "apri"
 #. placeholder {0}: capitalize(program.sourceType)
 #: src/components/programs/MediaDetailCard.tsx
 msgid "Open in {0}"
-msgstr ""
+msgstr "Apri in {0}"
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Open in Troubleshoot"
@@ -3652,7 +3652,7 @@ msgstr "Apre la ricerca"
 #: src/components/search/SearchValueNode.tsx
 #: src/components/search/SearchValueNode.tsx
 msgid "Operator"
-msgstr ""
+msgstr "Operatore"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Optional friendly name for this rule"
@@ -3665,7 +3665,7 @@ msgstr "Opzioni"
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "OR"
-msgstr ""
+msgstr "OPPURE"
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
@@ -3695,11 +3695,11 @@ msgstr "Altri video"
 #: src/components/settings/general/BackupForm.tsx
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "Output Path"
-msgstr ""
+msgstr "Cartella di destinazione"
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Output video at a constant frame rate."
-msgstr ""
+msgstr "Produce un video a frame rate costante."
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
@@ -3721,11 +3721,11 @@ msgstr "Imposta per questo slot come allineare i programmi."
 #. placeholder {0}: hardwareAccelerationMode === 'qsv' ? 'QSV' : 'VA-API'
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Override the default {0} device path (defaults to <0>/dev/dri/renderD128</0> on Linux and blank otherwise)"
-msgstr ""
+msgstr "Sostituisce il percorso predefinito del dispositivo {0} (di base <0>/dev/dri/renderD128</0> su Linux, vuoto negli altri casi)"
 
 #: src/components/programs/ProgramDetailsDialog.tsx
 msgid "Overview"
-msgstr ""
+msgstr "Panoramica"
 
 #: src/components/programming_controls/AddPaddingModal.tsx
 #: src/components/programming_controls/AddPaddingModal.tsx
@@ -3761,23 +3761,23 @@ msgstr "Pagine"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Passthrough audio unchanged. Other settings will not apply."
-msgstr ""
+msgstr "Copia l'audio senza modifiche. Le altre impostazioni non verranno applicate."
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Password"
-msgstr ""
+msgstr "Password"
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Path"
-msgstr ""
+msgstr "Percorso"
 
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 msgid "Path Replacements"
-msgstr ""
+msgstr "Sostituzioni di percorso"
 
 #: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Pause"
@@ -3798,7 +3798,7 @@ msgstr "Periodo"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Pick at least one day."
-msgstr ""
+msgstr "Scegli almeno un giorno."
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Pick specific programming to remove from the channel."
@@ -3875,7 +3875,7 @@ msgstr "Trasmette i programmi del canale solo negli orari che imposti; il resto 
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Please check server and browser logs for details."
-msgstr ""
+msgstr "Controlla i log del server e del browser per i dettagli."
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
@@ -3883,11 +3883,11 @@ msgstr "Scegli un valore maggiore di 1"
 
 #: src/components/settings/media_source/AddMediaSourceButton.tsx
 msgid "Plex (Auto)"
-msgstr ""
+msgstr "Plex (automatico)"
 
 #: src/components/settings/media_source/AddMediaSourceButton.tsx
 msgid "Plex (Manual)"
-msgstr ""
+msgstr "Plex (manuale)"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
@@ -3926,7 +3926,7 @@ msgstr "Preimpostazioni"
 
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "Proceed"
-msgstr ""
+msgstr "Continua"
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Profile created"
@@ -3965,7 +3965,7 @@ msgstr "Numero di programmi"
 
 #: src/components/RawProgramDetails.tsx
 msgid "Program JSON"
-msgstr ""
+msgstr "JSON del programma"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Program Playback Troubleshooter"
@@ -4034,20 +4034,20 @@ msgstr "Proprietà"
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Protocol must be HTTP or HTTPS"
-msgstr ""
+msgstr "Il protocollo deve essere HTTP o HTTPS"
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "QSV Device"
-msgstr ""
+msgstr "Dispositivo QSV"
 
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Query"
-msgstr ""
+msgstr "Ricerca"
 
 #: src/components/MediaSourceLibraryTable.tsx
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Queued"
-msgstr ""
+msgstr "In coda"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
@@ -4071,7 +4071,7 @@ msgstr "Casuale..."
 
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Random…"
-msgstr ""
+msgstr "Casuale…"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Range"
@@ -4079,11 +4079,11 @@ msgstr "Intervallo"
 
 #: src/components/programs/MediaDetailCard.tsx
 msgid "Read Less"
-msgstr ""
+msgstr "Mostra meno"
 
 #: src/components/programs/MediaDetailCard.tsx
 msgid "Read More"
-msgstr ""
+msgstr "Mostra tutto"
 
 #: src/components/slot_scheduler/RebuildEachCycleField.tsx
 msgid "Rebuild each cycle"
@@ -4110,7 +4110,7 @@ msgstr "Reindirizza al canale {0}"
 #. placeholder {0}: p.channel
 #: src/components/guide/TvGuide.tsx
 msgid "Redirect to Channel {0}"
-msgstr ""
+msgstr "Reindirizza al canale {0}"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Redirect..."
@@ -4118,22 +4118,22 @@ msgstr "Reindirizzamento..."
 
 #: src/hooks/useVersion.tsx
 msgid "Refresh"
-msgstr ""
+msgstr "Aggiorna"
 
 #: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/settings/media_source/MediaSourcesView.tsx
 #: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Refresh Libraries"
-msgstr ""
+msgstr "Aggiorna librerie"
 
 #. placeholder {0}: source.name
 #: src/components/settings/media_source/MediaSourceCard.tsx
 msgid "Refresh libraries of {0}"
-msgstr ""
+msgstr "Aggiorna le librerie di {0}"
 
 #: src/pages/ErrorPage.tsx
 msgid "Refresh Page"
-msgstr ""
+msgstr "Ricarica la pagina"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
@@ -4143,7 +4143,7 @@ msgstr "Aggiorna anteprima"
 #: src/pages/settings/XmlTvSettingsPage.tsx
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "Refresh Timer (Hours)"
-msgstr ""
+msgstr "Intervallo di aggiornamento (ore)"
 
 #: src/components/channels/BulkAssignFillersDialog.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
@@ -4168,11 +4168,11 @@ msgstr "Data di uscita (decrescente)"
 
 #: src/components/Video.tsx
 msgid "Reload Stream"
-msgstr ""
+msgstr "Ricarica il flusso"
 
 #: src/components/library/ProgramListItem.tsx
 msgid "Remove"
-msgstr ""
+msgstr "Rimuovi"
 
 #. placeholder {0}: import { betterHumanize } from '@/helpers/dayjs'; import { isNonEmptyString } from '@/helpers/util'; import { Autocomplete, Box, Checkbox, Chip, DialogContentText, List, ListItem, ListItemText, TextField, } from '@mui/material'; import Button from '@mui/material/Button'; import Dialog from '@mui/material/Dialog'; import DialogActions from '@mui/material/DialogActions'; import DialogContent from '@mui/material/DialogContent'; import DialogTitle from '@mui/material/DialogTitle'; import { seq } from '@tunarr/shared/util'; import dayjs from 'dayjs'; import { every, identity, includes, isEmpty, map, reduce, some, uniqBy, values, } from 'lodash-es'; import { Trans, useLingui } from '@lingui/react/macro'; import { plural } from '@lingui/core/macro'; import type { HTMLAttributes } from 'react'; import { useMemo, useState } from 'react'; import { match, P } from 'ts-pattern'; import { useCounter } from 'usehooks-ts'; import { extractProgramGrandparent } from '../../helpers/programUtil.ts'; import type { RemoveProgrammingRequest } from '../../hooks/programming_controls/useRemoveProgramming'; import { useRemoveProgramming } from '../../hooks/programming_controls/useRemoveProgramming'; import useStore from '../../store'; import { materializedProgramListSelector } from '../../store/selectors'; type RemoveShowsModalProps = { open: boolean; onClose: () => void; }; interface FilmOptionType { id: string; title: string; firstLetter?: string; } const RemoveShowsModalContent = ({ onClose, }: Omit<RemoveShowsModalProps, 'open'>) => { const { t } = useLingui(); const { count, increment, decrement } = useCounter(0); const removeProgramming = useRemoveProgramming(); const [removeRequest, setRemoveRequest] = useState<RemoveProgrammingRequest>( {}, ); const programs = useStore(materializedProgramListSelector); const hasMovies = useMemo(() => { return some( programs, (p) => p.type === 'content' && p.program.type === 'movie', ); }, [programs]); const numAndDurationById = useMemo(() => { return reduce( programs, (acc, curr) => { const key = match(curr) .with( { type: 'content', program: { type: P.select(P.union('movie', 'music_video', 'other_video')), }, }, identity, ) .with( { type: 'content', program: { type: 'episode' } }, ({ program }) => program.show?.uuid ?? program.season?.show?.uuid, ) .with( { type: 'content', program: { type: 'track' } }, ({ program }) => program.artist?.uuid ?? program.album?.artist?.uuid, ) .with({ type: P._ }, () => undefined) .exhaustive(); if (key) { acc[key] ??= { totalDuration: 0, totalPrograms: 0 }; acc[key].totalDuration += curr.duration; acc[key].totalPrograms++; } return acc; }, {} as Record<string, { totalPrograms: number; totalDuration: number }>, ); }, [programs]); // Get the total number of movies from the memoized object const movieCount = numAndDurationById['movie']?.totalPrograms ?? 0; const showList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'episode' && isNonEmptyString( program.program.show?.uuid ?? program.program.season?.show?.uuid, ) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const artistList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'track' && isNonEmptyString(extractProgramGrandparent(program.program)?.uuid) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const mapListToGroupedOptions = ( list: Array<{ id: string; title: string }>, ) => { return list.map((option) => { // Get the first letter, use a placeholder if title is empty. const firstLetter = (option.title?.[0] ?? '-').toUpperCase(); return { // Group numbers/digits under '0-9', otherwise use the first letter. firstLetter: /[0-9]/.test(firstLetter) ? '0-9' : firstLetter, ...option, }; }); }; const showOptions = useMemo( () => mapListToGroupedOptions(showList), [showList], ); const artistOptions = useMemo( () => mapListToGroupedOptions(artistList), [artistList], ); const isEmptyRemoveRequest = useMemo(() => { return ( isEmpty(removeRequest) ?? every(values(removeRequest), (value) => { // If it's a boolean (movies: true/false), only check if it's the 'empty' state (false). // We do this because lodash treats booleans as empty regardless of value if (typeof value === 'boolean') { return value === false; } // Otherwise, check if the value is empty. return isEmpty(value); }) ); }, [removeRequest]); const removeShowsProgramming = () => { removeProgramming(removeRequest); onClose(); }; const getProgramCounts = (id: string, type?: string) => { const details = numAndDurationById[id]; if (!details) { return null; } const count = details.totalPrograms; const programLabel = type === 'episode' ? plural(count, { one: 'episode', other: 'episodes' }) : type === 'track' ? plural(count, { one: 'track', other: 'tracks' }) : plural(count, { one: 'program', other: 'programs' }); return t`${count} ${programLabel}, ${betterHumanize( dayjs.duration(details.totalDuration), { style: 'short', }, )}`; }; const getArtistIds = (options: FilmOptionType[]) => map(options, 'id'); return ( <> <DialogTitle> <Trans>Remove Programming</Trans> </DialogTitle> <DialogContent> <DialogContentText> <Trans>Pick specific programming to remove from the channel.</Trans> </DialogContentText> <Autocomplete options={[...showOptions].sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.showIds ?? []; return includes(selectedIds, option.id); }} onChange={(_, newOptions) => { // Extract the IDs from the selected options const newShowIds = map(newOptions, 'id'); setRemoveRequest((prev) => ({ ...prev, showIds: newShowIds, })); // Update the program counter based on the number of selected shows const countDifference = newShowIds.length - (removeRequest.showIds?.length ?? 0); if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} value={ removeRequest.showIds ? showList.filter((show) => (removeRequest.showIds ?? []).includes(show.id), ) : [] } renderInput={(params) => ( <TextField {...params} label={t`Select Shows to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'episode')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> {artistList.length > 0 && ( <Autocomplete options={[...artistOptions].sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.artistIds ?? []; return includes(selectedIds, option.id); }} value={ removeRequest.artistIds ? artistList.filter((artist) => (removeRequest.artistIds ?? []).includes(artist.id), ) : [] } onChange={(_, newOptions) => { const newArtistIds = getArtistIds(newOptions); const previousArtistIds = removeRequest.artistIds ?? []; setRemoveRequest((prev) => ({ ...prev, artistIds: newArtistIds, })); // Update the program counter based on the number of selected shows const countDifference = newArtistIds.length - previousArtistIds.length; if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} renderInput={(params) => ( <TextField {...params} label={t`Select Artists to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'track')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> )} <Box key="dynamic-list-container"> <List dense> {hasMovies && ( <ListItem secondaryAction={ <Checkbox edge="end" onChange={(e) => { const isChecked = e.target.checked; setRemoveRequest((prev) => { const newState = { ...prev, movies: isChecked, }; return newState; }); const countDelta = isChecked ? movieCount : -movieCount; for (let i = 0; i < Math.abs(countDelta); i++) { if (countDelta > 0) increment(); else decrement(); } }} checked={!!removeRequest.movies} /> } > <ListItemText primary={t`Remove All ${movieCount} ${plural(movieCount, { one: 'Movie', other: 'Movies' })}`} secondary={getProgramCounts('movies')} /> </ListItem> )} </List> </Box> </DialogContent> <DialogActions> <Button onClick={() => onClose()}> <Trans>Cancel</Trans> </Button> <Button variant="contained" onClick={() => removeShowsProgramming()} disabled={isEmptyRemoveRequest} > <Trans> Remove {count}{' '} {plural(count, { one: 'program', other: 'programs' })} </Trans> </Button> </DialogActions> </> ); }; // The content mounts only while the dialog is open, so it does no work when closed. export const RemoveShowsModal = ({ open, ...props }: RemoveShowsModalProps) => ( <Dialog open={open} scroll={'paper'}> <RemoveShowsModalContent {...props} /> </Dialog> ); 
 #: src/components/programming_controls/RemoveShowsModal.tsx
@@ -4230,7 +4230,7 @@ msgstr "Rimuove tutti i periodi di Flex dal palinsesto."
 
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Removes all programs from playlist"
-msgstr ""
+msgstr "Rimuove tutti i programmi dalla playlist"
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Removes all programs from schedule"
@@ -4312,18 +4312,18 @@ msgstr "Ripristina opzioni"
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Reset programming to most recently saved state"
-msgstr ""
+msgstr "Riporta i programmi all'ultimo stato salvato"
 
 #: src/pages/guide/GuidePage.tsx
 msgid "Reset to current date/time"
-msgstr ""
+msgstr "Torna a data e ora attuali"
 
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Resolution"
-msgstr ""
+msgstr "Risoluzione"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Restore default logo"
@@ -4332,7 +4332,7 @@ msgstr "Ripristina il logo predefinito"
 #: src/pages/settings/HdhrSettingsPage.tsx
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "Restore Default Settings"
-msgstr ""
+msgstr "Ripristina impostazioni predefinite"
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "Restrict Hours"
@@ -4344,7 +4344,7 @@ msgstr "Limita orari..."
 
 #: src/components/search/SearchInput.tsx
 msgid "Restrict search fields"
-msgstr ""
+msgstr "Limita i campi di ricerca"
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
 msgid "Results"
@@ -4369,27 +4369,27 @@ msgstr "Rivedi la selezione"
 
 #: src/components/settings/general/LogRollForm.tsx
 msgid "Roll based on size"
-msgstr ""
+msgstr "Ruota in base alla dimensione"
 
 #: src/components/settings/general/LogRollForm.tsx
 msgid "Roll on Schedule"
-msgstr ""
+msgstr "Ruota a intervalli fissi"
 
 #: src/components/settings/general/LogRollForm.tsx
 msgid "Roll the log file on a fixed schedule, regardless of file size."
-msgstr ""
+msgstr "Ruota il file di log a intervalli fissi, qualunque sia la sua dimensione."
 
 #: src/components/settings/general/LogRollForm.tsx
 msgid "Roll the log file when it grows past the maximum size."
-msgstr ""
+msgstr "Ruota il file di log quando supera la dimensione massima."
 
 #: src/components/library/LibraryListViewBreadcrumbs.tsx
 msgid "Root"
-msgstr ""
+msgstr "Principale"
 
 #: src/components/ui/table/TablePager.tsx
 msgid "Rows per page"
-msgstr ""
+msgstr "Righe per pagina"
 
 #. placeholder {0}: idx + 1
 #. placeholder {0}: index + 1
@@ -4437,7 +4437,7 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Sample rate cannot be changed when copying input audio"
-msgstr ""
+msgstr "La frequenza di campionamento non si può cambiare se l'audio viene copiato senza modifiche"
 
 #: src/components/channel_config/ChannelEditActions.tsx
 #: src/components/channel_config/ChannelEditActions.tsx
@@ -4471,36 +4471,36 @@ msgstr "Salva"
 
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Save as new collection…"
-msgstr ""
+msgstr "Salva come nuova raccolta…"
 
 #: src/components/search/SearchInput.tsx
 msgid "Save as Smart Collection"
-msgstr ""
+msgstr "Salva come raccolta smart"
 
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Save Smart Collection"
-msgstr ""
+msgstr "Salva raccolta smart"
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Saving..."
-msgstr ""
+msgstr "Salvataggio..."
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Scan"
-msgstr ""
+msgstr "Scansiona"
 
 #. placeholder {0}: prettifySnakeCaseString(programType)
 #: src/components/programs/ProgramOperationsMenu.tsx
 msgid "Scan {0}"
-msgstr ""
+msgstr "Scansiona {0}"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Scan times use the server's time zone, which can differ from yours."
-msgstr ""
+msgstr "Gli orari di scansione usano il fuso orario del server, che può essere diverso dal tuo."
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Scan your libraries"
-msgstr ""
+msgstr "Scansiona le tue librerie"
 
 #: src/components/shell/useShellNav.tsx
 msgid "Scanner"
@@ -4509,11 +4509,11 @@ msgstr "Scansione"
 #: src/components/MediaSourceLibraryTable.tsx
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Scanning"
-msgstr ""
+msgstr "Scansione in corso"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Scans every enabled library on this schedule. Collection and playlist sync from media servers run on the same schedule."
-msgstr ""
+msgstr "Scansiona tutte le librerie attive secondo questa pianificazione. Anche la sincronizzazione di raccolte e playlist dai server multimediali segue la stessa pianificazione."
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Schedule programming in blocks that are either count or duration based. Can be used to generate random schedules."
@@ -4534,11 +4534,11 @@ msgstr ""
 #: src/pages/settings/ScannerSettingsPage.tsx
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Scheduled scans"
-msgstr ""
+msgstr "Scansioni pianificate"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Scheduled scans are off. You can still scan a library by hand from its media source."
-msgstr ""
+msgstr "Le scansioni pianificate sono disattivate. Puoi comunque scansionare una libreria a mano dalla sua sorgente."
 
 #: src/components/ui/table/DataTable.tsx
 #: src/components/ui/table/DataTable.tsx
@@ -4557,15 +4557,15 @@ msgstr ""
 
 #: src/components/ProgramSearchAutocomplete.tsx
 msgid "Search for shows"
-msgstr ""
+msgstr "Cerca serie"
 
 #: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx
 msgid "Search is currently scoped to this Media Source Library."
-msgstr ""
+msgstr "La ricerca è limitata a questa libreria."
 
 #: src/routes/media_sources_/$mediaSourceId/index.tsx
 msgid "Search is currently scoped to this Media Source."
-msgstr ""
+msgstr "La ricerca è limitata a questa sorgente multimediale."
 
 #. placeholder {0}: query.trim()
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
@@ -4590,19 +4590,19 @@ msgstr ""
 
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Search the Library"
-msgstr ""
+msgstr "Cerca nella libreria"
 
 #: src/components/programs/Seasons.tsx
 msgid "Seasons"
-msgstr ""
+msgstr "Stagioni"
 
 #: src/components/ui/patterns/CollectionView/SelectionBar.tsx
 msgid "select"
-msgstr ""
+msgstr "seleziona"
 
 #: src/components/ui/table/SelectCheckboxes.tsx
 msgid "Select {label}"
-msgstr ""
+msgstr "Seleziona {label}"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Select a program and channel to test playback. The troubleshooter will analyze stream selection, build the FFmpeg pipeline, and run a short test transcode."
@@ -4620,7 +4620,7 @@ msgstr "Seleziona tutto"
 
 #: src/components/ui/table/SelectCheckboxes.tsx
 msgid "Select all on this page"
-msgstr ""
+msgstr "Seleziona tutto in questa pagina"
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Select Artists to Remove"
@@ -4628,7 +4628,7 @@ msgstr "Scegli gli artisti da rimuovere"
 
 #: src/components/ui/patterns/CollectionView/SelectionBar.tsx
 msgid "Select rows to act on several at once."
-msgstr ""
+msgstr "Seleziona più righe per agire su tutte insieme."
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Select Shows to Remove"
@@ -4636,7 +4636,7 @@ msgstr "Scegli le serie da rimuovere"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Select the port the Tunarr server will listen on. This requires a server restart to take effect."
-msgstr ""
+msgstr "Scegli la porta su cui il server di Tunarr resta in ascolto. Per applicarla serve il riavvio del server."
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Selected Audio"
@@ -4652,17 +4652,17 @@ msgstr ""
 
 #: src/components/ui/patterns/CollectionView/SelectionBar.tsx
 msgid "Selection"
-msgstr ""
+msgstr "Selezione"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Server is unreachable"
-msgstr ""
+msgstr "Il server non è raggiungibile"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Server Listen Port"
-msgstr ""
+msgstr "Porta del server"
 
 #: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Server log lines as they arrive, newest first. Download the log file to attach it to a bug report."
@@ -4670,11 +4670,11 @@ msgstr ""
 
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 msgid "Server Path"
-msgstr ""
+msgstr "Percorso sul server"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Server Settings"
-msgstr ""
+msgstr "Impostazioni del server"
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -4683,23 +4683,23 @@ msgstr ""
 
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Set by environment variable"
-msgstr ""
+msgstr "Impostata da variabile d'ambiente"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Set the host of your Tunarr backend. When empty, the web UI will use the current host/port to communicate with the backend."
-msgstr ""
+msgstr "Imposta l'indirizzo del server di Tunarr. Se vuoto, l'interfaccia web usa l'indirizzo e la porta attuali."
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Set the log level for the Tunarr server.<0/>Selecting <1>\"Use environment settings\"</1> will instruct the server to use the <2>LOG_LEVEL</2> environment variable, if set, or system default \"info\"."
-msgstr ""
+msgstr "Imposta il livello di log del server di Tunarr.<0/>Scegliendo <1>“Use environment settings”</1> il server userà la variabile d'ambiente <2>LOG_LEVEL</2>, se impostata, oppure il valore predefinito “info”."
 
 #: src/components/settings/general/BackupForm.tsx
 msgid "Set to 0 to never delete backups"
-msgstr ""
+msgstr "Imposta 0 per non eliminare mai i backup"
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Sets the number of threads used to decode the input stream. Set to 0 to let ffmpeg automatically decide how many threads to use. Read more about this option <0>here</0>. <1>Note: </1> this option is overridden to 1 when using hardware accelearation for stability reasons."
-msgstr ""
+msgstr "Imposta il numero di thread usati per decodificare il flusso in ingresso. Imposta 0 per lasciar decidere a FFmpeg. Maggiori informazioni <0>qui</0>. <1>Nota: </1> con l'accelerazione hardware questa opzione viene forzata a 1 per stabilità."
 
 #: src/components/shell/useShellNav.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
@@ -4714,7 +4714,7 @@ msgstr "Impostazioni"
 #: src/pages/settings/HdhrSettingsPage.tsx
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "Settings Saved!"
-msgstr ""
+msgstr "Impostazioni salvate!"
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 #: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx
@@ -4738,11 +4738,11 @@ msgstr ""
 
 #: src/components/ui/table/ExpandRowButton.tsx
 msgid "Show details for {label}"
-msgstr ""
+msgstr "Mostra i dettagli di {label}"
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Show disabled libraries"
-msgstr ""
+msgstr "Mostra le librerie disattivate"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
@@ -4751,7 +4751,7 @@ msgstr "Ordine delle serie"
 
 #: src/pages/guide/GuidePage.tsx
 msgid "Show Stealth"
-msgstr ""
+msgstr "Mostra nascosti"
 
 #: src/components/profiles/condition/types.ts
 msgid "Show title"
@@ -4769,21 +4769,21 @@ msgstr "Serie: {0}"
 #: src/components/ui/table/DataTable.tsx
 #: src/components/ui/table/DataTable.tsx
 msgid "Show/Hide columns"
-msgstr ""
+msgstr "Mostra/nascondi colonne"
 
 #: src/components/ui/table/DataTable.tsx
 #: src/components/ui/table/DataTable.tsx
 msgid "Show/Hide filters"
-msgstr ""
+msgstr "Mostra/nascondi filtri"
 
 #: src/components/ui/table/DataTable.tsx
 msgid "Show/Hide filters ({activeFilters} active)"
-msgstr ""
+msgstr "Mostra/nascondi filtri ({activeFilters} attivi)"
 
 #: src/components/ui/table/DataTable.tsx
 #: src/components/ui/table/DataTable.tsx
 msgid "Show/Hide search"
-msgstr ""
+msgstr "Mostra/nascondi ricerca"
 
 #: src/components/channels/ChannelPrograms.tsx
 #: src/hooks/programming_controls/useSlotProgramOptions.ts
@@ -4839,7 +4839,7 @@ msgstr "Niente pause durante i programmi più corti di così"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Skip Setup"
-msgstr ""
+msgstr "Salta la configurazione"
 
 #: src/hooks/useRouteName.ts
 msgid "Slot Editor"
@@ -4878,7 +4878,7 @@ msgstr "Raccolta smart - {0}"
 #. placeholder {0}: smartCollection.name
 #: src/routes/library/smart_collections/$id.tsx
 msgid "Smart Collection: {0}"
-msgstr ""
+msgstr "Raccolta smart: {0}"
 
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/components/shell/useShellNav.tsx
@@ -4891,11 +4891,11 @@ msgstr "Raccolte smart"
 
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 msgid "Software (No GPU)"
-msgstr ""
+msgstr "Software (senza GPU)"
 
 #: src/hooks/useQueryErrorSnackbar.tsx
 msgid "Something went wrong loading data. Check the logs for details."
-msgstr ""
+msgstr "Si è verificato un problema durante il caricamento dei dati. Controlla i log per i dettagli."
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Sort"
@@ -4903,11 +4903,11 @@ msgstr "Ordina"
 
 #: src/components/ui/table/SortButton.tsx
 msgid "Sort by {label} ascending"
-msgstr ""
+msgstr "Ordina per {label} in modo crescente"
 
 #: src/components/ui/table/SortButton.tsx
 msgid "Sort by {label} descending"
-msgstr ""
+msgstr "Ordina per {label} in modo decrescente"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
@@ -4928,11 +4928,11 @@ msgstr "Ordina serie TV (decrescente)"
 
 #: src/components/ui/table/SortButton.tsx
 msgid "Sorted by {label} ascending"
-msgstr ""
+msgstr "Ordinato per {label} in modo crescente"
 
 #: src/components/ui/table/SortButton.tsx
 msgid "Sorted by {label} descending"
-msgstr ""
+msgstr "Ordinato per {label} in modo decrescente"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
@@ -4955,7 +4955,7 @@ msgstr "Colonna sonora"
 #: src/components/MediaSourceLibraryTable.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Source"
-msgstr ""
+msgstr "Sorgente"
 
 #: src/components/shell/useShellNav.tsx
 #: src/hooks/useRouteName.ts
@@ -5007,7 +5007,7 @@ msgstr "Modalità nascosta"
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Stop syncing this library"
-msgstr ""
+msgstr "Smetti di sincronizzare questa libreria"
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Stop Transcode Session"
@@ -5015,11 +5015,11 @@ msgstr "Interrompi sessione di transcodifica"
 
 #: src/components/programs/ProgramDetailsDialog.tsx
 msgid "Stream Info"
-msgstr ""
+msgstr "Informazioni sul flusso"
 
 #: src/components/ProgramStreamDetails.tsx
 msgid "Stream JSON"
-msgstr ""
+msgstr "JSON del flusso"
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "Stream Mode"
@@ -5084,7 +5084,7 @@ msgstr ""
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Subtitles"
-msgstr ""
+msgstr "Sottotitoli"
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Subtitles:"
@@ -5101,16 +5101,16 @@ msgstr ""
 #: src/components/settings/ffmpeg/useTranscodeConfigFormOptions.ts
 #: src/components/settings/ffmpeg/useTranscodeConfigFormOptions.ts
 msgid "Successfully saved config!"
-msgstr ""
+msgstr "Configurazione salvata!"
 
 #. placeholder {0}: task.id
 #: src/pages/settings/TaskSettingsPage.tsx
 msgid "Successfully scheduled {0} (running in background)."
-msgstr ""
+msgstr "{0} pianificato (in esecuzione in background)."
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Successfully updated scanner settings."
-msgstr ""
+msgstr "Impostazioni di scansione aggiornate."
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "Supplies the channel name and number to rule conditions."
@@ -5128,32 +5128,32 @@ msgstr "Passa al tema chiaro"
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Sync"
-msgstr ""
+msgstr "Sincronizza"
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Sync Now"
-msgstr ""
+msgstr "Sincronizza ora"
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Sync this library to Tunarr"
-msgstr ""
+msgstr "Sincronizza questa libreria con Tunarr"
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Sync with external playlist"
-msgstr ""
+msgstr "Sincronizza con una playlist esterna"
 
 #: src/components/custom-shows/CustomShowCard.tsx
 msgid "Synced"
-msgstr ""
+msgstr "Sincronizzata"
 
 #: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/custom-shows/CustomShowsView.tsx
 msgid "Synced with external playlist"
-msgstr ""
+msgstr "Sincronizzata con una playlist esterna"
 
 #: src/components/custom-shows/CustomShowCard.tsx
 msgid "Syncing"
-msgstr ""
+msgstr "Sincronizzazione in corso"
 
 #: src/components/settings/DarkModeButton.tsx
 #: src/components/shell/useShellNav.tsx
@@ -5228,7 +5228,7 @@ msgstr "Il backend ErsatzTV next non supporta questa modalità di streaming. Sup
 
 #: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
 msgid "The ErsatzTV next backend ignores some of these settings"
-msgstr ""
+msgstr "Il backend ErsatzTV next ignora alcune di queste impostazioni"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "The image will be rendered at its actual size without any scaling applied."
@@ -5236,11 +5236,11 @@ msgstr "L'immagine verrà mostrata alla sua dimensione reale, senza ridimensiona
 
 #: src/hooks/useVersion.tsx
 msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
-msgstr ""
+msgstr "La versione dell'interfaccia di Tunarr caricata non corrisponde a quella del server. Ricarica la pagina per avere l'ultima versione. Se il messaggio rimane, svuota la cache del browser e ricarica."
 
 #: src/components/UnavailableLibraryIndicator.tsx
 msgid "The media server stopped reporting this library on {since}. Its programs and channel schedules are preserved. Tunarr will not scan it until the server reports it again."
-msgstr ""
+msgstr "Il server multimediale ha smesso di mostrare questa libreria il {since}. I suoi programmi e i palinsesti dei canali sono conservati. Tunarr non la scansionerà finché il server non la mostrerà di nuovo."
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "The rules, program, or channel changed since this test ran. Run it again."
@@ -5256,7 +5256,7 @@ msgstr ""
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "The type of media in the provided paths"
-msgstr ""
+msgstr "Il tipo di contenuti presenti nei percorsi indicati"
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "The watermark fades in, stays for this many minutes, then hides for the same length. Set to 0 to keep it on screen without fading."
@@ -5276,11 +5276,11 @@ msgstr "Si è verificato un errore durante la creazione delle fasce orarie. Cont
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "There was an error submitting the request to update scanner settings. Please check the form and try again"
-msgstr ""
+msgstr "Si è verificato un errore durante l'aggiornamento delle impostazioni di scansione. Controlla i campi e riprova"
 
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 msgid "There was an error when submitting the form. Please see console logs for details."
-msgstr ""
+msgstr "Si è verificato un errore durante l'invio del modulo. Controlla la console per i dettagli."
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "These settings are stored in your browser and are saved automatically when changed."
@@ -5347,7 +5347,7 @@ msgstr "Serve ai programmi IPTV per raggruppare i canali. Se non ti serve, puoi 
 
 #: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
 msgid "This machine cannot encode this config in hardware on the ErsatzTV next backend"
-msgstr ""
+msgstr "Questo computer non può codificare questa configurazione in hardware con il backend ErsatzTV next"
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "This media source has no enabled or scanned libraries. Enable libraries for this source on the <0>Media Sources</0> page or manually trigger scans on the <1>Library</1> page."
@@ -5363,7 +5363,7 @@ msgstr "Questa playlist non ha programmi. Aggiungine qualcuno o scegli un'altra 
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "This playlist is synced with a media server playlist. Content is updated automatically and cannot be edited manually."
-msgstr ""
+msgstr "Questa playlist è sincronizzata con una playlist del server multimediale. I contenuti si aggiornano da soli e non si possono modificare a mano."
 
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
 msgid "This playlist was deleted. Choose another playlist."
@@ -5403,7 +5403,7 @@ msgstr "La playlist di questo slot è stata eliminata, quindi lo slot non può e
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Threads"
-msgstr ""
+msgstr "Thread"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Thumbnail URL"
@@ -5413,7 +5413,7 @@ msgstr "URL della miniatura"
 #: src/components/system/system-logs/SystemLogsView.tsx
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Time"
-msgstr ""
+msgstr "Ora"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Time before first break"
@@ -5481,16 +5481,16 @@ msgstr "Oggi"
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "toggle access token visibility"
-msgstr ""
+msgstr "mostra/nascondi token di accesso"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "toggle password visibility"
-msgstr ""
+msgstr "mostra/nascondi password"
 
 #: src/components/ui/table/DataTable.tsx
 msgid "Toggle visibility {label}"
-msgstr ""
+msgstr "Mostra/nascondi {label}"
 
 #: src/components/channel_config/ChannelProgrammingTools.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
@@ -5500,7 +5500,7 @@ msgstr "Strumenti"
 #. placeholder {0}: isNonEmptyString(query.query) && totalHits >= 1000 ? '>1000' : totalHits
 #: src/components/library/LibraryProgramGrid.tsx
 msgid "Total hits: {0}"
-msgstr ""
+msgstr "Risultati totali: {0}"
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "Total Runtime"
@@ -5513,7 +5513,7 @@ msgstr ""
 #: src/components/library/TrashView.tsx
 #: src/components/programs/Tracks.tsx
 msgid "Tracks"
-msgstr ""
+msgstr "Brani"
 
 #: src/components/channels/ChannelsView.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -5538,7 +5538,7 @@ msgstr "Configurazioni di transcodifica"
 #: src/pages/profiles/TranscodeConfigsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Transcoding Configs"
-msgstr ""
+msgstr "Configurazioni di transcodifica"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Transcoding Settings"
@@ -5573,7 +5573,7 @@ msgstr "Tunarr {0}"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Tunarr Backend URL"
-msgstr ""
+msgstr "URL del server di Tunarr"
 
 #: src/pages/system/StatusPage.tsx
 msgid "Tunarr Backend URL:"
@@ -5590,20 +5590,20 @@ msgstr "Home di Tunarr"
 
 #: src/components/Video.tsx
 msgid "Tunarr is currently configured to use the AC3 audio encoder. This audio format is not supported by browsers. The resultant stream will likely not have audio or will not play at all."
-msgstr ""
+msgstr "Tunarr è configurato per usare l'encoder audio AC3, un formato che i browser non supportano. Probabilmente il flusso non avrà audio o non partirà affatto."
 
 #. placeholder {0}: mediaSource.name
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
 msgid "Tunarr only syncs content from enabled libraries. Choose the libraries from {0} that you want to use in your channels."
-msgstr ""
+msgstr "Tunarr sincronizza solo i contenuti delle librerie attive. Scegli le librerie di {0} che vuoi usare nei tuoi canali."
 
 #: src/components/settings/media_source/MediaSourceLibrariesChip.tsx
 msgid "Tunarr only syncs content from enabled libraries. Click to choose libraries."
-msgstr ""
+msgstr "Tunarr sincronizza solo i contenuti delle librerie attive. Fai clic per sceglierle."
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Tunarr only syncs content from enabled libraries. Turn on a library's switch to sync it, or manage sources in <0>Media Source Settings.</0>"
-msgstr ""
+msgstr "Tunarr sincronizza solo i contenuti delle librerie attive. Attiva l'interruttore di una libreria per sincronizzarla, oppure gestisci le sorgenti nelle <0>impostazioni delle sorgenti multimediali.</0>"
 
 #: src/components/system/tasks/TasksView.tsx
 msgid "Tunarr registers its background tasks when the server starts. Check the server logs if this list stays empty."
@@ -5615,32 +5615,32 @@ msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Tunarr scans enabled libraries in the background. Channels can only use programs that have been scanned by Tunarr."
-msgstr ""
+msgstr "Tunarr scansiona in background le librerie attive. I canali possono usare solo i programmi già scansionati da Tunarr."
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Tunarr uses FFmpeg 6.1 or newer to transcode streams."
-msgstr ""
+msgstr "Tunarr usa FFmpeg 6.1 o successivo per transcodificare i flussi."
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Tunarr uses FFmpeg to transcode streams. Your container image includes it, but Tunarr could not use it."
-msgstr ""
+msgstr "Tunarr usa FFmpeg per transcodificare i flussi. L'immagine del tuo container lo include, ma Tunarr non è riuscito a usarlo."
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Tunarr will attempt to get Plex to pull Tunarr's updated XMLTV upon regeneration"
-msgstr ""
+msgstr "Quando rigenera l'XMLTV, Tunarr chiederà a Plex di scaricare la versione aggiornata"
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Tunarr will update Jellyfin's \"now playing\" state while channels are active."
-msgstr ""
+msgstr "Tunarr aggiornerà lo stato “in riproduzione” di Jellyfin mentre i canali sono attivi."
 
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Tunarr will update Plex's \"now playing\" state while channels are active."
-msgstr ""
+msgstr "Tunarr aggiornerà lo stato “in riproduzione” di Plex mentre i canali sono attivi."
 
 #: src/pages/settings/HdhrSettingsPage.tsx
 #: src/pages/settings/HdhrSettingsPage.tsx
 msgid "Tuner Count"
-msgstr ""
+msgstr "Numero di sintonizzatori"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "TV shows are grouped by show"
@@ -5662,12 +5662,12 @@ msgstr "Tipo"
 #: src/components/UnavailableLibraryIndicator.tsx
 #: src/components/UnavailableLibraryIndicator.tsx
 msgid "Unavailable"
-msgstr ""
+msgstr "Non disponibile"
 
 #: src/components/search/DateSearchValueNode.tsx
 #: src/components/search/DateSearchValueNode.tsx
 msgid "Unit"
-msgstr ""
+msgstr "Unità"
 
 #: src/components/profiles/condition/LibrarySelect.tsx
 msgid "Unknown library"
@@ -5679,25 +5679,25 @@ msgstr "Scollega"
 
 #: src/components/settings/media_source/MediaSourceHealthPill.tsx
 msgid "Unreachable"
-msgstr ""
+msgstr "Non raggiungibile"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/LocalMediaEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Update"
-msgstr ""
+msgstr "Aggiorna"
 
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "Update Play Status"
-msgstr ""
+msgstr "Aggiorna lo stato di riproduzione"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/PlexServerEditDialog.tsx
 msgid "URL"
-msgstr ""
+msgstr "URL"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Use channel default"
@@ -5714,7 +5714,7 @@ msgstr "Usa l'impostazione del palinsesto"
 
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "Use Show Poster"
-msgstr ""
+msgstr "Usa la locandina della serie"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Use these settings to override global ffmpeg settings for this channel."
@@ -5729,7 +5729,7 @@ msgstr ""
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
 msgid "Username"
-msgstr ""
+msgstr "Nome utente"
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Usually slots need to add flex time to ensure that the next slot starts at the correct time. When there are multiple videos in the slot, you might prefer to distribute the flex time between the videos or to place most of the flex time at the end of the slot."
@@ -5737,7 +5737,7 @@ msgstr "Di solito gli slot devono aggiungere tempo flex perché lo slot successi
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "VA-API Device"
-msgstr ""
+msgstr "Dispositivo VA-API"
 
 #: src/pages/system/SystemDebugPage.tsx
 msgid "VAAPI Capabilities"
@@ -5750,11 +5750,11 @@ msgstr ""
 #: src/components/search/NumericValueSearchNode.tsx
 #: src/components/search/StringValueSearchNode.tsx
 msgid "Value"
-msgstr ""
+msgstr "Valore"
 
 #: src/hooks/useVersion.tsx
 msgid "Version Mismatch!"
-msgstr ""
+msgstr "Versioni diverse!"
 
 #: src/components/ui/patterns/AppShell/HelpMenu.tsx
 msgid "Version unknown"
@@ -5766,20 +5766,20 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Video Bitrate"
-msgstr ""
+msgstr "Bitrate video"
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Video Buffer Size"
-msgstr ""
+msgstr "Dimensione del buffer video"
 
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Video Format"
-msgstr ""
+msgstr "Formato video"
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Video Options"
-msgstr ""
+msgstr "Opzioni video"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Video Streams"
@@ -5798,12 +5798,12 @@ msgstr ""
 #: src/components/smart_collections/SmartCollectionsView.tsx
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "View Collection"
-msgstr ""
+msgstr "Apri la raccolta"
 
 #: src/components/ProgramMetadataDialogContent.tsx
 #: src/components/programs/ProgramOperationsMenu.tsx
 msgid "View Full Details"
-msgstr ""
+msgstr "Mostra tutti i dettagli"
 
 #. placeholder {0}: capitalize(firstProgram.program.sourceType)
 #. placeholder {0}: capitalize(program.sourceType)
@@ -5814,7 +5814,7 @@ msgstr "Apri in {0}"
 
 #: src/hooks/useQueryErrorSnackbar.tsx
 msgid "View logs"
-msgstr ""
+msgstr "Vedi i log"
 
 #: src/components/profiles/StreamSelectionProfileSelect.tsx
 msgid "View profile"
@@ -5826,7 +5826,7 @@ msgstr ""
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Waiting for the first scan to finish..."
-msgstr ""
+msgstr "In attesa che finisca la prima scansione..."
 
 #: src/components/channels/ChannelCard.tsx
 #: src/hooks/useRouteName.ts
@@ -5839,7 +5839,7 @@ msgstr "Guarda il canale"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Watch from a client"
-msgstr ""
+msgstr "Guarda da un'app"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Watermark"
@@ -5857,7 +5857,7 @@ msgstr "Impostazioni web"
 #. placeholder {1}: trimStart(query.data?.tunarr, 'v')
 #: src/hooks/useVersion.tsx
 msgid "Web version = {0}, Server version = {1}"
-msgstr ""
+msgstr "Versione web = {0}, versione del server = {1}"
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "Week"
@@ -5882,7 +5882,7 @@ msgstr "Il peso è relativo alle altre liste filler del canale. I canali che han
 
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 msgid "Weight is relative to the channel's other filler lists. Channels that already have this list get the new weight and cooldown."
-msgstr ""
+msgstr "Il peso è relativo alle altre liste filler del canale. I canali che hanno già questa lista ricevono il nuovo peso e la nuova pausa tra ripetizioni."
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
@@ -5895,7 +5895,7 @@ msgstr "Benvenuto"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Welcome to Tunarr!"
-msgstr ""
+msgstr "Benvenuto in Tunarr!"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "What the ErsatzTV next worker recorded the last few times this channel failed to play an item. Attach it to a bug report."
@@ -5907,11 +5907,11 @@ msgstr "Se attiva, il logo intermittente appare subito all'avvio della trasmissi
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "When enabling, Tunarr will generate an initial backup immediately"
-msgstr ""
+msgstr "Quando li attivi, Tunarr crea subito un primo backup"
 
 #: src/components/settings/media_source/EditPathReplacementsForm.tsx
 msgid "When file paths on the remote server differ from the paths Tunarr can see, use Path Replacements to instruct Tunarr how to stream media from disk."
-msgstr ""
+msgstr "Se i percorsi dei file sul server remoto sono diversi da quelli che vede Tunarr, usa le sostituzioni di percorso per indicare a Tunarr dove trovare i file sul disco."
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Which audio track(s) to select when the condition holds"
@@ -5923,15 +5923,15 @@ msgstr ""
 
 #: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
 msgid "Will force use of a software decoder despite hardware acceleration settings."
-msgstr ""
+msgstr "Forza l'uso di un decodificatore software, anche con l'accelerazione hardware attiva."
 
 #: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
 msgid "Will force use of a software encoder despite hardware acceleration settings."
-msgstr ""
+msgstr "Forza l'uso di un codificatore software, anche con l'accelerazione hardware attiva."
 
 #: src/components/settings/ffmpeg/TranscodeConfigAdvancedOptions.tsx
 msgid "Will force use of a software filters (e.g. scale, pad, etc.) despite hardware acceleration settings."
-msgstr ""
+msgstr "Forza l'uso di filtri software (es. ridimensionamento, bordi, ecc.), anche con l'accelerazione hardware attiva."
 
 #: src/components/shell/useShellNav.tsx
 msgid "XMLTV"
@@ -5939,7 +5939,7 @@ msgstr "XMLTV"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "XMLTV guide"
-msgstr ""
+msgstr "Guida XMLTV"
 
 #: src/pages/system/StatusPage.tsx
 msgid "XMLTV Link:"
@@ -5957,11 +5957,11 @@ msgstr "Prima di mescolare puoi cambiare qualsiasi impostazione qui sotto."
 
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "You have unsaved changes!"
-msgstr ""
+msgstr "Hai modifiche non salvate!"
 
 #: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "You haven't added any media sources yet."
-msgstr ""
+msgstr "Non hai ancora aggiunto nessuna sorgente multimediale."
 
 #: src/components/channel_config/NoChannelsCreated.tsx
 #: src/components/channels/ChannelsView.tsx
@@ -5974,15 +5974,15 @@ msgstr "Non hai ancora creato nessuna lista filler! Vai alla pagina <0>Liste fil
 
 #: src/components/fillers/FillerListsView.tsx
 msgid "You haven't created any filler lists yet."
-msgstr ""
+msgstr "Non hai ancora creato nessuna lista filler."
 
 #: src/components/custom-shows/CustomShowsView.tsx
 msgid "You haven't created any playlists yet."
-msgstr ""
+msgstr "Non hai ancora creato nessuna playlist."
 
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "You haven't created any smart collections yet."
-msgstr ""
+msgstr "Non hai ancora creato nessuna raccolta smart."
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 msgid "You must create at least one <0>filler list</0> before assigning filler to a lot."
