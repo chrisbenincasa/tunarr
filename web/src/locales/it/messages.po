@@ -927,7 +927,7 @@ msgstr "Blocco"
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Block Shuffle"
-msgstr "Mescola a blocchi"
+msgstr "Rotazione a blocchi"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Break Duration"
@@ -1284,7 +1284,7 @@ msgstr "Configurazione"
 
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Configure Cyclic Shuffle"
-msgstr "Configura mescola ciclica"
+msgstr "Configura rotazione ciclica"
 
 #: src/pages/profiles/TranscodeConfigsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -1486,11 +1486,11 @@ msgstr "Scegli come ordinare i blocchi di film"
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Cyclic Shuffle"
-msgstr "Mescola ciclica"
+msgstr "Rotazione ciclica"
 
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Cyclic Shuffle randomly shuffles groups of programming."
-msgstr "La mescola ciclica mescola a caso gruppi di programmi."
+msgstr "La rotazione ciclica alterna a caso gruppi di programmi."
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Daily"
@@ -1740,7 +1740,7 @@ msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Display Watermark on Leading Edge"
-msgstr "Mostra la filigrana all'inizio"
+msgstr "Mostra il logo all'inizio"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
@@ -1992,7 +1992,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Enable if the watermark is an animated GIF or PNG. The watermark will loop according to the image's configuration. If this option is enabled and the image is not animated, there will be playback errors."
-msgstr "Attivala se la filigrana è una GIF o un PNG animato: l'animazione verrà ripetuta secondo le impostazioni dell'immagine. Se attivi questa opzione e l'immagine non è animata, ci saranno errori di riproduzione."
+msgstr "Attivala se il logo è una GIF o un PNG animato: l'animazione verrà ripetuta secondo le impostazioni dell'immagine. Se attivi questa opzione e l'immagine non è animata, ci saranno errori di riproduzione."
 
 #: src/components/settings/DarkModeButton.tsx
 msgid "Enable light Mode"
@@ -2012,7 +2012,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Enable Watermark"
-msgstr "Attiva filigrana"
+msgstr "Attiva logo a schermo"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/pages/system/StatusPage.tsx
@@ -2649,15 +2649,15 @@ msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Hide Watermark After (minutes)"
-msgstr "Nascondi la filigrana dopo (minuti)"
+msgstr "Nascondi il logo dopo (minuti)"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Hide watermark during filler"
-msgstr "Nascondi la filigrana durante i filler"
+msgstr "Nascondi il logo durante i filler"
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Hides the watermark for the rest of each program once the limit is reached. This overrides the fade settings above."
-msgstr "Raggiunto il limite, nasconde la filigrana per il resto del programma. Ha la precedenza sulle impostazioni di dissolvenza qui sopra."
+msgstr "Raggiunto il limite, nasconde il logo per il resto del programma. Ha la precedenza sulle impostazioni di dissolvenza qui sopra."
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -3203,12 +3203,12 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Mid"
-msgstr "A metà"
+msgstr "Durante"
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 msgid "Mid-Roll"
-msgstr "Pause a metà programma"
+msgstr "Pause durante il programma"
 
 #: src/components/ui/table/filters/RangeFilter.tsx
 msgid "Min"
@@ -3867,7 +3867,7 @@ msgstr "Playlist"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Opens the shuffle settings, where you can start every show at its first episode or loop shorter shows."
-msgstr "Trasmette le serie in ordine casuale, un episodio alla volta, mantenendo in sequenza gli episodi di ciascuna serie. Apre le impostazioni di mescolamento, dove puoi far partire ogni serie dal primo episodio o ripetere le serie più corte."
+msgstr "Trasmette le serie in ordine casuale, un episodio alla volta, mantenendo in sequenza gli episodi di ciascuna serie. Apre le impostazioni della rotazione, dove puoi far partire ogni serie dal primo episodio o ripetere le serie più corte."
 
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first, and removes programs longer than the allowed hours."
@@ -4254,7 +4254,7 @@ msgstr "Mostra un'icona del canale in sovrimpressione sul video (il classico log
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Repeatedly fades the watermark in and out while a program plays."
-msgstr "Fa apparire e scomparire ciclicamente la filigrana durante il programma."
+msgstr "Fa apparire e scomparire ciclicamente il logo durante il programma."
 
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "Repeats"
@@ -4835,7 +4835,7 @@ msgstr "Mescola i programmi di un canale, con la possibilità di raggrupparli se
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Skip mid-roll for programs shorter than this"
-msgstr "Niente pause a metà per i programmi più corti di così"
+msgstr "Niente pause durante i programmi più corti di così"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Skip Setup"
@@ -5260,7 +5260,7 @@ msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "The watermark fades in, stays for this many minutes, then hides for the same length. Set to 0 to keep it on screen without fading."
-msgstr "La filigrana appare in dissolvenza, resta visibile per questi minuti, poi scompare per lo stesso tempo. Imposta 0 per tenerla sempre visibile senza dissolvenza."
+msgstr "Il logo appare in dissolvenza, resta visibile per questi minuti, poi scompare per lo stesso tempo. Imposta 0 per tenerlo sempre visibile senza dissolvenza."
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Theme Settings"
@@ -5843,11 +5843,11 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Watermark"
-msgstr "Filigrana"
+msgstr "Logo a schermo"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Watermark Image URL"
-msgstr "URL dell'immagine della filigrana"
+msgstr "URL dell'immagine del logo"
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Web Settings"
@@ -5903,7 +5903,7 @@ msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "When enabled, intermittent watermarks fade in immediately when a stream is initialized. When disabled, the first watermark fade-in occurs after a full period."
-msgstr "Se attiva, la filigrana intermittente appare subito all'avvio della trasmissione. Se disattiva, la prima apparizione avviene dopo un periodo completo."
+msgstr "Se attiva, il logo intermittente appare subito all'avvio della trasmissione. Se disattiva, la prima apparizione avviene dopo un periodo completo."
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "When enabling, Tunarr will generate an initial backup immediately"
