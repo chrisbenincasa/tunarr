@@ -33,6 +33,8 @@ Tunarr checks these rules when you save or preview a schedule, and rejects a sch
 - Pad times and the number of days to schedule are greater than zero.
 - Every filler list, show, smart collection, and channel a slot references must exist.
 
+When Tunarr regenerates an already saved schedule, a Redirect slot whose channel was deleted plays [Flex](/configure/channels/flex) for its whole window.
+
 ## Empty or Deleted Playlists
 
 A playlist with no programs cannot fill a time slot.

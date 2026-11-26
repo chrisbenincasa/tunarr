@@ -32,7 +32,7 @@ Some programming types also allow configuration of the **order** in which their 
 - Every filler list, show, smart collection, and channel a slot references must exist.
 - Programs with no duration are skipped, because they cannot advance the schedule.
 
-Tunarr checks these rules when you save or preview a schedule, and rejects a schedule that breaks one with HTTP 400. Schedules saved before these checks existed still regenerate. A fixed slot with no duration produces nothing, and the scheduler moves on to the other slots.
+Tunarr checks these rules when you save or preview a schedule, and rejects a schedule that breaks one with HTTP 400. Schedules saved before these checks existed still regenerate. A fixed slot with no duration produces nothing, and the scheduler moves on to the other slots. A Redirect slot whose channel was deleted also produces nothing when a saved schedule regenerates.
 
 ### Empty or Deleted Playlists
 

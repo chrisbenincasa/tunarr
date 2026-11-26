@@ -22,3 +22,22 @@ export class StaticProgramIterator<ProgramT extends CondensedChannelProgram>
     return this;
   }
 }
+
+/**
+ * A {@link ProgramIterator} with nothing to play. Schedulers fill its slot
+ * with flex.
+ */
+
+export class EmptyProgramIterator implements ProgramIterator {
+  current(_state: IterationState): null {
+    return null;
+  }
+
+  next(): void {}
+
+  reset(): void {}
+
+  fork(): ProgramIterator {
+    return this;
+  }
+}

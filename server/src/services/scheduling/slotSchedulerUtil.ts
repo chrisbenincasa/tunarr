@@ -92,7 +92,10 @@ import type {
   ProgramIteratorSnapshot,
   SlotIteratorState,
 } from './slotIteratorState.ts';
-import { StaticProgramIterator } from './StaticProgramIterator.ts';
+import {
+  EmptyProgramIterator,
+  StaticProgramIterator,
+} from './StaticProgramIterator.ts';
 import { WeightedFillerProgramIterator } from './WeightedFillerProgramIterator.ts';
 
 const logger = LoggerFactory.child({
@@ -105,6 +108,7 @@ type ProgramMapping = {
   custom: Record<`custom-show.${string}`, SlotSchedulerProgram[]>;
   filler: Record<`filler.${string}`, SlotSchedulerProgram[]>;
   smartCollection: Record<`smart-collection.${string}`, SlotSchedulerProgram[]>;
+  missingRedirectChannelIds?: ReadonlySet<string>;
 };
 
 export type CustomShowContext = {
@@ -190,6 +194,7 @@ export function partitionSchedulablePrograms(programs: SlotSchedulerProgram[]) {
  */
 export function createProgramMap(
   programs: SlotSchedulerProgram[],
+  missingRedirectChannelIds?: ReadonlySet<string>,
 ): ProgramMapping {
   return reduce(
     programs,
@@ -245,6 +250,7 @@ export function createProgramMap(
       custom: {},
       filler: {},
       smartCollection: {},
+      missingRedirectChannelIds,
     } as unknown as ProgramMapping,
   );
 }
@@ -393,6 +399,9 @@ export function createSlotProgramIterator(
         }),
     )
     .with({ type: 'redirect' }, (slot) => {
+      if (programBySlotType.missingRedirectChannelIds?.has(slot.channelId)) {
+        return new EmptyProgramIterator();
+      }
       return new StaticProgramIterator({
         type: 'redirect',
         channel: slot.channelId,

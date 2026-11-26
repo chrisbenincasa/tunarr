@@ -87,6 +87,7 @@ class ScheduleContext {
     discardCount: number = 0,
     iteratorState?: SlotIteratorState,
     stableShuffle?: boolean,
+    missingRedirectChannelIds?: ReadonlySet<string>,
   ) {
     this.#seed = seed;
     this.#engine = MersenneTwister19937.seedWithArray(this.#seed).discard(
@@ -98,7 +99,7 @@ class ScheduleContext {
       deduplicatePrograms(programming),
     );
     this.#unschedulablePrograms = unschedulable;
-    const programMap = createProgramMap(schedulable);
+    const programMap = createProgramMap(schedulable, missingRedirectChannelIds);
     const fillerIterators = createFillerIterators(
       schedule.slots,
       programMap,
@@ -275,6 +276,7 @@ export class RandomSlotScheduler {
       discardCount,
       cycle.iteratorState,
       cycle.stableShuffle,
+      cycle.missingRedirectChannelIds,
     );
 
     const { maxDays, padMs, padStyle, flexPreference, randomDistribution } =

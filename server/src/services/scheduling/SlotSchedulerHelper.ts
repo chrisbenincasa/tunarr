@@ -159,24 +159,17 @@ export class SlotSchedulerHelper {
         slot.type === 'smart-collection' ? slot.smartCollectionId : undefined,
       ),
     );
-    const channelIds = uniq(
-      seq.collect(slots, (slot) =>
-        slot.type === 'redirect' ? slot.channelId : undefined,
-      ),
-    );
 
-    const [fillerLists, shows, smartCollections, channels] = await Promise.all([
-      this.fillerDB.getFillerListsByIds(fillerListIds),
-      this.programDB.getProgramGroupings(showIds),
-      this.smartCollectionsDB.getByIds(smartCollectionIds),
-      Promise.all(channelIds.map((id) => this.channelDB.getChannel(id))),
-    ]);
+    const [fillerLists, shows, smartCollections, missingChannelIds] =
+      await Promise.all([
+        this.fillerDB.getFillerListsByIds(fillerListIds),
+        this.programDB.getProgramGroupings(showIds),
+        this.smartCollectionsDB.getByIds(smartCollectionIds),
+        this.findMissingRedirectChannelIds(slots),
+      ]);
     const existingFillerListIds = new Set(fillerLists.map((l) => l.uuid));
     const existingSmartCollectionIds = new Set(
       smartCollections.map((c) => c.uuid),
-    );
-    const existingChannelIds = new Set(
-      seq.collect(channels, (channel) => channel?.uuid),
     );
 
     const problems = [...zipWithIndex(slots)].flatMap(([slot, index]) => {
@@ -210,7 +203,7 @@ export class SlotSchedulerHelper {
           }
           break;
         case 'redirect':
-          if (!existingChannelIds.has(slot.channelId)) {
+          if (missingChannelIds.has(slot.channelId)) {
             missing('channel', slot.channelId);
           }
           break;
@@ -232,6 +225,20 @@ export class SlotSchedulerHelper {
     if (problems.length > 0) {
       throw new ScheduleValidationError(problems.join('; '));
     }
+  }
+
+  // Channels that redirect slots target but that no longer exist.
+  async findMissingRedirectChannelIds(slots: BaseSlot[]) {
+    const channelIds = uniq(
+      seq.collect(slots, (slot) =>
+        slot.type === 'redirect' ? slot.channelId : undefined,
+      ),
+    );
+    const channels = await Promise.all(
+      channelIds.map((id) => this.channelDB.getChannel(id)),
+    );
+    const existing = new Set(seq.collect(channels, (channel) => channel?.uuid));
+    return new Set(channelIds.filter((id) => !existing.has(id)));
   }
 
   async materializeCustomShowPrograms(slots: BaseSlot[]) {
