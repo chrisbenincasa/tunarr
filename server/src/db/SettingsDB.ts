@@ -9,7 +9,6 @@ import type {
   FeatureFlags,
   FfmpegSettings,
   HdhrSettings,
-  PlexStreamSettings,
   SystemSettings,
   XmlTvSettings,
 } from '@tunarr/types';
@@ -22,7 +21,6 @@ import {
   defaultGlobalMediaSourceSettings,
   defaultHdhrSettings,
   defaultLogRollConfig,
-  defaultPlexStreamSettings,
   defaultXmlTvSettings as defaultXmlTvSettingsSchema,
 } from '@tunarr/types';
 import type {
@@ -35,7 +33,6 @@ import {
   FfmpegSettingsSchema,
   GlobalMediaSourceSettingsSchema,
   HdhrSettingsSchema,
-  PlexStreamSettingsSchema,
   StreamSelectionSettingsSchema,
   XmlTvSettingsSchema,
 } from '@tunarr/types/schemas';
@@ -88,7 +85,6 @@ export const SettingsSchema = z.object({
   clientId: z.string(),
   hdhr: HdhrSettingsSchema,
   xmltv: XmlTvSettingsSchema,
-  plexStream: PlexStreamSettingsSchema,
   ffmpeg: FfmpegSettingsSchema,
   mediaSource: z.preprocess(
     migrateLegacyMediaSourceSettings,
@@ -167,7 +163,6 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
     clientId: uuidv4(),
     hdhr: defaultHdhrSettings,
     xmltv: defaultXmlTvSettings(dbBasePath),
-    plexStream: defaultPlexStreamSettings,
     ffmpeg: defaultFfmpegSettings,
     mediaSource: defaultGlobalMediaSourceSettings,
     streamSelection: defaultStreamSelectionSettings,
@@ -236,10 +231,6 @@ export class SettingsDB extends ITypedEventEmitter implements ISettingsDB {
 
   hdhrSettings(): DeepReadonly<HdhrSettings> {
     return this.db.data.settings.hdhr;
-  }
-
-  plexSettings(): DeepReadonly<PlexStreamSettings> {
-    return this.db.data.settings.plexStream;
   }
 
   ffmpegSettings(): ReadableFfmpegSettings {

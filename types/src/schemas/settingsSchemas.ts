@@ -198,13 +198,6 @@ export const MediaSourceSettingsSchema = z.discriminatedUnion('type', [
   LocalMediaSourceSchema,
 ]);
 
-export const PlexStreamSettingsSchema = z.object({
-  streamPath: z.enum(['network', 'direct']).default('network'),
-  updatePlayStatus: z.boolean().default(false),
-  pathReplace: z.string().default(''),
-  pathReplaceWith: z.string().default(''),
-});
-
 export const HdhrSettingsSchema = z.object({
   autoDiscoveryEnabled: z.boolean().default(true),
   tunerCount: z.number().default(2),

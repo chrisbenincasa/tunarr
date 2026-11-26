@@ -11,7 +11,6 @@ import {
   type JellyfinServerSettingsSchema,
   type MediaSourceSettingsSchema,
   type PlexServerSettingsSchema,
-  PlexStreamSettingsSchema,
 } from './schemas/settingsSchemas.js';
 
 export type PlexServerSettings = z.infer<typeof PlexServerSettingsSchema>;
@@ -35,10 +34,6 @@ export type MediaSourceLibrary = z.infer<typeof MediaSourceLibrarySchema>;
 
 export type MediaSourceType = MediaSourceSettings['type'];
 export type MediaSourceContentType = z.infer<typeof MediaSourceContentType>;
-
-export type PlexStreamSettings = z.infer<typeof PlexStreamSettingsSchema>;
-
-export const defaultPlexStreamSettings = PlexStreamSettingsSchema.parse({});
 
 export const defaultGlobalMediaSourceSettings =
   GlobalMediaSourceSettingsSchema.parse({});

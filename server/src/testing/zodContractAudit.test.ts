@@ -29,7 +29,6 @@ const REQUEST_SCHEMA_NAMES = [
   'HdhrSettingsSchema',
   'InsertMediaSourceRequestSchema',
   'JellyfinLoginRequest',
-  'PlexStreamSettingsSchema',
   'ProgramSearchRequest',
   'SaveableChannelSchema',
   'SmartCollection',

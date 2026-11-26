@@ -8,7 +8,6 @@ import type {
   FeatureFlags,
   FfmpegSettings,
   HdhrSettings,
-  PlexStreamSettings,
   SystemSettings,
   XmlTvSettings,
 } from '@tunarr/types';
@@ -34,8 +33,6 @@ export interface ISettingsDB extends events.EventEmitter<SettingsChangeEvents> {
   xmlTvSettings(): DeepReadonly<XmlTvSettings>;
 
   hdhrSettings(): DeepReadonly<HdhrSettings>;
-
-  plexSettings(): DeepReadonly<PlexStreamSettings>;
 
   ffmpegSettings(): ReadableFfmpegSettings;
 
