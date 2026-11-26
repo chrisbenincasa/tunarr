@@ -217,6 +217,22 @@ export const SearchFieldSpecs: NonEmptyArray<
     uiVisible: true,
     visibleForLibraryTypes: 'all',
   },
+  {
+    key: 'audioTitles',
+    name: 'audio_title',
+    type: 'string' as const,
+    displayName: 'Audio Track Title',
+    uiVisible: true,
+    visibleForLibraryTypes: 'all',
+  },
+  {
+    key: 'subtitleTitles',
+    name: 'subtitle_title',
+    type: 'string' as const,
+    displayName: 'Subtitle Track Title',
+    uiVisible: true,
+    visibleForLibraryTypes: 'all',
+  },
   MinutesField,
   SecondsField,
   {

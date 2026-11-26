@@ -188,6 +188,28 @@ describe('MeilisearchService.buildFilterExpression', () => {
     });
   });
 
+  describe('track title filters', () => {
+    test.each([
+      ['contains', "audioTitles CONTAINS 'Commentary'"],
+      ['not contains', "audioTitles NOT CONTAINS 'Commentary'"],
+    ] as const)('%s', (op, expected) => {
+      const filter: SearchFilter = {
+        type: 'value',
+        fieldSpec: {
+          key: 'audioTitles',
+          name: 'audio_title',
+          type: 'string',
+          op,
+          value: ['Commentary'],
+        },
+      };
+
+      expect(MeilisearchService.buildFilterExpression(mockIndex, filter)).toBe(
+        expected,
+      );
+    });
+  });
+
   describe('faceted string filters', () => {
     test('single faceted string', () => {
       const filter: SearchFilter = {

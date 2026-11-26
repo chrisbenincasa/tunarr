@@ -73,6 +73,8 @@ const StringFields = [
   'library_id',
   'title',
   'show_title',
+  'audio_title',
+  'subtitle_title',
 ] as const;
 
 const StringField = createToken({
@@ -410,6 +412,8 @@ export const virtualFieldToIndexField: Record<string, string> = {
   video_width: 'videoWidth',
   audio_language: 'audioLanguages',
   subtitle_language: 'subtitleLanguages',
+  audio_title: 'audioTitles',
+  subtitle_title: 'subtitleTitles',
   audio_codec: 'audioCodec',
   audio_channels: 'audioChannels',
   media_source_id: 'mediaSourceId',

@@ -133,6 +133,17 @@ Helper functions, which treat equivalent language codes as equal:
 | --------- | ----- | --------- |
 | `program.showTitle == "Cowboy Bebop"` | By language: `eng` | Disable |
 
+**Commentary channel:** a channel that plays movies with their commentary track.
+
+1. Create a smart collection with the search `type = "movie" AND audio_title ~ "commentary"`. In the search builder, pick **Audio Track Title** and **contains**. Track title matching ignores case.
+2. Add the collection to a channel and assign it this profile:
+
+| Condition | Audio | Subtitles |
+| --------- | ----- | --------- |
+| `true` | By title: `Commentary` | Disable |
+
+**Subtitle Track Title** works the same way for subtitles, for example `subtitle_title ~ "sdh"`.
+
 ## Testing rules
 
 The **Test** panel at the bottom of the profile editor runs the rules you are editing against a real program, including changes you haven't saved.
