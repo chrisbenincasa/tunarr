@@ -2193,7 +2193,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
             selected: audioStream.selected,
             default: audioStream.default,
             languageCodeISO6392: audioStream.languageCode,
-            title: audioStream.displayTitle,
+            title: audioStream.title ?? audioStream.displayTitle,
           } satisfies MediaStream;
         },
       ),
@@ -2230,7 +2230,7 @@ export class PlexApiClient extends MediaSourceApiClient<PlexTypes> {
             codec: stream.codec.toLocaleLowerCase(),
             default: stream.default ?? false,
             index: stream.index ?? 0,
-            title: stream.displayTitle,
+            title: stream.title ?? stream.displayTitle,
             sdh,
             languageCodeISO6392: stream.languageCode,
             // A Plex stream key is a route to fetch the subtitle over HTTP; the

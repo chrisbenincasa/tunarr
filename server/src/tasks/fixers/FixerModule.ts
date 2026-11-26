@@ -7,6 +7,7 @@ import { BackfillProgramArtworkFixer } from './BackfillProgramArtworkFixer.ts';
 import { FixMislabeledGroupingExternalIdSourceType } from './FixMislabeledGroupingExternalIdSourceType.ts';
 import { FixSmartCollectionFilters } from './FixSmartCollectionFIlters.ts';
 import { NormalizeLanguageCodesFixer } from './NormalizeLanguageCodesFixer.ts';
+import { QueueTrackTitleRescanFixer } from './QueueTrackTitleRescanFixer.ts';
 import { SweepOrphanedSubtitleCacheFixer } from './SweepOrphanedSubtitleCacheFixer.ts';
 import { MigrateLegacyStreamSelection } from './MigrateLegacyStreamSelection.ts';
 
@@ -19,6 +20,7 @@ const FixerModule = new ContainerModule(({ bind }) => {
   bind<Fixer>(KEYS.Fixer).to(SweepOrphanedSubtitleCacheFixer);
   bind<Fixer>(KEYS.Fixer).to(FixMislabeledGroupingExternalIdSourceType);
   bind<Fixer>(KEYS.Fixer).to(MigrateLegacyStreamSelection);
+  bind<Fixer>(KEYS.Fixer).to(QueueTrackTitleRescanFixer);
 });
 
 export { FixerModule };

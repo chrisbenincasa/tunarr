@@ -58,7 +58,7 @@ Playback should be unchanged, with one exception. The old settings could give ea
 | ------ | -------- |
 | Default | The track the media marks as selected, then the one marked default, then the first track. |
 | By language | The first track matching a language in the list, in list order. Can prefer the track with the most or fewest channels. Falls back to Default. |
-| By title | The first track whose title contains the given text. Falls back to Default. |
+| By title | The first track whose title contains the given text, such as `Commentary`. The title is the track name stored in the file, as your media server reports it. Falls back to Default. |
 
 ### Subtitles
 
