@@ -124,6 +124,7 @@ const TasksModule = new ContainerModule(({ bind }) => {
           plexServer,
           request,
           sessionId,
+          ctx.get<ISettingsDB>(KEYS.SettingsDB).clientId(),
         ),
   );
 

@@ -54,7 +54,6 @@ export class PlexPlayStatusUpdaterPlugin implements ProgramStreamPlugin {
     this.updatePlexStatusTask = this.playStatusTaskFactory(
       server,
       {
-        channelNumber: context.playerContext.sourceChannel.number,
         duration: lineupItem.duration,
         ratingKey: lineupItem.program.externalKey,
         startTime: lineupItem.startOffset ?? 0,
