@@ -9,11 +9,11 @@ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid " Scheduling Strategy"
-msgstr ""
+msgstr " Strategia di programmazione"
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid " the following day."
-msgstr ""
+msgstr " del giorno dopo."
 
 #. placeholder {0}: channel.name
 #: src/pages/watch/ChannelWatchPage.tsx
@@ -27,7 +27,7 @@ msgstr "Sessioni di “{0}”"
 
 #: src/components/channel_config/ChannelEpgConfig.tsx
 msgid "\"Stealth\" channels are hidden from TV guides, spoofed HDHR, the m3u playlist, etc. The channel can still be streamed directly, used as a redirect target, or exported from the Channels page."
-msgstr ""
+msgstr "I canali “nascosti” non compaiono nelle guide TV, nel finto sintonizzatore HDHR, nella playlist M3U e così via. Il canale si può comunque trasmettere direttamente, usare come destinazione di un reindirizzamento o esportare dalla pagina Canali."
 
 #. placeholder {0}: badge.count
 #: src/components/ui/patterns/AppShell/NavBadge.tsx
@@ -37,7 +37,7 @@ msgstr "{0, plural, one {(# problema nei controlli di stato)} other {(# problemi
 #. placeholder {0}: customShow.contentCount
 #: src/components/channel_config/SelectedProgrammingList.tsx
 msgid "{0, plural, one {# item} other {# items}}"
-msgstr ""
+msgstr "{0, plural, one {# elemento} other {# elementi}}"
 
 #. placeholder {0}: filler.contentCount
 #. placeholder {0}: programList.length
@@ -51,18 +51,18 @@ msgstr "{0, plural, one {# programma} other {# programmi}}"
 #. placeholder {0}: customShow.contentCount
 #: src/components/channel_config/CustomShowProgrammingSelector.tsx
 msgid "{0, plural, one {# Program} other {# Programs}}"
-msgstr ""
+msgstr "{0, plural, one {# programma} other {# programmi}}"
 
 #. placeholder {0}: media.childCount ?? 0
 #. placeholder {1}: media.grandchildCount ?? 0
 #: src/components/channel_config/SelectedProgrammingList.tsx
 msgid "{0, plural, one {# season} other {# seasons}}, {1, plural, one {# total episode} other {# total episodes}}"
-msgstr ""
+msgstr "{0, plural, one {# stagione} other {# stagioni}}, {1, plural, one {# episodio in totale} other {# episodi in totale}}"
 
 #. placeholder {0}: selectedMedia.length
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "{0, plural, one {# Selected Item} other {# Selected Items}}"
-msgstr ""
+msgstr "{0, plural, one {# elemento selezionato} other {# elementi selezionati}}"
 
 #. placeholder {0}: status.connections
 #: src/components/channels/ChannelStatusPill.tsx
@@ -119,7 +119,7 @@ msgstr ""
 #. placeholder {0}: selectedMedia.length
 #: src/components/channel_config/SelectedProgrammingList.tsx
 msgid "{0, plural, one {Selected Item} other {Selected Items}}"
-msgstr ""
+msgstr "{0, plural, one {Elemento selezionato} other {Elementi selezionati}}"
 
 #. placeholder {0}: result.audioStreams.length
 #. placeholder {1}: result.subtitleStreams.length
@@ -180,7 +180,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "{block} Hours"
-msgstr ""
+msgstr "{block} ore"
 
 #. placeholder {0}: <> <MonoText>{count}</MonoText> selected </>
 #. placeholder {1}: <> <MonoText>{count}</MonoText> selected </>
@@ -205,7 +205,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/ProgramCalendarView.tsx
 msgid "{count, plural, one {# program} other {# programs}}"
-msgstr ""
+msgstr "{count, plural, one {# programma} other {# programmi}}"
 
 #: src/components/library/extractSubtitle.tsx
 #: src/components/programs/ProgramInfoBar.tsx
@@ -223,7 +223,7 @@ msgstr ""
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "{count, plural, one {episode} other {episodes}}"
-msgstr ""
+msgstr "{count, plural, one {episodio} other {episodi}}"
 
 #: src/helpers/dayjs.ts
 msgid "{count, plural, one {hour} other {hours}}"
@@ -236,7 +236,7 @@ msgstr ""
 #: src/components/programming_controls/RemoveShowsModal.tsx
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "{count, plural, one {program} other {programs}}"
-msgstr ""
+msgstr "{count, plural, one {programma} other {programmi}}"
 
 #: src/helpers/dayjs.ts
 msgid "{count, plural, one {second} other {seconds}}"
@@ -244,12 +244,12 @@ msgstr ""
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "{count, plural, one {track} other {tracks}}"
-msgstr ""
+msgstr "{count, plural, one {brano} other {brani}}"
 
 #. placeholder {0}: betterHumanize( dayjs.duration(details.totalDuration), { style: 'short', }, )
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "{count} {programLabel}, {0}"
-msgstr ""
+msgstr "{count} {programLabel}, {0}"
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{days, plural, one {# day} other {# days}}"
@@ -278,7 +278,7 @@ msgstr "{label}, mostra le sessioni"
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "{len, plural, one {There is # warning. Click for details.} other {There are # warnings. Click for details.}}"
-msgstr ""
+msgstr "{len, plural, one {C'è # avviso. Fai clic per i dettagli.} other {Ci sono # avvisi. Fai clic per i dettagli.}}"
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "{minutes, plural, one {# minute} other {# minutes}}"
@@ -312,7 +312,7 @@ msgstr "{unavailableSlotCount, plural, one {# slot usa una playlist vuota o elim
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 msgid "{value, plural, one {# program} other {# programs}}"
-msgstr ""
+msgstr "{value, plural, one {# programma} other {# programmi}}"
 
 #: src/pages/settings/HdhrSettingsPage.tsx
 msgid "* Restart required"
@@ -320,7 +320,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "# of Programs"
-msgstr ""
+msgstr "N. di programmi"
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/custom-shows/CustomShowsView.tsx
@@ -368,11 +368,11 @@ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "<0>None:</0> slots are picked in the order they are specified in the table (i.e. not randomly)<1/><2>Uniform:</2> all slots have an equal chance to be picked.<3/><4>Weighted:</4> each slot is picked with a specified probability"
-msgstr ""
+msgstr "<0>Nessuna:</0> gli slot vengono scelti nell'ordine della tabella (cioè non a caso)<1/><2>Uniforme:</2> tutti gli slot hanno la stessa probabilità di essere scelti.<3/><4>Ponderata:</4> ogni slot viene scelto con una probabilità stabilita"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "<0>Pad Slot:</0> Align slot start times to the specified pad time.<1/><2>Pad Episode:</2> Align episode start times (within a slot) to the specified pad time. <3>NOTE:</3> Depending on slot length and the chosen pad time, this could potentially create a lot of flex."
-msgstr ""
+msgstr "<0>Allinea slot:</0> allinea l'inizio degli slot all'orario scelto.<1/><2>Allinea episodi:</2> allinea l'inizio degli episodi (dentro uno slot) all'orario scelto. <3>NOTA:</3> a seconda della durata dello slot e dell'allineamento scelto, questo può creare molto Flex."
 
 #. placeholder {0}: new URL( '/api/xmltv.xml', isEmpty(backendUri) ? document.location.href : backendUri, ).href
 #: src/pages/settings/XmlTvSettingsPage.tsx
@@ -410,17 +410,17 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "A stream selection profile chooses the audio and subtitle streams for programs on this channel. Filler lists and playlists can assign their own profile, which takes precedence."
-msgstr ""
+msgstr "Un profilo di selezione dei flussi sceglie le tracce audio e i sottotitoli per i programmi di questo canale. Liste filler e playlist possono avere un proprio profilo, che ha la precedenza."
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "A-Z (asc)"
-msgstr ""
+msgstr "A-Z (crescente)"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "A-Z (desc)"
-msgstr ""
+msgstr "A-Z (decrescente)"
 
 #: src/helpers/dayjs.ts
 msgid "about "
@@ -459,7 +459,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Add a Filler List"
-msgstr ""
+msgstr "Aggiungi una lista filler"
 
 #: src/components/search/SearchFilterBuilder.tsx
 msgid "Add a filter expression to fine-tune results of the search"
@@ -467,15 +467,15 @@ msgstr ""
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Add Breaks"
-msgstr ""
+msgstr "Aggiungi pause"
 
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 msgid "Add Breaks..."
-msgstr ""
+msgstr "Aggiungi pause..."
 
 #: src/components/programming_controls/AddRedirectModal.tsx
 msgid "Add Channel Redirect"
-msgstr ""
+msgstr "Aggiungi reindirizzamento"
 
 #: src/components/profiles/condition/ConditionGroupEditor.tsx
 msgid "Add condition"
@@ -487,11 +487,11 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Add filler"
-msgstr ""
+msgstr "Aggiungi filler"
 
 #: src/components/programming_controls/AddFlexModal.tsx
 msgid "Add Flex Time"
-msgstr ""
+msgstr "Aggiungi Flex"
 
 #: src/components/profiles/condition/ConditionGroupEditor.tsx
 #: src/components/search/SearchGroupNode.tsx
@@ -502,15 +502,15 @@ msgstr ""
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
 msgid "Add Media"
-msgstr ""
+msgstr "Aggiungi contenuti"
 
 #: src/components/programming_controls/AddPaddingModal.tsx
 msgid "Add Padding"
-msgstr ""
+msgstr "Aggiungi allineamento"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Add point (%)"
-msgstr ""
+msgstr "Aggiungi punto (%)"
 
 #: src/hooks/useRouteName.ts
 #: src/hooks/useRouteName.ts
@@ -527,16 +527,16 @@ msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "Add Selected Media"
-msgstr ""
+msgstr "Aggiungi i contenuti selezionati"
 
 #: src/components/channel_config/CustomShowProgrammingSelector.tsx
 msgid "Add Show"
-msgstr ""
+msgstr "Aggiungi serie"
 
 #: src/components/slot_scheduler/AddRandomSlotButton.tsx
 #: src/components/slot_scheduler/AddTimeSlotButton.tsx
 msgid "Add Slot"
-msgstr ""
+msgstr "Aggiungi slot"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Add these links to an IPTV client. Jellyfin and Emby can use Tunarr as either an M3U source or an HDHomeRun tuner. Plex can add Tunarr as an HDHomeRun tuner."
@@ -548,7 +548,7 @@ msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Add TV Shows or Movies to programming list."
-msgstr ""
+msgstr "Aggiungi serie TV o film alla lista dei programmi."
 
 #. placeholder {0}: data.added
 #. placeholder {1}: data.added
@@ -559,27 +559,27 @@ msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Adds a channel redirect. During this period of time, the channel will redirect to another channel."
-msgstr ""
+msgstr "Aggiunge un reindirizzamento: per questo periodo di tempo il canale trasmetterà un altro canale."
 
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 msgid "Adds Flex after each TV episode or movie so the next program starts at one of the allowed minute marks, such as XX:00 or XX:30. Removes existing Flex first."
-msgstr ""
+msgstr "Aggiunge Flex dopo ogni episodio o film, in modo che il programma successivo inizi a uno dei minuti consentiti, per esempio XX:00 o XX:30. Rimuove prima il Flex esistente."
 
 #: src/components/programming_controls/AddPaddingModal.tsx
 msgid "Adds Flex breaks after each TV episode or movie to ensure that the program starts at one of the allowed minute marks."
-msgstr ""
+msgstr "Aggiunge pause Flex dopo ogni episodio o film, in modo che il programma successivo inizi a uno dei minuti consentiti."
 
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 msgid "Adds Flex breaks between programs so that no run of consecutive programs goes longer than the time you set. Existing Flex stays in place."
-msgstr ""
+msgstr "Aggiunge pause Flex tra i programmi, in modo che nessuna sequenza di programmi consecutivi superi il tempo che imposti. Il Flex esistente resta dov'è."
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Adds Flex breaks between programs, attempting to avoid groups of consecutive programs that exceed the specified number of minutes."
-msgstr ""
+msgstr "Aggiunge pause Flex tra i programmi, cercando di evitare sequenze di programmi consecutivi più lunghe dei minuti indicati."
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Adds one Flex time slot. To add Flex across the whole lineup at once, use the Flex menu next to Add."
-msgstr ""
+msgstr "Aggiunge un singolo blocco di Flex. Per aggiungere Flex a tutto il palinsesto in una volta, usa il menu Flex accanto ad Aggiungi."
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Adjust the output volume (not recommended). Values higher than 100 will boost the audio."
@@ -589,7 +589,7 @@ msgstr ""
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 msgid "Adjust Weights"
-msgstr ""
+msgstr "Regola i pesi"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Advanced options relating to audio. In general, do not change these unless you know what you are doing!"
@@ -606,11 +606,11 @@ msgstr ""
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "After Every"
-msgstr ""
+msgstr "Dopo ogni"
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "after every program"
-msgstr ""
+msgstr "dopo ogni programma"
 
 #: src/components/programs/Albums.tsx
 msgid "Albums"
@@ -636,7 +636,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "All lists are used"
-msgstr ""
+msgstr "Tutte le liste sono già in uso"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Allow external subtitles"
@@ -648,21 +648,21 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Allows you to pick specific programming to remove from the channel."
-msgstr ""
+msgstr "Ti permette di scegliere quali programmi rimuovere dal canale."
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Alphabetical"
-msgstr ""
+msgstr "Alfabetico"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Alphabetically"
-msgstr ""
+msgstr "In ordine alfabetico"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Alternates TV shows in blocks of episodes. You can pick the number of episodes per show in each block and if the order of shows in each block should be randomized. Movies are moved to the bottom."
-msgstr ""
+msgstr "Alterna le serie TV a blocchi di episodi. Puoi scegliere quanti episodi per serie mettere in ogni blocco e se l'ordine delle serie nei blocchi deve essere casuale. I film vengono spostati in fondo."
 
 #: src/components/profiles/condition/types.ts
 msgid "Always match"
@@ -699,7 +699,7 @@ msgstr "Applica a {0, plural, one {# canale} other {# canali}}"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Apply to Program Types (empty = all)"
-msgstr ""
+msgstr "Applica ai tipi di programma (vuoto = tutti)"
 
 #: src/components/settings/general/BackupForm.tsx
 #: src/components/settings/general/BackupForm.tsx
@@ -717,11 +717,11 @@ msgstr "Artisti"
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Asc"
-msgstr ""
+msgstr "Cresc."
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Ascending"
-msgstr ""
+msgstr "Crescente"
 
 #: src/components/fillers/FillerListCard.tsx
 msgid "Assign"
@@ -761,7 +761,7 @@ msgstr ""
 
 #: src/components/programming_controls/BalanceProgrammingModal.tsx
 msgid "Attempts to balance programming groups by either total lineup duration or number of unique programs. For instance, for a channel with many seasons of one show and few seasons of another, balancing will attempt to create an even mix of both shows by inserting repeats of the show with fewer episodes."
-msgstr ""
+msgstr "Cerca di bilanciare i gruppi di programmi in base alla durata totale nel palinsesto o al numero di programmi diversi. Per esempio, in un canale con molte stagioni di una serie e poche di un'altra, il bilanciamento cercherà di mescolarle in modo equo ripetendo la serie con meno episodi."
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -774,7 +774,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Audio & Subtitles"
-msgstr ""
+msgstr "Audio e sottotitoli"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Audio Action"
@@ -798,7 +798,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Audio file path or URL. It loops for as long as the fallback plays."
-msgstr ""
+msgstr "Percorso o URL del file audio. Viene ripetuto per tutto il tempo in cui va in onda il contenuto di riserva."
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigsTable.tsx
@@ -865,12 +865,12 @@ msgstr ""
 
 #: src/components/programming_controls/AdjustWeightsModal.tsx
 msgid "Automatic"
-msgstr ""
+msgstr "Automatico"
 
 #. placeholder {0}: betterHumanize(dayjs.duration(averageLengthMs))
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "Average program length: {0}"
-msgstr ""
+msgstr "Durata media dei programmi: {0}"
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
@@ -887,19 +887,19 @@ msgstr ""
 
 #: src/components/programming_controls/BalanceProgrammingModal.tsx
 msgid "Balance"
-msgstr ""
+msgstr "Bilancia"
 
 #: src/components/programming_controls/BalanceProgrammingModal.tsx
 msgid "Balance By:"
-msgstr ""
+msgstr "Bilancia per:"
 
 #: src/components/programming_controls/BalanceProgrammingModal.tsx
 msgid "Balance Programming"
-msgstr ""
+msgstr "Bilancia programmi"
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Balance..."
-msgstr ""
+msgstr "Bilancia..."
 
 #: src/components/profiles/condition/ConditionEditor.tsx
 msgid "Basic"
@@ -919,7 +919,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "Block"
-msgstr ""
+msgstr "Blocco"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/channel_config/ChannelProgrammingSort.tsx
@@ -927,23 +927,23 @@ msgstr ""
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Block Shuffle"
-msgstr ""
+msgstr "Mescola a blocchi"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Break Duration"
-msgstr ""
+msgstr "Durata della pausa"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Break Duration (minutes)"
-msgstr ""
+msgstr "Durata della pausa (minuti)"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Break Interval (minutes)"
-msgstr ""
+msgstr "Intervallo tra le pause (minuti)"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Break Positioning"
-msgstr ""
+msgstr "Posizione delle pause"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Buffer size cannot be changed when copying input audio"
@@ -959,7 +959,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/RebuildEachCycleField.tsx
 msgid "Builds new programming before the current programming runs out. Shuffled slots get a new order each cycle, and ordered shows continue where they left off. Days to Precalculate only sets the preview length."
-msgstr ""
+msgstr "Crea nuovi programmi prima che finiscano quelli attuali. Gli slot mescolati ricevono un nuovo ordine a ogni ciclo e le serie in ordine riprendono da dove si erano fermate. “Giorni da precalcolare” stabilisce solo la durata dell'anteprima."
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Built-in"
@@ -991,11 +991,11 @@ msgstr ""
 
 #: src/hooks/slot_scheduler/useScheduleSlots.ts
 msgid "Calculated {humanizedDuration} ({numShows} programs) of programming in {duration}ms"
-msgstr ""
+msgstr "Calcolati {humanizedDuration} di programmazione ({numShows} programmi) in {duration} ms"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Calculates a schedule where all programs end at the same time, creating a perfectly looping schedule."
-msgstr ""
+msgstr "Calcola un palinsesto in cui tutti i programmi finiscono nello stesso momento, così il palinsesto si ripete perfettamente."
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 msgid "Calculating Slots..."
@@ -1054,7 +1054,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Cannot use a channel number <= 0"
-msgstr ""
+msgstr "Il numero del canale deve essere maggiore di 0"
 
 #: src/components/programs/Actors.tsx
 msgid "Cast & Crew"
@@ -1101,43 +1101,43 @@ msgstr "Canale n. {0}"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Channel Fallback"
-msgstr ""
+msgstr "Contenuto di riserva del canale"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Channel Group"
-msgstr ""
+msgstr "Gruppo del canale"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Channel group is required"
-msgstr ""
+msgstr "Il gruppo del canale è obbligatorio"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Channel Name"
-msgstr ""
+msgstr "Nome del canale"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Channel name is required"
-msgstr ""
+msgstr "Il nome del canale è obbligatorio"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Channel Number"
-msgstr ""
+msgstr "Numero del canale"
 
 #: src/components/channel_config/ChannelEditActions.tsx
 msgid "Channel settings saved!"
-msgstr ""
+msgstr "Impostazioni del canale salvate!"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Channel Stream Mode"
-msgstr ""
+msgstr "Modalità di streaming del canale"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Channel Transcode Config"
-msgstr ""
+msgstr "Configurazione di transcodifica del canale"
 
 #: src/App.tsx
 #: src/components/channels/ChannelsView.tsx
@@ -1183,7 +1183,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Choose the transcode configuration to use for this channel. Configure transcode configurations on the <0>FFmpeg settings page</0>."
-msgstr ""
+msgstr "Scegli la configurazione di transcodifica da usare per questo canale. Le configurazioni si gestiscono nella <0>pagina delle impostazioni FFmpeg</0>."
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Chooses audio and subtitle streams for programs scheduled from this playlist."
@@ -1197,13 +1197,13 @@ msgstr ""
 #: src/components/search/SearchFieldRestrictMenu.tsx
 #: src/components/ui/patterns/CollectionView/SelectionBar.tsx
 msgid "Clear"
-msgstr ""
+msgstr "Svuota"
 
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/filler/EditFillerListForm.tsx
 #: src/components/slot_scheduler/ClearSlotsButton.tsx
 msgid "Clear All"
-msgstr ""
+msgstr "Svuota tutto"
 
 #: src/components/custom-shows/CustomShowsView.tsx
 #: src/components/fillers/FillerListsView.tsx
@@ -1217,11 +1217,11 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Clear Schedule"
-msgstr ""
+msgstr "Svuota palinsesto"
 
 #: src/components/channel_config/CustomShowProgrammingSelector.tsx
 msgid "Click to preview the items in this playlist. Only the whole playlist can be added at once."
-msgstr ""
+msgstr "Fai clic per vedere in anteprima gli elementi di questa playlist. Si può aggiungere solo la playlist intera."
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
 msgid "close"
@@ -1249,12 +1249,12 @@ msgstr "Comoda"
 
 #: src/components/slot_scheduler/RandomSlotsWeightAdjustDialog.tsx
 msgid "Commit"
-msgstr ""
+msgstr "Applica"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Completely randomizes the order of programs."
-msgstr ""
+msgstr "Mette i programmi in ordine completamente casuale."
 
 #: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Component"
@@ -1280,11 +1280,11 @@ msgstr ""
 
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 msgid "Config"
-msgstr ""
+msgstr "Configurazione"
 
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Configure Cyclic Shuffle"
-msgstr ""
+msgstr "Configura mescola ciclica"
 
 #: src/pages/profiles/TranscodeConfigsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -1293,7 +1293,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Configure what appears on your channel when there is no suitable filler content available. Using channel fallbacks requires ffmpeg transcoding."
-msgstr ""
+msgstr "Scegli cosa mostra il canale quando non ci sono filler adatti. Il contenuto di riserva richiede la transcodifica con FFmpeg."
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Connect a media source"
@@ -1301,7 +1301,7 @@ msgstr ""
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "Connect Media Source"
-msgstr ""
+msgstr "Collega una sorgente multimediale"
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 msgid "Console"
@@ -1309,11 +1309,11 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Consolidate"
-msgstr ""
+msgstr "Consolida"
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Consolidates contiguous match flex and redirect blocks into singular spans"
-msgstr ""
+msgstr "Unisce blocchi Flex e reindirizzamenti uguali e consecutivi in un unico blocco"
 
 #: src/components/profiles/condition/types.ts
 msgid "contains"
@@ -1325,20 +1325,20 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Continue"
-msgstr ""
+msgstr "Continua"
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Continue with New Content"
-msgstr ""
+msgstr "Continua con nuovi contenuti"
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Controls what happens when this slot runs out of replayed content from earlier continue slots."
-msgstr ""
+msgstr "Stabilisce cosa succede quando questo slot esaurisce i contenuti in replica degli slot “Continua” precedenti."
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 msgid "Cooldown"
-msgstr ""
+msgstr "Pausa tra ripetizioni"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 #: src/components/channels/BulkAssignFillersDialog.tsx
@@ -1427,7 +1427,7 @@ msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Counted from the start of each program. If a stream starts partway through a program, it counts from that point. Set to 0 for no limit."
-msgstr ""
+msgstr "Si conta dall'inizio di ogni programma. Se la visione inizia a programma già in corso, si conta da quel momento. Imposta 0 per non avere limiti."
 
 #: src/components/smart_collections/SmartCollectionsView.tsx
 msgid "Create"
@@ -1460,7 +1460,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "Create Rerun Block"
-msgstr ""
+msgstr "Crea blocco di repliche"
 
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Creates a new collection"
@@ -1480,17 +1480,17 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Customize how movie blocks are sorted"
-msgstr ""
+msgstr "Scegli come ordinare i blocchi di film"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Cyclic Shuffle"
-msgstr ""
+msgstr "Mescola ciclica"
 
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Cyclic Shuffle randomly shuffles groups of programming."
-msgstr ""
+msgstr "La mescola ciclica mescola a caso gruppi di programmi."
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Daily"
@@ -1508,7 +1508,7 @@ msgstr ""
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 msgid "Day"
-msgstr ""
+msgstr "Giorno"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 #: src/pages/settings/ScannerSettingsPage.tsx
@@ -1632,7 +1632,7 @@ msgstr ""
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "Delete Slot"
-msgstr ""
+msgstr "Elimina slot"
 
 #. placeholder {0}: confirmDeleteTranscodeConfig?.name
 #. placeholder {0}: confirmDeleteTranscodeConfig?.name ?? ''
@@ -1643,7 +1643,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
 msgid "Deleted playlist"
-msgstr ""
+msgstr "Playlist eliminata"
 
 #: src/components/channels/ChannelsDeleteDialog.tsx
 msgid "Deleting a channel removes all of its programming. This cannot be undone."
@@ -1680,11 +1680,11 @@ msgstr "Densità"
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Desc"
-msgstr ""
+msgstr "Decr."
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Descending"
-msgstr ""
+msgstr "Decrescente"
 
 #: src/components/system/tasks/TasksView.tsx
 msgid "Description"
@@ -1721,7 +1721,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Disable Image Scaling"
-msgstr ""
+msgstr "Disattiva il ridimensionamento dell'immagine"
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Disable Watermarks"
@@ -1740,20 +1740,20 @@ msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Display Watermark on Leading Edge"
-msgstr ""
+msgstr "Mostra la filigrana all'inizio"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Distribution"
-msgstr ""
+msgstr "Distribuzione"
 
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "Divides the programming in blocks of 4, 6, 8 or 12 hours then repeats each of the blocks the specified number of times."
-msgstr ""
+msgstr "Divide i programmi in blocchi di 4, 6, 8 o 12 ore e ripete ogni blocco il numero di volte indicato."
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Do not group programs at all. Normal shuffle."
-msgstr ""
+msgstr "Non raggruppa i programmi: mescolamento normale."
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Docs"
@@ -1770,7 +1770,7 @@ msgstr ""
 #: src/components/slot_scheduler/RandomSlotWarningsDialog.tsx
 #: src/components/slot_scheduler/TimeSlotWarningsDialog.tsx
 msgid "Done"
-msgstr ""
+msgstr "Fatto"
 
 #: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Download all logs"
@@ -1799,7 +1799,7 @@ msgstr "Duplica canale"
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Duplicates"
-msgstr ""
+msgstr "Duplicati"
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/custom-shows/CustomShowsView.tsx
@@ -1813,27 +1813,27 @@ msgstr "Durata"
 #: src/components/programming_controls/AddFlexModal.tsx
 #: src/components/programming_controls/AddRedirectModal.tsx
 msgid "Duration (seconds)"
-msgstr ""
+msgstr "Durata (secondi)"
 
 #: src/components/programming_controls/AddFlexModal.tsx
 msgid "Duration must be greater than 0."
-msgstr ""
+msgstr "La durata deve essere maggiore di 0."
 
 #: src/components/programming_controls/AddFlexModal.tsx
 msgid "Duration must be numeric"
-msgstr ""
+msgstr "La durata deve essere un numero"
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 msgid "Dynamic"
-msgstr ""
+msgstr "Dinamico"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Each next block comes from a random show. Shows with more episodes come up more often unless Loop Short Programs is on."
-msgstr ""
+msgstr "Ogni blocco successivo viene da una serie scelta a caso. Le serie con più episodi escono più spesso, a meno che non sia attivo “Ripeti i programmi brevi”."
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Eager"
-msgstr ""
+msgstr "Anticipata"
 
 #: src/components/custom-shows/CustomShowCard.tsx
 #: src/components/custom-shows/CustomShowsView.tsx
@@ -1869,7 +1869,7 @@ msgstr "Modifica canale"
 
 #: src/components/programming_controls/AddRedirectModal.tsx
 msgid "Edit Channel Redirect"
-msgstr ""
+msgstr "Modifica reindirizzamento"
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/channels/ChannelsView.tsx
@@ -1882,7 +1882,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddFlexModal.tsx
 msgid "Edit Flex Time"
-msgstr ""
+msgstr "Modifica Flex"
 
 #: src/components/settings/media_source/MediaSourceCard.tsx
 #: src/components/settings/media_source/MediaSourcesView.tsx
@@ -1909,7 +1909,7 @@ msgstr ""
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "Edit Slot"
-msgstr ""
+msgstr "Modifica slot"
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "Edit Stream Selection Profile"
@@ -1972,7 +1972,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Enable Animation"
-msgstr ""
+msgstr "Attiva animazione"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Enable Backups"
@@ -1992,7 +1992,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Enable if the watermark is an animated GIF or PNG. The watermark will loop according to the image's configuration. If this option is enabled and the image is not animated, there will be playback errors."
-msgstr ""
+msgstr "Attivala se la filigrana è una GIF o un PNG animato: l'animazione verrà ripetuta secondo le impostazioni dell'immagine. Se attivi questa opzione e l'immagine non è animata, ci saranno errori di riproduzione."
 
 #: src/components/settings/DarkModeButton.tsx
 msgid "Enable light Mode"
@@ -2012,12 +2012,12 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Enable Watermark"
-msgstr ""
+msgstr "Attiva filigrana"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/pages/system/StatusPage.tsx
 msgid "Enabled"
-msgstr ""
+msgstr "Attivo"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Enabled (loudnorm)"
@@ -2033,7 +2033,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "End Time"
-msgstr ""
+msgstr "Ora di fine"
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Ensures programs have a nice-looking start time, it will add Flex time to fill the gaps."
@@ -2041,7 +2041,7 @@ msgstr "Fa iniziare i programmi a orari “tondi”, aggiungendo Flex per riempi
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Ensures programs start only at a particular interval within the hour. This makes for nice looking schedules. Flex time is scheduled to facilitate."
-msgstr ""
+msgstr "Fa iniziare i programmi solo a intervalli precisi all'interno dell'ora, per un palinsesto ordinato. Per riuscirci viene aggiunto del Flex."
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Enter a cron expression."
@@ -2061,7 +2061,7 @@ msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Enter a number of minutes, 0 or more."
-msgstr ""
+msgstr "Inserisci un numero di minuti, 0 o più."
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 msgid "Enter your Emby password to generate a new access token."
@@ -2073,7 +2073,7 @@ msgstr ""
 
 #: src/components/channel_config/EditChannelForm.tsx
 msgid "EPG"
-msgstr ""
+msgstr "EPG"
 
 #: src/pages/settings/XmlTvSettingsPage.tsx
 #: src/pages/settings/XmlTvSettingsPage.tsx
@@ -2087,7 +2087,7 @@ msgstr ""
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Episode Order"
-msgstr ""
+msgstr "Ordine degli episodi"
 
 #: src/components/library/TrashView.tsx
 #: src/components/programs/Episodes.tsx
@@ -2116,7 +2116,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddRedirectModal.tsx
 msgid "Error occurred while loading channels, please try again soon."
-msgstr ""
+msgstr "Errore durante il caricamento dei canali, riprova tra poco."
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Error Options"
@@ -2124,7 +2124,7 @@ msgstr ""
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "Error querying Plex. Check console log and consider reporting a bug!"
-msgstr ""
+msgstr "Errore durante la richiesta a Plex. Controlla la console del browser e, se puoi, segnala il bug!"
 
 #: src/pages/channels/ChannelProgrammingPage.tsx
 msgid "Error removing schedule. {message}"
@@ -2144,7 +2144,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "Error saving programs. {message}"
-msgstr ""
+msgstr "Errore durante il salvataggio dei programmi. {message}"
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
@@ -2157,7 +2157,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelEditActions.tsx
 msgid "Error updating channel.<0/>Check browser console for details"
-msgstr ""
+msgstr "Errore durante l'aggiornamento del canale.<0/>Controlla la console del browser per i dettagli"
 
 #: src/components/smart_collections/EditSmartCollectionDialog.tsx
 msgid "Error updating Smart Collection. Check logs for details."
@@ -2217,7 +2217,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx
 msgid "Exclude Seasons"
-msgstr ""
+msgstr "Escludi stagioni"
 
 #: src/components/smart_collections/CreateSmartCollectionDialog.tsx
 msgid "Existing query: {filterString}"
@@ -2229,7 +2229,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Experimental: Make perfect schedule loop"
-msgstr ""
+msgstr "Sperimentale: crea un palinsesto che si ripete perfettamente"
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/channels/ChannelsView.tsx
@@ -2242,11 +2242,11 @@ msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Fade In and Out"
-msgstr ""
+msgstr "Dissolvenza in entrata e in uscita"
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Fade Period (mins)"
-msgstr ""
+msgstr "Periodo di dissolvenza (min)"
 
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 msgid "Failed to load channels."
@@ -2286,12 +2286,12 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Fallback"
-msgstr ""
+msgstr "Riserva"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Fallback Mode"
-msgstr ""
+msgstr "Modalità di riserva"
 
 #: src/pages/settings/FeaturesSettingsPage.tsx
 msgid "Feature flags saved!"
@@ -2375,7 +2375,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Fill with Flex"
-msgstr ""
+msgstr "Riempi con Flex"
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
@@ -2383,28 +2383,28 @@ msgstr ""
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "Filler"
-msgstr ""
+msgstr "Filler"
 
 #. placeholder {0}: showName ?? ''
 #: src/hooks/slot_scheduler/useSlotName.ts
 msgid "Filler - {0}"
-msgstr ""
+msgstr "Filler - {0}"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Filler Content"
-msgstr ""
+msgstr "Contenuti filler"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Filler cooldown must be a number"
-msgstr ""
+msgstr "La pausa tra ripetizioni dei filler deve essere un numero"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Filler is picked fresh at stream time like Flex time. The guide shows \"Commercial Break\" placeholders."
-msgstr ""
+msgstr "Il filler viene scelto al momento della trasmissione, come il Flex. La guida mostra dei segnaposto “Pausa pubblicitaria”."
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Filler is resolved at schedule time. The guide shows specific filler titles."
-msgstr ""
+msgstr "Il filler viene scelto quando si crea il palinsesto. La guida mostra i titoli dei filler."
 
 #: src/components/shell/CommandPaletteContainer.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -2416,16 +2416,16 @@ msgstr "Lista filler"
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Filler List"
-msgstr ""
+msgstr "Lista filler"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Filler List Cooldown (seconds)"
-msgstr ""
+msgstr "Pausa tra ripetizioni della lista filler (secondi)"
 
 #. placeholder {0}: cs.description
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Filler List: {0}"
-msgstr ""
+msgstr "Lista filler: {0}"
 
 #: src/components/fillers/FillerListsView.tsx
 #: src/components/fillers/FillerListsView.tsx
@@ -2439,7 +2439,7 @@ msgstr "Liste filler"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Filler Options"
-msgstr ""
+msgstr "Opzioni filler"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
@@ -2462,7 +2462,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "First Episode"
-msgstr ""
+msgstr "Primo episodio"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "First scan at"
@@ -2480,11 +2480,11 @@ msgstr ""
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Fixed"
-msgstr ""
+msgstr "Fisso"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Fixed Interval"
-msgstr ""
+msgstr "Intervallo fisso"
 
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 #: src/components/channel_config/EditChannelForm.tsx
@@ -2498,7 +2498,7 @@ msgstr "Flex"
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Flex Slot..."
-msgstr ""
+msgstr "Blocco Flex..."
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
@@ -2539,7 +2539,7 @@ msgstr ""
 #: src/pages/settings/ScannerSettingsPage.tsx
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Frequency"
-msgstr ""
+msgstr "Frequenza"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
@@ -2586,11 +2586,11 @@ msgstr ""
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Group episode programs by their show."
-msgstr ""
+msgstr "Raggruppa gli episodi per serie."
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Grouping works as follows:"
-msgstr ""
+msgstr "Il raggruppamento funziona così:"
 
 #: src/components/shell/useShellNav.tsx
 #: src/pages/guide/GuidePage.tsx
@@ -2619,7 +2619,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Head"
-msgstr ""
+msgstr "Apertura"
 
 #: src/components/settings/media_source/MediaSourcesView.tsx
 msgid "Health"
@@ -2649,15 +2649,15 @@ msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Hide Watermark After (minutes)"
-msgstr ""
+msgstr "Nascondi la filigrana dopo (minuti)"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Hide watermark during filler"
-msgstr ""
+msgstr "Nascondi la filigrana durante i filler"
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Hides the watermark for the rest of each program once the limit is reached. This overrides the fade settings above."
-msgstr ""
+msgstr "Raggiunto il limite, nasconde la filigrana per il resto del programma. Ha la precedenza sulle impostazioni di dissolvenza qui sopra."
 
 #: src/pages/settings/FfmpegSettingsPage.tsx
 #: src/pages/settings/FfmpegSettingsPage.tsx
@@ -2674,7 +2674,7 @@ msgstr "Di quanto può sforare il contenuto di uno slot oltre la sua fine? “Un
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "How long each commercial break lasts"
-msgstr ""
+msgstr "Quanto dura ogni pausa pubblicitaria"
 
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "How often the XMLTV file is regenerated"
@@ -2682,7 +2682,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "How often to insert a break"
-msgstr ""
+msgstr "Ogni quanto inserire una pausa"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "HW Accel"
@@ -2706,7 +2706,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "If no more programs can fit into a duration-based slot, flex time is added to fill the gap. This setting determines how flex is added <0>within</0> the slot to ensure all time is filled.<1/><2>Between:</2> Flex time is added between videos within a slot, if there are multiple<3/><4>End:</4> Flex time is added at the end of the slot"
-msgstr ""
+msgstr "Se in uno slot a durata non entrano altri programmi, il vuoto viene riempito con Flex. Questa impostazione stabilisce come il Flex viene distribuito <0>dentro</0> lo slot.<1/><2>Tra i video:</2> il Flex viene messo tra i video dello slot, se ce ne sono più di uno<3/><4>Alla fine:</4> il Flex viene messo alla fine dello slot"
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
@@ -2715,7 +2715,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "If set, any programming group with fewer episodes will be looped in order to make perfectly even blocks."
-msgstr ""
+msgstr "Se attivo, i gruppi di programmi con meno episodi vengono ripetuti per ottenere blocchi perfettamente uguali."
 
 #: src/components/settings/ffmpeg/TranscodeConfigErrorOptions.tsx
 msgid "If there are issues playing a video, Tunarr will try to use an error screen as a placeholder while retrying loading the video every 60 seconds."
@@ -2723,7 +2723,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "If true, adjusting the weight of one slot will scale the weights of other slots such that all weights total 100%. Otherwise, weights can be adjusted freely and the weight of each slot is only relative to the total weight."
-msgstr ""
+msgstr "Se attivo, quando cambi il peso di uno slot gli altri pesi si adeguano in modo che il totale sia sempre 100%. Altrimenti puoi regolare i pesi liberamente e il peso di ogni slot è relativo al totale."
 
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "If you proceed, all unsaved changes will be lost. Are you sure you want to proceed?"
@@ -2731,19 +2731,19 @@ msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Image"
-msgstr ""
+msgstr "Immagine"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Image URL"
-msgstr ""
+msgstr "URL dell'immagine"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "In Order"
-msgstr ""
+msgstr "In ordine"
 
 #: src/components/slot_scheduler/ShowSearchSlotProgrammingForm.tsx
 msgid "Include Seasons"
-msgstr ""
+msgstr "Includi stagioni"
 
 #: src/components/profiles/condition/types.ts
 msgid "includes"
@@ -2751,11 +2751,11 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "Increasing \"Max Overflow\" for the schedule."
-msgstr ""
+msgstr "Aumentare lo “Sforamento massimo” del palinsesto."
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "Increasing the slot duration."
-msgstr ""
+msgstr "Aumentare la durata dello slot."
 
 #: src/components/settings/general/BackupForm.tsx
 msgid "Increment"
@@ -2763,19 +2763,19 @@ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Initial Delay (minutes)"
-msgstr ""
+msgstr "Ritardo iniziale (minuti)"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Initial Delay + Interval"
-msgstr ""
+msgstr "Ritardo iniziale + intervallo"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Insert breaks at these percentages of the program duration"
-msgstr ""
+msgstr "Inserisci pause a queste percentuali della durata del programma"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Interval (minutes)"
-msgstr ""
+msgstr "Intervallo (minuti)"
 
 #. placeholder {0}: rule.error
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
@@ -2788,7 +2788,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Inverse linear decay, heavier weighting."
-msgstr ""
+msgstr "Decadimento lineare inverso, ponderazione più marcata."
 
 #: src/components/profiles/condition/types.ts
 #: src/components/profiles/condition/types.ts
@@ -2806,7 +2806,7 @@ msgstr ""
 
 #: src/components/channel_config/MediaGridItem.tsx
 msgid "Item was not present during the last scan"
-msgstr ""
+msgstr "L'elemento non era presente nell'ultima scansione"
 
 #: src/components/library/TrashView.tsx
 msgid "Items a recent scan couldn't find, because the file is missing or the media server no longer returns them. They can't play in channels. Emptying the trash replaces them with flex."
@@ -2814,7 +2814,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Items from any filler list will not be chosen more frequently than this cooldown setting."
-msgstr ""
+msgstr "Gli elementi delle liste filler non verranno scelti più spesso di quanto consente questa pausa."
 
 #: src/components/settings/media_source/AddMediaSourceButton.tsx
 msgid "Jellyfin"
@@ -2871,7 +2871,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Lazy"
-msgstr ""
+msgstr "Al momento"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Least channels (e.g. stereo)"
@@ -2879,7 +2879,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Leave blank to use the channel's icon."
-msgstr ""
+msgstr "Lascia vuoto per usare l'icona del canale."
 
 #: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Level"
@@ -2905,7 +2905,7 @@ msgstr "Libreria"
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Library Clip (not yet implemented)"
-msgstr ""
+msgstr "Clip dalla libreria (non ancora disponibile)"
 
 #. placeholder {0}: library.name
 #: src/routes/media_sources_/$mediaSourceId/libraries_.$libraryId.tsx
@@ -2918,7 +2918,7 @@ msgstr "Chiaro"
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Linear"
-msgstr ""
+msgstr "Lineare"
 
 #: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Lines show here as the server writes them."
@@ -2927,20 +2927,20 @@ msgstr ""
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Link Mode"
-msgstr ""
+msgstr "Modalità di collegamento"
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Link to existing slot"
-msgstr ""
+msgstr "Collega a uno slot esistente"
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Linked slots advance episode progression together sequentially."
-msgstr ""
+msgstr "Gli slot collegati avanzano insieme nella sequenza degli episodi."
 
 #: src/components/base/ProgramViewToggleButton.tsx
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "List"
-msgstr ""
+msgstr "Lista"
 
 #: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Live"
@@ -2985,7 +2985,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Lock Weights"
-msgstr ""
+msgstr "Blocca i pesi"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 #: src/components/settings/general/GeneralSettingsForm.tsx
@@ -2998,11 +2998,11 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Logarithmic"
-msgstr ""
+msgstr "Logaritmica"
 
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Logarithmic decay, lighter weighting."
-msgstr ""
+msgstr "Decadimento logaritmico, ponderazione più leggera."
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Logging"
@@ -3025,7 +3025,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Loop Short Programs"
-msgstr ""
+msgstr "Ripeti i programmi brevi"
 
 #: src/components/settings/ffmpeg/TranscodeConfigAudioSettingsForm.tsx
 msgid "Loudness Range Target"
@@ -3050,11 +3050,11 @@ msgstr "Principale"
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Makes multiple copies of the schedule and plays them in sequence"
-msgstr ""
+msgstr "Crea più copie del palinsesto e le trasmette una dopo l'altra"
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Makes multiple copies of the schedule and plays them in sequence. Normally this isn't necessary, because Tunarr will always play the schedule back from the beginning when it finishes. But creating replicas is a useful intermediary step sometimes before applying other transformations. Note that because very large channels can be problematic, the number of replicas will be limited to avoid creating really large channels."
-msgstr ""
+msgstr "Crea più copie del palinsesto e le trasmette una dopo l'altra. Di solito non serve, perché Tunarr ricomincia sempre il palinsesto da capo quando finisce. A volte però creare delle copie è un passaggio utile prima di applicare altre trasformazioni. Dato che i canali molto grandi possono dare problemi, il numero di copie è limitato."
 
 #: src/components/settings/media_source/EditMediaSourceLibrariesDialog.tsx
 msgid "Manage Libraries"
@@ -3066,7 +3066,7 @@ msgstr ""
 
 #: src/components/programming_controls/AdjustWeightsModal.tsx
 msgid "Manual"
-msgstr ""
+msgstr "Manuale"
 
 #: src/components/system/tasks/TaskStatusPill.tsx
 msgid "Manual only"
@@ -3116,11 +3116,11 @@ msgstr ""
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Max Duration"
-msgstr ""
+msgstr "Durata massima"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Max Duration (minutes)"
-msgstr ""
+msgstr "Durata massima (minuti)"
 
 #: src/components/settings/general/LogRollForm.tsx
 msgid "Max file size (bytes)"
@@ -3146,11 +3146,11 @@ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Maximum number of breaks per program (0 = unlimited)"
-msgstr ""
+msgstr "Numero massimo di pause per programma (0 = illimitato)"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel."
-msgstr ""
+msgstr "Numero massimo di giorni di palinsesto da precalcolare. La durata del palinsesto è limitata anche dal numero massimo di programmi consentiti in un canale."
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Maximum number of days to precalculate the schedule. Note that the length of the schedule is also bounded by the maximum number of programs allowed in a channel.<0/><1>Note: Previewing the schedule in the browser for long lengths of time can cause UI performance issues</1>"
@@ -3164,7 +3164,7 @@ msgstr ""
 #: src/components/channel_config/ProgrammingSelector.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "Media Source"
-msgstr ""
+msgstr "Sorgente multimediale"
 
 #. placeholder {0}: library.mediaSource.name
 #. placeholder {0}: mediaSource.name
@@ -3195,7 +3195,7 @@ msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Media..."
-msgstr ""
+msgstr "Contenuti..."
 
 #: src/components/system/system-logs/SystemLogsView.tsx
 msgid "Message"
@@ -3203,12 +3203,12 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Mid"
-msgstr ""
+msgstr "A metà"
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 msgid "Mid-Roll"
-msgstr ""
+msgstr "Pause a metà programma"
 
 #: src/components/ui/table/filters/RangeFilter.tsx
 msgid "Min"
@@ -3220,19 +3220,19 @@ msgstr ""
 
 #: src/components/programming_controls/AddBreaksModal.tsx
 msgid "Min Duration"
-msgstr ""
+msgstr "Durata minima"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Min Duration (minutes)"
-msgstr ""
+msgstr "Durata minima (minuti)"
 
 #: src/components/channel_config/ChannelEpgConfig.tsx
 msgid "Min. Visible in Guide Duration Program (seconds)"
-msgstr ""
+msgstr "Durata minima di un programma per comparire nella guida (secondi)"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Minimum Program Duration (minutes)"
-msgstr ""
+msgstr "Durata minima del programma (minuti)"
 
 #: src/components/channels/ChannelOptionsMenu.tsx
 msgid "Modify Programming"
@@ -3240,7 +3240,7 @@ msgstr "Modifica programmazione"
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "Month"
-msgstr ""
+msgstr "Mese"
 
 #: src/components/ui/patterns/AppShell/PhoneNav.tsx
 #: src/components/ui/patterns/AppShell/ShellTopBar.tsx
@@ -3275,22 +3275,22 @@ msgstr ""
 #: src/components/channel_config/SelectedProgrammingList.tsx
 #: src/components/profiles/condition/types.ts
 msgid "Movie"
-msgstr ""
+msgstr "Film"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Movie Sort"
-msgstr ""
+msgstr "Ordinamento dei film"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Movie Sort Order"
-msgstr ""
+msgstr "Ordine dei film"
 
 #. placeholder {0}: media.year
 #: src/components/channel_config/SelectedProgrammingList.tsx
 msgid "Movie, {0}"
-msgstr ""
+msgstr "Film, {0}"
 
 #: src/components/channels/ChannelPrograms.tsx
 #: src/components/library/TrashView.tsx
@@ -3299,11 +3299,11 @@ msgstr "Film"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Movies are grouped altogether"
-msgstr ""
+msgstr "I film vengono raggruppati tutti insieme"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Music tracks are grouped by artist"
-msgstr ""
+msgstr "I brani musicali vengono raggruppati per artista"
 
 #: src/components/profiles/condition/types.ts
 msgid "Music Video"
@@ -3462,7 +3462,7 @@ msgstr ""
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "No Media Sources detected."
-msgstr ""
+msgstr "Nessuna sorgente multimediale trovata."
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
 msgid "No pages or lists match."
@@ -3478,7 +3478,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelLineupList.tsx
 msgid "No programming added yet"
-msgstr ""
+msgstr "Non hai ancora aggiunto programmi"
 
 #: src/components/guide/TvGuide.tsx
 msgid "No Programming scheduled"
@@ -3495,7 +3495,7 @@ msgstr ""
 #: src/components/channel_config/MediaItemGrid.tsx
 #: src/components/channel_config/MediaItemList.tsx
 msgid "No results"
-msgstr ""
+msgstr "Nessun risultato"
 
 #: src/components/ui/table/DataTable.tsx
 msgid "No results found"
@@ -3526,7 +3526,7 @@ msgstr "Nessuno spettatore"
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "None"
-msgstr ""
+msgstr "Nessuno"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "None (no subtitles)"
@@ -3543,7 +3543,7 @@ msgstr ""
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "None:"
-msgstr ""
+msgstr "Nessuno:"
 
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
 msgid "Normalize Frame Rate"
@@ -3551,7 +3551,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Not a valid number"
-msgstr ""
+msgstr "Numero non valido"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -3591,7 +3591,7 @@ msgstr ""
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Number of Replications"
-msgstr ""
+msgstr "Numero di copie"
 
 #: src/pages/system/SystemDebugPage.tsx
 msgid "Nvidia Capabilities"
@@ -3617,11 +3617,11 @@ msgstr "On demand"
 
 #: src/components/slot_scheduler/RebuildEachCycleField.tsx
 msgid "On-demand channels replay their saved lineup, so they can't rebuild."
-msgstr ""
+msgstr "I canali on demand ritrasmettono il palinsesto salvato, quindi non possono ricostruirlo."
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "On-Demand channels resume from where you left off. Programming is paused when the channel is not streaming.<0/><1>NOTE:</1> While the channel is inactive, the TV Guide for the channel will be empty."
-msgstr ""
+msgstr "I canali on demand riprendono da dove li avevi lasciati: i programmi restano in pausa quando nessuno guarda il canale.<0/><1>NOTA:</1> mentre il canale è inattivo, la sua Guida TV resta vuota."
 
 #: src/pages/ErrorPage.tsx
 msgid "Oops!"
@@ -3629,7 +3629,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Opacity"
-msgstr ""
+msgstr "Opacità"
 
 #: src/components/ui/patterns/AppShell/CommandPalette.tsx
 #: src/components/ui/patterns/CollectionView/SelectionBar.tsx
@@ -3673,15 +3673,15 @@ msgstr ""
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "Order"
-msgstr ""
+msgstr "Ordine"
 
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 msgid "Order of programming within the slot"
-msgstr ""
+msgstr "Ordine dei programmi all'interno dello slot"
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Organize"
-msgstr ""
+msgstr "Organizza"
 
 #: src/components/profiles/condition/types.ts
 msgid "Other Video"
@@ -3704,19 +3704,19 @@ msgstr ""
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Overflow Behavior"
-msgstr ""
+msgstr "Comportamento in caso di sforamento"
 
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 msgid "Override how far past its boundary this slot's content can extend."
-msgstr ""
+msgstr "Imposta per questo slot di quanto il contenuto può sforare oltre la fine."
 
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 msgid "Override how late this slot can start if a previous slot ran long."
-msgstr ""
+msgstr "Imposta per questo slot quanto in ritardo può iniziare se lo slot precedente è durato di più."
 
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 msgid "Override how programs within this slot are padded."
-msgstr ""
+msgstr "Imposta per questo slot come allineare i programmi."
 
 #. placeholder {0}: hardwareAccelerationMode === 'qsv' ? 'QSV' : 'VA-API'
 #: src/components/settings/ffmpeg/TranscodeConfigVideoSettingsForm.tsx
@@ -3731,16 +3731,16 @@ msgstr ""
 #: src/components/programming_controls/AddPaddingModal.tsx
 #: src/components/programming_controls/AddPaddingModal.tsx
 msgid "Pad Start Times"
-msgstr ""
+msgstr "Allinea orari di inizio"
 
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 msgid "Pad Start Times..."
-msgstr ""
+msgstr "Allinea orari di inizio..."
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 msgid "Pad Style"
-msgstr ""
+msgstr "Stile di allineamento"
 
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
 #: src/components/slot_scheduler/RandomSlotSettingsForm.tsx
@@ -3789,7 +3789,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Percentage-Based"
-msgstr ""
+msgstr "In percentuale"
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 #: src/pages/channels/TimeSlotEditorPage.tsx
@@ -3802,7 +3802,7 @@ msgstr ""
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Pick specific programming to remove from the channel."
-msgstr ""
+msgstr "Scegli quali programmi rimuovere dal canale."
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Pipeline"
@@ -3818,7 +3818,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelEpgConfig.tsx
 msgid "Placeholder Program Title"
-msgstr ""
+msgstr "Titolo del programma segnaposto"
 
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Platform"
@@ -3839,20 +3839,20 @@ msgstr "Playlist"
 #: src/components/channel_config/SelectedProgrammingList.tsx
 #: src/hooks/slot_scheduler/useSlotName.ts
 msgid "Playlist - {0}"
-msgstr ""
+msgstr "Playlist - {0}"
 
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
 msgid "Playlist (add programs to a playlist first)"
-msgstr ""
+msgstr "Playlist (aggiungi prima i programmi a una playlist)"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Playlist programs are grouped by their playlist"
-msgstr ""
+msgstr "I programmi delle playlist vengono raggruppati per playlist"
 
 #. placeholder {0}: cs.description
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Playlist: {0}"
-msgstr ""
+msgstr "Playlist: {0}"
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 #: src/components/custom-shows/CustomShowsView.tsx
@@ -3867,11 +3867,11 @@ msgstr "Playlist"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Plays shows in a random order, one episode at a time, keeping each show's episodes in sequence. Opens the shuffle settings, where you can start every show at its first episode or loop shorter shows."
-msgstr ""
+msgstr "Trasmette le serie in ordine casuale, un episodio alla volta, mantenendo in sequenza gli episodi di ciascuna serie. Apre le impostazioni di mescolamento, dove puoi far partire ogni serie dal primo episodio o ripetere le serie più corte."
 
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 msgid "Plays the channel's programming only between the hours you set. Flex fills the rest of the day. Removes existing Flex first, and removes programs longer than the allowed hours."
-msgstr ""
+msgstr "Trasmette i programmi del canale solo negli orari che imposti; il resto della giornata viene riempito con Flex. Rimuove prima il Flex esistente e i programmi più lunghi della fascia consentita."
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "Please check server and browser logs for details."
@@ -3879,7 +3879,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Please choose a value greater than 1"
-msgstr ""
+msgstr "Scegli un valore maggiore di 1"
 
 #: src/components/settings/media_source/AddMediaSourceButton.tsx
 msgid "Plex (Auto)"
@@ -3892,15 +3892,15 @@ msgstr ""
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Position"
-msgstr ""
+msgstr "Posizione"
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Post"
-msgstr ""
+msgstr "Dopo"
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Pre"
-msgstr ""
+msgstr "Prima"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
@@ -3918,11 +3918,11 @@ msgstr ""
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Preset"
-msgstr ""
+msgstr "Preimpostazione"
 
 #: src/components/slot_scheduler/RandomSlotPresetButton.tsx
 msgid "Presets"
-msgstr ""
+msgstr "Preimpostazioni"
 
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "Proceed"
@@ -3956,12 +3956,12 @@ msgstr "Profili"
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Program"
-msgstr ""
+msgstr "Programma"
 
 #: src/components/programming_controls/BalanceProgrammingModal.tsx
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 msgid "Program Count"
-msgstr ""
+msgstr "Numero di programmi"
 
 #: src/components/RawProgramDetails.tsx
 msgid "Program JSON"
@@ -4005,7 +4005,7 @@ msgstr "Inizio della programmazione"
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "Programming starts at {startTime} and stops at {endTime}"
-msgstr ""
+msgstr "I programmi iniziano alle {startTime} e finiscono alle {endTime}"
 
 #: src/components/channels/ChannelSummaryQuickStats.tsx
 msgid "Programs"
@@ -4013,22 +4013,22 @@ msgstr "Programmi"
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "Programs saved!"
-msgstr ""
+msgstr "Programmi salvati!"
 
 #. placeholder {0}: errors?.guideMinimumDuration?.message ?? ''
 #: src/components/channel_config/ChannelEpgConfig.tsx
 msgid ""
 "Programs shorter than this value will be treated the same as Flex time. Meaning that the TV Guide will try to meld them with the previous program or display the block of programs as the \"place holder program\" if they make a large continuous group. Use 0 to disable this feature or use a large value to make the channel report only the placeholder program and not the real programming.\n"
 "{0}"
-msgstr ""
+msgstr "I programmi più corti di questo valore vengono trattati come Flex: la Guida TV proverà a unirli al programma precedente oppure, se formano un gruppo lungo e continuo, li mostrerà come “programma segnaposto”. Usa 0 per disattivare questa funzione, oppure un valore alto perché il canale mostri solo il programma segnaposto e non i programmi reali.\n{0}"
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "Programs Too Long"
-msgstr ""
+msgstr "Programmi troppo lunghi"
 
 #: src/components/channel_config/EditChannelForm.tsx
 msgid "Properties"
-msgstr ""
+msgstr "Proprietà"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -4054,20 +4054,20 @@ msgstr ""
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Random"
-msgstr ""
+msgstr "Casuale"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Random (by show)"
-msgstr ""
+msgstr "Casuale (per serie)"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Random Episode"
-msgstr ""
+msgstr "Episodio casuale"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Random..."
-msgstr ""
+msgstr "Casuale..."
 
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Random…"
@@ -4075,7 +4075,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Range"
-msgstr ""
+msgstr "Intervallo"
 
 #: src/components/programs/MediaDetailCard.tsx
 msgid "Read Less"
@@ -4087,18 +4087,18 @@ msgstr ""
 
 #: src/components/slot_scheduler/RebuildEachCycleField.tsx
 msgid "Rebuild each cycle"
-msgstr ""
+msgstr "Ricostruisci a ogni ciclo"
 
 #: src/components/programming_controls/AddRedirectModal.tsx
 msgid "Redirect duration"
-msgstr ""
+msgstr "Durata del reindirizzamento"
 
 #. placeholder {0}: p.name
 #. placeholder {0}: program.channelName
 #: src/hooks/programming_controls/useSlotProgramOptions.ts
 #: src/hooks/useProgramTitleFormatter.ts
 msgid "Redirect to \"{0}\""
-msgstr ""
+msgstr "Reindirizza a “{0}”"
 
 #. placeholder {0}: now.redirectChannel
 #. placeholder {0}: nowPlaying.redirectChannel
@@ -4114,7 +4114,7 @@ msgstr ""
 
 #: src/components/channel_config/AddProgrammingButton.tsx
 msgid "Redirect..."
-msgstr ""
+msgstr "Reindirizzamento..."
 
 #: src/hooks/useVersion.tsx
 msgid "Refresh"
@@ -4154,17 +4154,17 @@ msgstr "Peso relativo"
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Release Date"
-msgstr ""
+msgstr "Data di uscita"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Release Date (asc)"
-msgstr ""
+msgstr "Data di uscita (crescente)"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Release Date (desc)"
-msgstr ""
+msgstr "Data di uscita (decrescente)"
 
 #: src/components/Video.tsx
 msgid "Reload Stream"
@@ -4177,19 +4177,19 @@ msgstr ""
 #. placeholder {0}: import { betterHumanize } from '@/helpers/dayjs'; import { isNonEmptyString } from '@/helpers/util'; import { Autocomplete, Box, Checkbox, Chip, DialogContentText, List, ListItem, ListItemText, TextField, } from '@mui/material'; import Button from '@mui/material/Button'; import Dialog from '@mui/material/Dialog'; import DialogActions from '@mui/material/DialogActions'; import DialogContent from '@mui/material/DialogContent'; import DialogTitle from '@mui/material/DialogTitle'; import { seq } from '@tunarr/shared/util'; import dayjs from 'dayjs'; import { every, identity, includes, isEmpty, map, reduce, some, uniqBy, values, } from 'lodash-es'; import { Trans, useLingui } from '@lingui/react/macro'; import { plural } from '@lingui/core/macro'; import type { HTMLAttributes } from 'react'; import { useMemo, useState } from 'react'; import { match, P } from 'ts-pattern'; import { useCounter } from 'usehooks-ts'; import { extractProgramGrandparent } from '../../helpers/programUtil.ts'; import type { RemoveProgrammingRequest } from '../../hooks/programming_controls/useRemoveProgramming'; import { useRemoveProgramming } from '../../hooks/programming_controls/useRemoveProgramming'; import useStore from '../../store'; import { materializedProgramListSelector } from '../../store/selectors'; type RemoveShowsModalProps = { open: boolean; onClose: () => void; }; interface FilmOptionType { id: string; title: string; firstLetter?: string; } const RemoveShowsModalContent = ({ onClose, }: Omit<RemoveShowsModalProps, 'open'>) => { const { t } = useLingui(); const { count, increment, decrement } = useCounter(0); const removeProgramming = useRemoveProgramming(); const [removeRequest, setRemoveRequest] = useState<RemoveProgrammingRequest>( {}, ); const programs = useStore(materializedProgramListSelector); const hasMovies = useMemo(() => { return some( programs, (p) => p.type === 'content' && p.program.type === 'movie', ); }, [programs]); const numAndDurationById = useMemo(() => { return reduce( programs, (acc, curr) => { const key = match(curr) .with( { type: 'content', program: { type: P.select(P.union('movie', 'music_video', 'other_video')), }, }, identity, ) .with( { type: 'content', program: { type: 'episode' } }, ({ program }) => program.show?.uuid ?? program.season?.show?.uuid, ) .with( { type: 'content', program: { type: 'track' } }, ({ program }) => program.artist?.uuid ?? program.album?.artist?.uuid, ) .with({ type: P._ }, () => undefined) .exhaustive(); if (key) { acc[key] ??= { totalDuration: 0, totalPrograms: 0 }; acc[key].totalDuration += curr.duration; acc[key].totalPrograms++; } return acc; }, {} as Record<string, { totalPrograms: number; totalDuration: number }>, ); }, [programs]); // Get the total number of movies from the memoized object const movieCount = numAndDurationById['movie']?.totalPrograms ?? 0; const showList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'episode' && isNonEmptyString( program.program.show?.uuid ?? program.program.season?.show?.uuid, ) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const artistList = useMemo(() => { return map( uniqBy( seq.collect(programs, (program) => { if ( program.type === 'content' && program.program.type === 'track' && isNonEmptyString(extractProgramGrandparent(program.program)?.uuid) ) { return program; } return; }), ({ program }) => extractProgramGrandparent(program)?.uuid, ), ({ program }) => ({ // Verified safe above // eslint-disable-next-line @typescript-eslint/no-non-null-asserted-optional-chain id: extractProgramGrandparent(program)?.uuid!, title: extractProgramGrandparent(program)?.title ?? program.title, }), ); }, [programs]); const mapListToGroupedOptions = ( list: Array<{ id: string; title: string }>, ) => { return list.map((option) => { // Get the first letter, use a placeholder if title is empty. const firstLetter = (option.title?.[0] ?? '-').toUpperCase(); return { // Group numbers/digits under '0-9', otherwise use the first letter. firstLetter: /[0-9]/.test(firstLetter) ? '0-9' : firstLetter, ...option, }; }); }; const showOptions = useMemo( () => mapListToGroupedOptions(showList), [showList], ); const artistOptions = useMemo( () => mapListToGroupedOptions(artistList), [artistList], ); const isEmptyRemoveRequest = useMemo(() => { return ( isEmpty(removeRequest) ?? every(values(removeRequest), (value) => { // If it's a boolean (movies: true/false), only check if it's the 'empty' state (false). // We do this because lodash treats booleans as empty regardless of value if (typeof value === 'boolean') { return value === false; } // Otherwise, check if the value is empty. return isEmpty(value); }) ); }, [removeRequest]); const removeShowsProgramming = () => { removeProgramming(removeRequest); onClose(); }; const getProgramCounts = (id: string, type?: string) => { const details = numAndDurationById[id]; if (!details) { return null; } const count = details.totalPrograms; const programLabel = type === 'episode' ? plural(count, { one: 'episode', other: 'episodes' }) : type === 'track' ? plural(count, { one: 'track', other: 'tracks' }) : plural(count, { one: 'program', other: 'programs' }); return t`${count} ${programLabel}, ${betterHumanize( dayjs.duration(details.totalDuration), { style: 'short', }, )}`; }; const getArtistIds = (options: FilmOptionType[]) => map(options, 'id'); return ( <> <DialogTitle> <Trans>Remove Programming</Trans> </DialogTitle> <DialogContent> <DialogContentText> <Trans>Pick specific programming to remove from the channel.</Trans> </DialogContentText> <Autocomplete options={[...showOptions].sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.showIds ?? []; return includes(selectedIds, option.id); }} onChange={(_, newOptions) => { // Extract the IDs from the selected options const newShowIds = map(newOptions, 'id'); setRemoveRequest((prev) => ({ ...prev, showIds: newShowIds, })); // Update the program counter based on the number of selected shows const countDifference = newShowIds.length - (removeRequest.showIds?.length ?? 0); if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} value={ removeRequest.showIds ? showList.filter((show) => (removeRequest.showIds ?? []).includes(show.id), ) : [] } renderInput={(params) => ( <TextField {...params} label={t`Select Shows to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'episode')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> {artistList.length > 0 && ( <Autocomplete options={[...artistOptions].sort( (a, b) => -b.firstLetter.localeCompare(a.firstLetter), )} groupBy={(option: FilmOptionType) => option.firstLetter ?? '-'} getOptionLabel={(option: FilmOptionType) => option.title} openOnFocus sx={{ my: 2, flex: 1 }} autoComplete includeInputInList multiple={true} getOptionDisabled={(option) => { const selectedIds = removeRequest.artistIds ?? []; return includes(selectedIds, option.id); }} value={ removeRequest.artistIds ? artistList.filter((artist) => (removeRequest.artistIds ?? []).includes(artist.id), ) : [] } onChange={(_, newOptions) => { const newArtistIds = getArtistIds(newOptions); const previousArtistIds = removeRequest.artistIds ?? []; setRemoveRequest((prev) => ({ ...prev, artistIds: newArtistIds, })); // Update the program counter based on the number of selected shows const countDifference = newArtistIds.length - previousArtistIds.length; if (countDifference > 0) { for (let i = 0; i < countDifference; i++) increment(); } else if (countDifference < 0) { for (let i = 0; i < Math.abs(countDifference); i++) decrement(); } }} renderInput={(params) => ( <TextField {...params} label={t`Select Artists to Remove`} /> )} renderOption={( props: HTMLAttributes<HTMLLIElement>, option: FilmOptionType, ) => { const { ...optionProps } = props; return ( <Box key={option.id} component="li" sx={{ width: '100%', flexDirection: ['column', 'row'], }} {...optionProps} > <div style={{ textAlign: 'left', width: '100%', }} > {option.title} </div> <Chip label={getProgramCounts(option.id, 'track')} size="small" sx={{ width: '100%' }} /> </Box> ); }} /> )} <Box key="dynamic-list-container"> <List dense> {hasMovies && ( <ListItem secondaryAction={ <Checkbox edge="end" onChange={(e) => { const isChecked = e.target.checked; setRemoveRequest((prev) => { const newState = { ...prev, movies: isChecked, }; return newState; }); const countDelta = isChecked ? movieCount : -movieCount; for (let i = 0; i < Math.abs(countDelta); i++) { if (countDelta > 0) increment(); else decrement(); } }} checked={!!removeRequest.movies} /> } > <ListItemText primary={t`Remove All ${movieCount} ${plural(movieCount, { one: 'Movie', other: 'Movies' })}`} secondary={getProgramCounts('movies')} /> </ListItem> )} </List> </Box> </DialogContent> <DialogActions> <Button onClick={() => onClose()}> <Trans>Cancel</Trans> </Button> <Button variant="contained" onClick={() => removeShowsProgramming()} disabled={isEmptyRemoveRequest} > <Trans> Remove {count}{' '} {plural(count, { one: 'program', other: 'programs' })} </Trans> </Button> </DialogActions> </> ); }; // The content mounts only while the dialog is open, so it does no work when closed. export const RemoveShowsModal = ({ open, ...props }: RemoveShowsModalProps) => ( <Dialog open={open} scroll={'paper'}> <RemoveShowsModalContent {...props} /> </Dialog> ); 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Remove {count} {0}"
-msgstr ""
+msgstr "Rimuovi {count} {0}"
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "Remove All"
-msgstr ""
+msgstr "Rimuovi tutto"
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Remove All {movieCount} {movieCount, plural, one {Movie} other {Movies}}"
-msgstr ""
+msgstr "{movieCount, plural, one {Rimuovi il film} other {Rimuovi tutti i # film}}"
 
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 msgid "Remove All Flex"
-msgstr ""
+msgstr "Rimuovi tutto il Flex"
 
 #: src/components/profiles/condition/ConditionClauseEditor.tsx
 msgid "Remove condition"
@@ -4201,11 +4201,11 @@ msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Remove icon"
-msgstr ""
+msgstr "Rimuovi icona"
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Remove Programming"
-msgstr ""
+msgstr "Rimuovi programmi"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
@@ -4222,11 +4222,11 @@ msgstr "Rimuovere il palinsesto?"
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Remove..."
-msgstr ""
+msgstr "Rimuovi..."
 
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 msgid "Removes all Flex periods from the schedule."
-msgstr ""
+msgstr "Rimuove tutti i periodi di Flex dal palinsesto."
 
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Removes all programs from playlist"
@@ -4234,31 +4234,31 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Removes all programs from schedule"
-msgstr ""
+msgstr "Rimuove tutti i programmi dal palinsesto"
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Removes any specials from the schedule. Specials are episodes with season '00'."
-msgstr ""
+msgstr "Rimuove gli speciali dal palinsesto. Gli speciali sono gli episodi della stagione '00'."
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Removes repeated programs."
-msgstr ""
+msgstr "Rimuove i programmi ripetuti."
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "Removing overrun programs from the channel."
-msgstr ""
+msgstr "Rimuovere dal canale i programmi che sforano."
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Renders a channel icon (also known as bug or Digital On-screen Graphic) on top of the channel's stream."
-msgstr ""
+msgstr "Mostra un'icona del canale in sovrimpressione sul video (il classico logo nell'angolo dello schermo)."
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Repeatedly fades the watermark in and out while a program plays."
-msgstr ""
+msgstr "Fa apparire e scomparire ciclicamente la filigrana durante il programma."
 
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "Repeats"
-msgstr ""
+msgstr "Ripetizioni"
 
 #: src/components/channels/BulkAssignFillersDialog.tsx
 msgid "Replace"
@@ -4274,21 +4274,21 @@ msgstr "Sostituire le liste filler?"
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Replicate Programs"
-msgstr ""
+msgstr "Crea copie dei programmi"
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Replicate..."
-msgstr ""
+msgstr "Crea copie..."
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Rerun"
-msgstr ""
+msgstr "Replica"
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 #: src/components/custom-shows/EditCustomShowForm.tsx
 #: src/components/filler/EditFillerListForm.tsx
 msgid "Reset"
-msgstr ""
+msgstr "Ripristina"
 
 #: src/components/channel_config/ChannelEditActions.tsx
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
@@ -4298,11 +4298,11 @@ msgstr ""
 #: src/pages/settings/HdhrSettingsPage.tsx
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "Reset Changes"
-msgstr ""
+msgstr "Annulla modifiche"
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "Reset changes made to the channel's lineup"
-msgstr ""
+msgstr "Annulla le modifiche fatte al palinsesto del canale"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 #: src/pages/channels/RandomSlotEditorPage.tsx
@@ -4327,7 +4327,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Restore default logo"
-msgstr ""
+msgstr "Ripristina il logo predefinito"
 
 #: src/pages/settings/HdhrSettingsPage.tsx
 #: src/pages/settings/XmlTvSettingsPage.tsx
@@ -4336,11 +4336,11 @@ msgstr ""
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "Restrict Hours"
-msgstr ""
+msgstr "Limita orari"
 
 #: src/components/channel_config/ChannelProgrammingFlexTools.tsx
 msgid "Restrict Hours..."
-msgstr ""
+msgstr "Limita orari..."
 
 #: src/components/search/SearchInput.tsx
 msgid "Restrict search fields"
@@ -4361,11 +4361,11 @@ msgstr "Riprova"
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "Review"
-msgstr ""
+msgstr "Riepilogo"
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 msgid "Review Selections"
-msgstr ""
+msgstr "Rivedi la selezione"
 
 #: src/components/settings/general/LogRollForm.tsx
 msgid "Roll based on size"
@@ -4517,11 +4517,11 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Schedule programming in blocks that are either count or duration based. Can be used to generate random schedules."
-msgstr ""
+msgstr "Programma i contenuti in blocchi definiti per numero di elementi o per durata. Si può usare per creare palinsesti casuali."
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Schedule programming using slots assigned a start time and duration."
-msgstr ""
+msgstr "Programma i contenuti con slot che hanno un orario di inizio e una durata."
 
 #: src/pages/channels/ChannelProgrammingPage.tsx
 msgid "Schedule removed"
@@ -4610,13 +4610,13 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Select a slot to link to"
-msgstr ""
+msgstr "Scegli lo slot da collegare"
 
 #: src/components/channel_config/SelectedProgrammingActions.tsx
 #: src/components/fillers/AssignFillerToChannelsDialog.tsx
 #: src/components/search/SearchFieldRestrictMenu.tsx
 msgid "Select All"
-msgstr ""
+msgstr "Seleziona tutto"
 
 #: src/components/ui/table/SelectCheckboxes.tsx
 msgid "Select all on this page"
@@ -4624,7 +4624,7 @@ msgstr ""
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Select Artists to Remove"
-msgstr ""
+msgstr "Scegli gli artisti da rimuovere"
 
 #: src/components/ui/patterns/CollectionView/SelectionBar.tsx
 msgid "Select rows to act on several at once."
@@ -4632,7 +4632,7 @@ msgstr ""
 
 #: src/components/programming_controls/RemoveShowsModal.tsx
 msgid "Select Shows to Remove"
-msgstr ""
+msgstr "Scegli le serie da rimuovere"
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "Select the port the Tunarr server will listen on. This requires a server restart to take effect."
@@ -4721,7 +4721,7 @@ msgstr ""
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Show"
-msgstr ""
+msgstr "Serie"
 
 #: src/pages/profiles/TranscodeConfigPage.tsx
 msgid "Show Advanced"
@@ -4747,7 +4747,7 @@ msgstr ""
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Show Order"
-msgstr ""
+msgstr "Ordine delle serie"
 
 #: src/pages/guide/GuidePage.tsx
 msgid "Show Stealth"
@@ -4759,12 +4759,12 @@ msgstr ""
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Show:"
-msgstr ""
+msgstr "Serie:"
 
 #. placeholder {0}: show.title
 #: src/components/slot_scheduler/SlotSchedulerCyclicShuffleDialog.tsx
 msgid "Show: {0}"
-msgstr ""
+msgstr "Serie: {0}"
 
 #: src/components/ui/table/DataTable.tsx
 #: src/components/ui/table/DataTable.tsx
@@ -4792,50 +4792,50 @@ msgstr "Serie"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Shows come up at random, one episode at a time. Each show's episodes stay in order, starting from a random episode."
-msgstr ""
+msgstr "Le serie escono a caso, un episodio alla volta. Gli episodi di ogni serie restano in ordine, partendo da un episodio casuale."
 
 #: src/hooks/slot_scheduler/useScheduleEditNotice.ts
 msgid "Shows start from the beginning, because nothing has aired on this channel yet."
-msgstr ""
+msgstr "Le serie partono dall'inizio, perché su questo canale non è ancora andato in onda nulla."
 
 #: src/hooks/slot_scheduler/useScheduleEditNotice.ts
 msgid "Shows start from the beginning. The saved lineup no longer matches its schedule, so their places couldn't be recovered."
-msgstr ""
+msgstr "Le serie ripartono dall'inizio: il palinsesto salvato non corrisponde più alla sua pianificazione, quindi non è stato possibile recuperare il punto in cui erano arrivate."
 
 #: src/hooks/slot_scheduler/useScheduleEditNotice.ts
 msgid "Shows start from the beginning. This schedule was saved by an older version of Tunarr, so their places couldn't be recovered."
-msgstr ""
+msgstr "Le serie ripartono dall'inizio: questo palinsesto è stato salvato da una versione precedente di Tunarr, quindi non è stato possibile recuperare il punto in cui erano arrivate."
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Shows take turns in a fixed order, each playing a block of episodes before the next show."
-msgstr ""
+msgstr "Le serie si alternano in un ordine fisso: ognuna trasmette un blocco di episodi prima di passare alla successiva."
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Shows take turns in a fixed order."
-msgstr ""
+msgstr "Le serie si alternano in un ordine fisso."
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Shuffle"
-msgstr ""
+msgstr "Mescola"
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Shuffle Grouping"
-msgstr ""
+msgstr "Raggruppamento per il mescolamento"
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Shuffle Programming"
-msgstr ""
+msgstr "Mescola programmi"
 
 #: src/components/programming_controls/ShuffleProgrammingModal.tsx
 msgid "Shuffle programming in a channel, optionally grouping programs by certain criteria."
-msgstr ""
+msgstr "Mescola i programmi di un canale, con la possibilità di raggrupparli secondo alcuni criteri."
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Skip mid-roll for programs shorter than this"
-msgstr ""
+msgstr "Niente pause a metà per i programmi più corti di così"
 
 #: src/pages/welcome/WelcomePage.tsx
 msgid "Skip Setup"
@@ -4852,7 +4852,7 @@ msgstr "Pianificazione a slot"
 #: src/components/slot_scheduler/RandomSlotWarningsDialog.tsx
 #: src/components/slot_scheduler/TimeSlotWarningsDialog.tsx
 msgid "Slot Warnings"
-msgstr ""
+msgstr "Avvisi sugli slot"
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 msgid "Slots"
@@ -4860,7 +4860,7 @@ msgstr "Slot"
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Slots Editor..."
-msgstr ""
+msgstr "Editor degli slot..."
 
 #: src/components/shell/CommandPaletteContainer.tsx
 msgid "Smart collection"
@@ -4868,12 +4868,12 @@ msgstr "Raccolta smart"
 
 #: src/components/slot_scheduler/SmartCollectionSlotProgrammingForm.tsx
 msgid "Smart Collection"
-msgstr ""
+msgstr "Raccolta smart"
 
 #. placeholder {0}: collectionName ?? ''
 #: src/hooks/slot_scheduler/useSlotName.ts
 msgid "Smart Collection - {0}"
-msgstr ""
+msgstr "Raccolta smart - {0}"
 
 #. placeholder {0}: smartCollection.name
 #: src/routes/library/smart_collections/$id.tsx
@@ -4899,7 +4899,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Sort"
-msgstr ""
+msgstr "Ordina"
 
 #: src/components/ui/table/SortButton.tsx
 msgid "Sort by {label} ascending"
@@ -4912,19 +4912,19 @@ msgstr ""
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Sort By..."
-msgstr ""
+msgstr "Ordina per..."
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Sort TV Shows"
-msgstr ""
+msgstr "Ordina serie TV"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Sort TV Shows (asc)"
-msgstr ""
+msgstr "Ordina serie TV (crescente)"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Sort TV Shows (desc)"
-msgstr ""
+msgstr "Ordina serie TV (decrescente)"
 
 #: src/components/ui/table/SortButton.tsx
 msgid "Sorted by {label} ascending"
@@ -4937,20 +4937,20 @@ msgstr ""
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Sorts alphabetically by program title"
-msgstr ""
+msgstr "Ordina alfabeticamente per titolo del programma"
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Sorts everything by its release date. This will only work correctly if the release dates in Plex are correct. In case any item does not have a release date specified, it will be moved to the bottom."
-msgstr ""
+msgstr "Ordina tutto per data di uscita. Funziona correttamente solo se le date di uscita in Plex sono giuste. Gli elementi senza data di uscita vengono spostati in fondo."
 
 #: src/components/channel_config/ChannelProgrammingSort.tsx
 msgid "Sorts the list by TV Show and the episodes in each TV show by their season/episode number. Movies are moved to the bottom of the schedule."
-msgstr ""
+msgstr "Ordina la lista per serie TV e gli episodi di ogni serie per numero di stagione ed episodio. I film vengono spostati in fondo al palinsesto."
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Soundtrack"
-msgstr ""
+msgstr "Colonna sonora"
 
 #: src/components/MediaSourceLibraryTable.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -4964,17 +4964,17 @@ msgstr "Sorgenti"
 
 #: src/components/channel_config/ChannelProgrammingDeleteOptions.tsx
 msgid "Specials"
-msgstr ""
+msgstr "Speciali"
 
 #: src/components/programming_controls/AddRerunBlockModal.tsx
 msgid "Start"
-msgstr ""
+msgstr "Inizio"
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 #: src/components/slot_scheduler/EditTimeSlotDialogContent.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "Start Time"
-msgstr ""
+msgstr "Ora di inizio"
 
 #: src/components/channels/ChannelNowPlayingCard.tsx
 msgid "Started {startedAgo} - {remainingTime}remaining"
@@ -4983,7 +4983,7 @@ msgstr "Iniziato {startedAgo} - {remainingTime}rimanenti"
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Starting Episode"
-msgstr ""
+msgstr "Episodio iniziale"
 
 #: src/components/channels/ChannelsView.tsx
 #: src/components/shell/useShellNav.tsx
@@ -5003,7 +5003,7 @@ msgstr "Nascosto"
 
 #: src/components/channel_config/ChannelEpgConfig.tsx
 msgid "Stealth Mode"
-msgstr ""
+msgstr "Modalità nascosta"
 
 #: src/components/MediaSourceLibraryTable.tsx
 msgid "Stop syncing this library"
@@ -5050,12 +5050,12 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Stream this channel through the experimental ErsatzTV next backend instead of Tunarr's own pipeline. Use this to move channels over one at a time. Turning on the global ErsatzTV next feature flag enrolls every channel and replaces this setting."
-msgstr ""
+msgstr "Trasmette questo canale tramite il backend sperimentale ErsatzTV next invece che con il sistema di Tunarr. Serve per spostare i canali uno alla volta. Se attivi ErsatzTV next a livello globale, vale per tutti i canali e questa impostazione viene ignorata."
 
 #: src/components/channel_config/EditChannelForm.tsx
 #: src/components/channels/ChannelsView.tsx
 msgid "Streaming"
-msgstr "In streaming"
+msgstr "Streaming"
 
 #: src/components/profiles/StreamSelectionRuleEditor.tsx
 msgid "Subs"
@@ -5176,15 +5176,15 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "Tail"
-msgstr ""
+msgstr "Chiusura"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Tail Buffer (minutes)"
-msgstr ""
+msgstr "Margine finale (minuti)"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "Take Turns"
-msgstr ""
+msgstr "A turno"
 
 #: src/components/shell/useShellNav.tsx
 #: src/components/system/tasks/TasksView.tsx
@@ -5212,19 +5212,19 @@ msgstr ""
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "The channel's regular programming between the specified hours. Flex time will fill up the remaining hours."
-msgstr ""
+msgstr "I programmi normali del canale negli orari indicati. Il resto delle ore viene riempito con Flex."
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "The channel's schedule didn't load, so the start time can't be changed. Reload the page to try again."
-msgstr ""
+msgstr "Il palinsesto del canale non è stato caricato, quindi non puoi cambiare l'orario di inizio. Ricarica la pagina per riprovare."
 
 #: src/components/channel_config/MediaItemGrid.tsx
 msgid "The End."
-msgstr ""
+msgstr "Fine."
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "The ErsatzTV next backend does not serve this stream mode. It supports HLS, HLS Direct v2 and MPEG-TS."
-msgstr ""
+msgstr "Il backend ErsatzTV next non supporta questa modalità di streaming. Supporta HLS, HLS Direct v2 e MPEG-TS."
 
 #: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
 msgid "The ErsatzTV next backend ignores some of these settings"
@@ -5232,7 +5232,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "The image will be rendered at its actual size without any scaling applied."
-msgstr ""
+msgstr "L'immagine verrà mostrata alla sua dimensione reale, senza ridimensionamenti."
 
 #: src/hooks/useVersion.tsx
 msgid "The loaded version of the Tunarr UI does not match the server. Reload the browser to get the latest. If this message persists, clear your browser cache and reload."
@@ -5248,7 +5248,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "The streaming mode affects the type of underlying transcoding process used to create the channel's video stream.<0/>Learn more about Tunarr's stream modes <1>here</1>!"
-msgstr ""
+msgstr "La modalità di streaming determina il tipo di transcodifica usata per creare il video del canale.<0/>Scopri di più sulle modalità di streaming di Tunarr <1>qui</1>!"
 
 #: src/components/profiles/StreamSelectionPreviewPanel.tsx
 msgid "The test could not be run."
@@ -5260,7 +5260,7 @@ msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "The watermark fades in, stays for this many minutes, then hides for the same length. Set to 0 to keep it on screen without fading."
-msgstr ""
+msgstr "La filigrana appare in dissolvenza, resta visibile per questi minuti, poi scompare per lo stesso tempo. Imposta 0 per tenerla sempre visibile senza dissolvenza."
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Theme Settings"
@@ -5268,11 +5268,11 @@ msgstr "Tema"
 
 #: src/hooks/slot_scheduler/useScheduleSlots.ts
 msgid "There was an error generating slots. {serverMessage}"
-msgstr ""
+msgstr "Si è verificato un errore durante la creazione degli slot. {serverMessage}"
 
 #: src/hooks/slot_scheduler/useScheduleSlots.ts
 msgid "There was an error generating time slots. Check the browser console log for more information"
-msgstr ""
+msgstr "Si è verificato un errore durante la creazione delle fasce orarie. Controlla la console del browser per maggiori informazioni"
 
 #: src/pages/settings/ScannerSettingsPage.tsx
 msgid "There was an error submitting the request to update scanner settings. Please check the form and try again"
@@ -5290,15 +5290,15 @@ msgstr "Queste impostazioni sono memorizzate nel browser e vengono salvate autom
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "This {0} is marked as missing in the database."
-msgstr ""
+msgstr "Questo elemento ({0}) risulta mancante nel database."
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "This allows to schedule specific shows to run at specific time slots of the day or a week. It's recommended you first populate the channel with the episodes from the shows you want to play and/or other content like movies and redirects."
-msgstr ""
+msgstr "Permette di programmare serie specifiche in fasce orarie precise del giorno o della settimana. Ti consigliamo di riempire prima il canale con gli episodi delle serie che vuoi trasmettere e/o con altri contenuti, come film e reindirizzamenti."
 
 #: src/components/programming_controls/AdjustWeightsModal.tsx
 msgid "This allows you to pick the weights for each of the shows, so you can decide that some shows should be less frequent than other shows."
-msgstr ""
+msgstr "Ti permette di scegliere il peso di ogni serie, così puoi decidere che alcune serie vadano in onda meno spesso di altre."
 
 #: src/pages/channels/RandomSlotEditorPage.tsx
 msgid "This channel has an existing time slot schedule. A channel can only use one scheduling type at a time. Saving a schedule here will remove the existing time slot schedule."
@@ -5315,15 +5315,15 @@ msgstr "Il canale mantiene i programmi attuali ma non userà più il palinsesto 
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "This channel number has already been used"
-msgstr ""
+msgstr "Questo numero di canale è già in uso"
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "This channel rebuilds its schedule each cycle, so the schedule moves the start time forward as programs air."
-msgstr ""
+msgstr "Questo canale ricostruisce il palinsesto a ogni ciclo, quindi l'orario di inizio avanza man mano che i programmi vanno in onda."
 
 #: src/components/slot_scheduler/SlotProgrammingTooLongWarningDetails.tsx
 msgid "This could cause the following slot's programs to go unscheduled. Possible solutions include:"
-msgstr ""
+msgstr "Questo potrebbe impedire la programmazione dello slot successivo. Possibili soluzioni:"
 
 #: src/components/profiles/condition/ConditionEditor.tsx
 msgid "This expression can't be represented in Basic mode. Edit it in CEL mode or simplify it first."
@@ -5331,7 +5331,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotFillerDialogPanel.tsx
 msgid "This filler list has no programs and will be ignored."
-msgstr ""
+msgstr "Questa lista filler non ha programmi e verrà ignorata."
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "This is the default profile. The built-in profile will become the default."
@@ -5339,11 +5339,11 @@ msgstr ""
 
 #: src/components/channel_config/ChannelEpgConfig.tsx
 msgid "This is the name of the fake program that will appear in the TV guide when there are no programs to display in that time slot guide, e.g when a large Flex block is scheduled."
-msgstr ""
+msgstr "È il nome del programma fittizio che compare nella Guida TV quando in quella fascia oraria non ci sono programmi da mostrare, per esempio durante un lungo blocco di Flex."
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "This is used by iptv clients to categorize the channels. You can leave it as 'tunarr' if you don't need this sort of classification."
-msgstr ""
+msgstr "Serve ai programmi IPTV per raggruppare i canali. Se non ti serve, puoi lasciare 'tunarr'."
 
 #: src/components/settings/ffmpeg/EtvNextCompatibilityNotice.tsx
 msgid "This machine cannot encode this config in hardware on the ErsatzTV next backend"
@@ -5351,15 +5351,15 @@ msgstr ""
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "This media source has no enabled or scanned libraries. Enable libraries for this source on the <0>Media Sources</0> page or manually trigger scans on the <1>Library</1> page."
-msgstr ""
+msgstr "Questa sorgente non ha librerie attive o già scansionate. Attiva le librerie nella pagina <0>Sorgenti multimediali</0> oppure avvia una scansione manuale dalla pagina <1>Libreria</1>."
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "This option is disabled because it would calculate a schedule that is too long."
-msgstr ""
+msgstr "Questa opzione è disattivata perché produrrebbe un palinsesto troppo lungo."
 
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
 msgid "This playlist has no programs. Add programs to it or choose another playlist."
-msgstr ""
+msgstr "Questa playlist non ha programmi. Aggiungine qualcuno o scegli un'altra playlist."
 
 #: src/components/custom-shows/EditCustomShowForm.tsx
 msgid "This playlist is synced with a media server playlist. Content is updated automatically and cannot be edited manually."
@@ -5367,7 +5367,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/CustomShowSlotProgrammingForm.tsx
 msgid "This playlist was deleted. Choose another playlist."
-msgstr ""
+msgstr "Questa playlist è stata eliminata. Scegline un'altra."
 
 #: src/pages/profiles/StreamSelectionProfilePage.tsx
 msgid "This profile is built into Tunarr and cannot be changed. Duplicate it to make a version you can edit."
@@ -5381,25 +5381,25 @@ msgstr "Rimuove tutte le liste filler assegnate ora a {0, plural, one {# canale}
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 #: src/components/slot_scheduler/TimeSlotTable.tsx
 msgid "This show is marked as missing in the database."
-msgstr ""
+msgstr "Questa serie risulta mancante nel database."
 
 #. placeholder {0}: groupPeers.length
 #. placeholder {1}: groupPeers.length
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "This slot is linked with {0} other {1, plural, one {slot} other {slots}}. Content fields are shared across the group."
-msgstr ""
+msgstr "{1, plural, one {Questo slot è collegato a un altro slot.} other {Questo slot è collegato ad altri # slot.}} I campi dei contenuti sono condivisi nel gruppo."
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "This slot replays content aired by continue slots earlier in the period."
-msgstr ""
+msgstr "Questo slot ritrasmette i contenuti andati in onda negli slot “Continua” precedenti del periodo."
 
 #: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
 msgid "This slot's playlist has no programs, so the slot cannot be scheduled. Add programs to the playlist, choose another playlist, or remove the slot."
-msgstr ""
+msgstr "La playlist di questo slot non ha programmi, quindi lo slot non può essere programmato. Aggiungi programmi alla playlist, scegline un'altra o rimuovi lo slot."
 
 #: src/components/slot_scheduler/SlotUnavailableCustomShowWarningDetails.tsx
 msgid "This slot's playlist was deleted, so the slot cannot be scheduled. Choose another playlist or remove the slot."
-msgstr ""
+msgstr "La playlist di questo slot è stata eliminata, quindi lo slot non può essere programmato. Scegli un'altra playlist o rimuovi lo slot."
 
 #: src/components/settings/ffmpeg/TranscodeConfigSettingsForm.tsx
 msgid "Threads"
@@ -5407,7 +5407,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelPropertiesEditor.tsx
 msgid "Thumbnail URL"
-msgstr ""
+msgstr "URL della miniatura"
 
 #: src/components/system/system-logs/LogDetail.tsx
 #: src/components/system/system-logs/SystemLogsView.tsx
@@ -5417,11 +5417,11 @@ msgstr ""
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Time before first break"
-msgstr ""
+msgstr "Tempo prima della prima pausa"
 
 #: src/components/slot_scheduler/MidRollConfigPanel.tsx
 msgid "Time between subsequent breaks"
-msgstr ""
+msgstr "Tempo tra una pausa e l'altra"
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Time format"
@@ -5433,7 +5433,7 @@ msgstr "Formato orario"
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "Time Limit"
-msgstr ""
+msgstr "Limite di tempo"
 
 #: src/hooks/useRouteName.ts
 msgid "Time Slot Editor"
@@ -5445,7 +5445,7 @@ msgstr "Fasce orarie"
 
 #: src/components/channel_config/ChannelProgrammingOrganizeOptions.tsx
 msgid "Time Slots..."
-msgstr ""
+msgstr "Fasce orarie..."
 
 #: src/components/profiles/condition/ConditionClauseEditor.tsx
 #: src/pages/system/TroubleshootPage.tsx
@@ -5463,19 +5463,19 @@ msgstr ""
 
 #: src/components/programming_controls/AddRestrictHoursModal.tsx
 msgid "TO"
-msgstr ""
+msgstr "A"
 
 #: src/components/slot_scheduler/EditSlotProgrammingForm.tsx
 msgid "To schedule movies, add them to a playlist and choose Playlist."
-msgstr ""
+msgstr "Per programmare dei film, aggiungili a una playlist e scegli Playlist."
 
 #: src/components/channel_config/ProgrammingSelector.tsx
 msgid "To use Tunarr, you need to first connect a media source. This will allow you to build custom channels with your content."
-msgstr ""
+msgstr "Per usare Tunarr devi prima collegare una sorgente multimediale. Così potrai creare canali personalizzati con i tuoi contenuti."
 
 #: src/components/slot_scheduler/ProgramWeekCalendarView.tsx
 msgid "Today"
-msgstr ""
+msgstr "Oggi"
 
 #: src/components/settings/media_source/EmbyServerEditDialog.tsx
 #: src/components/settings/media_source/JelllyfinServerEditDialog.tsx
@@ -5495,7 +5495,7 @@ msgstr ""
 #: src/components/channel_config/ChannelProgrammingTools.tsx
 #: src/components/custom-shows/CustomShowSortToolsMenu.tsx
 msgid "Tools"
-msgstr ""
+msgstr "Strumenti"
 
 #. placeholder {0}: isNonEmptyString(query.query) && totalHits >= 1000 ? '>1000' : totalHits
 #: src/components/library/LibraryProgramGrid.tsx
@@ -5542,7 +5542,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Transcoding Settings"
-msgstr ""
+msgstr "Impostazioni di transcodifica"
 
 #: src/components/library/TrashView.tsx
 #: src/components/shell/useShellNav.tsx
@@ -5644,7 +5644,7 @@ msgstr ""
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "TV shows are grouped by show"
-msgstr ""
+msgstr "Le serie TV vengono raggruppate per serie"
 
 #: src/components/programming_controls/AddReplicateModal.tsx
 #: src/components/programming_controls/AddReplicateModal.tsx
@@ -5657,7 +5657,7 @@ msgstr ""
 #: src/pages/system/TroubleshootPage.tsx
 #: src/pages/system/TroubleshootPage.tsx
 msgid "Type"
-msgstr ""
+msgstr "Tipo"
 
 #: src/components/UnavailableLibraryIndicator.tsx
 #: src/components/UnavailableLibraryIndicator.tsx
@@ -5675,7 +5675,7 @@ msgstr ""
 
 #: src/components/slot_scheduler/SlotLinkingControl.tsx
 msgid "Unlink"
-msgstr ""
+msgstr "Scollega"
 
 #: src/components/settings/media_source/MediaSourceHealthPill.tsx
 msgid "Unreachable"
@@ -5705,12 +5705,12 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Use ErsatzTV next Backend (Experimental)"
-msgstr ""
+msgstr "Usa il backend ErsatzTV next (sperimentale)"
 
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 #: src/components/slot_scheduler/TimeSlotConfigDialogPanel.tsx
 msgid "Use schedule default"
-msgstr ""
+msgstr "Usa l'impostazione del palinsesto"
 
 #: src/pages/settings/XmlTvSettingsPage.tsx
 msgid "Use Show Poster"
@@ -5718,7 +5718,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Use these settings to override global ffmpeg settings for this channel."
-msgstr ""
+msgstr "Usa queste impostazioni per sostituire, solo per questo canale, le impostazioni globali di FFmpeg."
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 msgid "Used By"
@@ -5787,7 +5787,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "Videos from the filler list will be randomly picked to play unless there are cooldown restrictions to place or if no videos are short enough for the remaining Flex time.<0/>Each filler can be assigned a cooldown, which restricts how frequently the list will be chosen during flex time."
-msgstr ""
+msgstr "I video della lista filler vengono scelti a caso, a meno che non ci siano pause tra ripetizioni da rispettare o che nessun video sia abbastanza corto per il Flex rimasto.<0/>A ogni filler si può assegnare una pausa tra ripetizioni, che limita quanto spesso la lista viene scelta durante il Flex."
 
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
 #: src/components/profiles/StreamSelectionProfilesTable.tsx
@@ -5843,11 +5843,11 @@ msgstr ""
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Watermark"
-msgstr ""
+msgstr "Filigrana"
 
 #: src/components/channel_config/ChannelTranscodingConfig.tsx
 msgid "Watermark Image URL"
-msgstr ""
+msgstr "URL dell'immagine della filigrana"
 
 #: src/components/settings/general/WebSettings.tsx
 msgid "Web Settings"
@@ -5861,7 +5861,7 @@ msgstr ""
 
 #: src/components/channel_config/ChannelProgrammingConfig.tsx
 msgid "Week"
-msgstr ""
+msgstr "Settimana"
 
 #: src/pages/channels/TimeSlotEditorPage.tsx
 msgid "Weekly"
@@ -5870,11 +5870,11 @@ msgstr "Settimanale"
 #: src/components/channel_config/ChannelFlexConfig.tsx
 #: src/components/slot_scheduler/RandomSlotTable.tsx
 msgid "Weight"
-msgstr ""
+msgstr "Peso"
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 msgid "Weight %"
-msgstr ""
+msgstr "Peso %"
 
 #: src/components/channels/BulkAssignFillersDialog.tsx
 msgid "Weight is relative to the channel's other filler lists. Channels that already have a selected list get the new weight and cooldown."
@@ -5887,7 +5887,7 @@ msgstr ""
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 #: src/components/slot_scheduler/SlotOrderFormControl.tsx
 msgid "Weighting"
-msgstr ""
+msgstr "Ponderazione"
 
 #: src/components/shell/useShellNav.tsx
 msgid "Welcome"
@@ -5903,7 +5903,7 @@ msgstr ""
 
 #: src/components/channel_config/WatermarkTimingFields.tsx
 msgid "When enabled, intermittent watermarks fade in immediately when a stream is initialized. When disabled, the first watermark fade-in occurs after a full period."
-msgstr ""
+msgstr "Se attiva, la filigrana intermittente appare subito all'avvio della trasmissione. Se disattiva, la prima apparizione avviene dopo un periodo completo."
 
 #: src/components/settings/general/GeneralSettingsForm.tsx
 msgid "When enabling, Tunarr will generate an initial backup immediately"
@@ -5953,7 +5953,7 @@ msgstr "Sì"
 
 #: src/components/programming_controls/AddBlockShuffleModal.tsx
 msgid "You can change any setting below before shuffling."
-msgstr ""
+msgstr "Prima di mescolare puoi cambiare qualsiasi impostazione qui sotto."
 
 #: src/components/settings/UnsavedNavigationAlert.tsx
 msgid "You have unsaved changes!"
@@ -5970,7 +5970,7 @@ msgstr "Non hai ancora creato nessun canale."
 
 #: src/components/channel_config/ChannelFlexConfig.tsx
 msgid "You haven't created any filler lists yet! Go to the <0>Filler Lists</0> page to create one."
-msgstr ""
+msgstr "Non hai ancora creato nessuna lista filler! Vai alla pagina <0>Liste filler</0> per crearne una."
 
 #: src/components/fillers/FillerListsView.tsx
 msgid "You haven't created any filler lists yet."
@@ -5986,9 +5986,9 @@ msgstr ""
 
 #: src/components/slot_scheduler/EditRandomSlotDialogContent.tsx
 msgid "You must create at least one <0>filler list</0> before assigning filler to a lot."
-msgstr ""
+msgstr "Devi creare almeno una <0>lista filler</0> prima di assegnare filler a uno slot."
 
 #. placeholder {0}: field.value
 #: src/components/programming_controls/AddReplicateModal.tsx
 msgid "Your list will be replicated {0} times"
-msgstr ""
+msgstr "La lista verrà copiata {0} volte"
