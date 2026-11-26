@@ -292,6 +292,25 @@ describe('search parser', () => {
     expect(searchFilterToString(request)).toEqual(input);
   });
 
+  test.each(['audio_title', 'subtitle_title'])('parse %s contains', (field) => {
+    const input = `${field} ~ "Commentary"`;
+
+    const query = parseAndCheckExpression(input);
+    const request = parsedSearchToRequest(query);
+
+    expect(request).toMatchObject({
+      type: 'value',
+      fieldSpec: {
+        key: field === 'audio_title' ? 'audioTitles' : 'subtitleTitles',
+        name: field,
+        op: 'contains',
+        type: 'string',
+        value: ['Commentary'],
+      },
+    });
+    expect(searchFilterToString(request)).toEqual(input);
+  });
+
   test('parse library_name', () => {
     const input = `library_name = "library"`;
 

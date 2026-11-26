@@ -111,6 +111,8 @@ Fields available for search:
 | `audio_channels` | `number` | Whole number audio channels | `2`, `5.1` => `6` | 
 | `audio_language` | `string` | Audio language (ISO 639-2 codes - see [Wikipedia page](https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes)), this looks at all available audio languages for the movie/shows | `eng`, `spa` |
 | `subtitle_language` | `string` | Subtitle languages (ISO 639-2 codes - see [Wikipedia page](https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes)) | `eng` | 
+| `audio_title` | `string` | Title of any audio track, as your media server reports it. `~` (contains) ignores case. | `audio_title ~ "commentary"` |
+| `subtitle_title` | `string` | Title of any subtitle track, including external subtitle files. `~` (contains) ignores case. | `subtitle_title ~ "sdh"` |
 | `release_year` | `number` | Program release year | `1990` |
 | `release_date` | `date` | Program's original release date | `1990-12-05` (`YYYY-MM-DD` or `YYYYMMDD`) |
 | `added_date` | `date` | When the program was added to Tunarr | `2024-06-01` |

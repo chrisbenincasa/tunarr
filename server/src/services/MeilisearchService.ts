@@ -171,6 +171,8 @@ const ProgramsIndex: TunarrSearchIndex<ProgramSearchDocument> = {
     'grandparent.studio',
     'audioLanguages',
     'subtitleLanguages',
+    'audioTitles',
+    'subtitleTitles',
   ],
   sortable: [
     'title',
@@ -311,6 +313,8 @@ export type TerminalProgramSearchDocument<
   audioChannels?: number;
   audioLanguages?: string[];
   subtitleLanguages?: string[];
+  audioTitles?: string[];
+  subtitleTitles?: string[];
 };
 
 export type ProgramSearchDocument =
@@ -1974,6 +1978,11 @@ export class MeilisearchService implements ISearchService {
         program.mediaItem?.streams,
         'subtitles',
       ),
+      audioTitles: getUniqueStreamTitles(program.mediaItem?.streams, ['audio']),
+      subtitleTitles: getUniqueStreamTitles(program.mediaItem?.streams, [
+        'subtitles',
+        'external_subtitles',
+      ]),
       state: 'ok',
     } satisfies TerminalProgramSearchDocument<typeof program.type>;
   }
@@ -2102,6 +2111,11 @@ export class MeilisearchService implements ISearchService {
         program.mediaItem?.streams,
         'subtitles',
       ),
+      audioTitles: getUniqueStreamTitles(program.mediaItem?.streams, ['audio']),
+      subtitleTitles: getUniqueStreamTitles(program.mediaItem?.streams, [
+        'subtitles',
+        'external_subtitles',
+      ]),
     }; // satisfies TerminalProgramSearchDocument<typeof program.type>;
   }
 
@@ -2173,4 +2187,17 @@ function encodeCaseSensitiveId(id: string): SingleCaseString {
 
 export function decodeCaseSensitiveId(id: SingleCaseString): string {
   return base32.decode(id);
+}
+
+export function getUniqueStreamTitles(
+  streams: Pick<MediaStream, 'streamType' | 'title'>[] | undefined,
+  types: MediaStream['streamType'][],
+): string[] {
+  return uniq(
+    seq.collect(streams, (s) =>
+      types.includes(s.streamType) && isNonEmptyString(s.title)
+        ? s.title
+        : undefined,
+    ),
+  );
 }
