@@ -1,6 +1,7 @@
-import { renderWithProviders, screen } from '@/test/utils';
+import { renderWithProviders, screen, waitFor } from '@/test/utils';
 import { QueryClient } from '@tanstack/react-query';
 import type { FillerList } from '@tunarr/types';
+import { BulkAssignFillersMaxChannels } from '@tunarr/types/api';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 import type * as Sdk from '../../generated/sdk.gen.ts';
 import type * as BulkAssignHooks from '../../hooks/useBulkAssignFillers.tsx';
@@ -26,7 +27,7 @@ const fillerLists: FillerList[] = [
   { id: 'filler-c', name: 'Station IDs', contentCount: 2 },
 ];
 
-const renderDialog = () => {
+const renderDialog = (selectedChannelIds = ['channel-1', 'channel-2']) => {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -35,7 +36,7 @@ const renderDialog = () => {
     <BulkAssignFillersDialog
       open
       onClose={() => {}}
-      selectedChannelIds={['channel-1', 'channel-2']}
+      selectedChannelIds={selectedChannelIds}
     />,
     { queryClient },
   );
@@ -86,6 +87,54 @@ describe('BulkAssignFillersDialog', () => {
 
     await user.click(screen.getByText('Bumpers'));
     expect(apply).toBeDisabled();
+  });
+
+  test('replace mode asks for confirmation before sending', async () => {
+    const { user } = renderDialog();
+
+    await user.click(screen.getByLabelText('Replace all existing fillers'));
+    await user.click(screen.getByText('Bumpers'));
+    await user.click(screen.getByRole('button', { name: /Apply to/ }));
+
+    expect(screen.getByText('Replace filler lists?')).toBeInTheDocument();
+    expect(mutate).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+    await waitFor(() =>
+      expect(
+        screen.queryByText('Replace filler lists?'),
+      ).not.toBeInTheDocument(),
+    );
+    expect(mutate).not.toHaveBeenCalled();
+
+    await user.click(screen.getByRole('button', { name: /Apply to/ }));
+    await user.click(screen.getByRole('button', { name: 'Replace' }));
+
+    expect(mutate).toHaveBeenCalledTimes(1);
+    expect(mutate).toHaveBeenCalledWith({
+      body: {
+        channelIds: ['channel-1', 'channel-2'],
+        fillers: [
+          { fillerShowId: 'filler-a', weight: 50, cooldownSeconds: 30 },
+        ],
+        mode: 'replace',
+      },
+    });
+  });
+
+  test('disables Apply when more channels are selected than the limit allows', async () => {
+    const ids = Array.from(
+      { length: BulkAssignFillersMaxChannels + 2 },
+      (_, i) => `channel-${i}`,
+    );
+    const { user } = renderDialog(ids);
+
+    await user.click(screen.getByText('Bumpers'));
+
+    expect(screen.getByRole('button', { name: /Apply to/ })).toBeDisabled();
+    expect(
+      screen.getByText(/Deselect 2 channels to continue/),
+    ).toBeInTheDocument();
   });
 
   test('shows a retryable error when the filler lists fail to load', async () => {

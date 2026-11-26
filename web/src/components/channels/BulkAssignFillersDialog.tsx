@@ -23,6 +23,7 @@ import {
 } from '@mui/material';
 import { useQuery } from '@tanstack/react-query';
 import type { FillerList } from '@tunarr/types';
+import { BulkAssignFillersMaxChannels } from '@tunarr/types/api';
 import { isEmpty } from 'lodash-es';
 import { useState } from 'react';
 import { useMap } from 'usehooks-ts';
@@ -32,6 +33,7 @@ import {
   useBulkAssignFillers,
 } from '../../hooks/useBulkAssignFillers.tsx';
 import { fillerListsQuery } from '../../hooks/useFillerLists.ts';
+import { BulkAssignChannelLimitAlert } from '../fillers/BulkAssignChannelLimitAlert.tsx';
 
 type FillerSelection = {
   weight: number;
@@ -60,6 +62,7 @@ export function BulkAssignFillersDialog({
   const [replaceMode, setReplaceMode] = useState(false);
   const [confirmingReplace, setConfirmingReplace] = useState(false);
   const mutation = useBulkAssignFillers(onClose);
+  const overLimit = selectedChannelIds.length > BulkAssignFillersMaxChannels;
 
   const toggleFiller = (filler: FillerList) => {
     if (selectedFillers.has(filler.id)) {
@@ -248,7 +251,14 @@ export function BulkAssignFillersDialog({
             />
           </Trans>
         </DialogTitle>
-        <DialogContent>{renderContent()}</DialogContent>
+        <DialogContent>
+          {renderContent()}
+          {overLimit && (
+            <BulkAssignChannelLimitAlert
+              selectedCount={selectedChannelIds.length}
+            />
+          )}
+        </DialogContent>
         <DialogActions>
           <Button onClick={onClose}>
             <Trans>Cancel</Trans>
@@ -256,7 +266,9 @@ export function BulkAssignFillersDialog({
           <Button
             variant="contained"
             onClick={handleApply}
-            disabled={selectedFillers.size === 0 || mutation.isPending}
+            disabled={
+              selectedFillers.size === 0 || overLimit || mutation.isPending
+            }
           >
             <Trans>
               Apply to{' '}

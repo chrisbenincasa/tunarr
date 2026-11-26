@@ -78,3 +78,5 @@ On the **Channels** page in table view, use the row checkboxes to select one or 
 4. Click **Apply** to save
 
 After applying, a notification shows how many assignments were added and how many were updated.
+
+Both dialogs apply to at most 1,000 channels at a time. With more selected, **Apply** stays disabled until you deselect enough channels.
