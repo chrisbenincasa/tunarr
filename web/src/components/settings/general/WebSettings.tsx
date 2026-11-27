@@ -67,6 +67,7 @@ export const WebSettings = () => {
           >
             <MenuItem value="en">English</MenuItem>
             <MenuItem value="es">Español</MenuItem>
+            <MenuItem value="it">Italiano</MenuItem>
             <MenuItem value="zh-CN">简体中文</MenuItem>
             {import.meta.env.DEV && (
               <MenuItem value="pseudo-LOCALE">pseudo-LOCALE (dev)</MenuItem>

@@ -4,9 +4,14 @@ import useStore from '@/store/index.ts';
 import { i18n } from '@lingui/core';
 import { I18nProvider } from '@lingui/react';
 import { ThemeProvider, createTheme } from '@mui/material';
-import { esES as muiEsES, zhCN as muiZhCN } from '@mui/material/locale';
+import {
+  esES as muiEsES,
+  itIT as muiItIT,
+  zhCN as muiZhCN,
+} from '@mui/material/locale';
 import {
   esES as pickersEsES,
+  itIT as pickersItIT,
   zhCN as pickersZhCN,
 } from '@mui/x-date-pickers/locales';
 import { LocalizationProvider } from '@mui/x-date-pickers';
@@ -43,6 +48,9 @@ export const Tunarr = () => {
     const theme = createTunarrTheme(density);
     if (locale === 'es') {
       return createTheme(theme, muiEsES, pickersEsES);
+    }
+    if (locale === 'it') {
+      return createTheme(theme, muiItIT, pickersItIT);
     }
     if (locale === 'zh-CN') {
       return createTheme(theme, muiZhCN, pickersZhCN);
