@@ -231,3 +231,12 @@ export function is2Tuple<T>(
 export function isNumber2Tuple(value: unknown): value is [number, number] {
   return is2Tuple(value, isNumber);
 }
+
+export function timeRangesOverlap(
+  startA: number,
+  endA: number,
+  startB: number,
+  endB: number,
+): boolean {
+  return Math.max(startA, startB) < Math.min(endA, endB);
+}

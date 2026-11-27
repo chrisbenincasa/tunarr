@@ -113,7 +113,7 @@ export class StreamProgramCalculator {
       );
     }
 
-    const lineup = await this.channelDB.loadLineup(channel.uuid);
+    let lineup = await this.channelDB.loadLineup(channel.uuid);
 
     // Fix channel lineups if necessary
     if (channel.duration <= 0) {
@@ -136,7 +136,6 @@ export class StreamProgramCalculator {
     // on the channel.
     const maxDuration =
       currentProgram.program.duration - currentProgram.timeElapsed;
-    const endTimeMs = req.startTime + maxDuration;
     let streamDuration = maxDuration;
 
     while (currentProgram.program.type === 'redirect') {
@@ -171,6 +170,7 @@ export class StreamProgramCalculator {
       }
 
       channelContext = newChannelAndLineup.channel;
+      lineup = newChannelAndLineup.lineup;
 
       currentProgram = await this.getCurrentProgramAndTimeElapsed(
         req.startTime,
@@ -180,11 +180,8 @@ export class StreamProgramCalculator {
 
       const timeLeft =
         currentProgram.program.duration - currentProgram.timeElapsed;
-      const newEndTime = req.startTime + timeLeft;
-      if (newEndTime < endTimeMs) {
-        streamDuration = newEndTime - req.startTime;
-        currentProgram.program.streamDuration = streamDuration;
-      }
+      streamDuration = Math.min(streamDuration, timeLeft);
+      currentProgram.program.streamDuration = streamDuration;
     }
 
     if (!lineupItem) {
@@ -298,6 +295,67 @@ export class StreamProgramCalculator {
         programBeginMs: req.startTime,
         streamDuration,
       };
+    }
+
+    // Populate next program metadata for "coming up next" overlay.
+    // This is a lightweight DB lookup (one program by ID) and only
+    // runs when the next lineup item is a content item.
+    const shouldLoadNextProgramMetadata =
+      channelContext.transcoding?.nowPlayingOverlay?.enabled &&
+      (channelContext.transcoding?.nowPlayingOverlay?.comingUpNextForSeconds ??
+        0) > 0;
+
+    this.logger.debug(
+      {
+        channelId: channelContext.uuid,
+        overlayEnabled: channelContext.transcoding?.nowPlayingOverlay?.enabled,
+        comingUpNextForSeconds:
+          channelContext.transcoding?.nowPlayingOverlay
+            ?.comingUpNextForSeconds ?? 0,
+        shouldLoadNextProgramMetadata,
+      },
+      'Evaluated coming up next metadata load',
+    );
+
+    if (
+      shouldLoadNextProgramMetadata &&
+      isContentBackedLineupItem(lineupItem) &&
+      lineupItem.streamDuration ===
+        currentProgram.program.duration - currentProgram.timeElapsed &&
+      upperBounds.every((remaining) => remaining > lineupItem.streamDuration) &&
+      currentProgram.programIndex >= 0 &&
+      lineup.items.length > 0
+    ) {
+      const nextIndex = (currentProgram.programIndex + 1) % lineup.items.length;
+      const nextItem = lineup.items[nextIndex];
+      if (nextItem?.type === 'content') {
+        try {
+          const nextProgram = await this.programDB.getProgramById(nextItem.id);
+          if (nextProgram) {
+            lineupItem.nextProgramMetadata = {
+              title: nextProgram.title ?? undefined,
+              artist: nextProgram.artistName ?? undefined,
+              album: nextProgram.albumName ?? undefined,
+              year:
+                nextProgram.year != null ? String(nextProgram.year) : undefined,
+              filePath: nextProgram.filePath ?? undefined,
+            };
+            this.logger.debug(
+              {
+                channelId: channelContext.uuid,
+                nextProgramId: nextItem.id,
+                nextProgramMetadata: lineupItem.nextProgramMetadata,
+              },
+              'Loaded next program metadata for now playing overlay',
+            );
+          }
+        } catch (err) {
+          this.logger.debug(
+            err,
+            'Failed to load next program metadata for overlay',
+          );
+        }
+      }
     }
 
     return Result.success({

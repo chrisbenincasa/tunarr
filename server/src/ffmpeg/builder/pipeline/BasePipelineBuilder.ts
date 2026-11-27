@@ -174,6 +174,10 @@ export class PipelineBuilderContext {
     merge(this, props);
   }
 
+  hasNowPlayingOverlay() {
+    return this.ffmpegState.nowPlayingOverlay !== undefined;
+  }
+
   hasSubtitleOverlay() {
     return (
       (this.subtitleStream?.isImageBased &&

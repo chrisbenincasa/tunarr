@@ -1,3 +1,13 @@
+import { globalOptions } from '@/globals.js';
+import {
+  type NowPlayingMetadata,
+  getNowPlayingMetadata,
+  getNowPlayingMetadataFromFfprobe,
+  type NowPlayingOverlayPayload,
+  resolveNowPlayingOverlay,
+} from '@/ffmpeg/NowPlayingOverlay.js';
+import path from 'node:path';
+import { existsSync } from 'node:fs';
 import type {
   ISettingsDB,
   ReadableFfmpegSettings,
@@ -23,6 +33,7 @@ import {
   isLinux,
   isNonEmptyString,
   loopableInputLocation,
+  timeoutPromise,
 } from '@/util/index.js';
 import type { Logger } from '@/util/logging/LoggerFactory.js';
 import { makeLocalUrl } from '@/util/serverUtil.js';
@@ -109,6 +120,7 @@ import { ConcatStreamModeRemuxes } from './types.ts';
 import { FfmpegInfo } from './ffmpegInfo.ts';
 
 const SoundtrackProbeTimeoutMs = 10_000;
+const OverlayProbeTimeoutMs = 1_000;
 
 @injectable()
 @loggingDef({ category: 'streaming' })
@@ -313,6 +325,7 @@ export class FfmpegStreamFactory {
       duration,
       realtime,
       watermark,
+      nowPlayingOverlay: overlayConfig,
       streamMode,
       encoding,
       isFirstTranscode,
@@ -430,6 +443,15 @@ export class FfmpegStreamFactory {
         duration,
         ptsOffset,
         isFirstTranscode,
+        nowPlayingOverlay: playbackParams
+          ? ((await this.maybeCreateNowPlayingOverlay({
+              config: overlayConfig,
+              lineupItem,
+              playbackParams,
+              startTime,
+              streamSource,
+            })) ?? undefined)
+          : undefined,
         subtitleSegmentStartNumber,
         emitEndList: emitEndList ?? false,
         threadCount: isPassthrough ? 0 : this.transcodeConfig.threadCount,
@@ -488,6 +510,126 @@ export class FfmpegStreamFactory {
         isPassthrough,
       ),
     };
+  }
+
+  private async maybeCreateNowPlayingOverlay(args: {
+    config: StreamSessionCreateArgs['options']['nowPlayingOverlay'];
+    lineupItem: StreamSessionCreateArgs['lineupItem'];
+    playbackParams: FfmpegPlaybackParams;
+    startTime: Duration;
+    streamSource: FileStreamSource | HttpStreamSource;
+  }): Promise<Nullable<NowPlayingOverlayPayload>> {
+    const { config, lineupItem, playbackParams, startTime, streamSource } =
+      args;
+    if (!config?.enabled || playbackParams.videoFormat === VideoFormats.Copy) {
+      this.logger.debug(
+        {
+          enabled: config?.enabled ?? false,
+          videoFormat: playbackParams.videoFormat,
+        },
+        'Skipping now playing overlay before metadata enrichment',
+      );
+      return null;
+    }
+
+    const metadata = getNowPlayingMetadata(lineupItem);
+    const nextMetadata = lineupItem.nextProgramMetadata;
+    const filePath =
+      streamSource.type === 'file' ? streamSource.path : undefined;
+    const options = {
+      ...config,
+      filePath,
+      startOffsetSeconds: startTime.asSeconds(),
+      remainingDurationSeconds: lineupItem.streamDuration / 1000,
+    };
+    const scheduled = resolveNowPlayingOverlay({
+      ...options,
+      metadata,
+      nextMetadata,
+    });
+    if (!scheduled) return null;
+
+    const capabilities = await this.ffmpegInfo.getCapabilities();
+    if (!capabilities.hasFilter('drawtext')) return null;
+
+    const [current, next] = await Promise.all([
+      scheduled.windows.length && filePath
+        ? this.enrichOverlayMetadata(metadata, filePath)
+        : metadata,
+      scheduled.comingUpNextWindows.length && nextMetadata?.filePath
+        ? this.enrichOverlayMetadata(nextMetadata, nextMetadata.filePath)
+        : nextMetadata,
+    ]);
+    return (
+      resolveNowPlayingOverlay({
+        ...options,
+        metadata: current,
+        nextMetadata: next,
+        fontFile: this.resolveNowPlayingOverlayFontFile(),
+      }) ?? null
+    );
+  }
+
+  private async enrichOverlayMetadata(
+    metadata: NowPlayingMetadata,
+    filePath: string,
+  ): Promise<NowPlayingMetadata> {
+    try {
+      const probe = await timeoutPromise(
+        this.ffmpegInfo.probeFileWithCache(filePath, OverlayProbeTimeoutMs),
+        OverlayProbeTimeoutMs,
+      );
+      if (probe) {
+        const tags = getNowPlayingMetadataFromFfprobe(probe, metadata.title);
+        return {
+          ...metadata,
+          title: tags.title ?? metadata.title,
+          artist: tags.artist ?? metadata.artist,
+          album: tags.album ?? metadata.album,
+          year: tags.year ?? metadata.year,
+        };
+      }
+    } catch (error) {
+      this.logger.debug(
+        { err: error, path: filePath },
+        'Using library metadata after overlay probe failed',
+      );
+    }
+    return metadata;
+  }
+
+  private resolveNowPlayingOverlayFontFile(): string | undefined {
+    const candidates: string[] = [];
+
+    const dbDir = globalOptions().databaseDirectory;
+    if (isNonEmptyString(dbDir)) {
+      candidates.push(path.join(dbDir, 'font.ttf'));
+    }
+
+    switch (process.platform) {
+      case 'win32':
+        candidates.push(
+          'C:/Windows/Fonts/segoeui.ttf',
+          'C:/Windows/Fonts/arial.ttf',
+          'C:/Windows/Fonts/tahoma.ttf',
+        );
+        break;
+      case 'darwin':
+        candidates.push(
+          '/System/Library/Fonts/Supplemental/Arial.ttf',
+          '/Library/Fonts/Arial.ttf',
+        );
+        break;
+      default:
+        candidates.push(
+          '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',
+          '/usr/share/fonts/TTF/DejaVuSans.ttf',
+          '/usr/share/fonts/truetype/freefont/FreeSans.ttf',
+        );
+        break;
+    }
+
+    return candidates.find((candidate) => existsSync(candidate));
   }
 
   /**

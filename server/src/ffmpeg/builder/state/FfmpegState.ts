@@ -1,3 +1,4 @@
+import type { NowPlayingOverlayPayload } from '@/ffmpeg/NowPlayingOverlay.js';
 import { HardwareAccelerationMode } from '@/db/schema/TranscodeConfig.js';
 import type { FfmpegVersionResult } from '@/ffmpeg/ffmpegInfo.js';
 import type { DataProps, Maybe, Nullable } from '@/types/util.js';
@@ -87,6 +88,7 @@ export class FfmpegState {
   // The constructor deep-merges into these objects; each state must own them.
   outputFormat: OutputFormat = { ...MpegTsOutputFormat };
   outputLocation: OutputLocation = { ...StdoutOutputLocation };
+  nowPlayingOverlay?: NowPlayingOverlayPayload;
   ptsOffset?: number;
   /**
    * Segment/file number to continue the WebVTT subtitle sidecar's `segment`

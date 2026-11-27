@@ -89,6 +89,19 @@ export const ChannelTranscodingOptionsSchema = z.object({
   targetResolution: ResolutionSchema.optional(),
   videoBitrate: z.number().optional(),
   videoBufferSize: z.number().optional(),
+  nowPlayingOverlay: z
+    .object({
+      enabled: z.boolean().default(false).catch(false),
+      showForSeconds: z.number().positive().default(8).catch(8),
+      showAtEndForSeconds: z.number().nonnegative().default(0).catch(0),
+      startPaddingSeconds: z.number().nonnegative().default(0).catch(0),
+      endPaddingSeconds: z.number().nonnegative().default(0).catch(0),
+      comingUpNextForSeconds: z.number().nonnegative().default(0).catch(0),
+      comingUpNextOffsetSeconds: z.number().nonnegative().default(30).catch(30),
+      fadeDurationSeconds: z.number().nonnegative().default(0.5).catch(0.5),
+    })
+    .optional()
+    .catch(undefined),
 });
 
 export const HlsChannelStreamMode = 'hls';
@@ -241,6 +254,9 @@ export const SaveableChannelSchema = ChannelSchema.omit({
     streamSelectionProfileId: true,
   })
   .extend({
+    transcoding: ChannelTranscodingOptionsSchema.pick({
+      nowPlayingOverlay: true,
+    }).optional(),
     icon: StrictChannelIconSchema,
     watermark: StrictWatermarkSchema.optional(),
   });
