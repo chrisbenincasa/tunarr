@@ -6,7 +6,9 @@ import { z } from 'zod/v4';
 //
 // Ordered iterators store the last program they played. That also covers
 // `ordered_shuffle`, because a rotated list keeps the cyclic order of the
-// sorted list, so resuming after a program needs no rotation offset.
+// sorted list, so resuming after a program needs no rotation offset. Before
+// it plays anything, `ordered_shuffle` stores the program before its random
+// start, so a build with a new seed keeps that start.
 //
 // Shuffle iterators store the programs played in the current pass, so a pass
 // plays every program once before any repeats. Stable shuffles also store the
