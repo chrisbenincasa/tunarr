@@ -27,7 +27,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Controller, useFormContext, useWatch } from 'react-hook-form';
-import { LanguageAutocomplete } from '../LanguageAutocomplete.tsx';
+import { LanguagePriorityList } from '../LanguagePriorityList.tsx';
 import { ConditionEditor } from './condition/ConditionEditor.tsx';
 import type {
   AudioAction,
@@ -354,62 +354,16 @@ function AudioByLanguageFields({ index }: { index: number }) {
               : undefined,
         }}
         render={({ field, fieldState: { error } }) => (
-          <LanguageAutocomplete
-            values={field.value}
-            showValues
-            onRemove={({ iso6392 }) =>
-              field.onChange((field.value ?? []).filter((v) => v !== iso6392))
-            }
-            onSelect={({ iso6392 }) => {
-              field.onChange([...(field.value ?? []), iso6392]);
-            }}
-            onClear={() => field.onChange([])}
-            allowMultiple
+          <LanguagePriorityList
+            values={field.value ?? []}
+            onChange={field.onChange}
+            label={t`Languages`}
+            error={!!error}
             helperText={
               error?.message ??
-              t`Preferred languages in priority order. Type a code to add custom.`
+              t`Tunarr uses the highest language in the list that the program has a track for. Drag to reorder.`
             }
-            textFieldProps={{
-              size: 'small',
-              error: !!error,
-            }}
           />
-          // <Autocomplete
-          //   multiple
-          //   freeSolo
-          //   options={COMMON_LANGUAGES.map((l) => l.code)}
-          //   getOptionLabel={(option) => {
-          //     const lang = COMMON_LANGUAGES.find((l) => l.code === option);
-          //     return lang ? `${lang.label} (${lang.code})` : option;
-          //   }}
-          //   value={field.value ?? []}
-          //   onChange={(_, newValue) => field.onChange(newValue)}
-          //   renderTags={(value, getTagProps) =>
-          //     value.map((code, i) => {
-          //       const lang = COMMON_LANGUAGES.find((l) => l.code === code);
-          //       return (
-          //         <Chip
-          //           {...getTagProps({ index: i })}
-          //           key={code}
-          //           label={lang ? `${lang.label} (${lang.code})` : code}
-          //           size="small"
-          //         />
-          //       );
-          //     })
-          //   }
-          //   renderInput={(params) => (
-          //     <TextField
-          //       {...params}
-          //       label={t`Languages`}
-          //       size="small"
-          //       error={!!error}
-          //       helperText={
-          //         error?.message ??
-          //         t`Preferred languages in priority order. Type a code to add custom.`
-          //       }
-          //     />
-          //   )}
-          // />
         )}
       />
       <Controller

@@ -336,3 +336,36 @@ export function formatBytes(bytes: number, decimals: number = 2): string {
 
   return `${isNegative ? '-' : ''}${formatted} ${units[i]}`;
 }
+
+export function moveItem<T>(
+  items: readonly T[],
+  from: number,
+  to: number,
+): T[] {
+  const result = [...items];
+  result.splice(to, 0, ...result.splice(from, 1));
+  return result;
+}
+
+/**
+ * Reorders a sortable list while one item is dragged over another. The move
+ * waits until the pointer crosses the middle of the hovered item, so the two
+ * don't swap back and forth before the list re-renders. Returns undefined
+ * when nothing should move.
+ */
+export function moveOnDragOver<T>(
+  items: readonly T[],
+  dragged: T,
+  over: T,
+  pointerInUpperHalf: boolean,
+): T[] | undefined {
+  const from = items.indexOf(dragged);
+  const to = items.indexOf(over);
+  if (from < 0 || to < 0 || from === to) {
+    return;
+  }
+  if (from < to ? pointerInUpperHalf : !pointerInUpperHalf) {
+    return;
+  }
+  return moveItem(items, from, to);
+}

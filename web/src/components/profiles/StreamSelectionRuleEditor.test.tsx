@@ -140,6 +140,28 @@ describe('StreamSelectionRuleEditor', () => {
     ).toBeNull();
   });
 
+  test('lists audio languages in priority order and reorders them', async () => {
+    const { user } = renderEditor({
+      expanded: true,
+      rules: [
+        rule({
+          audioAction: { type: 'by_language', languages: ['spa', 'eng'] },
+        }),
+      ],
+    });
+
+    const rowLabels = () =>
+      within(screen.getByRole('list', { name: 'Languages' }))
+        .getAllByRole('listitem')
+        .map((row) => row.textContent);
+
+    expect(rowLabels()).toEqual(['1Spanishspa', '2Englisheng']);
+
+    await user.click(screen.getByRole('button', { name: 'Move English up' }));
+
+    expect(rowLabels()).toEqual(['1Englisheng', '2Spanishspa']);
+  });
+
   test('hides the rule controls and locks the fields when read-only', () => {
     renderEditor({ expanded: true, readOnly: true });
 
