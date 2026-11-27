@@ -26,7 +26,7 @@ import type {
   NumericOperator,
   TextOperator,
 } from './types.ts';
-import { LanguageAutocomplete } from '@/components/LanguageAutocomplete.tsx';
+import { LanguageSelect } from '@/components/LanguageSelect.tsx';
 import { GenreAutocomplete } from './GenreAutocomplete.tsx';
 import { LibrarySelect } from './LibrarySelect.tsx';
 
@@ -163,11 +163,9 @@ export function ConditionClauseEditor({
               ))}
             </Select>
           </FormControl>
-          <LanguageAutocomplete
-            values={clause.value ? [clause.value] : []}
-            onSelect={({ iso6392 }) => onChange({ ...clause, value: iso6392 })}
-            onRemove={() => onChange({ ...clause, value: '' })}
-            onClear={() => onChange({ ...clause, value: '' })}
+          <LanguageSelect
+            value={clause.value}
+            onChange={(value) => onChange({ ...clause, value })}
             textFieldProps={{
               size: 'small',
               sx: { minWidth: 180 },
@@ -195,11 +193,9 @@ export function ConditionClauseEditor({
               ))}
             </Select>
           </FormControl>
-          <LanguageAutocomplete
-            values={clause.value ? [clause.value] : []}
-            onSelect={({ iso6392 }) => onChange({ ...clause, value: iso6392 })}
-            onRemove={() => onChange({ ...clause, value: '' })}
-            onClear={() => onChange({ ...clause, value: '' })}
+          <LanguageSelect
+            value={clause.value}
+            onChange={(value) => onChange({ ...clause, value })}
             textFieldProps={{
               size: 'small',
               sx: { minWidth: 180 },
