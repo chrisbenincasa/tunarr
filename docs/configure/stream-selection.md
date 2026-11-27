@@ -57,7 +57,7 @@ Playback should be unchanged, with one exception. The old settings could give ea
 | Action | Behavior |
 | ------ | -------- |
 | Default | The track the media marks as selected, then the one marked default, then the first track. |
-| By language | The first track matching a language in the list, in list order. Can prefer the track with the most or fewest channels. Falls back to Default. |
+| By language | The first track matching a language in the list, in list order. Drag languages or use the arrows to change the order. Can prefer the track with the most or fewest channels. Falls back to Default. |
 | By title | The first track whose title contains the given text. Falls back to Default. |
 
 ### Subtitles
@@ -68,7 +68,7 @@ Playback should be unchanged, with one exception. The old settings could give ea
 | Default | The subtitle track marked as default, if any. |
 | By language | The first track matching a language in the list, in list order. Can be limited to forced or default tracks, and can exclude image-based or external subtitles. The **None** filter selects no subtitles. |
 
-Language codes accept ISO 639-1 (`en`) and both ISO 639-2 forms (`ger` and `deu`); they are treated as equivalent.
+Language codes accept ISO 639-1 (`en`) and both ISO 639-2 forms (`ger` and `deu`); they are treated as equivalent. To add a language that isn't in the audio picker, type its 2- or 3-letter code and press Enter.
 
 ## Conditions
 
