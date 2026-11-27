@@ -106,6 +106,18 @@ describe('NormalizeLanguageCodesFixer', () => {
         programVersionId: 'version-indexed',
       })
       .run();
+    // An external subtitle stream counts toward the subtitle facet too.
+    drizzle
+      .insert(ProgramMediaStream)
+      .values({
+        uuid: 'external-subtitle-stream',
+        index: RowCount + 1,
+        codec: 'srt',
+        streamKind: 'external_subtitles' as const,
+        language: 'spa',
+        programVersionId: 'version-indexed',
+      })
+      .run();
     // A program that is not in the index: it must not get a stub document.
     drizzle
       .insert(ProgramMediaStream)
@@ -132,6 +144,19 @@ describe('NormalizeLanguageCodesFixer', () => {
           updatedAt: new Date(0),
         })),
       )
+      .run();
+    // A local sidecar file appears only in the subtitles table.
+    drizzle
+      .insert(ProgramSubtitles)
+      .values({
+        uuid: 'subtitle-sidecar-only',
+        subtitleType: 'sidecar' as const,
+        codec: 'srt',
+        language: 'jpn',
+        programId: IndexedProgramId,
+        createdAt: new Date(0),
+        updatedAt: new Date(0),
+      })
       .run();
   });
 
@@ -185,10 +210,10 @@ describe('NormalizeLanguageCodesFixer', () => {
       .from(ProgramSubtitles)
       .all();
     expect(new Set(streams.map(({ language }) => language))).toEqual(
-      new Set(['deu', 'fra']),
+      new Set(['deu', 'fra', 'spa']),
     );
     expect(new Set(subtitles.map(({ language }) => language))).toEqual(
-      new Set(['fra']),
+      new Set(['fra', 'jpn']),
     );
 
     // The backfill paged instead of materializing 1002 rows in one statement.
@@ -207,7 +232,7 @@ describe('NormalizeLanguageCodesFixer', () => {
     );
     expect(
       new Set(documents.flatMap((d) => d.subtitleLanguages ?? [])),
-    ).toEqual(new Set(['fra']));
+    ).toEqual(new Set(['fra', 'spa', 'jpn']));
     // ...and the program that is not indexed was never pushed as a stub.
     expect(documents.some((d) => d.id === UnindexedProgramId)).toBe(false);
     expect(

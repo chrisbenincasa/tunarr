@@ -4,7 +4,7 @@ import { KEYS } from '@/types/inject.js';
 import { ContainerModule } from 'inversify';
 import { BackfillMediaSourceIdFixer } from './BackfillMediaSourceIdFixer.ts';
 import { BackfillProgramArtworkFixer } from './BackfillProgramArtworkFixer.ts';
-import { BackfillTrackTitleSearchFixer } from './BackfillTrackTitleSearchFixer.ts';
+import { BackfillStreamSearchFieldsFixer } from './BackfillStreamSearchFieldsFixer.ts';
 import { FixMislabeledGroupingExternalIdSourceType } from './FixMislabeledGroupingExternalIdSourceType.ts';
 import { FixSmartCollectionFilters } from './FixSmartCollectionFIlters.ts';
 import { NormalizeLanguageCodesFixer } from './NormalizeLanguageCodesFixer.ts';
@@ -22,7 +22,7 @@ const FixerModule = new ContainerModule(({ bind }) => {
   bind<Fixer>(KEYS.Fixer).to(FixMislabeledGroupingExternalIdSourceType);
   bind<Fixer>(KEYS.Fixer).to(MigrateLegacyStreamSelection);
   bind<Fixer>(KEYS.Fixer).to(QueueTrackTitleRescanFixer);
-  bind<Fixer>(KEYS.Fixer).to(BackfillTrackTitleSearchFixer);
+  bind<Fixer>(KEYS.Fixer).to(BackfillStreamSearchFieldsFixer);
 });
 
 export { FixerModule };

@@ -1,6 +1,9 @@
 import { SearchFilter } from '@tunarr/types/api';
 import { describe, expect, test } from 'vitest';
-import { MeilisearchService } from './MeilisearchService.js';
+import {
+  getSubtitleLanguages,
+  MeilisearchService,
+} from './MeilisearchService.js';
 
 // Mock index configuration for testing
 const mockIndex = {
@@ -1073,5 +1076,25 @@ describe('MeilisearchService.buildFilterExpression', () => {
         "type = 'movie' AND genres.name NOT IN ['horror', 'thriller']",
       );
     });
+  });
+});
+
+describe('getSubtitleLanguages', () => {
+  test('includes embedded, external, and sidecar subtitles once each', () => {
+    expect(
+      getSubtitleLanguages(
+        [
+          { streamType: 'audio', languageCodeISO6392: 'jpn' },
+          { streamType: 'subtitles', languageCodeISO6392: 'eng' },
+          { streamType: 'external_subtitles', languageCodeISO6392: 'spa' },
+          { streamType: 'subtitles', languageCodeISO6392: null },
+        ],
+        [{ language: 'fre' }, { language: 'eng' }],
+      ),
+    ).toEqual(['eng', 'spa', 'fra']);
+  });
+
+  test('handles a program with no streams or sidecars', () => {
+    expect(getSubtitleLanguages(undefined, null)).toEqual([]);
   });
 });

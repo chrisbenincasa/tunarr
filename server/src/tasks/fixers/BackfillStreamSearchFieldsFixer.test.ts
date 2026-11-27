@@ -3,6 +3,7 @@ import { DBAccess } from '@/db/DBAccess.js';
 import type { DrizzleDBAccess } from '@/db/schema/index.js';
 import { Program } from '@/db/schema/Program.js';
 import { ProgramMediaStream } from '@/db/schema/ProgramMediaStream.js';
+import { ProgramSubtitles } from '@/db/schema/ProgramSubtitles.js';
 import { ProgramVersion } from '@/db/schema/ProgramVersion.js';
 import { setGlobalOptionsUnchecked } from '@/globals.js';
 import type {
@@ -13,14 +14,15 @@ import { inMemorySettingsDB } from '@/testing/getFakeSettingsDb.js';
 import { copyPreMigratedDb } from '@/testing/testDbFactory.js';
 import tmp from 'tmp-promise';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { BackfillTrackTitleSearchFixer } from './BackfillTrackTitleSearchFixer.js';
+import { BackfillStreamSearchFieldsFixer } from './BackfillStreamSearchFieldsFixer.js';
 
 type StreamRow = {
   kind: 'audio' | 'subtitles' | 'external_subtitles';
   title: string | null;
+  language?: string;
 };
 
-describe('BackfillTrackTitleSearchFixer', () => {
+describe('BackfillStreamSearchFieldsFixer', () => {
   let cleanup: () => Promise<void>;
   let drizzle: DrizzleDBAccess;
 
@@ -91,10 +93,26 @@ describe('BackfillTrackTitleSearchFixer', () => {
           codec: 'aac',
           streamKind: stream.kind,
           title: stream.title,
+          language: stream.language,
           programVersionId: versionId,
         })
         .run();
     });
+  }
+
+  function insertStoredSubtitle(programId: string, language: string) {
+    drizzle
+      .insert(ProgramSubtitles)
+      .values({
+        uuid: `${programId}-${language}`,
+        subtitleType: 'sidecar',
+        codec: 'srt',
+        language,
+        programId,
+        createdAt: new Date(0),
+        updatedAt: new Date(0),
+      })
+      .run();
   }
 
   function makeFixer(indexedIds: Set<string>, done = false) {
@@ -111,9 +129,9 @@ describe('BackfillTrackTitleSearchFixer', () => {
       },
     } as unknown as MeilisearchService;
     const settingsDB = inMemorySettingsDB({
-      migration: { hasBackfilledTrackTitleSearch: done },
+      migration: { hasBackfilledStreamSearchFields: done },
     });
-    const fixer = new BackfillTrackTitleSearchFixer(
+    const fixer = new BackfillStreamSearchFieldsFixer(
       drizzle,
       searchService,
       settingsDB,
@@ -128,8 +146,8 @@ describe('BackfillTrackTitleSearchFixer', () => {
       { kind: 'audio', title: 'Commentary with the director' },
       { kind: 'audio', title: 'Commentary with the director' },
       { kind: 'audio', title: null },
-      { kind: 'subtitles', title: 'English SDH' },
-      { kind: 'external_subtitles', title: 'Signs & Songs' },
+      { kind: 'subtitles', title: 'English SDH', language: 'eng' },
+      { kind: 'external_subtitles', title: 'Signs & Songs', language: 'spa' },
     ]);
     insertVersion('movie', 'movie-v2', 2, [
       { kind: 'audio', title: 'From a later version' },
@@ -151,12 +169,50 @@ describe('BackfillTrackTitleSearchFixer', () => {
           id: 'movie',
           audioTitles: ['English', 'Commentary with the director'],
           subtitleTitles: ['English SDH', 'Signs & Songs'],
+          subtitleLanguages: ['eng', 'spa'],
         },
-        { id: 'no-streams', audioTitles: [], subtitleTitles: [] },
+        {
+          id: 'no-streams',
+          audioTitles: [],
+          subtitleTitles: [],
+          subtitleLanguages: [],
+        },
       ]),
     );
     expect(updates).toHaveLength(2);
-    expect(settingsDB.migrationState.hasBackfilledTrackTitleSearch).toBe(true);
+    expect(settingsDB.migrationState.hasBackfilledStreamSearchFields).toBe(
+      true,
+    );
+  });
+
+  it('adds sidecar subtitle languages and keeps the stream languages', async () => {
+    insertProgram('local-movie');
+    insertVersion('local-movie', 'local-movie-v1', 1, [
+      { kind: 'subtitles', title: null, language: 'eng' },
+    ]);
+    insertStoredSubtitle('local-movie', 'eng');
+    insertStoredSubtitle('local-movie', 'fre');
+    insertStoredSubtitle('local-movie', 'unknown');
+    insertProgram('sidecar-only');
+    insertStoredSubtitle('sidecar-only', 'jpn');
+
+    const { fixer, updates } = makeFixer(
+      new Set(['local-movie', 'sidecar-only']),
+    );
+    await fixer.run();
+
+    expect(updates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'local-movie',
+          subtitleLanguages: ['eng', 'fra'],
+        }),
+        expect.objectContaining({
+          id: 'sidecar-only',
+          subtitleLanguages: ['jpn'],
+        }),
+      ]),
+    );
   });
 
   it('pages through every program', async () => {

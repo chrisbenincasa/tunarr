@@ -5,15 +5,17 @@ import { InjectLogger } from '@/util/inject.js';
 import { type Logger } from '@/util/logging/LoggerFactory.js';
 import { asc, gt, inArray } from 'drizzle-orm';
 import { inject, injectable } from 'inversify';
-import { last } from 'lodash-es';
+import { last, uniq } from 'lodash-es';
 import type { DrizzleDBAccess } from '../../db/schema/index.ts';
 import { Program } from '../../db/schema/Program.ts';
 import { ProgramMediaStream } from '../../db/schema/ProgramMediaStream.ts';
 import { ProgramVersion } from '../../db/schema/ProgramVersion.ts';
 import {
+  getUniqueStreamLanguages,
   getUniqueStreamTitles,
   MeilisearchService,
 } from '../../services/MeilisearchService.ts';
+import { getStoredSubtitleLanguages } from './storedSubtitleLanguages.ts';
 
 /**
  * Matches the search service's document lookup page size, so each page of
@@ -21,15 +23,21 @@ import {
  */
 const PageSize = 100;
 
+type StreamFields = {
+  audioTitles: string[];
+  subtitleTitles: string[];
+  subtitleLanguages: string[];
+};
+
 /**
- * Adds audio and subtitle track titles to existing search documents. New
- * documents get them at index time; this covers programs indexed before the
- * fields existed. Only the two title fields are sent, and programs missing
- * from the index are skipped. Runs once; completion is recorded in the
+ * Brings existing search documents up to date with fields added after they
+ * were indexed: audio and subtitle track titles, and subtitle languages that
+ * include external subtitle files. Only these fields are sent, and programs
+ * missing from the index are skipped. Runs once; completion is recorded in the
  * settings file.
  */
 @injectable()
-export class BackfillTrackTitleSearchFixer extends Fixer {
+export class BackfillStreamSearchFieldsFixer extends Fixer {
   @InjectLogger() declare protected readonly logger: Logger;
 
   canRunInBackground = true;
@@ -43,7 +51,7 @@ export class BackfillTrackTitleSearchFixer extends Fixer {
   }
 
   protected async runInternal(): Promise<void> {
-    if (this.settingsDB.migrationState.hasBackfilledTrackTitleSearch) {
+    if (this.settingsDB.migrationState.hasBackfilledStreamSearchFields) {
       return;
     }
 
@@ -69,28 +77,30 @@ export class BackfillTrackTitleSearchFixer extends Fixer {
       const programIds = page.map(({ uuid }) => uuid);
       const indexed = await this.searchService.getPrograms(programIds);
       const indexedIds = indexed.map(({ id }) => id);
-      const titles = this.getTrackTitles(indexedIds);
+      const fields = this.getStreamFields(indexedIds);
 
       const partials = indexedIds.map((id) => ({
         id,
-        audioTitles: titles.get(id)?.audio ?? [],
-        subtitleTitles: titles.get(id)?.subtitles ?? [],
+        audioTitles: fields.get(id)?.audioTitles ?? [],
+        subtitleTitles: fields.get(id)?.subtitleTitles ?? [],
+        subtitleLanguages: fields.get(id)?.subtitleLanguages ?? [],
       }));
       await this.searchService.updatePrograms(partials);
       updated += partials.length;
     }
 
-    this.logger.info('Added track titles to %d search document(s)', updated);
+    this.logger.info(
+      'Added track titles and subtitle languages to %d search document(s)',
+      updated,
+    );
 
     await this.settingsDB.updateBaseSettings('migration', {
-      hasBackfilledTrackTitleSearch: true,
+      hasBackfilledStreamSearchFields: true,
     });
   }
 
-  private getTrackTitles(
-    programIds: string[],
-  ): Map<string, { audio: string[]; subtitles: string[] }> {
-    const result = new Map<string, { audio: string[]; subtitles: string[] }>();
+  private getStreamFields(programIds: string[]): Map<string, StreamFields> {
+    const result = new Map<string, StreamFields>();
     if (programIds.length === 0) {
       return result;
     }
@@ -122,36 +132,49 @@ export class BackfillTrackTitleSearchFixer extends Fixer {
     for (const [programId, { uuid }] of firstVersions) {
       programByVersion.set(uuid, programId);
     }
-    if (programByVersion.size === 0) {
-      return result;
-    }
 
-    const streams = this.drizzle
-      .select({
-        programVersionId: ProgramMediaStream.programVersionId,
-        streamType: ProgramMediaStream.streamKind,
-        title: ProgramMediaStream.title,
-      })
-      .from(ProgramMediaStream)
-      .where(
-        inArray(ProgramMediaStream.programVersionId, [
-          ...programByVersion.keys(),
-        ]),
-      )
-      .all();
+    const streams =
+      programByVersion.size === 0
+        ? []
+        : this.drizzle
+            .select({
+              programVersionId: ProgramMediaStream.programVersionId,
+              streamType: ProgramMediaStream.streamKind,
+              title: ProgramMediaStream.title,
+              languageCodeISO6392: ProgramMediaStream.language,
+            })
+            .from(ProgramMediaStream)
+            .where(
+              inArray(ProgramMediaStream.programVersionId, [
+                ...programByVersion.keys(),
+              ]),
+            )
+            .all();
 
     const streamsByProgram = Map.groupBy(streams, (stream) =>
       programByVersion.get(stream.programVersionId),
     );
-    for (const [programId, programStreams] of streamsByProgram) {
-      if (!programId) {
-        continue;
-      }
+    const storedSubtitleLanguages = getStoredSubtitleLanguages(
+      this.drizzle,
+      programIds,
+    );
+
+    for (const programId of programIds) {
+      const programStreams = streamsByProgram.get(programId) ?? [];
       result.set(programId, {
-        audio: getUniqueStreamTitles(programStreams, ['audio']),
-        subtitles: getUniqueStreamTitles(programStreams, [
+        audioTitles: getUniqueStreamTitles(programStreams, ['audio']),
+        subtitleTitles: getUniqueStreamTitles(programStreams, [
           'subtitles',
           'external_subtitles',
+        ]),
+        // Stored subtitles cover local sidecar files. Merging in the streams
+        // keeps every language the document already has.
+        subtitleLanguages: uniq([
+          ...getUniqueStreamLanguages(programStreams, [
+            'subtitles',
+            'external_subtitles',
+          ]),
+          ...(storedSubtitleLanguages.get(programId) ?? []),
         ]),
       });
     }

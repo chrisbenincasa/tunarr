@@ -86,6 +86,7 @@ import type { Logger } from '../util/logging/LoggerFactory.ts';
 import { getAvailablePort } from '../util/net.ts';
 import throttle from '../util/throttle.ts';
 import { FileSystemService } from './FileSystemService.ts';
+import { LanguageService } from './LanguageService.ts';
 import type { ISearchService } from './ISearchService.ts';
 import { SearchParser } from './search/SearchParser.ts';
 import { buildMeilisearchArgs } from './search/meilisearchArgs.ts';
@@ -1831,24 +1832,6 @@ export class MeilisearchService implements ISearchService {
     return buf;
   }
 
-  private getUniqueStreamLanguages(
-    streams:
-      | {
-          streamType: MediaStream['streamType'];
-          languageCodeISO6392?: string | null;
-        }[]
-      | undefined,
-    type: 'audio' | 'subtitles',
-  ): string[] {
-    return uniq(
-      seq.collect(streams, (s) =>
-        s.streamType === type && isNonEmptyString(s.languageCodeISO6392)
-          ? s.languageCodeISO6392
-          : undefined,
-      ),
-    );
-  }
-
   private convertProgramToSearchDocument<
     ProgramT extends TerminalProgram & HasMediaSourceAndLibraryId,
   >(
@@ -1970,13 +1953,12 @@ export class MeilisearchService implements ISearchService {
         : undefined,
       audioCodec: audioStream?.codec,
       audioChannels: nullToUndefined(audioStream?.channels),
-      audioLanguages: this.getUniqueStreamLanguages(
-        program.mediaItem?.streams,
+      audioLanguages: getUniqueStreamLanguages(program.mediaItem?.streams, [
         'audio',
-      ),
-      subtitleLanguages: this.getUniqueStreamLanguages(
+      ]),
+      subtitleLanguages: getSubtitleLanguages(
         program.mediaItem?.streams,
-        'subtitles',
+        program.externalSubtitles,
       ),
       audioTitles: getUniqueStreamTitles(program.mediaItem?.streams, ['audio']),
       subtitleTitles: getUniqueStreamTitles(program.mediaItem?.streams, [
@@ -2103,13 +2085,12 @@ export class MeilisearchService implements ISearchService {
       videoBitDepth: nullToUndefined(videoStream?.bitDepth),
       audioCodec: audioStream?.codec,
       audioChannels: nullToUndefined(audioStream?.channels),
-      audioLanguages: this.getUniqueStreamLanguages(
-        program.mediaItem?.streams,
+      audioLanguages: getUniqueStreamLanguages(program.mediaItem?.streams, [
         'audio',
-      ),
-      subtitleLanguages: this.getUniqueStreamLanguages(
+      ]),
+      subtitleLanguages: getSubtitleLanguages(
         program.mediaItem?.streams,
-        'subtitles',
+        program.externalSubtitles,
       ),
       audioTitles: getUniqueStreamTitles(program.mediaItem?.streams, ['audio']),
       subtitleTitles: getUniqueStreamTitles(program.mediaItem?.streams, [
@@ -2200,4 +2181,37 @@ export function getUniqueStreamTitles(
         : undefined,
     ),
   );
+}
+
+export function getUniqueStreamLanguages(
+  streams:
+    | Pick<MediaStream, 'streamType' | 'languageCodeISO6392'>[]
+    | undefined,
+  types: MediaStream['streamType'][],
+): string[] {
+  return uniq(
+    seq.collect(streams, (s) =>
+      types.includes(s.streamType) && isNonEmptyString(s.languageCodeISO6392)
+        ? s.languageCodeISO6392
+        : undefined,
+    ),
+  );
+}
+
+/**
+ * Languages of every subtitle a program has. Local sidecar files are listed
+ * apart from the media streams, so both sources are merged.
+ */
+export function getSubtitleLanguages(
+  streams:
+    | Pick<MediaStream, 'streamType' | 'languageCodeISO6392'>[]
+    | undefined,
+  sidecars: { language: string }[] | null | undefined,
+): string[] {
+  return uniq([
+    ...getUniqueStreamLanguages(streams, ['subtitles', 'external_subtitles']),
+    ...seq.collect(sidecars, (s) =>
+      LanguageService.normalizeLanguageCode(s.language),
+    ),
+  ]);
 }
