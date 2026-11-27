@@ -110,7 +110,7 @@ Fields available for search:
 | `video_bit_depth` | `number` | Video pixel bit depth | `10` |
 | `audio_channels` | `number` | Whole number audio channels | `2`, `5.1` => `6` | 
 | `audio_language` | `string` | Audio language (ISO 639-2 codes - see [Wikipedia page](https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes)), this looks at all available audio languages for the movie/shows | `eng`, `spa` |
-| `subtitle_language` | `string` | Subtitle languages (ISO 639-2 codes - see [Wikipedia page](https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes)) | `eng` | 
+| `subtitle_language` | `string` | Subtitle languages (ISO 639-2 codes - see [Wikipedia page](https://en.wikipedia.org/wiki/List_of_ISO_639-2_codes)), including external subtitle files | `eng` | 
 | `audio_title` | `string` | Title of any audio track, as your media server reports it. `~` (contains) ignores case. | `audio_title ~ "commentary"` |
 | `subtitle_title` | `string` | Title of any subtitle track, including external subtitle files. `~` (contains) ignores case. | `subtitle_title ~ "sdh"` |
 | `release_year` | `number` | Program release year | `1990` |

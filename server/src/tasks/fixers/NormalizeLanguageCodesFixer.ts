@@ -10,6 +10,7 @@ import type { DrizzleDBAccess } from '../../db/schema/index.ts';
 import { InjectLogger } from '../../util/inject.ts';
 import { type Logger } from '../../util/logging/LoggerFactory.ts';
 import Fixer from './fixer.ts';
+import { getStoredSubtitleLanguages } from './storedSubtitleLanguages.ts';
 
 /**
  * Bounded batch size: keeps the row list, the UPDATE's bound variables and the
@@ -28,6 +29,7 @@ type FacetKind = 'audio' | 'subtitles';
 const FacetStreamKinds: Partial<Record<StreamKind, FacetKind>> = {
   audio: 'audio',
   subtitles: 'subtitles',
+  external_subtitles: 'subtitles',
 };
 
 type AffectedRow = { uuid: string; programId: string };
@@ -336,6 +338,18 @@ export class NormalizeLanguageCodesFixer extends Fixer {
       const languages = result.get(programId)?.[facetKind];
       if (languages && !languages.includes(language)) {
         languages.push(language);
+      }
+    }
+
+    for (const [programId, languages] of getStoredSubtitleLanguages(
+      this.drizzleDB,
+      [...result.keys()],
+    )) {
+      const subtitles = result.get(programId)?.subtitles;
+      for (const language of languages) {
+        if (subtitles && !subtitles.includes(language)) {
+          subtitles.push(language);
+        }
       }
     }
 

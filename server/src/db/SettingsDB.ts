@@ -121,8 +121,9 @@ export const MigrationStateSchema = z.object({
   // Set once Plex and Emby programs have been queued for a rescan that
   // rewrites their stored track titles.
   hasQueuedTrackTitleRescan: z.boolean().optional().default(false),
-  // Set once existing search documents have their track titles.
-  hasBackfilledTrackTitleSearch: z.boolean().optional().default(false),
+  // Set once existing search documents have their track titles and their
+  // external subtitle languages.
+  hasBackfilledStreamSearchFields: z.boolean().optional().default(false),
 });
 
 export type MigrationState = z.infer<typeof MigrationStateSchema>;
@@ -169,8 +170,8 @@ export const defaultSettings = (dbBasePath: string): SettingsFile => ({
     hasMigratedLegacyStreamSelection: true,
     // Fresh installs have no stored track titles to rewrite.
     hasQueuedTrackTitleRescan: true,
-    // Fresh installs index track titles from the start.
-    hasBackfilledTrackTitleSearch: true,
+    // Fresh installs index these fields from the start.
+    hasBackfilledStreamSearchFields: true,
   },
   settings: {
     clientId: uuidv4(),
