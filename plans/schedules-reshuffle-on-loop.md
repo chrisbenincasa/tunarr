@@ -97,7 +97,9 @@ Each cycle stores a snapshot of the state it started from:
 
 - `discardCount`, the RNG skip count into the channel's `scheduleSeed`.
 - Ordered iterators, including `ordered_shuffle`: `lastProgramId`. A rotation keeps the sorted
-  list's cyclic order, so `ordered_shuffle` needs no stored offset.
+  list's cyclic order, so `ordered_shuffle` needs no stored offset. Before it plays anything,
+  `ordered_shuffle` stores the program before its random start, so a save with a new seed keeps
+  that start (#2589).
 - Shuffle iterators: the IDs played in the current pass, plus the iterator's own seed and pass
   number (stable shuffle, below).
 - Random slots: the next slot for sequential distribution, and each slot's last-played time for

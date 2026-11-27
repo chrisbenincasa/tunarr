@@ -170,6 +170,36 @@ describe('ordered_shuffle resume', () => {
     );
     expect(take(resumed, 3)).toEqual(['custom-6', 'custom-1', 'custom-2']);
   });
+
+  // A slot that hasn't aired yet still has a place: its random start. A save
+  // draws a new seed, so without a snapshot the slot would start elsewhere.
+  test('keeps its starting point before it plays anything', () => {
+    const episodes = fixtureEpisodes('show', 8, oneHour);
+    const unplayed = new ContentProgramChunkedShuffle(
+      episodes,
+      getProgramOrderer('next'),
+      random(),
+    );
+    const snapshot = unplayed.snapshot();
+    expect(snapshot).toBeDefined();
+    const expected = take(unplayed, 3);
+
+    const differentStarts = [1, 2, 3, 4, 5].map((seed) =>
+      take(
+        new ContentProgramChunkedShuffle(
+          episodes,
+          getProgramOrderer('next'),
+          random(seed),
+          true,
+          snapshot,
+        ),
+        3,
+      ),
+    );
+    for (const resumed of differentStarts) {
+      expect(resumed).toEqual(expected);
+    }
+  });
 });
 
 describe('shuffle resume', () => {
@@ -323,6 +353,40 @@ describe('time slot cycles', () => {
     const last = contentIds(cycle1.lineup).at(-1) ?? '';
     const next = all[(all.indexOf(last) + 1) % all.length];
     expect(contentIds(cycle2.lineup)[0]).toBe(next);
+  });
+
+  // A schedule save rebuilds from the carried state with a new seed. A slot
+  // that hasn't aired yet must start where the old seed put it.
+  test('an ordered_shuffle slot that has not aired keeps its start under a new seed', async () => {
+    const slots = [
+      showSlot(1, 'ordered_shuffle'),
+      showSlot(2, 'ordered_shuffle', { startTime: 12 * oneHour }),
+    ];
+    const episodes = () => fixtureEpisodes('show', 30, oneHour);
+    const morning = await scheduleTimeSlots(
+      daySchedule(slots),
+      episodes(),
+      [42],
+      0,
+      day1,
+      { endTime: day1.add(12, 'hour') },
+    );
+    const afternoon = (seed: number[], discardCount: number) =>
+      scheduleTimeSlots(
+        daySchedule(slots),
+        episodes(),
+        seed,
+        discardCount,
+        day1.add(12, 'hour'),
+        {
+          endTime: day1.add(1, 'day'),
+          iteratorState: morning.iteratorState,
+        },
+      );
+
+    const planned = await afternoon([42], morning.discardCount);
+    const afterSave = await afternoon([7], 0);
+    expect(contentIds(afterSave.lineup)).toEqual(contentIds(planned.lineup));
   });
 
   test('a linked group continues across cycles', async () => {

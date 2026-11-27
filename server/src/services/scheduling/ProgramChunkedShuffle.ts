@@ -39,6 +39,21 @@ abstract class ProgramChunkedShuffle<
       this.resumeAfter(resume.lastProgramId);
     }
   }
+
+  // Before it plays anything, the iterator's place is its random starting
+  // point. Storing the program before that point keeps the start when the
+  // next build draws a different rotation, as a save with a new seed does.
+  snapshot(): ProgramIteratorSnapshot | undefined {
+    const played = super.snapshot();
+    if (played || this.programs.length === 0) {
+      return played;
+    }
+    const before =
+      this.programs[
+        (this.position - 1 + this.programs.length) % this.programs.length
+      ];
+    return before ? { type: 'ordered', lastProgramId: before.uuid } : undefined;
+  }
 }
 
 export class ContentProgramChunkedShuffle extends ProgramChunkedShuffle<CondensedContentProgram> {
