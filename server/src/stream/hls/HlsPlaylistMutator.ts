@@ -144,7 +144,9 @@ export class HlsPlaylistMutator {
 
       // EXTINF
       const duration = parseFloat(trimEnd(line.trim(), ',').split(':')[1]!);
-      items.push(new PlaylistSegment(currentTime, line, playlistLines[i + 2]!));
+      items.push(
+        new PlaylistSegment(currentTime, line, playlistLines[i + 2]!, duration),
+      );
 
       currentTime = currentTime.add(duration, 'seconds');
       i += 3;
@@ -177,6 +179,22 @@ export class HlsPlaylistMutator {
       items,
       (item): item is PlaylistSegment => item.type === 'segment',
     );
+
+    // HLS Direct copies the source video, so segments are cut at the source's
+    // keyframes and can run past the nominal segment length. Every EXTINF,
+    // rounded to the nearest integer, must be <= the target duration
+    // (RFC 8216 4.3.3.1). Measure over the whole session playlist rather than
+    // the trimmed window, so the declared value only ever rises and doesn't
+    // flip back and forth as long segments leave the window.
+    const longestSegment = max(
+      allSegments
+        .map((segment) => segment.duration)
+        .filter((duration) => Number.isFinite(duration)),
+    );
+    const effectiveTargetDuration =
+      longestSegment === undefined
+        ? targetDuration
+        : Math.max(targetDuration, Math.round(longestSegment));
 
     if (allSegments.length > maxSegmentsToKeep) {
       const filtered = filterOptions
@@ -231,7 +249,7 @@ export class HlsPlaylistMutator {
     const lines = [
       '#EXTM3U',
       '#EXT-X-VERSION:6',
-      `#EXT-X-TARGETDURATION:${targetDuration}`,
+      `#EXT-X-TARGETDURATION:${effectiveTargetDuration}`,
       `#EXT-X-MEDIA-SEQUENCE:${startSequence}`,
       `#EXT-X-DISCONTINUITY-SEQUENCE:${discontinuitySequence}`,
       '#EXT-X-INDEPENDENT-SEGMENTS',
@@ -402,6 +420,7 @@ class PlaylistSegment {
     public startTime: Dayjs,
     public extInf: string,
     public line: string,
+    public duration: number,
   ) {}
 
   get startSequence() {
